@@ -97,7 +97,7 @@ export default function Catalogs() {
       }
     });
 
-    socket.on("job_status_update", (data) => {
+    socket.on("job_status", (data) => {
       console.log("Job Update:", data);
       setJobStatus(data.status);
       setJobProgress(data.progress || 0);
@@ -388,8 +388,18 @@ export default function Catalogs() {
             <div className="flex items-center justify-center gap-4">
               {jobStatus === "pending" || jobStatus === "processing" ? (
                 <div className="flex flex-col items-center text-blue-600">
-                  <Loader2 className="w-16 h-16 animate-spin mb-4" />
-                  <span className="font-semibold text-lg">{jobMessage || "Initializing Worker..."}</span>
+                  <div className="relative mb-6 mt-4">
+                    <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-75"></div>
+                    <div className="relative bg-white rounded-full p-4 border shadow-sm">
+                       <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+                    </div>
+                  </div>
+                  <span className="font-bold text-xl text-gray-800">
+                    {jobStatus === "pending" ? "Initializing AI Engine..." : "Extracting Products..."}
+                  </span>
+                  <span className="text-sm text-gray-500 mt-2 text-center max-w-sm">
+                    {jobMessage || "Our AI is reading your catalog. This usually takes around 1-2 minutes depending on the catalog size."}
+                  </span>
                 </div>
               ) : jobStatus === "completed" ? (
                 <div className="flex flex-col items-center text-green-600">

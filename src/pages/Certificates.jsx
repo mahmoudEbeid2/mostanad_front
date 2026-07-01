@@ -1,9 +1,350 @@
+import { useState, useEffect } from "react";
+import { Rnd } from "react-rnd";
+import { getCompanies } from "../services/apiCompanies";
+import { getBrands } from "../services/apiBrands";
+import { createTemplate } from "../services/apiTemplates";
+import toast from "react-hot-toast";
+import { 
+  Type, Image as ImageIcon, Table as TableIcon, Square, 
+  Trash2, Save, Settings, Layers, AlignLeft, PaintBucket
+} from "lucide-react";
+import Button from "../ui/Button";
+
 export default function Certificates() {
+  const [companies, setCompanies] = useState([]);
+  const [brands, setBrands] = useState([]);
+  
+  const [selectedCompany, setSelectedCompany] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("");
+  const [templateName, setTemplateName] = useState("New Certificate");
+  
+  const [elements, setElements] = useState([]);
+  const [selectedElementId, setSelectedElementId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const compRes = await getCompanies({ limit: 100 });
+        if (compRes.status === "success") setCompanies(compRes.data.companies || []);
+      } catch (err) {
+        toast.error("Failed to load companies");
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCompany) {
+      setBrands([]);
+      setSelectedBrand("");
+      return;
+    }
+    const fetchBrands = async () => {
+      try {
+        const brandRes = await getBrands(selectedCompany);
+        if (brandRes.status === "success") setBrands(brandRes.data.brands || []);
+      } catch (err) {
+        toast.error("Failed to load brands");
+      }
+    };
+    fetchBrands();
+  }, [selectedCompany]);
+
+  const addElement = (type) => {
+    const newElement = {
+      id: Date.now().toString(),
+      type,
+      x: 50,
+      y: 50,
+      w: type === "text" ? 200 : type === "table" ? 400 : 150,
+      h: type === "text" ? 50 : type === "table" ? 200 : 150,
+      content: type === "text" ? "Double click to edit" : type === "image" ? "https://via.placeholder.com/150" : type === "table" ? "Table (3x3)" : "",
+      style: {
+        fontSize: 16,
+        color: "#000000",
+        backgroundColor: type === "rectangle" ? "#e5e7eb" : "transparent",
+        opacity: 1,
+        zIndex: elements.length + 1,
+        textAlign: "left",
+        borderWidth: type === "table" ? 1 : 0,
+        borderColor: "#000000",
+      },
+      tableConfig: type === "table" ? { rows: 3, cols: 3 } : null
+    };
+    setElements([...elements, newElement]);
+    setSelectedElementId(newElement.id);
+  };
+
+  const updateElement = (id, updates) => {
+    setElements(elements.map(el => el.id === id ? { ...el, ...updates } : el));
+  };
+
+  const updateStyle = (id, styleUpdates) => {
+    setElements(elements.map(el => el.id === id ? { ...el, style: { ...el.style, ...styleUpdates } } : el));
+  };
+
+  const removeElement = (id) => {
+    setElements(elements.filter(el => el.id !== id));
+    if (selectedElementId === id) setSelectedElementId(null);
+  };
+
+  const handleSave = async () => {
+    if (!templateName) return toast.error("Please enter a certificate name");
+    if (!selectedCompany) return toast.error("Please select a company");
+
+    try {
+      setIsSaving(true);
+      const payload = {
+        name: templateName,
+        type: "certificate",
+        brandId: selectedBrand || null,
+        isGlobal: false,
+        fields: elements, // Save the entire canvas state as JSON
+        htmlContent: `<div class="certificate-wrapper">Certificate ${templateName} generated.</div>` // Mock HTML for now
+      };
+
+      await createTemplate(selectedCompany, payload);
+      toast.success("Certificate saved successfully!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save certificate");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const selectedElement = elements.find(el => el.id === selectedElementId);
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Certificates Management</h1>
-      <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
-        <p>This module is under construction.</p>
+    <div className="h-[calc(100vh-100px)] flex flex-col bg-gray-50 rounded-2xl overflow-hidden border border-gray-200 shadow-sm animate-in fade-in duration-500">
+      
+      {/* Topbar */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-20">
+        <div className="flex items-center gap-4">
+          <input 
+            type="text" 
+            value={templateName}
+            onChange={(e) => setTemplateName(e.target.value)}
+            className="text-xl font-bold text-gray-900 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none transition-colors px-2 py-1"
+            placeholder="Certificate Name"
+          />
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <select
+            value={selectedCompany}
+            onChange={(e) => setSelectedCompany(e.target.value)}
+            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select Company</option>
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          
+          <select
+            value={selectedBrand}
+            onChange={(e) => setSelectedBrand(e.target.value)}
+            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={!selectedCompany}
+          >
+            <option value="">Select Brand (Optional)</option>
+            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+
+          <Button onClick={handleSave} isLoading={isSaving} className="flex items-center gap-2">
+            <Save className="w-4 h-4" /> Save Certificate
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden">
+        
+        {/* Left Toolbar */}
+        <div className="w-20 bg-white border-r border-gray-200 flex flex-col items-center py-6 gap-6 z-20 shadow-sm">
+          <button onClick={() => addElement("text")} className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors group flex flex-col items-center gap-1" title="Add Text">
+            <Type className="w-6 h-6" />
+            <span className="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">Text</span>
+          </button>
+          <button onClick={() => addElement("image")} className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors group flex flex-col items-center gap-1" title="Add Image">
+            <ImageIcon className="w-6 h-6" />
+            <span className="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">Image</span>
+          </button>
+          <button onClick={() => addElement("table")} className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors group flex flex-col items-center gap-1" title="Add Table">
+            <TableIcon className="w-6 h-6" />
+            <span className="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">Table</span>
+          </button>
+          <button onClick={() => addElement("rectangle")} className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors group flex flex-col items-center gap-1" title="Add Shape">
+            <Square className="w-6 h-6" />
+            <span className="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">Shape</span>
+          </button>
+        </div>
+
+        {/* Canvas Area */}
+        <div className="flex-1 bg-gray-100 overflow-auto relative flex justify-center py-10" onClick={() => setSelectedElementId(null)}>
+          <div 
+            className="bg-white shadow-md relative" 
+            style={{ width: "800px", height: "1131px", minHeight: "1131px" }} // A4 aspect ratio approximation (800x1131)
+            onClick={(e) => e.stopPropagation()}
+          >
+            {elements.map((el) => (
+              <Rnd
+                key={el.id}
+                size={{ width: el.w, height: el.h }}
+                position={{ x: el.x, y: el.y }}
+                onDragStop={(e, d) => updateElement(el.id, { x: d.x, y: d.y })}
+                onResizeStop={(e, direction, ref, delta, position) => {
+                  updateElement(el.id, {
+                    w: parseInt(ref.style.width, 10),
+                    h: parseInt(ref.style.height, 10),
+                    ...position,
+                  });
+                }}
+                className={`${selectedElementId === el.id ? "ring-2 ring-blue-500" : "hover:ring-1 hover:ring-gray-300"} transition-shadow`}
+                style={{
+                  zIndex: el.style.zIndex,
+                  opacity: el.style.opacity,
+                  backgroundColor: el.type === "rectangle" ? el.style.backgroundColor : "transparent",
+                  color: el.style.color,
+                  fontSize: `${el.style.fontSize}px`,
+                  textAlign: el.style.textAlign,
+                }}
+                onClick={(e) => { e.stopPropagation(); setSelectedElementId(el.id); }}
+              >
+                {el.type === "text" && (
+                  <div className="w-full h-full p-2 outline-none break-words" contentEditable suppressContentEditableWarning onBlur={(e) => updateElement(el.id, { content: e.currentTarget.textContent })}>
+                    {el.content}
+                  </div>
+                )}
+                {el.type === "image" && (
+                  <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
+                     {el.content.startsWith("http") ? <img src={el.content} className="w-full h-full object-cover" alt="element" /> : <span className="text-xs text-gray-400 p-2 text-center">Image Placeholder<br/>(Set URL in properties)</span>}
+                  </div>
+                )}
+                {el.type === "table" && (
+                  <table className="w-full h-full border-collapse" style={{ borderWidth: `${el.style.borderWidth}px`, borderColor: el.style.borderColor, borderStyle: 'solid' }}>
+                    <tbody>
+                      {Array.from({ length: el.tableConfig?.rows || 3 }).map((_, rIdx) => (
+                        <tr key={rIdx}>
+                          {Array.from({ length: el.tableConfig?.cols || 3 }).map((_, cIdx) => (
+                            <td key={cIdx} className="p-2 border" style={{ borderWidth: `${el.style.borderWidth}px`, borderColor: el.style.borderColor }}>
+                              <div contentEditable suppressContentEditableWarning className="outline-none min-h-[20px]">Cell</div>
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </Rnd>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Properties Panel */}
+        {selectedElement && (
+          <div className="w-72 bg-white border-l border-gray-200 flex flex-col z-20 shadow-sm overflow-y-auto">
+            <div className="p-4 border-b border-gray-100 flex items-center gap-2">
+              <Settings className="w-5 h-5 text-gray-500" />
+              <h3 className="font-bold text-gray-800">Properties</h3>
+            </div>
+            
+            <div className="p-4 space-y-6">
+              
+              {/* Type specific controls */}
+              {selectedElement.type === "image" && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Image URL</label>
+                  <input 
+                    type="text" 
+                    value={selectedElement.content} 
+                    onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                    placeholder="https://..."
+                  />
+                </div>
+              )}
+
+              {selectedElement.type === "text" && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Font Size (px)</label>
+                  <input 
+                    type="number" 
+                    value={selectedElement.style.fontSize} 
+                    onChange={(e) => updateStyle(selectedElement.id, { fontSize: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                  />
+                </div>
+              )}
+
+              {(selectedElement.type === "text" || selectedElement.type === "rectangle") && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Color</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color" 
+                      value={selectedElement.type === "rectangle" ? selectedElement.style.backgroundColor : selectedElement.style.color} 
+                      onChange={(e) => updateStyle(selectedElement.id, selectedElement.type === "rectangle" ? { backgroundColor: e.target.value } : { color: e.target.value })}
+                      className="w-10 h-10 p-1 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer"
+                    />
+                    <input 
+                      type="text" 
+                      value={selectedElement.type === "rectangle" ? selectedElement.style.backgroundColor : selectedElement.style.color}
+                      readOnly
+                      className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedElement.type === "table" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Rows</label>
+                    <input type="number" min="1" value={selectedElement.tableConfig.rows} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, rows: Number(e.target.value) }})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Cols</label>
+                    <input type="number" min="1" value={selectedElement.tableConfig.cols} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, cols: Number(e.target.value) }})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
+                  </div>
+                </div>
+              )}
+
+              {/* Universal controls */}
+              <div className="pt-4 border-t border-gray-100">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Opacity</label>
+                <div className="flex items-center gap-4">
+                  <input 
+                    type="range" min="0" max="1" step="0.1" 
+                    value={selectedElement.style.opacity} 
+                    onChange={(e) => updateStyle(selectedElement.id, { opacity: Number(e.target.value) })}
+                    className="flex-1"
+                  />
+                  <span className="text-xs font-mono w-8 text-right">{Math.round(selectedElement.style.opacity * 100)}%</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Z-Index (Layer)</label>
+                <input 
+                  type="number" 
+                  value={selectedElement.style.zIndex} 
+                  onChange={(e) => updateStyle(selectedElement.id, { zIndex: Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                />
+              </div>
+
+              <div className="pt-6 mt-6 border-t border-red-100">
+                <button 
+                  onClick={() => removeElement(selectedElement.id)}
+                  className="w-full py-2.5 flex items-center justify-center gap-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete Element
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
+        
       </div>
     </div>
   );

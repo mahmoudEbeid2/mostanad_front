@@ -3,7 +3,8 @@ import { getCompanies } from "../services/apiCompanies";
 import { getBrands } from "../services/apiBrands";
 import { uploadCatalog } from "../services/apiProducts";
 import { io } from "socket.io-client";
-import { UploadCloud, CheckCircle, AlertCircle, FileText, Loader2, PlayCircle } from "lucide-react";
+import { PDFDocument } from "pdf-lib";
+import { UploadCloud, CheckCircle, AlertCircle, FileText, Loader2, PlayCircle, Scissors } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
 
@@ -15,7 +16,13 @@ export default function Catalogs() {
   
   const [selectedCompany, setSelectedCompany] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
+  
+  // File and Slicing State
   const [file, setFile] = useState(null);
+  const [totalPages, setTotalPages] = useState(0);
+  const [startPage, setStartPage] = useState(1);
+  const [endPage, setEndPage] = useState(1);
+  const [isParsingPdf, setIsParsingPdf] = useState(false);
   
   const [isUploading, setIsUploading] = useState(false);
   const [jobId, setJobId] = useState(null);
@@ -91,7 +98,7 @@ export default function Catalogs() {
     };
   }, [jobId]);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const selected = e.target.files[0];
     if (selected && selected.type !== "application/pdf") {
       toast.error("Please select a valid PDF file");
@@ -99,27 +106,79 @@ export default function Catalogs() {
       setFile(null);
       return;
     }
+    
     setFile(selected);
+    
+    // Parse PDF to get page count
+    if (selected) {
+      try {
+        setIsParsingPdf(true);
+        const arrayBuffer = await selected.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        const count = pdfDoc.getPageCount();
+        setTotalPages(count);
+        setStartPage(1);
+        setEndPage(count);
+      } catch (err) {
+        toast.error("Failed to parse PDF file. It might be corrupted.");
+        setFile(null);
+      } finally {
+        setIsParsingPdf(false);
+      }
+    }
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!selectedCompany) return toast.error("Please select a company");
     if (!file) return toast.error("Please select a PDF catalog");
+    
+    const parsedStart = parseInt(startPage);
+    const parsedEnd = parseInt(endPage);
 
-    const formData = new FormData();
-    formData.append("companyId", selectedCompany);
-    if (selectedBrand) formData.append("brandId", selectedBrand);
-    formData.append("catalog", file);
+    if (parsedStart < 1 || parsedEnd > totalPages || parsedStart > parsedEnd) {
+      return toast.error("Invalid page range selected.");
+    }
 
     try {
       setIsUploading(true);
-      // Reset state
+      
+      let uploadFile = file;
+
+      // Slice the PDF if range is modified
+      if (parsedStart > 1 || parsedEnd < totalPages) {
+        toast.loading("Slicing PDF locally...", { id: "slicing" });
+        const arrayBuffer = await file.arrayBuffer();
+        const srcDoc = await PDFDocument.load(arrayBuffer);
+        const destDoc = await PDFDocument.create();
+
+        // pdf-lib pages are 0-indexed, UI is 1-indexed
+        const indices = [];
+        for (let i = parsedStart - 1; i < parsedEnd; i++) {
+          indices.push(i);
+        }
+
+        const copiedPages = await destDoc.copyPages(srcDoc, indices);
+        copiedPages.forEach((page) => destDoc.addPage(page));
+
+        const pdfBytes = await destDoc.save();
+        uploadFile = new File([pdfBytes], `sliced_${file.name}`, {
+          type: "application/pdf"
+        });
+        toast.dismiss("slicing");
+      }
+
+      // Reset Job State
       setJobId(null);
       setJobStatus(null);
       setJobProgress(0);
       setJobMessage("");
       setJobResults(null);
+
+      const formData = new FormData();
+      formData.append("companyId", selectedCompany);
+      if (selectedBrand) formData.append("brandId", selectedBrand);
+      formData.append("catalog", uploadFile);
 
       const res = await uploadCatalog(formData);
       if (res.status === "accepted" || res.status === "success") {
@@ -128,6 +187,7 @@ export default function Catalogs() {
         setJobStatus("pending");
       }
     } catch (error) {
+      toast.dismiss("slicing");
       toast.error(error.response?.data?.message || "Failed to upload catalog");
     } finally {
       setIsUploading(false);
@@ -138,6 +198,7 @@ export default function Catalogs() {
     setJobId(null);
     setFile(null);
     setJobStatus(null);
+    setTotalPages(0);
   };
 
   return (
@@ -189,6 +250,12 @@ export default function Catalogs() {
             <div className="mt-8">
               <label className="block text-sm font-medium text-gray-700 mb-2">PDF Catalog</label>
               <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors relative">
+                {isParsingPdf && (
+                  <div className="absolute inset-0 bg-white/80 rounded-xl flex flex-col items-center justify-center z-10">
+                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
+                    <span className="text-sm font-medium text-gray-600">Analyzing PDF...</span>
+                  </div>
+                )}
                 <div className="space-y-2 text-center">
                   <FileText className="mx-auto h-12 w-12 text-gray-400" />
                   <div className="flex text-sm text-gray-600 justify-center">
@@ -201,15 +268,63 @@ export default function Catalogs() {
                   <p className="text-xs text-gray-500">PDF up to 50MB</p>
                 </div>
               </div>
-              {file && (
-                <div className="mt-3 text-sm text-green-600 flex items-center justify-center gap-2 font-medium bg-green-50 py-2 rounded-lg border border-green-100">
-                  <CheckCircle className="w-4 h-4" /> Selected: {file.name}
+              
+              {/* File Info and Slicing */}
+              {file && !isParsingPdf && (
+                <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2 text-blue-800 font-medium text-sm">
+                      <CheckCircle className="w-5 h-5 text-blue-600" /> 
+                      {file.name}
+                    </div>
+                    <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-md">
+                      {totalPages} Pages
+                    </span>
+                  </div>
+
+                  <div className="bg-white rounded-lg p-4 border border-blue-100">
+                    <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-700">
+                      <Scissors className="w-4 h-4 text-blue-500" /> Page Range (Optional)
+                    </div>
+                    <p className="text-xs text-gray-500 mb-4">Save processing time by extracting only the pages you need.</p>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Start Page</label>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          max={endPage}
+                          value={startPage}
+                          onChange={(e) => setStartPage(e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                        />
+                      </div>
+                      <div className="text-gray-400 mt-5">to</div>
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">End Page</label>
+                        <input 
+                          type="number" 
+                          min={startPage} 
+                          max={totalPages}
+                          value={endPage}
+                          onChange={(e) => setEndPage(e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                        />
+                      </div>
+                    </div>
+                    {(parseInt(startPage) !== 1 || parseInt(endPage) !== totalPages) && (
+                      <p className="text-xs text-amber-600 mt-3 font-medium bg-amber-50 p-2 rounded border border-amber-100">
+                        A new PDF with {parseInt(endPage) - parseInt(startPage) + 1} pages will be generated and uploaded.
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
             <div className="pt-4 border-t border-gray-100 flex justify-end">
-              <Button type="submit" isLoading={isUploading} className="w-full md:w-auto px-8">
+              <Button type="submit" isLoading={isUploading || isParsingPdf} className="w-full md:w-auto px-8">
                 <PlayCircle className="w-5 h-5 mr-1" /> Start AI Extraction
               </Button>
             </div>

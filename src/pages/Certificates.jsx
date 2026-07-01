@@ -183,8 +183,8 @@ export default function Certificates() {
         <div className="flex-1 bg-gray-100 overflow-auto relative flex justify-center py-10" onClick={() => setSelectedElementId(null)}>
           <div 
             className="bg-white shadow-xl relative" 
-            style={{ width: "950px", height: "1343px", minHeight: "1343px" }} // Larger A4 aspect ratio approximation (950x1343)
-            onClick={(e) => e.stopPropagation()}
+            style={{ width: "1000px", height: "1414px", minHeight: "1414px" }} 
+            onClick={() => setSelectedElementId(null)}
           >
             {elements.map((el) => (
               <Rnd
@@ -207,45 +207,46 @@ export default function Certificates() {
                   color: el.style.color,
                   fontSize: `${el.style.fontSize}px`,
                   textAlign: el.style.textAlign,
-                  transform: `rotate(${el.style.rotation || 0}deg)`,
                 }}
                 onClick={(e) => { e.stopPropagation(); setSelectedElementId(el.id); }}
               >
-                {el.type === "text" && (
-                  <div className="w-full h-full p-2 outline-none break-words" contentEditable suppressContentEditableWarning onBlur={(e) => updateElement(el.id, { content: e.currentTarget.textContent })}>
-                    {el.content}
-                  </div>
-                )}
-                {el.type === "image" && (
-                  <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
-                     {(el.content.startsWith("http") || el.content.startsWith("data:image")) ? <img src={el.content} className="w-full h-full object-cover" alt="element" /> : <span className="text-xs text-gray-400 p-2 text-center">Image Placeholder<br/>(Upload or set URL)</span>}
-                  </div>
-                )}
-                {el.type === "table" && (
-                  <table className="w-full h-full border-collapse" style={{ borderWidth: `${el.style.borderWidth}px`, borderColor: el.style.borderColor, borderStyle: 'solid' }}>
-                    <tbody>
-                      {Array.from({ length: el.tableConfig?.rows || 3 }).map((_, rIdx) => (
-                        <tr key={rIdx}>
-                          {Array.from({ length: el.tableConfig?.cols || 3 }).map((_, cIdx) => (
-                            <td 
-                              key={cIdx} 
-                              className="p-2 border" 
-                              style={{ 
-                                borderWidth: `${el.style.borderWidth}px`, 
-                                borderColor: el.style.borderColor,
-                                backgroundColor: rIdx === 0 ? (el.tableConfig.headerBg || "#f3f4f6") : (el.tableConfig.cellBg || "#ffffff"),
-                                color: rIdx === 0 ? (el.tableConfig.headerColor || "#000000") : (el.tableConfig.cellColor || "#000000"),
-                                fontWeight: rIdx === 0 ? "bold" : "normal"
-                              }}
-                            >
-                              <div contentEditable suppressContentEditableWarning className="outline-none min-h-[20px]">{rIdx === 0 ? "Header" : "Cell"}</div>
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                <div style={{ transform: `rotate(${el.style.rotation || 0}deg)`, width: '100%', height: '100%' }}>
+                  {el.type === "text" && (
+                    <div className="w-full h-full p-2 outline-none break-words" contentEditable suppressContentEditableWarning onBlur={(e) => updateElement(el.id, { content: e.currentTarget.textContent })}>
+                      {el.content}
+                    </div>
+                  )}
+                  {el.type === "image" && (
+                    <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
+                       {(el.content.startsWith("http") || el.content.startsWith("data:image")) ? <img src={el.content} className="w-full h-full object-cover" alt="element" /> : <span className="text-xs text-gray-400 p-2 text-center">Image Placeholder<br/>(Upload or set URL)</span>}
+                    </div>
+                  )}
+                  {el.type === "table" && (
+                    <table className="w-full h-full border-collapse" style={{ borderWidth: `${el.style.borderWidth}px`, borderColor: el.style.borderColor, borderStyle: 'solid' }}>
+                      <tbody>
+                        {Array.from({ length: el.tableConfig?.rows || 3 }).map((_, rIdx) => (
+                          <tr key={rIdx}>
+                            {Array.from({ length: el.tableConfig?.cols || 3 }).map((_, cIdx) => (
+                              <td 
+                                key={cIdx} 
+                                className="p-2 border" 
+                                style={{ 
+                                  borderWidth: `${el.style.borderWidth}px`, 
+                                  borderColor: el.style.borderColor,
+                                  backgroundColor: rIdx === 0 ? (el.tableConfig.headerBg || "#f3f4f6") : (el.tableConfig.cellBg || "#ffffff"),
+                                  color: rIdx === 0 ? (el.tableConfig.headerColor || "#000000") : (el.tableConfig.cellColor || "#000000"),
+                                  fontWeight: rIdx === 0 ? "bold" : "normal"
+                                }}
+                              >
+                                <div contentEditable suppressContentEditableWarning className="outline-none min-h-[20px]">{rIdx === 0 ? "Header" : "Cell"}</div>
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               </Rnd>
             ))}
           </div>

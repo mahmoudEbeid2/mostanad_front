@@ -216,7 +216,7 @@ export default function Certificates() {
                 )}
                 {el.type === "image" && (
                   <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
-                     {el.content.startsWith("http") ? <img src={el.content} className="w-full h-full object-cover" alt="element" /> : <span className="text-xs text-gray-400 p-2 text-center">Image Placeholder<br/>(Set URL in properties)</span>}
+                     {(el.content.startsWith("http") || el.content.startsWith("data:image")) ? <img src={el.content} className="w-full h-full object-cover" alt="element" /> : <span className="text-xs text-gray-400 p-2 text-center">Image Placeholder<br/>(Upload or set URL)</span>}
                   </div>
                 )}
                 {el.type === "table" && (
@@ -251,15 +251,44 @@ export default function Certificates() {
               
               {/* Type specific controls */}
               {selectedElement.type === "image" && (
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Image URL</label>
-                  <input 
-                    type="text" 
-                    value={selectedElement.content} 
-                    onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-                    placeholder="https://..."
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Upload Image</label>
+                    <label className="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 font-bold border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors">
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      Select Local File
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              updateElement(selectedElement.id, { content: reader.result });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <span className="text-xs text-gray-400 font-bold uppercase">OR</span>
+                    <div className="h-px bg-gray-200 flex-1"></div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Image URL</label>
+                    <input 
+                      type="text" 
+                      value={selectedElement.content.startsWith("data:image") ? "" : selectedElement.content} 
+                      onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                      placeholder="Paste image URL..."
+                    />
+                  </div>
                 </div>
               )}
 

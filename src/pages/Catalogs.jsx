@@ -83,7 +83,7 @@ export default function Catalogs() {
           const currentStatus = res.data.status;
           if (currentStatus === "completed" || currentStatus === "failed") {
              setJobStatus(currentStatus);
-             if (res.data.results) setJobResults(res.data.results);
+             if (res.data.result) setJobResults(res.data.result);
              if (res.data.error) setJobMessage(res.data.error);
              
              if (currentStatus === "completed") toast.success("Catalog processed successfully!");
@@ -102,7 +102,7 @@ export default function Catalogs() {
       setJobStatus(data.status);
       setJobProgress(data.progress || 0);
       if (data.message) setJobMessage(data.message);
-      if (data.results) setJobResults(data.results);
+      if (data.result) setJobResults(data.result);
 
       if (data.status === "completed") {
         toast.success("Catalog processed successfully!");

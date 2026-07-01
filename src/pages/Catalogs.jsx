@@ -434,11 +434,11 @@ export default function Catalogs() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white p-4 rounded-lg shadow-sm border border-green-100">
                     <p className="text-sm text-gray-500">Products Extracted</p>
-                    <p className="text-3xl font-black text-green-600">{jobResults.productsCount || 0}</p>
+                    <p className="text-3xl font-black text-green-600">{jobResults.totalProductsExtracted || 0}</p>
                   </div>
                   <div className="bg-white p-4 rounded-lg shadow-sm border border-green-100">
                     <p className="text-sm text-gray-500">Categories Found</p>
-                    <p className="text-3xl font-black text-green-600">{jobResults.categoriesCount || 0}</p>
+                    <p className="text-3xl font-black text-green-600">{(jobResults.categoriesCreated || 0) + (jobResults.categoriesReused || 0)}</p>
                   </div>
                 </div>
               </div>

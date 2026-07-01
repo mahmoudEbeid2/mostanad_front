@@ -11,7 +11,7 @@ export default function Login() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-400/20 blur-[120px]"></div>
       </div>
 
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8 sm:p-12 relative z-10">
+      <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl shadow-gray-200/50 border border-gray-100 p-10 sm:p-14 relative z-10 m-auto">
         
         <div className="flex flex-col items-center text-center mb-10">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 mb-6">

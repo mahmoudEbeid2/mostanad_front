@@ -65,12 +65,13 @@ export default function Certificates() {
         color: "#000000",
         backgroundColor: type === "rectangle" ? "#e5e7eb" : "transparent",
         opacity: 1,
+        rotation: 0,
         zIndex: elements.length + 1,
         textAlign: "left",
         borderWidth: type === "table" ? 1 : 0,
         borderColor: "#000000",
       },
-      tableConfig: type === "table" ? { rows: 3, cols: 3 } : null
+      tableConfig: type === "table" ? { rows: 3, cols: 3, headerBg: "#f3f4f6", headerColor: "#000000", cellBg: "#ffffff", cellColor: "#000000" } : null
     };
     setElements([...elements, newElement]);
     setSelectedElementId(newElement.id);
@@ -181,8 +182,8 @@ export default function Certificates() {
         {/* Canvas Area */}
         <div className="flex-1 bg-gray-100 overflow-auto relative flex justify-center py-10" onClick={() => setSelectedElementId(null)}>
           <div 
-            className="bg-white shadow-md relative" 
-            style={{ width: "800px", height: "1131px", minHeight: "1131px" }} // A4 aspect ratio approximation (800x1131)
+            className="bg-white shadow-xl relative" 
+            style={{ width: "950px", height: "1343px", minHeight: "1343px" }} // Larger A4 aspect ratio approximation (950x1343)
             onClick={(e) => e.stopPropagation()}
           >
             {elements.map((el) => (
@@ -206,6 +207,7 @@ export default function Certificates() {
                   color: el.style.color,
                   fontSize: `${el.style.fontSize}px`,
                   textAlign: el.style.textAlign,
+                  transform: `rotate(${el.style.rotation || 0}deg)`,
                 }}
                 onClick={(e) => { e.stopPropagation(); setSelectedElementId(el.id); }}
               >
@@ -225,8 +227,18 @@ export default function Certificates() {
                       {Array.from({ length: el.tableConfig?.rows || 3 }).map((_, rIdx) => (
                         <tr key={rIdx}>
                           {Array.from({ length: el.tableConfig?.cols || 3 }).map((_, cIdx) => (
-                            <td key={cIdx} className="p-2 border" style={{ borderWidth: `${el.style.borderWidth}px`, borderColor: el.style.borderColor }}>
-                              <div contentEditable suppressContentEditableWarning className="outline-none min-h-[20px]">Cell</div>
+                            <td 
+                              key={cIdx} 
+                              className="p-2 border" 
+                              style={{ 
+                                borderWidth: `${el.style.borderWidth}px`, 
+                                borderColor: el.style.borderColor,
+                                backgroundColor: rIdx === 0 ? (el.tableConfig.headerBg || "#f3f4f6") : (el.tableConfig.cellBg || "#ffffff"),
+                                color: rIdx === 0 ? (el.tableConfig.headerColor || "#000000") : (el.tableConfig.cellColor || "#000000"),
+                                fontWeight: rIdx === 0 ? "bold" : "normal"
+                              }}
+                            >
+                              <div contentEditable suppressContentEditableWarning className="outline-none min-h-[20px]">{rIdx === 0 ? "Header" : "Cell"}</div>
                             </td>
                           ))}
                         </tr>
@@ -325,31 +337,75 @@ export default function Certificates() {
               )}
 
               {selectedElement.type === "table" && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Rows</label>
-                    <input type="number" min="1" value={selectedElement.tableConfig.rows} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, rows: Number(e.target.value) }})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Rows</label>
+                      <input type="number" min="1" value={selectedElement.tableConfig.rows} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, rows: Number(e.target.value) }})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Cols</label>
+                      <input type="number" min="1" value={selectedElement.tableConfig.cols} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, cols: Number(e.target.value) }})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Cols</label>
-                    <input type="number" min="1" value={selectedElement.tableConfig.cols} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, cols: Number(e.target.value) }})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
+                  
+                  <div className="pt-2 border-t border-gray-100">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 mt-2">Header Colors</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] text-gray-400 mb-1">Background</label>
+                        <input type="color" value={selectedElement.tableConfig.headerBg || "#f3f4f6"} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, headerBg: e.target.value }})} className="w-full h-8 cursor-pointer rounded" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-400 mb-1">Text</label>
+                        <input type="color" value={selectedElement.tableConfig.headerColor || "#000000"} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, headerColor: e.target.value }})} className="w-full h-8 cursor-pointer rounded" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Cell Colors</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] text-gray-400 mb-1">Background</label>
+                        <input type="color" value={selectedElement.tableConfig.cellBg || "#ffffff"} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, cellBg: e.target.value }})} className="w-full h-8 cursor-pointer rounded" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-400 mb-1">Text</label>
+                        <input type="color" value={selectedElement.tableConfig.cellColor || "#000000"} onChange={(e) => updateElement(selectedElement.id, { tableConfig: { ...selectedElement.tableConfig, cellColor: e.target.value }})} className="w-full h-8 cursor-pointer rounded" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Universal controls */}
-              <div className="pt-4 border-t border-gray-100">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Opacity</label>
-                <div className="flex items-center gap-4">
-                  <input 
-                    type="range" min="0" max="1" step="0.1" 
-                    value={selectedElement.style.opacity} 
-                    onChange={(e) => updateStyle(selectedElement.id, { opacity: Number(e.target.value) })}
-                    className="flex-1"
-                  />
-                  <span className="text-xs font-mono w-8 text-right">{Math.round(selectedElement.style.opacity * 100)}%</span>
+              <div className="pt-4 border-t border-gray-100 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Rotation</label>
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="range" min="0" max="360" step="1" 
+                      value={selectedElement.style.rotation || 0} 
+                      onChange={(e) => updateStyle(selectedElement.id, { rotation: Number(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <span className="text-xs font-mono w-8 text-right">{selectedElement.style.rotation || 0}°</span>
+                  </div>
                 </div>
-              </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Opacity</label>
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="range" min="0" max="1" step="0.1" 
+                      value={selectedElement.style.opacity} 
+                      onChange={(e) => updateStyle(selectedElement.id, { opacity: Number(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <span className="text-xs font-mono w-8 text-right">{Math.round(selectedElement.style.opacity * 100)}%</span>
+                  </div>
+                </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Z-Index (Layer)</label>

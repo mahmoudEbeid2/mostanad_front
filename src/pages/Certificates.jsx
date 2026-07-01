@@ -172,13 +172,63 @@ export default function Certificates() {
 
     try {
       setIsSaving(true);
+      
+      // 1. Extract dynamic fields from text elements that use {{var_name}}
+      const extractedFields = {};
+      elements.forEach(el => {
+        if (el.type === "text") {
+          const regex = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
+          let match;
+          while ((match = regex.exec(el.content)) !== null) {
+            extractedFields[match[1]] = "string"; // tell the backend LLM what type to expect
+          }
+        }
+      });
+
+      // 2. Generate HTML representation of the certificate
+      const innerHtml = elements.map(el => {
+        let commonStyles = `position: absolute; left: ${el.x}px; top: ${el.y}px; width: ${el.w}px; height: ${el.h}px; z-index: ${el.style.zIndex || 1}; opacity: ${el.style.opacity || 1}; transform: rotate(${el.style.rotation || 0}deg);`;
+        
+        if (el.type === "text") {
+          commonStyles += `font-family: '${el.style.fontFamily || 'Arial'}', sans-serif; font-size: ${el.style.fontSize}px; font-weight: ${el.style.fontWeight || 'normal'}; color: ${el.style.color}; text-align: ${el.style.textAlign || 'left'}; direction: ${el.style.direction || 'ltr'};`;
+          return `<div style="${commonStyles}">${el.content.replace(/\n/g, '<br/>')}</div>`;
+        } else if (el.type === "image") {
+          return `<img src="${el.content}" style="${commonStyles} object-fit: contain;" />`;
+        } else if (el.type === "rectangle") {
+          commonStyles += `background-color: ${el.style.backgroundColor};`;
+          return `<div style="${commonStyles}"></div>`;
+        } else if (el.type === "table") {
+          let tableHtml = `<table style="${commonStyles} border-collapse: collapse; border: ${el.style.borderWidth}px solid ${el.style.borderColor};"><tbody>`;
+          for(let r=0; r < (el.tableConfig?.rows || 3); r++) {
+            tableHtml += `<tr>`;
+            for(let c=0; c < (el.tableConfig?.cols || 3); c++) {
+              const bg = r === 0 ? el.tableConfig.headerBg : el.tableConfig.cellBg;
+              const color = r === 0 ? el.tableConfig.headerColor : el.tableConfig.cellColor;
+              const fw = r === 0 ? 'bold' : 'normal';
+              tableHtml += `<td style="border: ${el.style.borderWidth}px solid ${el.style.borderColor}; padding: 8px; background-color: ${bg}; color: ${color}; font-weight: ${fw};"></td>`;
+            }
+            tableHtml += `</tr>`;
+          }
+          tableHtml += `</tbody></table>`;
+          return tableHtml;
+        }
+        return '';
+      }).join('\\n');
+
+      const fullHtmlContent = `
+        <div class="certificate-wrapper" style="position: relative; width: 1000px; height: 1414px; background: white; overflow: hidden;">
+          ${innerHtml}
+        </div>
+        <!-- CANVA_STATE: ${JSON.stringify(elements).replace(/--/g, '&#45;&#45;')} -->
+      `;
+
       const payload = {
         name: templateName,
         type: "certificate",
         brandId: selectedBrand || null,
         isGlobal: false,
-        fields: elements, // Save the entire canvas state as JSON
-        htmlContent: `<div class="certificate-wrapper">Certificate ${templateName} generated.</div>` // Mock HTML for now
+        fields: extractedFields, // Backend LLM needs this exactly to know what to fill
+        htmlContent: fullHtmlContent
       };
 
       await createTemplate(selectedCompany, payload);

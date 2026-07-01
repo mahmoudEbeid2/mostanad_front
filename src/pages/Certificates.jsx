@@ -12,6 +12,7 @@ import {
 import Button from "../ui/Button";
 
 const FONTS = [
+  "Cairo", "Tajawal", "Almarai", "Montserrat", "Poppins", "Roboto", "Open Sans",
   "Arial", "Times New Roman", "Courier New", "Georgia", 
   "Verdana", "Tahoma", "Trebuchet MS", "Impact", "Comic Sans MS",
   "system-ui", "sans-serif", "serif", "monospace"
@@ -30,6 +31,7 @@ export default function Certificates() {
   const [historyIndex, setHistoryIndex] = useState(0);
 
   const [selectedElementId, setSelectedElementId] = useState(null);
+  const [editingElementId, setEditingElementId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const saveHistory = (newElements) => {
@@ -265,11 +267,11 @@ export default function Certificates() {
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 bg-gray-100 overflow-auto relative flex justify-center py-10" onClick={() => setSelectedElementId(null)}>
+        <div className="flex-1 bg-gray-100 overflow-auto relative flex justify-center py-10" onClick={() => { setSelectedElementId(null); setEditingElementId(null); }}>
           <div 
             className="bg-white shadow-xl relative" 
             style={{ width: "1000px", height: "1414px", minHeight: "1414px" }} 
-            onClick={() => setSelectedElementId(null)}
+            onClick={() => { setSelectedElementId(null); setEditingElementId(null); }}
           >
             {elements.map((el) => (
               <Rnd
@@ -293,12 +295,21 @@ export default function Certificates() {
                   fontFamily: el.style.fontFamily || "Arial",
                   fontSize: `${el.style.fontSize}px`,
                   textAlign: el.style.textAlign,
+                  cursor: editingElementId === el.id ? 'text' : 'move'
                 }}
+                disableDragging={editingElementId === el.id}
+                enableUserSelectHack={editingElementId !== el.id}
                 onClick={(e) => { e.stopPropagation(); setSelectedElementId(el.id); }}
+                onDoubleClick={(e) => { e.stopPropagation(); setEditingElementId(el.id); }}
               >
                 <div style={{ transform: `rotate(${el.style.rotation || 0}deg)`, width: '100%', height: '100%' }}>
                   {el.type === "text" && (
-                    <div className="w-full h-full p-2 outline-none break-words" contentEditable suppressContentEditableWarning onBlur={(e) => updateElement(el.id, { content: e.currentTarget.textContent })}>
+                    <div 
+                      className={`w-full h-full p-2 outline-none break-words ${editingElementId === el.id ? 'ring-1 ring-blue-300' : ''}`} 
+                      contentEditable={editingElementId === el.id} 
+                      suppressContentEditableWarning 
+                      onBlur={(e) => { updateElement(el.id, { content: e.currentTarget.textContent }); setEditingElementId(null); }}
+                    >
                       {el.content}
                     </div>
                   )}
@@ -314,18 +325,18 @@ export default function Certificates() {
                           <tr key={rIdx}>
                             {Array.from({ length: el.tableConfig?.cols || 3 }).map((_, cIdx) => (
                               <td 
-                                key={cIdx} 
-                                className="p-2 border" 
-                                style={{ 
-                                  borderWidth: `${el.style.borderWidth}px`, 
-                                  borderColor: el.style.borderColor,
-                                  backgroundColor: rIdx === 0 ? (el.tableConfig.headerBg || "#f3f4f6") : (el.tableConfig.cellBg || "#ffffff"),
-                                  color: rIdx === 0 ? (el.tableConfig.headerColor || "#000000") : (el.tableConfig.cellColor || "#000000"),
-                                  fontWeight: rIdx === 0 ? "bold" : "normal"
-                                }}
-                              >
-                                <div contentEditable suppressContentEditableWarning className="outline-none min-h-[20px]">{rIdx === 0 ? "Header" : "Cell"}</div>
-                              </td>
+                              key={cIdx} 
+                              className="p-2 border" 
+                              style={{ 
+                                borderWidth: `${el.style.borderWidth}px`, 
+                                borderColor: el.style.borderColor,
+                                backgroundColor: rIdx === 0 ? (el.tableConfig.headerBg || "#f3f4f6") : (el.tableConfig.cellBg || "#ffffff"),
+                                color: rIdx === 0 ? (el.tableConfig.headerColor || "#000000") : (el.tableConfig.cellColor || "#000000"),
+                                fontWeight: rIdx === 0 ? "bold" : "normal"
+                              }}
+                            >
+                              <div contentEditable={editingElementId === el.id} suppressContentEditableWarning className="outline-none min-h-[20px]">{rIdx === 0 ? "Header" : "Cell"}</div>
+                            </td>
                             ))}
                           </tr>
                         ))}

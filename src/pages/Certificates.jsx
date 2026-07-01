@@ -406,6 +406,7 @@ export default function Certificates() {
                     <span className="text-xs font-mono w-8 text-right">{Math.round(selectedElement.style.opacity * 100)}%</span>
                   </div>
                 </div>
+              </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Z-Index (Layer)</label>

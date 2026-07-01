@@ -51,6 +51,23 @@ export default function Certificates() {
     fetchBrands();
   }, [selectedCompany]);
 
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if typing in an input, textarea, or contentEditable element
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        return;
+      }
+      
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElementId) {
+        removeElement(selectedElementId);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedElementId, elements]);
+
   const addElement = (type) => {
     const newElement = {
       id: Date.now().toString(),

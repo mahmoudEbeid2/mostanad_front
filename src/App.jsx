@@ -5,6 +5,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Roles from "./pages/Roles";
+import Categories from "./pages/Categories";
 import Products from "./pages/Products";
 import Labels from "./pages/Labels";
 import Certificates from "./pages/Certificates";
@@ -33,6 +34,7 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/roles" element={<Roles />} />
+            <Route path="/categories" element={<Categories />} />
             <Route path="/products" element={<Products />} />
             <Route path="/labels" element={<Labels />} />
             <Route path="/certificates" element={<Certificates />} />

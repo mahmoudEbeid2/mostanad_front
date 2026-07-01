@@ -9,13 +9,15 @@ import {
   Users, 
   Building2, 
   User, 
-  LogOut 
+  LogOut,
+  FolderTree
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const navLinks = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { name: "Roles", path: "/roles", icon: ShieldAlert },
+  { name: "Categories", path: "/categories", icon: FolderTree },
   { name: "Products", path: "/products", icon: Package },
   { name: "Labels", path: "/labels", icon: Tags },
   { name: "Certificates", path: "/certificates", icon: FileCheck },

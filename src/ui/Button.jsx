@@ -7,9 +7,9 @@ const Button = React.forwardRef(
       "relative flex items-center justify-center gap-2 px-4 py-3 font-semibold rounded-xl transition-all duration-300 ease-out active:scale-95 disabled:opacity-70 disabled:pointer-events-none overflow-hidden";
       
     const variants = {
-      primary: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/30",
-      secondary: "bg-gray-800 hover:bg-gray-700 text-white border border-gray-700",
-      ghost: "hover:bg-gray-800/50 text-gray-300 hover:text-white",
+      primary: "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20",
+      secondary: "bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 shadow-sm",
+      ghost: "hover:bg-gray-100 text-gray-600 hover:text-gray-900",
     };
 
     return (

@@ -45,7 +45,7 @@ export default function LoginForm() {
       <FormRow label="Email or Username">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Mail className="h-5 w-5 text-gray-500" />
+            <Mail className="h-5 w-5 text-gray-400" />
           </div>
           <Input
             type="text"
@@ -61,7 +61,7 @@ export default function LoginForm() {
       <FormRow label="Password">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Lock className="h-5 w-5 text-gray-500" />
+            <Lock className="h-5 w-5 text-gray-400" />
           </div>
           <Input
             type="password"
@@ -74,20 +74,20 @@ export default function LoginForm() {
         </div>
       </FormRow>
 
-      <div className="flex items-center justify-between mt-2 mb-4">
+      <div className="flex items-center justify-between mt-1 mb-3">
         <div className="flex items-center">
           <input
             id="remember-me"
             name="remember-me"
             type="checkbox"
-            className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-800"
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-          <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
+          <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600">
             Remember me
           </label>
         </div>
         <div className="text-sm">
-          <a href="#" className="font-medium text-blue-500 hover:text-blue-400 transition-colors">
+          <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
             Forgot password?
           </a>
         </div>

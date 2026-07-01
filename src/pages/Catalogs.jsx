@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getCompanies } from "../services/apiCompanies";
 import { getBrands } from "../services/apiBrands";
 import { uploadCatalog } from "../services/apiProducts";
@@ -97,6 +97,11 @@ export default function Catalogs() {
       socket.disconnect();
     };
   }, [jobId]);
+
+  const pdfPreviewUrl = useMemo(() => {
+    if (file) return URL.createObjectURL(file);
+    return null;
+  }, [file]);
 
   const handleFileChange = async (e) => {
     const selected = e.target.files[0];
@@ -271,54 +276,74 @@ export default function Catalogs() {
               
               {/* File Info and Slicing */}
               {file && !isParsingPdf && (
-                <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2 text-blue-800 font-medium text-sm">
-                      <CheckCircle className="w-5 h-5 text-blue-600" /> 
-                      {file.name}
+                <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                  
+                  {/* Left Column: Slicing Controls */}
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2 text-blue-800 font-medium text-sm truncate max-w-[70%]">
+                        <CheckCircle className="w-5 h-5 text-blue-600 shrink-0" /> 
+                        <span className="truncate">{file.name}</span>
+                      </div>
+                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-md shrink-0">
+                        {totalPages} Pages
+                      </span>
                     </div>
-                    <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-md">
-                      {totalPages} Pages
-                    </span>
+
+                    <div className="bg-white rounded-lg p-4 border border-blue-100">
+                      <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-700">
+                        <Scissors className="w-4 h-4 text-blue-500" /> Page Range
+                      </div>
+                      <p className="text-xs text-gray-500 mb-4">Save processing time by extracting only the pages you need. Preview the PDF on the right to see the page numbers.</p>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Start Page</label>
+                          <input 
+                            type="number" 
+                            min="1" 
+                            max={endPage}
+                            value={startPage}
+                            onChange={(e) => setStartPage(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                          />
+                        </div>
+                        <div className="text-gray-400 mt-5">to</div>
+                        <div className="flex-1">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">End Page</label>
+                          <input 
+                            type="number" 
+                            min={startPage} 
+                            max={totalPages}
+                            value={endPage}
+                            onChange={(e) => setEndPage(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                          />
+                        </div>
+                      </div>
+                      {(parseInt(startPage) !== 1 || parseInt(endPage) !== totalPages) && (
+                        <p className="text-xs text-amber-600 mt-3 font-medium bg-amber-50 p-2 rounded border border-amber-100">
+                          A new PDF with {parseInt(endPage) - parseInt(startPage) + 1} pages will be generated.
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="bg-white rounded-lg p-4 border border-blue-100">
-                    <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-700">
-                      <Scissors className="w-4 h-4 text-blue-500" /> Page Range (Optional)
-                    </div>
-                    <p className="text-xs text-gray-500 mb-4">Save processing time by extracting only the pages you need.</p>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Start Page</label>
-                        <input 
-                          type="number" 
-                          min="1" 
-                          max={endPage}
-                          value={startPage}
-                          onChange={(e) => setStartPage(e.target.value)}
-                          className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                        />
+                  {/* Right Column: PDF Preview */}
+                  <div className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-64 lg:h-full min-h-[250px]">
+                    {pdfPreviewUrl ? (
+                      <iframe 
+                        src={`${pdfPreviewUrl}#toolbar=0&navpanes=0`} 
+                        title="PDF Preview"
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-400">
+                        <FileText className="w-8 h-8 opacity-50" />
                       </div>
-                      <div className="text-gray-400 mt-5">to</div>
-                      <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">End Page</label>
-                        <input 
-                          type="number" 
-                          min={startPage} 
-                          max={totalPages}
-                          value={endPage}
-                          onChange={(e) => setEndPage(e.target.value)}
-                          className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                        />
-                      </div>
-                    </div>
-                    {(parseInt(startPage) !== 1 || parseInt(endPage) !== totalPages) && (
-                      <p className="text-xs text-amber-600 mt-3 font-medium bg-amber-50 p-2 rounded border border-amber-100">
-                        A new PDF with {parseInt(endPage) - parseInt(startPage) + 1} pages will be generated and uploaded.
-                      </p>
                     )}
                   </div>
+
                 </div>
               )}
             </div>

@@ -6,7 +6,7 @@ import { createTemplate } from "../services/apiTemplates";
 import toast from "react-hot-toast";
 import { 
   Type, Image as ImageIcon, Table as TableIcon, Square, 
-  Trash2, Save, Settings, Layers, AlignLeft, PaintBucket,
+  Trash2, Save, Settings, Layers, AlignLeft, AlignCenter, AlignRight, PaintBucket,
   Undo2, Redo2
 } from "lucide-react";
 import Button from "../ui/Button";
@@ -425,6 +425,29 @@ export default function Certificates() {
                       onChange={(e) => updateStyle(selectedElement.id, { fontSize: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Alignment</label>
+                    <div className="flex bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                      <button 
+                        onClick={() => updateStyle(selectedElement.id, { textAlign: 'left' })}
+                        className={`flex-1 p-2 flex justify-center transition-colors ${selectedElement.style.textAlign === 'left' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                      >
+                        <AlignLeft className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => updateStyle(selectedElement.id, { textAlign: 'center' })}
+                        className={`flex-1 p-2 flex justify-center border-l border-r border-gray-200 transition-colors ${selectedElement.style.textAlign === 'center' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                      >
+                        <AlignCenter className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => updateStyle(selectedElement.id, { textAlign: 'right' })}
+                        className={`flex-1 p-2 flex justify-center transition-colors ${selectedElement.style.textAlign === 'right' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                      >
+                        <AlignRight className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

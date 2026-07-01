@@ -217,8 +217,8 @@ export default function Certificates() {
                     </div>
                   )}
                   {el.type === "image" && (
-                    <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
-                       {(el.content.startsWith("http") || el.content.startsWith("data:image")) ? <img src={el.content} className="w-full h-full object-cover" alt="element" /> : <span className="text-xs text-gray-400 p-2 text-center">Image Placeholder<br/>(Upload or set URL)</span>}
+                    <div className={`w-full h-full flex items-center justify-center overflow-hidden ${(el.content.startsWith("http") || el.content.startsWith("data:image")) ? '' : 'border-2 border-dashed border-gray-300 bg-gray-50'}`}>
+                       {(el.content.startsWith("http") || el.content.startsWith("data:image")) ? <img src={el.content} className="w-full h-full object-contain pointer-events-none select-none" alt="element" /> : <span className="text-xs text-gray-400 p-2 text-center">Image Placeholder<br/>(Upload or set URL)</span>}
                     </div>
                   )}
                   {el.type === "table" && (

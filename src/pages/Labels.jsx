@@ -298,29 +298,84 @@ export default function Labels() {
             )}
 
             {/* Results Section */}
-            {jobStatus === "completed" && jobResults && (
+            {jobStatus === "completed" && jobResults && jobResults.validation && (
               <div className="mt-8">
                 {/* Compliant or Not */}
-                <div className={`p-6 rounded-2xl border-2 text-center mb-8 ${jobResults.isCompliant ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800'}`}>
+                <div className={`p-6 rounded-2xl border-2 text-center mb-8 ${jobResults.validation.compliant ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800'}`}>
                   <h3 className="text-3xl font-black mb-2 uppercase tracking-wide">
-                    {jobResults.isCompliant ? "Compliant" : "Non-Compliant"}
+                    {jobResults.validation.compliant ? "Compliant" : "Non-Compliant"}
                   </h3>
-                  <p className="text-sm opacity-80 font-medium">According to regulations in {selectedCountry}</p>
+                  <p className="text-sm opacity-80 font-medium">
+                    According to regulations in {jobResults.validation.country || selectedCountry}
+                  </p>
                 </div>
 
-                {/* AI Feedback / Extracted Data */}
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
-                  <div className="bg-gray-100 border-b border-gray-200 px-6 py-4">
-                    <h4 className="font-bold text-gray-800 flex items-center gap-2">
-                      <FileText className="w-5 h-5" /> AI Analysis Report
-                    </h4>
+                {/* Validation Issues List */}
+                {jobResults.validation.results && jobResults.validation.results.length > 0 && (
+                  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8">
+                    <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <h4 className="font-bold text-gray-800">Identified Issues ({jobResults.validation.results.length})</h4>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      {jobResults.validation.results.map((item, idx) => (
+                        <div key={idx} className="p-6 hover:bg-gray-50 transition-colors">
+                          <div className="flex gap-4">
+                            <div className="flex-shrink-0 mt-1">
+                              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                                item.category === 'regulatory' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'
+                              }`}>
+                                {idx + 1}
+                              </span>
+                            </div>
+                            <div className="flex-1 space-y-3">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                                    item.category === 'regulatory' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                    {item.category === 'regulatory' ? 'Regulatory Rule' : 'Database Mismatch'}
+                                  </span>
+                                  {item.location && (
+                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                                      Location: {item.location}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-gray-800 font-medium leading-relaxed">{item.issue}</p>
+                              </div>
+                              
+                              <div className="bg-green-50 rounded-lg p-4 border border-green-100 flex items-start gap-3">
+                                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <p className="text-sm font-bold text-green-800 mb-1">Recommended Solution</p>
+                                  <p className="text-sm text-green-700 leading-relaxed">{item.solution}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="p-6">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono bg-white p-4 rounded-xl border border-gray-200 overflow-x-auto shadow-inner">
-                      {typeof jobResults === 'object' ? JSON.stringify(jobResults, null, 2) : jobResults}
-                    </pre>
+                )}
+
+                {/* Extracted Product Info Summary */}
+                {jobResults.product && jobResults.product.extractedDetails && (
+                  <div className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
+                    <div className="bg-gray-100 border-b border-gray-200 px-6 py-4">
+                      <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-gray-500" /> Extracted Label Information
+                      </h4>
+                    </div>
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                      <div><span className="text-gray-500 block mb-1">Product Name</span><span className="font-semibold text-gray-900">{jobResults.product.extractedDetails.name || 'N/A'}</span></div>
+                      <div><span className="text-gray-500 block mb-1">Producer</span><span className="font-semibold text-gray-900">{jobResults.product.extractedDetails.producer || 'N/A'}</span></div>
+                      <div><span className="text-gray-500 block mb-1">Dosage</span><span className="font-semibold text-gray-900">{jobResults.product.extractedDetails.dosage || 'N/A'}</span></div>
+                      <div><span className="text-gray-500 block mb-1">Storage</span><span className="font-semibold text-gray-900">{jobResults.product.extractedDetails.storage || 'N/A'}</span></div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 

@@ -6,7 +6,8 @@ import { createTemplate } from "../services/apiTemplates";
 import toast from "react-hot-toast";
 import { 
   Type, Image as ImageIcon, Table as TableIcon, Square, 
-  Trash2, Save, Settings, Layers, AlignLeft, PaintBucket
+  Trash2, Save, Settings, Layers, AlignLeft, PaintBucket,
+  Undo2, Redo2
 } from "lucide-react";
 import Button from "../ui/Button";
 
@@ -19,8 +20,35 @@ export default function Certificates() {
   const [templateName, setTemplateName] = useState("New Certificate");
   
   const [elements, setElements] = useState([]);
+  const [history, setHistory] = useState([[]]); // History starts with empty canvas
+  const [historyIndex, setHistoryIndex] = useState(0);
+
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const saveHistory = (newElements) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newElements);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    setElements(newElements);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setElements(history[historyIndex - 1]);
+      setSelectedElementId(null);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setElements(history[historyIndex + 1]);
+      setSelectedElementId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,6 +82,20 @@ export default function Certificates() {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Undo (Ctrl+Z)
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      
+      // Redo (Ctrl+Y or Ctrl+Shift+Z)
+      if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
       // Ignore if typing in an input, textarea, or contentEditable element
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
         return;
@@ -66,7 +108,7 @@ export default function Certificates() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElementId, elements]);
+  }, [selectedElementId, elements, history, historyIndex]);
 
   const addElement = (type) => {
     const newElement = {
@@ -90,20 +132,20 @@ export default function Certificates() {
       },
       tableConfig: type === "table" ? { rows: 3, cols: 3, headerBg: "#f3f4f6", headerColor: "#000000", cellBg: "#ffffff", cellColor: "#000000" } : null
     };
-    setElements([...elements, newElement]);
+    saveHistory([...elements, newElement]);
     setSelectedElementId(newElement.id);
   };
 
   const updateElement = (id, updates) => {
-    setElements(elements.map(el => el.id === id ? { ...el, ...updates } : el));
+    saveHistory(elements.map(el => el.id === id ? { ...el, ...updates } : el));
   };
 
   const updateStyle = (id, styleUpdates) => {
-    setElements(elements.map(el => el.id === id ? { ...el, style: { ...el.style, ...styleUpdates } } : el));
+    saveHistory(elements.map(el => el.id === id ? { ...el, style: { ...el.style, ...styleUpdates } } : el));
   };
 
   const removeElement = (id) => {
-    setElements(elements.filter(el => el.id !== id));
+    saveHistory(elements.filter(el => el.id !== id));
     if (selectedElementId === id) setSelectedElementId(null);
   };
 
@@ -149,6 +191,25 @@ export default function Certificates() {
         </div>
         
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 border-r border-gray-200 pr-4 mr-2">
+            <button 
+              onClick={undo} 
+              disabled={historyIndex === 0} 
+              className={`p-2 rounded-lg transition-colors ${historyIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'}`}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={redo} 
+              disabled={historyIndex === history.length - 1} 
+              className={`p-2 rounded-lg transition-colors ${historyIndex === history.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'}`}
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 className="w-5 h-5" />
+            </button>
+          </div>
+
           <select
             value={selectedCompany}
             onChange={(e) => setSelectedCompany(e.target.value)}

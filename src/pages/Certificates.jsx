@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Rnd } from "react-rnd";
+import Select from "react-select";
 import { getCompanies } from "../services/apiCompanies";
 import { getBrands } from "../services/apiBrands";
 import { createTemplate } from "../services/apiTemplates";
@@ -17,6 +18,11 @@ const FONTS = [
   "Verdana", "Tahoma", "Trebuchet MS", "Impact", "Comic Sans MS",
   "system-ui", "sans-serif", "serif", "monospace"
 ];
+
+const fontOptions = FONTS.map(f => ({ value: f, label: f }));
+const formatFontOptionLabel = ({ value, label }) => (
+  <div style={{ fontFamily: value }}>{label}</div>
+);
 
 export default function Certificates() {
   const [companies, setCompanies] = useState([]);
@@ -130,6 +136,8 @@ export default function Certificates() {
       style: {
         fontFamily: "Arial",
         fontSize: 16,
+        fontWeight: "normal",
+        direction: "ltr",
         color: "#000000",
         backgroundColor: type === "rectangle" ? "#e5e7eb" : "transparent",
         opacity: 1,
@@ -293,9 +301,11 @@ export default function Certificates() {
                   backgroundColor: el.type === "rectangle" ? el.style.backgroundColor : "transparent",
                   color: el.style.color,
                   fontFamily: el.style.fontFamily || "Arial",
+                  fontWeight: el.style.fontWeight || "normal",
                   fontSize: `${el.style.fontSize}px`,
                   textAlign: el.style.textAlign,
-                  cursor: editingElementId === el.id ? 'text' : 'move'
+                  cursor: editingElementId === el.id ? 'text' : 'move',
+                  direction: el.style.direction || "ltr",
                 }}
                 disableDragging={editingElementId === el.id}
                 enableUserSelectHack={editingElementId !== el.id}
@@ -406,25 +416,59 @@ export default function Certificates() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Font Family</label>
-                    <select 
-                      value={selectedElement.style.fontFamily || "Arial"} 
-                      onChange={(e) => updateStyle(selectedElement.id, { fontFamily: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-                      style={{ fontFamily: selectedElement.style.fontFamily || "Arial" }}
-                    >
-                      {FONTS.map(font => (
-                        <option key={font} value={font} style={{ fontFamily: font }}>{font}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Font Size (px)</label>
-                    <input 
-                      type="number" 
-                      value={selectedElement.style.fontSize} 
-                      onChange={(e) => updateStyle(selectedElement.id, { fontSize: Number(e.target.value) })}
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                    <Select
+                      options={fontOptions}
+                      value={fontOptions.find(o => o.value === (selectedElement.style.fontFamily || "Arial"))}
+                      onChange={(selected) => updateStyle(selectedElement.id, { fontFamily: selected.value })}
+                      formatOptionLabel={formatFontOptionLabel}
+                      className="text-sm"
+                      placeholder="Search fonts..."
                     />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Size (px)</label>
+                      <input 
+                        type="number" 
+                        value={selectedElement.style.fontSize} 
+                        onChange={(e) => updateStyle(selectedElement.id, { fontSize: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Weight</label>
+                      <select 
+                        value={selectedElement.style.fontWeight || "normal"} 
+                        onChange={(e) => updateStyle(selectedElement.id, { fontWeight: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                      >
+                        <option value="normal">Normal</option>
+                        <option value="500">Medium (500)</option>
+                        <option value="600">Semi Bold (600)</option>
+                        <option value="bold">Bold (700)</option>
+                        <option value="800">Extra Bold (800)</option>
+                        <option value="900">Black (900)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Direction (RTL/LTR)</label>
+                    <div className="flex bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                      <button 
+                        onClick={() => updateStyle(selectedElement.id, { direction: 'ltr' })}
+                        className={`flex-1 p-2 flex justify-center transition-colors text-xs font-bold ${selectedElement.style.direction === 'ltr' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                      >
+                        LTR (English)
+                      </button>
+                      <button 
+                        onClick={() => updateStyle(selectedElement.id, { direction: 'rtl' })}
+                        className={`flex-1 p-2 flex justify-center border-l border-gray-200 transition-colors text-xs font-bold ${selectedElement.style.direction === 'rtl' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                      >
+                        RTL (Arabic)
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Alignment</label>

@@ -19,6 +19,7 @@
     "react-hot-toast": "^2.6.0",
     "react-rnd": "^10.5.3",
     "react-router-dom": "^7.18.1",
+    "react-select": "^5.10.2",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {

@@ -13,3 +13,8 @@ export const uploadCatalog = async (formData) => {
   });
   return response.data;
 };
+
+export const getTaskStatus = async (taskId) => {
+  const response = await apiClient.get(`/background-tasks/${taskId}`);
+  return response.data;
+};

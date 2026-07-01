@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { getCompanies } from "../services/apiCompanies";
 import { getBrands } from "../services/apiBrands";
-import { uploadCatalog } from "../services/apiProducts";
+import { uploadCatalog, getTaskStatus } from "../services/apiProducts";
 import { io } from "socket.io-client";
 import { PDFDocument } from "pdf-lib";
 import { UploadCloud, CheckCircle, AlertCircle, FileText, Loader2, PlayCircle, Scissors } from "lucide-react";
@@ -72,9 +72,29 @@ export default function Catalogs() {
 
     const socket = io(BACKEND_URL);
 
-    socket.on("connect", () => {
+    socket.on("connect", async () => {
       console.log("Connected to WebSocket, joining job:", jobId);
       socket.emit("join_job", jobId);
+      
+      // Prevent race condition: Check HTTP status immediately in case it completed before socket connected
+      try {
+        const res = await getTaskStatus(jobId);
+        if (res.status === "success" && res.data) {
+          const currentStatus = res.data.status;
+          if (currentStatus === "completed" || currentStatus === "failed") {
+             setJobStatus(currentStatus);
+             if (res.data.results) setJobResults(res.data.results);
+             if (res.data.error) setJobMessage(res.data.error);
+             
+             if (currentStatus === "completed") toast.success("Catalog processed successfully!");
+             else toast.error("Catalog processing failed.");
+             
+             socket.disconnect();
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch initial task status", err);
+      }
     });
 
     socket.on("job_status_update", (data) => {

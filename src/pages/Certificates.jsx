@@ -11,6 +11,12 @@ import {
 } from "lucide-react";
 import Button from "../ui/Button";
 
+const FONTS = [
+  "Arial", "Times New Roman", "Courier New", "Georgia", 
+  "Verdana", "Tahoma", "Trebuchet MS", "Impact", "Comic Sans MS",
+  "system-ui", "sans-serif", "serif", "monospace"
+];
+
 export default function Certificates() {
   const [companies, setCompanies] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -120,6 +126,7 @@ export default function Certificates() {
       h: type === "text" ? 50 : type === "table" ? 200 : 150,
       content: type === "text" ? "Double click to edit" : type === "image" ? "https://via.placeholder.com/150" : type === "table" ? "Table (3x3)" : "",
       style: {
+        fontFamily: "Arial",
         fontSize: 16,
         color: "#000000",
         backgroundColor: type === "rectangle" ? "#e5e7eb" : "transparent",
@@ -283,6 +290,7 @@ export default function Certificates() {
                   opacity: el.style.opacity,
                   backgroundColor: el.type === "rectangle" ? el.style.backgroundColor : "transparent",
                   color: el.style.color,
+                  fontFamily: el.style.fontFamily || "Arial",
                   fontSize: `${el.style.fontSize}px`,
                   textAlign: el.style.textAlign,
                 }}
@@ -384,14 +392,29 @@ export default function Certificates() {
               )}
 
               {selectedElement.type === "text" && (
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Font Size (px)</label>
-                  <input 
-                    type="number" 
-                    value={selectedElement.style.fontSize} 
-                    onChange={(e) => updateStyle(selectedElement.id, { fontSize: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Font Family</label>
+                    <select 
+                      value={selectedElement.style.fontFamily || "Arial"} 
+                      onChange={(e) => updateStyle(selectedElement.id, { fontFamily: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                      style={{ fontFamily: selectedElement.style.fontFamily || "Arial" }}
+                    >
+                      {FONTS.map(font => (
+                        <option key={font} value={font} style={{ fontFamily: font }}>{font}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Font Size (px)</label>
+                    <input 
+                      type="number" 
+                      value={selectedElement.style.fontSize} 
+                      onChange={(e) => updateStyle(selectedElement.id, { fontSize: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
                 </div>
               )}
 

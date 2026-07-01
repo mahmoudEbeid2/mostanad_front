@@ -19,13 +19,10 @@ const Button = React.forwardRef(
         className={`${baseStyles} ${variants[variant]} ${className}`}
         {...props}
       >
-        {isLoading && <Spinner size="sm" />}
-        <span className={isLoading ? "opacity-0" : "opacity-100"}>{children}</span>
-        {isLoading && (
-          <span className="absolute inset-0 flex items-center justify-center">
-            <Spinner size="sm" />
-          </span>
-        )}
+        {isLoading && <Spinner size="sm" className="absolute" />}
+        <span className={`flex items-center justify-center gap-2 transition-opacity ${isLoading ? "opacity-0" : "opacity-100"}`}>
+          {children}
+        </span>
       </button>
     );
   }

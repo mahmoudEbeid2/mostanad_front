@@ -94,7 +94,7 @@ export default function LoginForm() {
       </div>
 
       <Button type="submit" isLoading={isLoading} className="w-full">
-        <LogIn className="w-5 h-5 mr-2" />
+        <LogIn className="w-5 h-5" />
         Sign In
       </Button>
     </form>

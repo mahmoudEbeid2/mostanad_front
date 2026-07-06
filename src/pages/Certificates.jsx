@@ -11,7 +11,7 @@ import {
   Undo2, Redo2, Sparkles, UploadCloud
 } from "lucide-react";
 import Button from "../ui/Button";
-import axios from "axios";
+import apiClient from "../services/apiClient";
 
 const FONTS = [
   "Cairo", "Tajawal", "Almarai", "Montserrat", "Poppins", "Roboto", "Open Sans",
@@ -256,7 +256,7 @@ export default function Certificates() {
     try {
       setIsGenerating(true);
       toast.loading("Sending design to AI for processing...", { id: "ai-gen" });
-      const res = await axios.post(`/api/companies/${selectedCompany}/templates/generate-ai`, formData, {
+      const res = await apiClient.post(`/companies/${selectedCompany}/templates/generate-ai`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success("Design sent to AI worker successfully! Check background tasks.", { id: "ai-gen" });

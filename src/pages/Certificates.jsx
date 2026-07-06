@@ -8,9 +8,10 @@ import toast from "react-hot-toast";
 import { 
   Type, Image as ImageIcon, Table as TableIcon, Square, 
   Trash2, Save, Settings, Layers, AlignLeft, AlignCenter, AlignRight, PaintBucket,
-  Undo2, Redo2
+  Undo2, Redo2, Sparkles, UploadCloud
 } from "lucide-react";
 import Button from "../ui/Button";
+import axios from "axios";
 
 const FONTS = [
   "Cairo", "Tajawal", "Almarai", "Montserrat", "Poppins", "Roboto", "Open Sans",
@@ -240,6 +241,34 @@ export default function Certificates() {
     }
   };
 
+  const [isGenerating, setIsGenerating] = useState(false);
+  const handleGenerateAI = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!selectedCompany) return toast.error("Please select a company first");
+    if (!templateName) return toast.error("Please enter a certificate name first");
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("templateName", templateName);
+    if (selectedBrand) formData.append("brandId", selectedBrand);
+
+    try {
+      setIsGenerating(true);
+      toast.loading("Sending design to AI for processing...", { id: "ai-gen" });
+      const res = await axios.post(`/api/companies/${selectedCompany}/templates/generate-ai`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success("Design sent to AI worker successfully! Check background tasks.", { id: "ai-gen" });
+      // In a real scenario, we'd listen to sockets here to load the generated template when done
+    } catch(err) {
+      toast.error(err.response?.data?.message || "Failed to generate AI template", { id: "ai-gen" });
+    } finally {
+      setIsGenerating(false);
+      e.target.value = null; // reset input
+    }
+  };
+
   const selectedElement = elements.find(el => el.id === selectedElementId);
 
   return (
@@ -296,9 +325,16 @@ export default function Certificates() {
             {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
 
-          <Button onClick={handleSave} isLoading={isSaving} className="flex items-center gap-2">
-            <Save className="w-4 h-4" /> Save Certificate
-          </Button>
+          <div className="flex gap-2">
+            <label className="relative flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-medium rounded-lg shadow-sm hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 cursor-pointer transition-all disabled:opacity-50">
+              {isGenerating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Sparkles className="w-4 h-4" />}
+              Generate Certification
+              <input type="file" accept=".pdf,image/*,.ai" className="hidden" onChange={handleGenerateAI} disabled={isGenerating} />
+            </label>
+            <Button onClick={handleSave} isLoading={isSaving} className="flex items-center gap-2">
+              <Save className="w-4 h-4" /> Save Certificate
+            </Button>
+          </div>
         </div>
       </div>
 

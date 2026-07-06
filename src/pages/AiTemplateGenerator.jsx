@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getCompanies } from "../services/apiCompanies";
 import { getTemplateById, updateTemplate } from "../services/apiTemplates";
 import toast from "react-hot-toast";
@@ -21,7 +21,29 @@ export default function AiTemplateGenerator() {
   const [socketInstance, setSocketInstance] = useState(null);
   
   // For Preview Zooming
-  const [zoom, setZoom] = useState(0.4); // Scale to fit screen
+  const [zoom, setZoom] = useState(0.4); // Default, but auto-calculated
+  const previewContainerRef = useRef(null);
+
+  // Auto-fit zoom on mount and window resize
+  useEffect(() => {
+    const updateZoom = () => {
+      if (previewContainerRef.current) {
+        const containerWidth = previewContainerRef.current.clientWidth - 64; // accounting for p-8 (32px * 2)
+        const containerHeight = previewContainerRef.current.clientHeight - 64;
+        
+        const scaleW = containerWidth / 1000;
+        const scaleH = containerHeight / 1414;
+        const bestScale = Math.min(scaleW, scaleH);
+        
+        setZoom(Math.min(Math.max(bestScale, 0.1), 1));
+      }
+    };
+
+    // Slight delay to ensure DOM is painted
+    setTimeout(updateZoom, 100);
+    window.addEventListener("resize", updateZoom);
+    return () => window.removeEventListener("resize", updateZoom);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -206,19 +228,23 @@ export default function AiTemplateGenerator() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-8 relative flex justify-center items-start">
+          <div ref={previewContainerRef} className="flex-1 overflow-auto p-8 relative flex justify-center items-start bg-gray-100">
             {htmlCode ? (
-              <div 
-                className="shadow-xl bg-white transition-transform origin-top"
-                style={{ 
-                  transform: `scale(${zoom})`,
-                  width: "1000px", 
-                  height: "1414px",
-                  overflow: "hidden",
-                  position: "relative"
-                }}
-                dangerouslySetInnerHTML={{ __html: htmlCode }}
-              />
+              <div style={{ width: 1000 * zoom, height: 1414 * zoom, position: 'relative', flexShrink: 0 }}>
+                <div 
+                  className="shadow-xl bg-white origin-top-left"
+                  style={{ 
+                    transform: `scale(${zoom})`,
+                    width: "1000px", 
+                    height: "1414px",
+                    overflow: "hidden",
+                    position: "absolute",
+                    top: 0,
+                    left: 0
+                  }}
+                  dangerouslySetInnerHTML={{ __html: htmlCode }}
+                />
+              </div>
             ) : (
               <div className="h-full w-full flex flex-col items-center justify-center text-gray-400">
                 <Sparkles className="w-12 h-12 mb-4 opacity-20" />

@@ -11,7 +11,6 @@ import {
   Undo2, Redo2, Sparkles, UploadCloud
 } from "lucide-react";
 import Button from "../ui/Button";
-import Button from "../ui/Button";
 import apiClient from "../services/apiClient";
 const FONTS = [
   "Cairo", "Tajawal", "Almarai", "Montserrat", "Poppins", "Roboto", "Open Sans",

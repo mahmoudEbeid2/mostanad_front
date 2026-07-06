@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Button from "../ui/Button";
 import apiClient from "../services/apiClient";
+import { io } from "socket.io-client";
 
 const FONTS = [
   "Cairo", "Tajawal", "Almarai", "Montserrat", "Poppins", "Roboto", "Open Sans",
@@ -93,6 +94,30 @@ export default function Certificates() {
     };
     fetchBrands();
   }, [selectedCompany]);
+
+  useEffect(() => {
+    // Listen for AI Worker updates
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    // Connect to the base URL (remove /api/v1 if it exists)
+    const socketUrl = API_URL.replace("/api/v1", "");
+    const socket = io(socketUrl);
+
+    socket.on("job_status_update", (data) => {
+      if (data.type === "ai_template_generation") {
+        if (data.status === "processing") {
+          toast.loading("AI is analyzing and generating your design... Please wait.", { id: "ai-gen" });
+        } else if (data.status === "completed") {
+          toast.success("AI Template Generated Successfully! 🎉 You can find it saved in your Templates.", { id: "ai-gen", duration: 6000 });
+          setIsGenerating(false);
+        } else if (data.status === "failed") {
+          toast.error("AI Template Generation Failed. ❌", { id: "ai-gen" });
+          setIsGenerating(false);
+        }
+      }
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   // Handle keyboard shortcuts
   useEffect(() => {

@@ -16,7 +16,9 @@ export default function AiTemplateGenerator() {
   const [isSaving, setIsSaving] = useState(false);
   
   const [generatedTemplateId, setGeneratedTemplateId] = useState(null);
+  const [currentTaskId, setCurrentTaskId] = useState(null);
   const [htmlCode, setHtmlCode] = useState("");
+  const [socketInstance, setSocketInstance] = useState(null);
   
   // For Preview Zooming
   const [zoom, setZoom] = useState(0.4); // Scale to fit screen
@@ -37,14 +39,17 @@ export default function AiTemplateGenerator() {
     const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
     const socketUrl = API_URL.replace("/api/v1", "");
     const socket = io(socketUrl);
+    setSocketInstance(socket);
 
-    socket.on("job_status_update", async (data) => {
+    socket.on("job_status", async (data) => {
+      // Only process updates for the current generating task
       if (data.type === "ai_template_generation") {
         if (data.status === "processing") {
           toast.loading("AI is analyzing and generating your design... Please wait.", { id: "ai-gen" });
         } else if (data.status === "completed") {
           toast.success("AI Template Generated Successfully! 🎉 Loading preview...", { id: "ai-gen", duration: 3000 });
           setIsGenerating(false);
+          setCurrentTaskId(null);
           
           if (data.result?.templateId) {
             setGeneratedTemplateId(data.result.templateId);
@@ -53,6 +58,7 @@ export default function AiTemplateGenerator() {
         } else if (data.status === "failed") {
           toast.error("AI Template Generation Failed. ❌ " + (data.error || ""), { id: "ai-gen" });
           setIsGenerating(false);
+          setCurrentTaskId(null);
         }
       }
     });
@@ -86,9 +92,17 @@ export default function AiTemplateGenerator() {
       setHtmlCode("");
       setGeneratedTemplateId(null);
       toast.loading("Sending design to AI for processing...", { id: "ai-gen" });
-      await apiClient.post(`/companies/${selectedCompany}/templates/generate-ai`, formData, {
+      const res = await apiClient.post(`/companies/${selectedCompany}/templates/generate-ai`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      
+      const taskId = res.data?.data?.taskId;
+      if (taskId) {
+        setCurrentTaskId(taskId);
+        if (socketInstance) {
+          socketInstance.emit("join_job", taskId);
+        }
+      }
     } catch(err) {
       toast.error(err.response?.data?.message || "Failed to submit task", { id: "ai-gen" });
       setIsGenerating(false);

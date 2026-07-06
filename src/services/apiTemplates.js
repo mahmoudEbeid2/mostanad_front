@@ -15,3 +15,13 @@ export const createTemplate = async (companyId, data) => {
   const response = await apiClient.post(url, data);
   return response.data;
 };
+
+export const getTemplateById = async (templateId) => {
+  const response = await apiClient.get(`/templates/${templateId}`);
+  return response.data;
+};
+
+export const updateTemplate = async (templateId, data) => {
+  const response = await apiClient.patch(`/templates/${templateId}`, data);
+  return response.data;
+};

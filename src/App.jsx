@@ -13,6 +13,7 @@ import Catalogs from "./pages/Catalogs";
 import Users from "./pages/Users";
 import Companies from "./pages/Companies";
 import Account from "./pages/Account";
+import AiTemplateGenerator from "./pages/AiTemplateGenerator";
 
 import ProtectedRoute from "./ui/ProtectedRoute";
 import AppLayout from "./ui/AppLayout";
@@ -38,6 +39,7 @@ function App() {
             <Route path="/products" element={<Products />} />
             <Route path="/labels" element={<Labels />} />
             <Route path="/certificates" element={<Certificates />} />
+            <Route path="/ai-generator" element={<AiTemplateGenerator />} />
             <Route path="/catalogs" element={<Catalogs />} />
             <Route path="/users" element={<Users />} />
             <Route path="/companies" element={<Companies />} />

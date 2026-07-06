@@ -10,7 +10,8 @@ import {
   Building2, 
   User, 
   LogOut,
-  FolderTree
+  FolderTree,
+  Sparkles
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -21,6 +22,7 @@ const navLinks = [
   { name: "Products", path: "/products", icon: Package },
   { name: "Labels", path: "/labels", icon: Tags },
   { name: "Certificates", path: "/certificates", icon: FileCheck },
+  { name: "AI Generator", path: "/ai-generator", icon: Sparkles },
   { name: "Catalogs", path: "/catalogs", icon: BookOpen },
   { name: "Users", path: "/users", icon: Users },
   { name: "Companies", path: "/companies", icon: Building2 },

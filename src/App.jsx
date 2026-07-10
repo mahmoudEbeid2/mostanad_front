@@ -8,12 +8,15 @@ import Roles from "./pages/Roles";
 import Categories from "./pages/Categories";
 import Products from "./pages/Products";
 import Labels from "./pages/Labels";
+import TemplatesList from "./pages/TemplatesList";
 import Certificates from "./pages/Certificates";
 import Catalogs from "./pages/Catalogs";
 import Users from "./pages/Users";
 import Companies from "./pages/Companies";
 import Account from "./pages/Account";
 import AiTemplateGenerator from "./pages/AiTemplateGenerator";
+import CertificateGenerator from "./pages/CertificateGenerator";
+import Brands from "./pages/Brands";
 
 import ProtectedRoute from "./ui/ProtectedRoute";
 import AppLayout from "./ui/AppLayout";
@@ -37,12 +40,15 @@ function App() {
             <Route path="/roles" element={<Roles />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/products/catalog-upload" element={<Catalogs />} />
             <Route path="/labels" element={<Labels />} />
-            <Route path="/certificates" element={<Certificates />} />
-            <Route path="/ai-generator" element={<AiTemplateGenerator />} />
-            <Route path="/catalogs" element={<Catalogs />} />
+            <Route path="/templates" element={<TemplatesList />} />
+            <Route path="/templates/editor" element={<Certificates />} />
+            <Route path="/templates/ai" element={<AiTemplateGenerator />} />
+            <Route path="/certificates/generate" element={<CertificateGenerator />} />
             <Route path="/users" element={<Users />} />
             <Route path="/companies" element={<Companies />} />
+            <Route path="/brands" element={<Brands />} />
             <Route path="/account" element={<Account />} />
           </Route>
 

@@ -72,10 +72,10 @@ export default function Dashboard() {
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Users" value={data?.stats?.users} icon={Users} color="blue" />
-        <StatCard title="Companies" value={data?.stats?.companies} icon={Building2} color="indigo" />
-        <StatCard title="Products" value={data?.stats?.products} icon={Package} color="emerald" />
-        <StatCard title="Monthly Revenue" value={`$${data?.stats?.totalMonthlyRevenue || 0}`} icon={DollarSign} color="amber" />
+        <StatCard title="Total Users" value={data?.stats?.users} growth={data?.stats?.growth?.users} icon={Users} color="blue" />
+        <StatCard title="Companies" value={data?.stats?.companies} growth={data?.stats?.growth?.companies} icon={Building2} color="indigo" />
+        <StatCard title="Products" value={data?.stats?.products} growth={data?.stats?.growth?.products} icon={Package} color="emerald" />
+        <StatCard title="Monthly Revenue" value={`$${data?.stats?.totalMonthlyRevenue || 0}`} growth={data?.stats?.growth?.revenue} icon={DollarSign} color="amber" />
       </div>
 
       {/* Secondary Stats & Tasks */}
@@ -146,7 +146,7 @@ export default function Dashboard() {
 }
 
 // Subcomponents
-function StatCard({ title, value, icon: Icon, color }) {
+function StatCard({ title, value, growth = 0, icon: Icon, color }) {
   const colors = {
     blue: "bg-blue-50 text-blue-600",
     indigo: "bg-indigo-50 text-indigo-600",
@@ -154,14 +154,17 @@ function StatCard({ title, value, icon: Icon, color }) {
     amber: "bg-amber-50 text-amber-600",
   };
 
+  const isPositive = growth >= 0;
+  const growthColor = isPositive ? "text-emerald-500 bg-emerald-50" : "text-red-500 bg-red-50";
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
         <div className={`p-3 rounded-xl ${colors[color]}`}>
           <Icon className="w-6 h-6" />
         </div>
-        <span className="text-xs font-semibold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-md flex items-center gap-1">
-          <ArrowUpRight className="w-3 h-3" /> +12%
+        <span className={`text-xs font-semibold px-2 py-1 rounded-md flex items-center gap-1 ${growthColor}`}>
+          <ArrowUpRight className={`w-3 h-3 ${!isPositive && "rotate-90"}`} /> {isPositive ? "+" : ""}{growth}%
         </span>
       </div>
       <div>

@@ -25,3 +25,8 @@ export const updateTemplate = async (templateId, data) => {
   const response = await apiClient.patch(`/templates/${templateId}`, data);
   return response.data;
 };
+
+export const deleteTemplate = async (templateId) => {
+  const response = await apiClient.delete(`/templates/${templateId}`);
+  return response.data;
+};

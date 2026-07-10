@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { getMe } from "../services/apiAuth";
 import toast from "react-hot-toast";
 
 const AuthContext = createContext();
@@ -10,21 +11,35 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load auth from localStorage on mount
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    const fetchUser = async () => {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
 
-    if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error("Failed to parse user from local storage", error);
-        logout();
+      if (storedToken && storedUser) {
+        try {
+          // Initial fast load from local storage
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+          setIsAuthenticated(true);
+          
+          // Fetch fresh data from backend to ensure permissions are up to date
+          const res = await getMe();
+          if (res.status === "success") {
+            setUser(res.data.user);
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+          }
+        } catch (error) {
+          console.error("Session expired or failed to fetch fresh user data", error);
+          // Only logout if it's a 401/403, otherwise just keep the stored user
+          if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            logout();
+          }
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+    
+    fetchUser();
   }, []);
 
   const loginAuth = (userData, userToken) => {

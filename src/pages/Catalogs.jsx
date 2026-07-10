@@ -274,7 +274,10 @@ export default function Catalogs() {
             {/* File Upload */}
             <div className="mt-8">
               <label className="block text-sm font-medium text-gray-700 mb-2">PDF Catalog</label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors relative">
+              <label 
+                htmlFor="file-upload"
+                className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors relative cursor-pointer"
+              >
                 {isParsingPdf && (
                   <div className="absolute inset-0 bg-white/80 rounded-xl flex flex-col items-center justify-center z-10">
                     <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
@@ -284,15 +287,15 @@ export default function Catalogs() {
                 <div className="space-y-2 text-center">
                   <FileText className="mx-auto h-12 w-12 text-gray-400" />
                   <div className="flex text-sm text-gray-600 justify-center">
-                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 px-2">
-                      <span>Upload a file</span>
-                      <input id="file-upload" name="file-upload" type="file" accept=".pdf" className="sr-only" onChange={handleFileChange} />
-                    </label>
+                    <span className="font-medium text-blue-600 hover:text-blue-500 px-1">
+                      Upload a file
+                    </span>
+                    <input id="file-upload" name="file-upload" type="file" accept=".pdf" className="sr-only" onChange={handleFileChange} disabled={isParsingPdf} />
                     <p className="pl-1">or drag and drop</p>
                   </div>
                   <p className="text-xs text-gray-500">PDF up to 50MB</p>
                 </div>
-              </div>
+              </label>
               
               {/* File Info and Slicing */}
               {file && !isParsingPdf && (
@@ -417,12 +420,16 @@ export default function Catalogs() {
 
             {/* Progress Bar */}
             {(jobStatus === "pending" || jobStatus === "processing") && (
-              <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200">
-                <div 
-                  className="bg-blue-600 h-4 rounded-full transition-all duration-500 ease-out flex items-center justify-center"
-                  style={{ width: `${jobProgress}%` }}
-                >
-                  {jobProgress > 10 && <span className="text-[10px] font-bold text-white">{jobProgress}%</span>}
+              <div className="w-full">
+                <div className="flex justify-between text-sm font-bold text-gray-700 mb-2">
+                  <span>Upload Progress</span>
+                  <span>{jobProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200">
+                  <div 
+                    className="bg-blue-600 h-4 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${jobProgress}%` }}
+                  ></div>
                 </div>
               </div>
             )}

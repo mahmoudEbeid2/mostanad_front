@@ -1,26 +1,29 @@
 import { useState, useEffect, useMemo } from "react";
+import Select from "react-select";
+import countryList from "react-select-country-list";
 import { getCompanies } from "../services/apiCompanies";
+import { getBrands } from "../services/apiBrands";
 import { verifyLabel } from "../services/apiLabels";
 import { getTaskStatus } from "../services/apiProducts"; // reuse for checking task status
 import { io } from "socket.io-client";
-import { CheckCircle, AlertCircle, Image as ImageIcon, Loader2, PlayCircle, ShieldCheck, FileText } from "lucide-react";
+import { CheckCircle, AlertCircle, Image as ImageIcon, Loader2, PlayCircle, ShieldCheck, FileText, MapPin, Database, Cpu, CloudUpload, Search, FileCheck, Scan, ShieldAlert, FlaskConical } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
-const COUNTRIES = [
-  "Saudi Arabia",
-  "United Arab Emirates",
-  "Egypt",
-  "United States",
-  "European Union"
-];
-
 export default function Labels() {
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState("Saudi Arabia");
+  
+  const countryOptions = useMemo(() => [
+    { label: "Global", value: "Global" },
+    ...countryList().getData()
+  ], []);
+  const [selectedCountry, setSelectedCountry] = useState(countryOptions[0]);
+  
+  const [brands, setBrands] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState("");
   
   const [file, setFile] = useState(null);
   
@@ -44,6 +47,23 @@ export default function Labels() {
     };
     fetchCompanies();
   }, []);
+
+  useEffect(() => {
+    if (!selectedCompany) {
+      setBrands([]);
+      setSelectedBrand("");
+      return;
+    }
+    const fetchBrands = async () => {
+      try {
+        const res = await getBrands(selectedCompany);
+        if (res.status === "success") {
+          setBrands(res.data.brands || []);
+        }
+      } catch (error) {}
+    };
+    fetchBrands();
+  }, [selectedCompany]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -129,7 +149,8 @@ export default function Labels() {
 
       const formData = new FormData();
       if (selectedCompany) formData.append("companyId", selectedCompany);
-      formData.append("country", selectedCountry);
+      if (selectedBrand) formData.append("brandId", selectedBrand);
+      formData.append("country", selectedCountry.label);
       formData.append("label", file);
 
       const res = await verifyLabel(formData);
@@ -164,21 +185,18 @@ export default function Labels() {
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
           <form onSubmit={handleUpload} className="space-y-8">
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Country Selection */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Target Country (Required)</label>
-                <select
+                <label className="block text-sm font-bold text-gray-700 mb-2">Food and Drug Authority (Country)</label>
+                <Select
+                  options={countryOptions}
                   value={selectedCountry}
-                  onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
-                  required
-                >
-                  {COUNTRIES.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-2">The AI will check compliance against this country's food & drug regulations.</p>
+                  onChange={setSelectedCountry}
+                  className="react-select-container text-sm"
+                  classNamePrefix="react-select"
+                />
+                <p className="text-[10px] text-gray-500 mt-2 leading-tight">AI will check compliance against the selected country's FDA regulations.</p>
               </div>
 
               {/* Company Selection */}
@@ -187,11 +205,27 @@ export default function Labels() {
                 <select
                   value={selectedCompany}
                   onChange={(e) => setSelectedCompany(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
+                  className="w-full px-4 py-[9px] bg-gray-50 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700"
                 >
-                  <option value="">Global Verification (No specific company)</option>
+                  <option value="">Global Verification</option>
                   {companies.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Brand Selection */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Brand (Optional)</label>
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  disabled={!selectedCompany || brands.length === 0}
+                  className="w-full px-4 py-[9px] bg-gray-50 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700 disabled:opacity-50"
+                >
+                  <option value="">Global Verification</option>
+                  {brands.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
                 </select>
               </div>
@@ -202,19 +236,22 @@ export default function Labels() {
               <label className="block text-sm font-bold text-gray-700 mb-2">Label Design (Image or PDF)</label>
               
               {!file ? (
-                <div className="flex justify-center px-6 pt-10 pb-12 border-2 border-gray-300 border-dashed rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors relative">
+                <label 
+                  htmlFor="file-upload"
+                  className="flex flex-col items-center justify-center px-6 pt-10 pb-12 border-2 border-gray-300 border-dashed rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors relative cursor-pointer"
+                >
                   <div className="space-y-3 text-center">
                     <ImageIcon className="mx-auto h-16 w-16 text-gray-400" />
                     <div className="flex text-base text-gray-600 justify-center">
-                      <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-bold text-blue-600 hover:text-blue-500 px-3 py-1 shadow-sm border border-gray-200">
-                        <span>Upload a file</span>
-                        <input id="file-upload" name="file-upload" type="file" accept="image/*,.pdf" className="sr-only" onChange={handleFileChange} />
-                      </label>
-                      <p className="pl-2 pt-1">or drag and drop</p>
+                      <span className="font-bold text-blue-600 hover:text-blue-500 px-1">
+                        Upload a file
+                      </span>
+                      <input id="file-upload" name="file-upload" type="file" accept="image/*,.pdf" className="sr-only" onChange={handleFileChange} />
+                      <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-sm text-gray-500">PNG, JPG, or PDF up to 20MB</p>
                   </div>
-                </div>
+                </label>
               ) : (
                 <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start bg-blue-50 p-6 rounded-2xl border border-blue-100">
                   <div className="flex flex-col gap-4">
@@ -261,17 +298,52 @@ export default function Labels() {
             {/* Status Indicator */}
             <div className="flex items-center justify-center gap-4">
               {jobStatus === "pending" || jobStatus === "processing" ? (
-                <div className="flex flex-col items-center text-blue-600">
-                  <div className="relative mb-6 mt-4">
-                    <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-75"></div>
-                    <div className="relative bg-white rounded-full p-4 border shadow-sm">
-                       <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+                <div className="flex flex-col w-full max-w-2xl mx-auto bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+                  {/* Decorative Background */}
+                  <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-blue-50 rounded-full blur-3xl opacity-60"></div>
+                  <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-indigo-50 rounded-full blur-3xl opacity-60"></div>
+
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-8">
+                      <div>
+                        <h3 className="font-extrabold text-2xl text-gray-900 tracking-tight">AI Analysis in Progress</h3>
+                        <p className="text-sm text-gray-500 mt-1.5 font-medium">Please wait while the AI verifies compliance.</p>
+                      </div>
+                      <div className="bg-blue-600 text-white px-4 py-1.5 rounded-full font-black text-sm shadow-sm">
+                        {jobProgress}%
+                      </div>
+                    </div>
+                    
+                    {/* Dynamic Icon & Message Stage */}
+                    <div className="flex items-center gap-5 p-5 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 rounded-2xl border border-blue-100/50 mb-8">
+                      <div className="relative flex-shrink-0">
+                        <div className="absolute inset-0 bg-blue-200 rounded-full animate-ping opacity-30"></div>
+                        <div className="relative bg-white p-3.5 rounded-full shadow-sm border border-blue-100 text-blue-600">
+                          {jobProgress < 20 ? <CloudUpload className="w-7 h-7" /> :
+                           jobProgress < 40 ? <Scan className="w-7 h-7" /> :
+                           jobProgress < 60 ? <Database className="w-7 h-7" /> :
+                           jobProgress < 80 ? <ShieldCheck className="w-7 h-7" /> :
+                           <FileCheck className="w-7 h-7" />}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-1.5">Current Stage</h4>
+                        <p className="text-gray-800 font-bold text-base leading-snug break-words">
+                          {jobMessage || "Initializing AI processors..."}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Unified Progress Bar */}
+                    <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden relative shadow-inner">
+                      <div 
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-700 ease-out relative"
+                        style={{ width: `${Math.max(jobProgress, 5)}%` }}
+                      >
+                        <div className="absolute top-0 right-0 bottom-0 left-0 bg-white/20 w-full overflow-hidden animate-[shimmer_2s_infinite]"></div>
+                      </div>
                     </div>
                   </div>
-                  <span className="font-bold text-xl text-gray-800">Checking Regulations...</span>
-                  <span className="text-sm text-gray-500 mt-2 text-center max-w-sm">
-                    {jobMessage || "Our AI is analyzing the label against local compliance rules. This takes a few seconds."}
-                  </span>
                 </div>
               ) : jobStatus === "completed" ? (
                 <div className="flex flex-col items-center text-green-600">
@@ -286,16 +358,6 @@ export default function Labels() {
                 </div>
               )}
             </div>
-
-            {/* Progress Bar */}
-            {(jobStatus === "pending" || jobStatus === "processing") && (
-              <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200">
-                <div 
-                  className="bg-blue-600 h-4 rounded-full transition-all duration-500 ease-out flex items-center justify-center"
-                  style={{ width: `${jobProgress}%` }}
-                ></div>
-              </div>
-            )}
 
             {/* Results Section */}
             {jobStatus === "completed" && jobResults && jobResults.validation && (
@@ -312,45 +374,55 @@ export default function Labels() {
 
                 {/* Validation Issues List */}
                 {jobResults.validation.results && jobResults.validation.results.length > 0 && (
-                  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8">
-                    <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center gap-3">
-                      <AlertCircle className="w-5 h-5 text-red-500" />
-                      <h4 className="font-bold text-gray-800">Identified Issues ({jobResults.validation.results.length})</h4>
+                  <div className="mb-8 space-y-4">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="bg-red-100 p-2.5 rounded-xl border border-red-200">
+                        <AlertCircle className="w-6 h-6 text-red-600" />
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-extrabold text-gray-900">Actionable Feedback</h4>
+                        <p className="text-sm text-gray-500 font-medium">We found {jobResults.validation.results.length} issues that need your attention</p>
+                      </div>
                     </div>
-                    <div className="divide-y divide-gray-100">
+                    
+                    <div className="grid grid-cols-1 gap-5">
                       {jobResults.validation.results.map((item, idx) => (
-                        <div key={idx} className="p-6 hover:bg-gray-50 transition-colors">
-                          <div className="flex gap-4">
-                            <div className="flex-shrink-0 mt-1">
-                              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                                item.category === 'regulatory' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'
-                              }`}>
-                                {idx + 1}
-                              </span>
-                            </div>
-                            <div className="flex-1 space-y-3">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                                    item.category === 'regulatory' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
-                                  }`}>
-                                    {item.category === 'regulatory' ? 'Regulatory Rule' : 'Database Mismatch'}
+                        <div key={idx} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col md:flex-row hover:shadow-md transition-all duration-300 group">
+                          {/* Left Accent Bar */}
+                          <div className={`w-2 md:w-3 flex-shrink-0 ${
+                            item.category === 'regulatory' ? 'bg-amber-400' :
+                            item.category === 'technical_error' ? 'bg-red-500' : 'bg-blue-500'
+                          }`} />
+                          
+                          <div className="p-5 flex-1 flex flex-col justify-between">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2 mb-3">
+                                <span className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-md ${
+                                  item.category === 'regulatory' ? 'bg-amber-50 text-amber-800 border border-amber-200' : 
+                                  item.category === 'technical_error' ? 'bg-red-50 text-red-800 border border-red-200' :
+                                  'bg-blue-50 text-blue-800 border border-blue-200'
+                                }`}>
+                                  {item.category === 'regulatory' ? <><ShieldAlert className="w-3.5 h-3.5" /> Regulatory Violation</> : 
+                                   item.category === 'technical_error' ? <><FlaskConical className="w-3.5 h-3.5" /> Critical Technical Error</> : 
+                                   <><Database className="w-3.5 h-3.5" /> Database Mismatch</>}
+                                </span>
+                                {item.location && (
+                                  <span className="text-xs font-bold text-gray-600 bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-md flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" /> {item.location}
                                   </span>
-                                  {item.location && (
-                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                                      Location: {item.location}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-gray-800 font-medium leading-relaxed">{item.issue}</p>
+                                )}
                               </div>
-                              
-                              <div className="bg-green-50 rounded-lg p-4 border border-green-100 flex items-start gap-3">
-                                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  <p className="text-sm font-bold text-green-800 mb-1">Recommended Solution</p>
-                                  <p className="text-sm text-green-700 leading-relaxed">{item.solution}</p>
-                                </div>
+                              <h5 className="text-gray-900 font-bold text-lg leading-snug mb-4 group-hover:text-blue-600 transition-colors">
+                                {item.issue}
+                              </h5>
+                            </div>
+                            
+                            <div className="bg-emerald-50/80 rounded-xl p-4 border border-emerald-100/50 flex items-start gap-3 relative overflow-hidden mt-2">
+                              <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-100 rounded-bl-full opacity-50 -z-10" />
+                              <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-1">Recommended Fix</p>
+                                <p className="text-sm text-emerald-900 font-medium leading-relaxed">{item.solution}</p>
                               </div>
                             </div>
                           </div>

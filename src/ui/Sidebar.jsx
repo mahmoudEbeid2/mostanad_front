@@ -1,38 +1,71 @@
-import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   ShieldAlert, 
   Package, 
   Tags, 
   FileCheck, 
-  BookOpen, 
   Users, 
   Building2, 
-  User, 
   LogOut,
   FolderTree,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Tag
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const navLinks = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { name: "Roles", path: "/roles", icon: ShieldAlert },
-  { name: "Categories", path: "/categories", icon: FolderTree },
-  { name: "Products", path: "/products", icon: Package },
-  { name: "Labels", path: "/labels", icon: Tags },
-  { name: "Certificates", path: "/certificates", icon: FileCheck },
-  { name: "AI Generator", path: "/ai-generator", icon: Sparkles },
-  { name: "Catalogs", path: "/catalogs", icon: BookOpen },
   { name: "Users", path: "/users", icon: Users },
   { name: "Companies", path: "/companies", icon: Building2 },
+  { name: "Brands", path: "/brands", icon: Tag },
+  { name: "Categories", path: "/categories", icon: FolderTree },
+  { 
+    name: "Products", 
+    icon: Package,
+    subLinks: [
+      { name: "Product List", path: "/products" },
+      { name: "Catalog Upload", path: "/products/catalog-upload" }
+    ]
+  },
+  { name: "Labels", path: "/labels", icon: Tags },
+  { 
+    name: "Templates", 
+    icon: FileCheck,
+    subLinks: [
+      { name: "Templates List", path: "/templates" },
+      { name: "Template Editor", path: "/templates/editor" },
+      { name: "AI Generator", path: "/templates/ai" }
+    ]
+  },
+  { 
+    name: "Certificates", 
+    icon: Sparkles,
+    subLinks: [
+      { name: "Generator", path: "/certificates/generate" }
+    ]
+  },
 ];
 
 export default function Sidebar() {
   const { logout, user } = useAuth();
+  const location = useLocation();
+  const [openDropdowns, setOpenDropdowns] = useState({
+    Products: location.pathname.startsWith("/products"),
+    Templates: location.pathname.startsWith("/templates"),
+    Certificates: location.pathname.startsWith("/certificates")
+  });
+
+  const toggleDropdown = (name) => {
+    setOpenDropdowns(prev => ({ ...prev, [name]: !prev[name] }));
+  };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0">
+    <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0 z-40">
       
       {/* Logo */}
       <div className="p-6 border-b border-gray-100 flex items-center gap-3">
@@ -44,22 +77,63 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {navLinks.map((link) => (
-          <NavLink
-            key={link.name}
-            to={link.path}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`
-            }
-          >
-            <link.icon className="w-5 h-5 opacity-75" />
-            {link.name}
-          </NavLink>
-        ))}
+        {navLinks.map((link) => {
+          if (link.subLinks) {
+            const isOpen = openDropdowns[link.name];
+            const isActive = link.subLinks.some(sub => location.pathname === sub.path);
+            return (
+              <div key={link.name} className="flex flex-col">
+                <button
+                  onClick={() => toggleDropdown(link.name)}
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full ${
+                    isActive && !isOpen ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <link.icon className="w-5 h-5 opacity-75" />
+                    {link.name}
+                  </div>
+                  {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {isOpen && (
+                  <div className="mt-1 ml-4 pl-4 border-l border-gray-200 flex flex-col space-y-1">
+                    {link.subLinks.map(sub => (
+                      <NavLink
+                        key={sub.name}
+                        to={sub.path}
+                        end={sub.path === "/products"} // so exact match for /products
+                        className={({ isActive: subActive }) =>
+                          `block px-3 py-2 rounded-lg text-sm transition-colors ${
+                            subActive ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                          }`
+                        }
+                      >
+                        {sub.name}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <NavLink
+              key={link.name}
+              to={link.path}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`
+              }
+            >
+              <link.icon className="w-5 h-5 opacity-75" />
+              {link.name}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* Footer Actions */}
@@ -88,7 +162,6 @@ export default function Sidebar() {
           Logout
         </button>
       </div>
-
     </aside>
   );
 }

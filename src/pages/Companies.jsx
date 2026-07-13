@@ -105,28 +105,30 @@ export default function Companies() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.username.trim()) {
-      toast.error("Name and Username are required");
+    if (!formData.name.trim()) {
+      toast.error("Name is required");
       return;
     }
-    if (modalMode === "add" && !formData.password.trim()) {
-      toast.error("Password is required for new companies");
-      return;
-    }
+
+    // Auto-generate username and password to satisfy backend constraints
+    const generatedUsername = "co_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    const generatedPassword = "Auto" + Date.now().toString() + "!";
+    
+    const payload = {
+      ...formData,
+      username: formData.username || generatedUsername,
+      password: formData.password || generatedPassword
+    };
 
     try {
       setIsSubmitting(true);
       
-      const payload = { ...formData };
-      if (modalMode === "edit" && !payload.password) {
-        delete payload.password; // Don't send empty password on edit
-      }
-
       if (modalMode === "add") {
         await createCompany(payload);
         toast.success("Company created successfully");
       } else {
-        await updateCompany(currentCompany.id, payload);
+        const { username, password, ...updateData } = payload;
+        await updateCompany(currentCompany.id, updateData);
         toast.success("Company updated successfully");
       }
       closeModal();
@@ -154,14 +156,13 @@ export default function Companies() {
 
   return (
     <div className="max-w-7xl mx-auto pb-12 relative">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
             <Building2 className="w-8 h-8 text-blue-600" />
             Companies Management
           </h1>
-          <p className="text-gray-500 mt-1">Manage tenant companies, their credentials, and status.</p>
+          <p className="text-gray-500 mt-1">Manage tenant companies and their status.</p>
         </div>
         <Button className="shrink-0" onClick={openAddModal}>
           <Plus className="w-5 h-5 mr-2" />
@@ -169,13 +170,12 @@ export default function Companies() {
         </Button>
       </div>
 
-      {/* Search Bar */}
       <div className="bg-white p-4 rounded-t-2xl border-x border-t border-gray-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
         <div className="relative w-full sm:w-96">
           <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name or username..."
+            placeholder="Search by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
@@ -183,15 +183,13 @@ export default function Companies() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-b-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase text-xs tracking-wider">
               <tr>
-                <th className="px-6 py-4">Company Name</th>
-                <th className="px-6 py-4">Username</th>
-                <th className="px-6 py-4">Email & Phone</th>
+                <th className="px-6 py-4">Company</th>
+                <th className="px-6 py-4">Contact</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -199,7 +197,7 @@ export default function Companies() {
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center">
+                  <td colSpan="4" className="px-6 py-12 text-center">
                     <div className="flex justify-center">
                       <span className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
                     </div>
@@ -207,11 +205,10 @@ export default function Companies() {
                 </tr>
               ) : filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-16 text-center">
+                  <td colSpan="4" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center text-gray-400">
                       <Building2 className="w-12 h-12 mb-3 text-gray-300" />
                       <p className="text-lg font-medium text-gray-500">No companies found</p>
-                      <p className="text-sm mt-1">Try adjusting your search or add a new company.</p>
                     </div>
                   </td>
                 </tr>
@@ -221,11 +218,6 @@ export default function Companies() {
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{company.name}</div>
                       <div className="text-xs text-gray-500 font-mono mt-1">ID: {company.id.split('-')[0]}...</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md text-xs font-mono border border-gray-200">
-                        @{company.username}
-                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-gray-900 text-sm">{company.email || "-"}</div>
@@ -272,7 +264,6 @@ export default function Companies() {
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
@@ -281,12 +272,7 @@ export default function Companies() {
                 <Building2 className="w-5 h-5 text-blue-600" />
                 {modalMode === "add" ? "Add New Company" : modalMode === "edit" ? "Edit Company" : "View Company Details"}
               </h2>
-              <button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                &times;
-              </button>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 transition-colors">&times;</button>
             </div>
             
             <form onSubmit={handleSave} className="flex flex-col">
@@ -297,45 +283,31 @@ export default function Companies() {
                       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Company Name</label>
                       <div className="text-gray-900 font-bold text-xl">{formData.name}</div>
                     </div>
-                    
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Username</label>
-                        <div className="text-gray-900 font-mono text-sm bg-white border border-gray-200 px-3 py-2 rounded-md inline-block">
-                          @{formData.username}
-                        </div>
-                      </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</label>
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${
-                          formData.isActive 
-                            ? "bg-green-50 text-green-700 border-green-200" 
-                            : "bg-red-50 text-red-700 border-red-200"
+                          formData.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
                         }`}>
                           {formData.isActive ? "Active" : "Inactive"}
                         </span>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Email</label>
-                        <div className="text-gray-900 font-medium text-base">
-                          {formData.email || "—"}
-                        </div>
+                        <div className="text-gray-900 font-medium text-base">{formData.email || "—"}</div>
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Phone</label>
-                        <div className="text-gray-900 font-medium text-base">
-                          {formData.phone || "—"}
-                        </div>
+                        <div className="text-gray-900 font-medium text-base">{formData.phone || "—"}</div>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
+                    <div className="space-y-4">
+                      <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Company Name *</label>
                         <input
                           type="text"
@@ -344,32 +316,6 @@ export default function Companies() {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                           placeholder="Enter company name"
                           required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Username *</label>
-                        <input
-                          type="text"
-                          value={formData.username}
-                          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="company_user"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          Password {modalMode === "add" ? "*" : "(Leave blank to keep current)"}
-                        </label>
-                        <input
-                          type="password"
-                          value={formData.password}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="••••••••"
-                          required={modalMode === "add"}
                         />
                       </div>
 

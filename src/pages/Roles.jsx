@@ -102,6 +102,16 @@ const PERMISSIONS_MODULES = [
     permissions: [
       { slug: "read_dashboard", label: "Read" },
     ]
+  },
+  {
+    module: "eda_requirements",
+    label: "EDA Requirements",
+    permissions: [
+      { slug: "create_eda_requirements", label: "Create" },
+      { slug: "read_eda_requirements", label: "Read" },
+      { slug: "update_eda_requirements", label: "Update" },
+      { slug: "delete_eda_requirements", label: "Delete" },
+    ]
   }
 ];
 

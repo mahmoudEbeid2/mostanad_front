@@ -18,15 +18,17 @@ import {
 import { useAuth } from "../context/AuthContext";
 
 const navLinks = [
-  { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  { name: "Roles", path: "/roles", icon: ShieldAlert },
-  { name: "Users", path: "/users", icon: Users },
-  { name: "Companies", path: "/companies", icon: Building2 },
-  { name: "Brands", path: "/brands", icon: Tag },
-  { name: "Categories", path: "/categories", icon: FolderTree },
+  { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, permission: "read_dashboard" },
+  { name: "Roles", path: "/roles", icon: ShieldAlert, permission: "read_roles" },
+  { name: "Users", path: "/users", icon: Users, permission: "read_users" },
+  { name: "Companies", path: "/companies", icon: Building2, permission: "read_companies" },
+  { name: "Brands", path: "/brands", icon: Tag }, // Anyone can view brands right now
+  { name: "EDA Requirements", path: "/eda-requirements", icon: FileCheck, permission: "read_eda_requirements" },
+  { name: "Categories", path: "/categories", icon: FolderTree, permission: "read_categories" },
   { 
     name: "Products", 
     icon: Package,
+    permission: "read_products",
     subLinks: [
       { name: "Product List", path: "/products" },
       { name: "Catalog Upload", path: "/products/catalog-upload" }
@@ -36,6 +38,7 @@ const navLinks = [
   { 
     name: "Templates", 
     icon: FileCheck,
+    permission: "read_templates",
     subLinks: [
       { name: "Templates List", path: "/templates" },
       { name: "Template Editor", path: "/templates/editor" },
@@ -45,6 +48,7 @@ const navLinks = [
   { 
     name: "Certificates", 
     icon: Sparkles,
+    permission: "read_certificates",
     subLinks: [
       { name: "Generator", path: "/certificates/generate" }
     ]
@@ -78,6 +82,12 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {navLinks.map((link) => {
+          const assignedSlugs = user?.role?.permissions?.map(p => typeof p === 'string' ? p : p?.permission?.slug).filter(Boolean) || [];
+          
+          if (link.permission && !assignedSlugs.includes(link.permission)) {
+            return null; // Hide link if user lacks permission
+          }
+
           if (link.subLinks) {
             const isOpen = openDropdowns[link.name];
             const isActive = link.subLinks.some(sub => location.pathname === sub.path);

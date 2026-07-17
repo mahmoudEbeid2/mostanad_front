@@ -16,10 +16,13 @@ import Companies from "./pages/Companies";
 import Account from "./pages/Account";
 import AiTemplateGenerator from "./pages/AiTemplateGenerator";
 import CertificateGenerator from "./pages/CertificateGenerator";
+import Processing from "./pages/Processing";
 import Brands from "./pages/Brands";
+import EdaRequirements from "./pages/EdaRequirements";
 
 import ProtectedRoute from "./ui/ProtectedRoute";
 import AppLayout from "./ui/AppLayout";
+import RequirePermission from "./ui/RequirePermission";
 
 function App() {
   return (
@@ -36,19 +39,21 @@ function App() {
             }
           >
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/roles" element={<Roles />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/products/catalog-upload" element={<Catalogs />} />
+            <Route path="/dashboard" element={<RequirePermission permission="read_dashboard"><Dashboard /></RequirePermission>} />
+            <Route path="/roles" element={<RequirePermission permission="read_roles"><Roles /></RequirePermission>} />
+            <Route path="/categories" element={<RequirePermission permission="read_categories"><Categories /></RequirePermission>} />
+            <Route path="/products" element={<RequirePermission permission="read_products"><Products /></RequirePermission>} />
+            <Route path="/products/catalog-upload" element={<RequirePermission permission="create_products"><Catalogs /></RequirePermission>} />
             <Route path="/labels" element={<Labels />} />
-            <Route path="/templates" element={<TemplatesList />} />
-            <Route path="/templates/editor" element={<Certificates />} />
-            <Route path="/templates/ai" element={<AiTemplateGenerator />} />
-            <Route path="/certificates/generate" element={<CertificateGenerator />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/companies" element={<Companies />} />
+            <Route path="/templates" element={<RequirePermission permission="read_templates"><TemplatesList /></RequirePermission>} />
+            <Route path="/templates/editor" element={<RequirePermission permission="update_templates"><Certificates /></RequirePermission>} />
+            <Route path="/templates/ai" element={<RequirePermission permission="create_templates"><AiTemplateGenerator /></RequirePermission>} />
+            <Route path="/certificates/generate" element={<RequirePermission permission="create_certificates"><CertificateGenerator /></RequirePermission>} />
+            <Route path="/users" element={<RequirePermission permission="read_users"><Users /></RequirePermission>} />
+            <Route path="/companies" element={<RequirePermission permission="read_companies"><Companies /></RequirePermission>} />
             <Route path="/brands" element={<Brands />} />
+            <Route path="/eda-requirements" element={<RequirePermission permission="read_eda_requirements"><EdaRequirements /></RequirePermission>} />
+            <Route path="/processing/:jobId" element={<Processing />} />
             <Route path="/account" element={<Account />} />
           </Route>
 

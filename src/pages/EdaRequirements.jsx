@@ -312,22 +312,38 @@ export default function EdaRequirements() {
                 
                 {Array.isArray(viewReq.extractedData) ? (
                   <div className="space-y-4">
-                    {viewReq.extractedData.map((section, idx) => {
-                      const isExpanded = expandedSection === idx;
+                    {viewReq.extractedData.map((rule, idx) => {
+                      if (rule.section && rule.content) {
+                        const isExpanded = expandedSection === idx;
+                        return (
+                          <div key={idx} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all">
+                            <button 
+                              onClick={() => setExpandedSection(isExpanded ? null : idx)}
+                              className="w-full px-5 py-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors"
+                            >
+                              <span className="font-bold text-slate-800 text-left">{rule.section}</span>
+                              {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                            </button>
+                            {isExpanded && (
+                              <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
+                                {rule.content}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
                       return (
-                        <div key={idx} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all">
-                          <button 
-                            onClick={() => setExpandedSection(isExpanded ? null : idx)}
-                            className="w-full px-5 py-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors"
-                          >
-                            <span className="font-bold text-slate-800 text-left">{section.section}</span>
-                            {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
-                          </button>
-                          {isExpanded && (
-                            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
-                              {section.content}
-                            </div>
-                          )}
+                        <div key={idx} className={`bg-white rounded-xl shadow-sm border overflow-hidden ${rule.severity === 'CRITICAL' ? 'border-red-200' : 'border-blue-200'}`}>
+                          <div className={`px-5 py-3 border-b flex justify-between items-center ${rule.severity === 'CRITICAL' ? 'bg-red-50' : 'bg-blue-50'}`}>
+                             <div className="flex items-center gap-2">
+                               <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{rule.severity}</span>
+                               <span className="text-sm font-semibold text-slate-700">{rule.ruleType}</span>
+                             </div>
+                             <span className="text-xs font-medium text-slate-500 bg-white px-2 py-1 rounded border shadow-sm">Target: {rule.targetProductType}</span>
+                          </div>
+                          <div className="px-5 py-4 text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
+                            {rule.ruleDescription}
+                          </div>
                         </div>
                       )
                     })}
@@ -373,54 +389,119 @@ export default function EdaRequirements() {
 
                 <div className="mt-4">
                   <div className="flex justify-between items-center mb-4">
-                    <label className="block text-sm font-semibold text-gray-700">Structured Sections</label>
+                    <label className="block text-sm font-semibold text-gray-700">Structured Rules</label>
                     <Button 
                       type="button" 
                       variant="secondary" 
                       onClick={() => setEditFormData({
                         ...editFormData,
-                        extractedData: [...editFormData.extractedData, { section: "New Section", content: "" }]
+                        extractedData: [...editFormData.extractedData, { targetProductType: "All Products", ruleType: "General Rule", ruleDescription: "", severity: "WARNING" }]
                       })}
                       className="text-xs py-1"
                     >
-                      <Plus className="w-4 h-4 mr-1" /> Add Section
+                      <Plus className="w-4 h-4 mr-1" /> Add Rule
                     </Button>
                   </div>
                   
                   <div className="space-y-4">
-                    {editFormData.extractedData.map((section, index) => (
-                      <div key={index} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative">
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            const newData = [...editFormData.extractedData];
-                            newData.splice(index, 1);
-                            setEditFormData({ ...editFormData, extractedData: newData });
-                          }}
-                          className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        
-                        <div className="mb-3 pr-8">
-                          <label className="block text-xs font-medium text-gray-500 mb-1">Section Title</label>
-                          <input
-                            type="text"
-                            value={section.section}
-                            onChange={(e) => handleEditSectionChange(index, "section", e.target.value)}
-                            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold"
-                          />
+                    {editFormData.extractedData.map((rule, index) => {
+                      if (rule.section !== undefined) {
+                        return (
+                          <div key={index} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative">
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                const newData = [...editFormData.extractedData];
+                                newData.splice(index, 1);
+                                setEditFormData({ ...editFormData, extractedData: newData });
+                              }}
+                              className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            
+                            <div className="mb-3 pr-8">
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Section Title</label>
+                              <input
+                                type="text"
+                                value={rule.section}
+                                onChange={(e) => handleEditSectionChange(index, "section", e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Content</label>
+                              <textarea
+                                value={rule.content}
+                                onChange={(e) => handleEditSectionChange(index, "content", e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[100px] whitespace-pre-wrap"
+                              />
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <div key={index} className={`bg-white p-4 rounded-xl border shadow-sm relative ${rule.severity === 'CRITICAL' ? 'border-red-200' : 'border-blue-200'}`}>
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              const newData = [...editFormData.extractedData];
+                              newData.splice(index, 1);
+                              setEditFormData({ ...editFormData, extractedData: newData });
+                            }}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3 pr-8">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Target Product</label>
+                              <input
+                                type="text"
+                                value={rule.targetProductType}
+                                onChange={(e) => handleEditSectionChange(index, "targetProductType", e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Rule Type</label>
+                              <select
+                                value={rule.ruleType}
+                                onChange={(e) => handleEditSectionChange(index, "ruleType", e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                              >
+                                <option value="Mandatory Field">Mandatory Field</option>
+                                <option value="Prohibited Claim">Prohibited Claim</option>
+                                <option value="Formatting Rule">Formatting Rule</option>
+                                <option value="Storage Condition">Storage Condition</option>
+                                <option value="General Rule">General Rule</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Severity</label>
+                              <select
+                                value={rule.severity}
+                                onChange={(e) => handleEditSectionChange(index, "severity", e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                              >
+                                <option value="WARNING">WARNING</option>
+                                <option value="CRITICAL">CRITICAL</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Rule Description</label>
+                            <textarea
+                              value={rule.ruleDescription}
+                              onChange={(e) => handleEditSectionChange(index, "ruleDescription", e.target.value)}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[80px] whitespace-pre-wrap"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">Content</label>
-                          <textarea
-                            value={section.content}
-                            onChange={(e) => handleEditSectionChange(index, "content", e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[100px] whitespace-pre-wrap"
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               </div>

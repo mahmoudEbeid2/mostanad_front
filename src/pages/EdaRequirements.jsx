@@ -343,6 +343,11 @@ export default function EdaRequirements() {
                           </div>
                           <div className="px-5 py-4 text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
                             {rule.ruleDescription}
+                            {rule.example && (
+                              <div className="mt-3 p-3 bg-gray-50 border-l-2 border-slate-300 text-xs italic text-slate-600 rounded-r">
+                                <span className="font-semibold not-italic">Example:</span> {rule.example}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )
@@ -491,13 +496,24 @@ export default function EdaRequirements() {
                               </select>
                             </div>
                           </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Rule Description</label>
-                            <textarea
-                              value={rule.ruleDescription}
-                              onChange={(e) => handleEditSectionChange(index, "ruleDescription", e.target.value)}
-                              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[80px] whitespace-pre-wrap"
-                            />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Rule Description</label>
+                              <textarea
+                                value={rule.ruleDescription}
+                                onChange={(e) => handleEditSectionChange(index, "ruleDescription", e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[80px] whitespace-pre-wrap"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Example (Optional)</label>
+                              <textarea
+                                value={rule.example || ""}
+                                onChange={(e) => handleEditSectionChange(index, "example", e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[80px] whitespace-pre-wrap bg-gray-50"
+                                placeholder="Paste an example of this rule in action..."
+                              />
+                            </div>
                           </div>
                         </div>
                       )

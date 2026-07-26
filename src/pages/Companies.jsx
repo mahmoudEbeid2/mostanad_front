@@ -343,111 +343,71 @@ export default function Companies() {
             
             <form onSubmit={handleSave} className="flex flex-col">
               <div className="p-6 space-y-4">
-                {modalMode === "view" ? (
-                  <div className="bg-gray-50 p-6 rounded-lg border border-gray-100 space-y-6">
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Company Name</label>
-                      <div className="text-gray-900 font-bold text-xl">{formData.name}</div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Company Name *</label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                        placeholder="Enter company name"
+                        required
+                        disabled={modalMode === "view"}
+                      />
                     </div>
-                    <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Username</label>
-                        <div className="flex items-center gap-2">
-                          <span className="bg-white text-gray-700 px-2 py-1 rounded-md text-sm font-mono border border-gray-200">
-                            @{formData.username || "N/A"}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              copyToClipboard(formData.username, "Username");
-                            }}
-                            className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
-                            title="Copy Username"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</label>
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${
-                          formData.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
-                        }`}>
-                          {formData.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Email</label>
-                        <div className="text-gray-900 font-medium text-base">{formData.email || "—"}</div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Phone</label>
-                        <div className="text-gray-900 font-medium text-base">{formData.phone || "—"}</div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Company Name *</label>
-                        <input
-                          type="text"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="Enter company name"
-                          required
-                        />
-                      </div>
 
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="info@company.com"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                        placeholder="info@company.com"
+                        disabled={modalMode === "view"}
+                      />
+                    </div>
 
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
+                      <input
+                        type="text"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                        placeholder="+123456789"
+                        disabled={modalMode === "view"}
+                      />
+                    </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
-                        <input
-                          type="text"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="+123456789"
-                        />
-                      </div>
-                      
-                      {modalMode === "add" && (
-                        <>
-                          <div className="pt-2 border-t border-gray-100">
-                            <div className="flex items-center justify-between mb-1">
-                              <label className="block text-sm font-semibold text-gray-700">Username</label>
+                    {modalMode !== "edit" && (
+                      <>
+                        <div className="pt-2 border-t border-gray-100">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-sm font-semibold text-gray-700">Username</label>
+                            {modalMode === "add" && (
                               <button type="button" onClick={generateUsername} className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium bg-blue-50 px-2 py-1 rounded transition-colors">
                                 <Wand2 className="w-3 h-3" /> Auto Generate
                               </button>
-                            </div>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                value={formData.username}
-                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
-                                placeholder="Leave blank to auto-generate"
-                              />
-                              <button type="button" onClick={() => copyToClipboard(formData.username, "Username")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title="Copy Username">
-                                <Copy className="w-4 h-4" />
-                              </button>
-                            </div>
+                            )}
                           </div>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={formData.username}
+                              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm disabled:bg-gray-50 disabled:text-gray-500"
+                              placeholder="Leave blank to auto-generate"
+                              disabled={modalMode === "view"}
+                            />
+                            <button type="button" onClick={() => copyToClipboard(formData.username, "Username")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title="Copy Username">
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
 
+                        {modalMode === "add" && (
                           <div className="pb-2">
                             <div className="flex items-center justify-between mb-1">
                               <label className="block text-sm font-semibold text-gray-700">Password</label>
@@ -460,7 +420,7 @@ export default function Companies() {
                                 type="text"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
+                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm disabled:bg-gray-50 disabled:text-gray-500"
                                 placeholder="Leave blank to auto-generate"
                               />
                               <button type="button" onClick={() => copyToClipboard(formData.password, "Password")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title="Copy Password">
@@ -468,27 +428,27 @@ export default function Companies() {
                               </button>
                             </div>
                           </div>
-                        </>
-                      )}
-                    </div>
+                        )}
+                      </>
+                    )}
+                  </div>
 
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 mt-2">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-700">Account Status</div>
-                        <div className="text-xs text-gray-500">Allow login for this company</div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={formData.isActive} 
-                          onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} 
-                          className="sr-only peer" 
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                      </label>
+                  <div className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 mt-2 ${modalMode === "view" ? "opacity-75" : ""}`}>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-700">Account Status</div>
+                      <div className="text-xs text-gray-500">Allow login for this company</div>
                     </div>
-                  </>
-                )}
+                    <label className={`relative inline-flex items-center ${modalMode === "view" ? "cursor-not-allowed" : "cursor-pointer"}`}>
+                      <input 
+                        type="checkbox" 
+                        checked={formData.isActive} 
+                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} 
+                        className="sr-only peer"
+                        disabled={modalMode === "view"}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
               </div>
 
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center mt-auto">

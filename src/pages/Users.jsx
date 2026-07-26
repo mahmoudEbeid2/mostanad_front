@@ -132,8 +132,17 @@ export default function Users() {
       if (!payload.roleId) payload.roleId = null;
 
       if (modalMode === "add") {
-        await createUser(payload);
-        toast.success("User created successfully");
+        const res = await createUser(payload);
+        const newUser = res.data.user;
+        
+        if (newUser.generatedPassword) {
+          const creds = `Username: ${newUser.username}\nPassword: ${newUser.generatedPassword}`;
+          navigator.clipboard.writeText(creds).catch(() => {});
+          toast.success("User created. Credentials copied to clipboard!", { duration: 6000 });
+          window.prompt("User created successfully! Please copy these credentials:", creds);
+        } else {
+          toast.success("User created successfully");
+        }
       } else {
         await updateUser(currentUser.id, payload);
         toast.success("User updated successfully");

@@ -207,8 +207,7 @@ export default function Users() {
       const creds = `Username: ${user.username}\nNew Password: ${newPassword}`;
       navigator.clipboard.writeText(creds).catch(() => {});
       
-      toast.success("Password reset successfully. Credentials copied to clipboard!", { duration: 6000 });
-      window.prompt(`Password for ${user.username} has been reset. Please copy the new credentials:`, creds);
+      toast.success("Password reset successfully & copied to clipboard!", { duration: 6000 });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to reset password");
     }

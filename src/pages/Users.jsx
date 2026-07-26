@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getUsers, createUser, updateUser, deleteUser, getUserById } from "../services/apiUsers";
 import { getRoles } from "../services/apiRoles";
-import { Search, Plus, Edit2, Trash2, Users as UsersIcon } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, Users as UsersIcon, Copy, Wand2 } from "lucide-react";
 import Button from "../ui/Button";
 import toast from "react-hot-toast";
 
@@ -20,9 +20,39 @@ export default function Users() {
     email: "",
     phone: "",
     roleId: "",
+    username: "",
+    password: "",
     isActive: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const generateUsername = () => {
+    if (!formData.email) {
+      toast.error("Please enter an email first to generate a username");
+      return;
+    }
+    const base = formData.email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_");
+    const suffix = Math.floor(100 + Math.random() * 900);
+    setFormData(prev => ({ ...prev, username: `${base}${suffix}` }));
+  };
+
+  const generatePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormData(prev => ({ ...prev, password }));
+  };
+
+  const copyToClipboard = (text, type) => {
+    if (!text) {
+      toast.error(`No ${type} to copy`);
+      return;
+    }
+    navigator.clipboard.writeText(text).catch(() => {});
+    toast.success(`${type} copied to clipboard!`);
+  };
 
   useEffect(() => {
     fetchData();
@@ -61,6 +91,8 @@ export default function Users() {
       email: "", 
       phone: "", 
       roleId: roles.length > 0 ? roles[0].id : "", 
+      username: "",
+      password: "",
       isActive: true 
     });
     setCurrentUser(null);
@@ -135,14 +167,9 @@ export default function Users() {
         const res = await createUser(payload);
         const newUser = res.data.user;
         
-        if (newUser.generatedPassword) {
-          const creds = `Username: ${newUser.username}\nPassword: ${newUser.generatedPassword}`;
-          navigator.clipboard.writeText(creds).catch(() => {});
-          toast.success("User created. Credentials copied to clipboard!", { duration: 6000 });
-          window.prompt("User created successfully! Please copy these credentials:", creds);
-        } else {
-          toast.success("User created successfully");
-        }
+        // We only show the alert if the system generated them on backend (legacy), 
+        // but now the user sees them and can copy them from the UI before saving.
+        toast.success("User created successfully!");
       } else {
         await updateUser(currentUser.id, payload);
         toast.success("User updated successfully");
@@ -360,6 +387,52 @@ export default function Users() {
                     disabled={modalMode === "view"}
                   />
                 </div>
+
+                {modalMode === "add" && (
+                  <>
+                    <div className="md:col-span-2 pt-2 border-t border-gray-100">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-sm font-semibold text-gray-700">Username</label>
+                        <button type="button" onClick={generateUsername} className="text-xs text-teal-600 hover:text-teal-700 flex items-center gap-1 font-medium bg-teal-50 px-2 py-1 rounded transition-colors">
+                          <Wand2 className="w-3 h-3" /> Auto Generate
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formData.username}
+                          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none font-mono text-sm"
+                          placeholder="e.g. admin123 (or leave blank to auto-generate)"
+                        />
+                        <button type="button" onClick={() => copyToClipboard(formData.username, "Username")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title="Copy Username">
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2 pb-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-sm font-semibold text-gray-700">Password</label>
+                        <button type="button" onClick={generatePassword} className="text-xs text-teal-600 hover:text-teal-700 flex items-center gap-1 font-medium bg-teal-50 px-2 py-1 rounded transition-colors">
+                          <Wand2 className="w-3 h-3" /> Auto Generate
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none font-mono text-sm"
+                          placeholder="Leave blank to generate automatically"
+                        />
+                        <button type="button" onClick={() => copyToClipboard(formData.password, "Password")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title="Copy Password">
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 mt-2 ${modalMode === "view" ? "opacity-75" : ""}`}>

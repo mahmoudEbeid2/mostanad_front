@@ -11,7 +11,7 @@ services:
       - traefik_webgateway
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.mostanad-front.rule=Host(`app.dossira.tech`)"
+      - "traefik.http.routers.mostanad-front.rule=Host(`dossira.tech`) || Host(`www.dossira.tech`)"
       - "traefik.http.routers.mostanad-front.entrypoints=websecure"
       - "traefik.http.routers.mostanad-front.tls.certresolver=myresolver"
       - "traefik.http.services.mostanad-front.loadbalancer.server.port=80"

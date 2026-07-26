@@ -24,3 +24,8 @@ export const deleteUser = async (id) => {
   const response = await apiClient.delete(`/users/${id}`);
   return response.data;
 };
+
+export const resetUserPassword = async (id) => {
+  const response = await apiClient.patch(`/users/${id}/reset-password`);
+  return response.data;
+};

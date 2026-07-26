@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { getUsers, createUser, updateUser, deleteUser, getUserById } from "../services/apiUsers";
+import { getUsers, createUser, updateUser, deleteUser, getUserById, resetUserPassword } from "../services/apiUsers";
 import { getRoles } from "../services/apiRoles";
-import { Search, Plus, Edit2, Trash2, Users as UsersIcon, Copy, Wand2 } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, Users as UsersIcon, Copy, Wand2, Key } from "lucide-react";
 import Button from "../ui/Button";
 import toast from "react-hot-toast";
 
@@ -197,6 +197,23 @@ export default function Users() {
     }
   };
 
+  const handleResetPassword = async (user) => {
+    if (!window.confirm(`Are you sure you want to reset the password for ${user.username}?`)) return;
+
+    try {
+      const res = await resetUserPassword(user.id);
+      const newPassword = res.data.generatedPassword;
+      
+      const creds = `Username: ${user.username}\nNew Password: ${newPassword}`;
+      navigator.clipboard.writeText(creds).catch(() => {});
+      
+      toast.success("Password reset successfully. Credentials copied to clipboard!", { duration: 6000 });
+      window.prompt(`Password for ${user.username} has been reset. Please copy the new credentials:`, creds);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to reset password");
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto pb-12 relative">
       {/* Header */}
@@ -298,6 +315,16 @@ export default function Users() {
                     </td>
                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleResetPassword(user);
+                          }}
+                          className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                          title="Reset Password"
+                        >
+                          <Key className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

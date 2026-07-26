@@ -380,7 +380,6 @@ export default function Companies() {
                         disabled={modalMode === "view"}
                       />
                     </div>
-                      <div>
                     {modalMode !== "edit" && (
                       <>
                         <div className="pt-2 border-t border-gray-100">

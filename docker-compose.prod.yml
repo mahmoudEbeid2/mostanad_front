@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: mostanad_front_prod
+    restart: always
+    networks:
+      - traefik_webgateway
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mostanad-front.rule=Host(`app.dossira.tech`)"
+      - "traefik.http.routers.mostanad-front.entrypoints=websecure"
+      - "traefik.http.routers.mostanad-front.tls.certresolver=myresolver"
+      - "traefik.http.services.mostanad-front.loadbalancer.server.port=80"
+
+networks:
+  traefik_webgateway:
+    external: true

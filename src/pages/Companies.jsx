@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { getCompanies, createCompany, updateCompany, deleteCompany, getCompanyById } from "../services/apiCompanies";
-import { Search, Plus, Edit2, Trash2, Building2 } from "lucide-react";
+import { getCompanies, createCompany, updateCompany, deleteCompany, getCompanyById, resetCompanyPassword } from "../services/apiCompanies";
+import { Search, Plus, Edit2, Trash2, Building2, Copy, Wand2, Key } from "lucide-react";
 import Button from "../ui/Button";
 import toast from "react-hot-toast";
 
@@ -22,6 +22,34 @@ export default function Companies() {
     isActive: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const generateUsername = () => {
+    if (!formData.name) {
+      toast.error("Please enter a company name first to generate a username");
+      return;
+    }
+    const base = formData.name.split(" ")[0].toLowerCase().replace(/[^a-z0-9_]/g, "_");
+    const suffix = Math.floor(100 + Math.random() * 900);
+    setFormData(prev => ({ ...prev, username: `${base}${suffix}` }));
+  };
+
+  const generatePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormData(prev => ({ ...prev, password }));
+  };
+
+  const copyToClipboard = (text, type) => {
+    if (!text) {
+      toast.error(`No ${type} to copy`);
+      return;
+    }
+    navigator.clipboard.writeText(text).catch(() => {});
+    toast.success(`${type} copied to clipboard!`);
+  };
 
   useEffect(() => {
     fetchCompanies();
@@ -110,15 +138,16 @@ export default function Companies() {
       return;
     }
 
-    // Auto-generate username and password to satisfy backend constraints
-    const generatedUsername = "co_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    const generatedPassword = "Auto" + Date.now().toString() + "!";
-    
+    // Auto-generate username and password if empty
     const payload = {
       ...formData,
-      username: formData.username || generatedUsername,
-      password: formData.password || generatedPassword
     };
+    if (!payload.username) {
+      payload.username = "co_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+    if (!payload.password && modalMode === "add") {
+      payload.password = "Auto" + Date.now().toString() + "!";
+    }
 
     try {
       setIsSubmitting(true);
@@ -151,6 +180,19 @@ export default function Companies() {
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete company");
       setIsLoading(false); 
+    }
+  };
+
+  const handleResetPassword = async (company) => {
+    try {
+      const res = await resetCompanyPassword(company.id);
+      const newPassword = res.data.generatedPassword;
+      
+      navigator.clipboard.writeText(newPassword).catch(() => {});
+      
+      toast.success("Password reset successfully & copied to clipboard!", { duration: 6000 });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to reset password");
     }
   };
 
@@ -217,7 +259,21 @@ export default function Companies() {
                   <tr key={company.id} onClick={() => openViewModal(company)} className="hover:bg-gray-50/50 transition-colors cursor-pointer group">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{company.name}</div>
-                      <div className="text-xs text-gray-500 font-mono mt-1">ID: {company.id.split('-')[0]}...</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md text-xs font-mono border border-gray-200">
+                          @{company.username}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(company.username, "Username");
+                          }}
+                          className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
+                          title="Copy Username"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-gray-900 text-sm">{company.email || "-"}</div>
@@ -234,6 +290,16 @@ export default function Companies() {
                     </td>
                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleResetPassword(company);
+                          }}
+                          className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                          title="Reset Password"
+                        >
+                          <Key className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -340,6 +406,52 @@ export default function Companies() {
                           placeholder="+123456789"
                         />
                       </div>
+                      
+                      {modalMode === "add" && (
+                        <>
+                          <div className="pt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-sm font-semibold text-gray-700">Username</label>
+                              <button type="button" onClick={generateUsername} className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium bg-blue-50 px-2 py-1 rounded transition-colors">
+                                <Wand2 className="w-3 h-3" /> Auto Generate
+                              </button>
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={formData.username}
+                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
+                                placeholder="Leave blank to auto-generate"
+                              />
+                              <button type="button" onClick={() => copyToClipboard(formData.username, "Username")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title="Copy Username">
+                                <Copy className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="pb-2">
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-sm font-semibold text-gray-700">Password</label>
+                              <button type="button" onClick={generatePassword} className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium bg-blue-50 px-2 py-1 rounded transition-colors">
+                                <Wand2 className="w-3 h-3" /> Auto Generate
+                              </button>
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
+                                placeholder="Leave blank to auto-generate"
+                              />
+                              <button type="button" onClick={() => copyToClipboard(formData.password, "Password")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title="Copy Password">
+                                <Copy className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 mt-2">

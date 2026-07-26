@@ -24,3 +24,8 @@ export const deleteCompany = async (id) => {
   const response = await apiClient.delete(`/companies/${id}`);
   return response.data;
 };
+
+export const resetCompanyPassword = async (id) => {
+  const response = await apiClient.patch(`/companies/${id}/reset-password`);
+  return response.data;
+};

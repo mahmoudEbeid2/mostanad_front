@@ -351,6 +351,24 @@ export default function Companies() {
                     </div>
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                       <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Username</label>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-white text-gray-700 px-2 py-1 rounded-md text-sm font-mono border border-gray-200">
+                            @{formData.username || "N/A"}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              copyToClipboard(formData.username, "Username");
+                            }}
+                            className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
+                            title="Copy Username"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div>
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</label>
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${
                           formData.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"

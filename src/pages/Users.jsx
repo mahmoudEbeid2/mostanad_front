@@ -268,9 +268,21 @@ export default function Users() {
                       <div className="text-xs text-gray-500">{user.email}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs font-mono border border-gray-200">
-                        @{user.username}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs font-mono border border-gray-200">
+                          @{user.username}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(user.username, "Username");
+                          }}
+                          className="text-gray-400 hover:text-teal-600 transition-colors p-1 rounded hover:bg-teal-50"
+                          title="Copy Username"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-gray-900">{user.role?.name || "No Role"}</div>

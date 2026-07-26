@@ -198,14 +198,11 @@ export default function Users() {
   };
 
   const handleResetPassword = async (user) => {
-    if (!window.confirm(`Are you sure you want to reset the password for ${user.username}?`)) return;
-
     try {
       const res = await resetUserPassword(user.id);
       const newPassword = res.data.generatedPassword;
       
-      const creds = `Username: ${user.username}\nNew Password: ${newPassword}`;
-      navigator.clipboard.writeText(creds).catch(() => {});
+      navigator.clipboard.writeText(newPassword).catch(() => {});
       
       toast.success("Password reset successfully & copied to clipboard!", { duration: 6000 });
     } catch (error) {

@@ -1,13 +1,8 @@
-import axios from "axios";
-import { getAuthHeader } from "./apiAuth";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+import apiClient from "./apiClient";
 
 export const getReferenceLabels = async () => {
   try {
-    const response = await axios.get(`${API_URL}/api/v1/reference-labels`, {
-      headers: getAuthHeader(),
-    });
+    const response = await apiClient.get("/reference-labels");
     return response.data.data.referenceLabels;
   } catch (error) {
     throw new Error(error.response?.data?.message || "Failed to fetch reference labels");
@@ -16,9 +11,8 @@ export const getReferenceLabels = async () => {
 
 export const uploadReferenceLabels = async (formData) => {
   try {
-    const response = await axios.post(`${API_URL}/api/v1/reference-labels`, formData, {
+    const response = await apiClient.post("/reference-labels", formData, {
       headers: {
-        ...getAuthHeader(),
         "Content-Type": "multipart/form-data",
       },
     });
@@ -30,9 +24,7 @@ export const uploadReferenceLabels = async (formData) => {
 
 export const deleteReferenceLabel = async (id) => {
   try {
-    await axios.delete(`${API_URL}/api/v1/reference-labels/${id}`, {
-      headers: getAuthHeader(),
-    });
+    await apiClient.delete(`/reference-labels/${id}`);
   } catch (error) {
     throw new Error(error.response?.data?.message || "Failed to delete reference label");
   }

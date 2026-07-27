@@ -29,12 +29,13 @@ export default function Products() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form State
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: "",
-    gtin: "",
-    categoryId: "",
-    companyId: "",
-    brandId: ""
+    name: "", gtin: "", categoryId: "", companyId: "", brandId: "",
+    description: "", indications: "", physicalForm: "", appearance: "",
+    dosage: "", mixingInstructions: "", withdrawalPeriod: "",
+    contraindications: "", storage: "", packaging: "", registrationNumber: "",
+    origin: "", producer: "", activeIngredients: [], targetSpecies: [], userSafety: []
   });
   const [modalBrands, setModalBrands] = useState([]);
 
@@ -124,19 +125,43 @@ export default function Products() {
   // Modal Handlers
   const openAddModal = () => {
     setModalMode("add");
-    setFormData({ name: "", gtin: "", categoryId: "", companyId: "", brandId: "" });
+    setCurrentStep(1);
+    setFormData({ 
+      name: "", gtin: "", categoryId: "", companyId: "", brandId: "",
+      description: "", indications: "", physicalForm: "", appearance: "",
+      dosage: "", mixingInstructions: "", withdrawalPeriod: "",
+      contraindications: "", storage: "", packaging: "", registrationNumber: "",
+      origin: "", producer: "", activeIngredients: [], targetSpecies: [], userSafety: []
+    });
     setCurrentProduct(null);
     setIsModalOpen(true);
   };
 
   const openEditModal = (product) => {
     setModalMode("edit");
+    setCurrentStep(1);
     setFormData({
       name: product.name || "",
-      gtin: product.gtin || "",
+      gtin: product.gtin || product.productCode || "",
       categoryId: product.categoryId || "",
       companyId: product.companyId || "",
-      brandId: product.brandId || ""
+      brandId: product.brandId || "",
+      description: product.description || "",
+      indications: product.indications || "",
+      physicalForm: product.physicalForm || "",
+      appearance: product.appearance || "",
+      dosage: product.dosage || "",
+      mixingInstructions: product.mixingInstructions || "",
+      withdrawalPeriod: product.withdrawalPeriod || "",
+      contraindications: product.contraindications || "",
+      storage: product.storage || "",
+      packaging: product.packaging || "",
+      registrationNumber: product.registrationNumber || "",
+      origin: product.origin || "",
+      producer: product.producer || "",
+      activeIngredients: product.activeIngredients || [],
+      targetSpecies: product.targetSpecies || [],
+      userSafety: product.userSafety || []
     });
     setCurrentProduct(product);
     setIsModalOpen(true);
@@ -157,15 +182,7 @@ export default function Products() {
     try {
       const res = await getProductById(product.id);
       if (res.status === "success" && res.data?.product) {
-        const freshProd = res.data.product;
-        setFormData({
-          name: freshProd.name || "",
-          gtin: freshProd.gtin || "",
-          categoryId: freshProd.categoryId || "",
-          companyId: freshProd.companyId || "",
-          brandId: freshProd.brandId || ""
-        });
-        setCurrentProduct(freshProd);
+        setCurrentProduct(res.data.product);
       }
     } catch (error) {
       toast.error("Failed to fetch latest product details");
@@ -184,8 +201,23 @@ export default function Products() {
     try {
       setIsSubmitting(true);
       const payload = { ...formData };
-      if (!payload.gtin) delete payload.gtin;
-      if (!payload.categoryId) delete payload.categoryId;
+      
+      // Cleanup payload
+      payload.productCode = payload.gtin || null;
+      delete payload.gtin;
+      
+      if (!payload.categoryId) payload.categoryId = null;
+      if (!payload.brandId) payload.brandId = null;
+      
+      // Clean empty arrays
+      payload.targetSpecies = payload.targetSpecies.filter(Boolean);
+      payload.userSafety = payload.userSafety.filter(Boolean);
+      payload.activeIngredients = payload.activeIngredients.filter(a => a.name && a.concentration);
+      
+      // Clean empty strings to null
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === "") payload[key] = null;
+      });
 
       if (modalMode === "add") {
         await createProduct(payload);
@@ -494,71 +526,173 @@ export default function Products() {
                   </div>
                 ) : (
                   <>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Product Name *</label>
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                        placeholder="e.g. Paracetamol 500mg"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">GTIN (Barcode)</label>
-                      <input
-                        type="text"
-                        value={formData.gtin}
-                        onChange={(e) => setFormData({ ...formData, gtin: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                        placeholder="e.g. 0614141000036"
-                      />
+                    {/* Stepper Header */}
+                    <div className="flex items-center justify-between mb-6 px-2">
+                      {[1, 2, 3, 4].map((step) => (
+                        <div key={step} className="flex flex-col items-center flex-1">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${currentStep === step ? 'bg-teal-600 text-white' : currentStep > step ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-400'}`}>
+                            {step}
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Company *</label>
-                      <select
-                        value={formData.companyId}
-                        onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white"
-                        required
-                      >
-                        <option value="">Select Company...</option>
-                        {companies.map(c => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                    {currentStep === 1 && (
+                      <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 1: Basic Information</h3>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Product Name *</label>
+                          <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" required />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">GTIN (Barcode)</label>
+                          <input type="text" value={formData.gtin} onChange={(e) => setFormData({ ...formData, gtin: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Company *</label>
+                          <select value={formData.companyId} onChange={(e) => setFormData({ ...formData, companyId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white" required>
+                            <option value="">Select Company...</option>
+                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Brand (Optional)</label>
+                          <select value={formData.brandId} onChange={(e) => setFormData({ ...formData, brandId: e.target.value })} disabled={!formData.companyId || modalBrands.length === 0} className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 disabled:opacity-50">
+                            <option value="">No Brand</option>
+                            {modalBrands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+                          <select value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+                            <option value="">No Category</option>
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    )}
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Brand (Optional)</label>
-                      <select
-                        value={formData.brandId}
-                        onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
-                        disabled={!formData.companyId || modalBrands.length === 0}
-                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 disabled:opacity-50"
-                      >
-                        <option value="">No Brand</option>
-                        {modalBrands.map(b => (
-                          <option key={b.id} value={b.id}>{b.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                    {currentStep === 2 && (
+                      <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 2: Characteristics</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Physical Form</label>
+                            <input type="text" value={formData.physicalForm} onChange={(e) => setFormData({ ...formData, physicalForm: e.target.value })} placeholder="e.g. Powder, Liquid" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Appearance</label>
+                            <input type="text" value={formData.appearance} onChange={(e) => setFormData({ ...formData, appearance: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Packaging</label>
+                            <input type="text" value={formData.packaging} onChange={(e) => setFormData({ ...formData, packaging: e.target.value })} placeholder="e.g. 25KG Bag" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Reg Number</label>
+                            <input type="text" value={formData.registrationNumber} onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Origin (Country)</label>
+                            <input type="text" value={formData.origin} onChange={(e) => setFormData({ ...formData, origin: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Producer</label>
+                            <input type="text" value={formData.producer} onChange={(e) => setFormData({ ...formData, producer: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+                          <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="3"></textarea>
+                        </div>
+                      </div>
+                    )}
 
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
-                      <select
-                        value={formData.categoryId}
-                        onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white"
-                      >
-                        <option value="">No Category</option>
-                        {categories.map(c => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                    {currentStep === 3 && (
+                      <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 3: Medical & Usage</h3>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Indications</label>
+                          <textarea value={formData.indications} onChange={(e) => setFormData({ ...formData, indications: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="2"></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Dosage</label>
+                          <textarea value={formData.dosage} onChange={(e) => setFormData({ ...formData, dosage: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="2"></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Mixing Instructions</label>
+                          <textarea value={formData.mixingInstructions} onChange={(e) => setFormData({ ...formData, mixingInstructions: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="2"></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Contraindications</label>
+                          <textarea value={formData.contraindications} onChange={(e) => setFormData({ ...formData, contraindications: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="2"></textarea>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Withdrawal Period</label>
+                            <input type="text" value={formData.withdrawalPeriod} onChange={(e) => setFormData({ ...formData, withdrawalPeriod: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Storage</label>
+                            <input type="text" value={formData.storage} onChange={(e) => setFormData({ ...formData, storage: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {currentStep === 4 && (
+                      <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 4: Composition & Safety</h3>
+                        
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Target Species (Comma separated)</label>
+                          <input type="text" value={formData.targetSpecies.join(", ")} onChange={(e) => setFormData({ ...formData, targetSpecies: e.target.value.split(",").map(s => s.trim()) })} placeholder="e.g. Poultry, Cattle, Sheep" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">User Safety (Comma separated)</label>
+                          <input type="text" value={formData.userSafety.join(", ")} onChange={(e) => setFormData({ ...formData, userSafety: e.target.value.split(",").map(s => s.trim()) })} placeholder="e.g. Wear gloves, Avoid eye contact" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2 flex justify-between items-center">
+                            <span>Active Ingredients</span>
+                            <button type="button" onClick={() => setFormData({ ...formData, activeIngredients: [...formData.activeIngredients, { name: "", concentration: "" }] })} className="text-teal-600 hover:text-teal-700 text-xs flex items-center gap-1 font-bold bg-teal-50 px-2 py-1 rounded">
+                              <Plus className="w-3 h-3" /> Add Ingredient
+                            </button>
+                          </label>
+                          <div className="space-y-2">
+                            {formData.activeIngredients.map((ing, i) => (
+                              <div key={i} className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg border border-gray-200">
+                                <input type="text" placeholder="Name (e.g. Vitamin A)" value={ing.name} onChange={(e) => {
+                                  const arr = [...formData.activeIngredients];
+                                  arr[i].name = e.target.value;
+                                  setFormData({ ...formData, activeIngredients: arr });
+                                }} className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-teal-500" />
+                                <input type="text" placeholder="Conc. (e.g. 50%)" value={ing.concentration} onChange={(e) => {
+                                  const arr = [...formData.activeIngredients];
+                                  arr[i].concentration = e.target.value;
+                                  setFormData({ ...formData, activeIngredients: arr });
+                                }} className="w-1/3 px-3 py-1.5 text-sm border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-teal-500" />
+                                <button type="button" onClick={() => {
+                                  const arr = formData.activeIngredients.filter((_, idx) => idx !== i);
+                                  setFormData({ ...formData, activeIngredients: arr });
+                                }} className="p-1.5 text-red-500 hover:bg-red-100 rounded-md transition-colors">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                            {formData.activeIngredients.length === 0 && (
+                              <p className="text-xs text-gray-400 text-center py-2 bg-gray-50 rounded-lg border border-gray-200 border-dashed">No active ingredients added.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -603,9 +737,20 @@ export default function Products() {
                       <Button variant="secondary" onClick={closeModal} type="button">
                         Cancel
                       </Button>
-                      <Button type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                        {modalMode === "add" ? "Create Product" : "Save Changes"}
-                      </Button>
+                      {currentStep > 1 && (
+                        <Button variant="secondary" onClick={() => setCurrentStep(currentStep - 1)} type="button">
+                          Previous
+                        </Button>
+                      )}
+                      {currentStep < 4 ? (
+                        <Button type="button" onClick={() => setCurrentStep(currentStep + 1)} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                          Next
+                        </Button>
+                      ) : (
+                        <Button type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                          {modalMode === "add" ? "Create Product" : "Save Changes"}
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>

@@ -210,6 +210,7 @@ export default function TemplatesList() {
         ...formData,
         companyId: formData.companyId || undefined,
         productId: formData.isGlobal ? null : (formData.productId || null),
+        brandId: formData.brandId || null,
         fields: parsedFields
       };
 

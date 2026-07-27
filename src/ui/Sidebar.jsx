@@ -24,6 +24,7 @@ const navLinks = [
   { name: "Companies", path: "/companies", icon: Building2, permission: "read_companies" },
   { name: "Brands", path: "/brands", icon: Tag }, // Anyone can view brands right now
   { name: "EDA Requirements", path: "/eda-requirements", icon: FileCheck, permission: "read_eda_requirements" },
+  { name: "Reference Labels", path: "/reference-labels", icon: FileCheck, permission: "read_eda_requirements" },
   { name: "Categories", path: "/categories", icon: FolderTree, permission: "read_categories" },
   { 
     name: "Products", 

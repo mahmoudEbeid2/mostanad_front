@@ -19,6 +19,7 @@ import CertificateGenerator from "./pages/CertificateGenerator";
 import Processing from "./pages/Processing";
 import Brands from "./pages/Brands";
 import EdaRequirements from "./pages/EdaRequirements";
+import ReferenceLabels from "./pages/ReferenceLabels";
 
 import ProtectedRoute from "./ui/ProtectedRoute";
 import AppLayout from "./ui/AppLayout";
@@ -53,6 +54,7 @@ function App() {
             <Route path="/companies" element={<RequirePermission permission="read_companies"><Companies /></RequirePermission>} />
             <Route path="/brands" element={<Brands />} />
             <Route path="/eda-requirements" element={<RequirePermission permission="read_eda_requirements"><EdaRequirements /></RequirePermission>} />
+            <Route path="/reference-labels" element={<RequirePermission permission="read_eda_requirements"><ReferenceLabels /></RequirePermission>} />
             <Route path="/processing/:jobId" element={<Processing />} />
             <Route path="/account" element={<Account />} />
           </Route>

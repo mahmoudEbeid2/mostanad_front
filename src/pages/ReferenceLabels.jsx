@@ -29,21 +29,33 @@ export default function ReferenceLabels() {
 
   useEffect(() => {
     fetchLabels();
-    fetchDropdowns();
+    fetchCompanies();
   }, []);
 
-  const fetchDropdowns = async () => {
+  const fetchCompanies = async () => {
     try {
       if (user?.type !== "company") {
-        const comps = await getCompanies();
-        setCompanies(comps.companies || []);
+        const res = await getCompanies({ limit: 100 });
+        if (res.status === "success") setCompanies(res.data?.companies || []);
       }
-      const brnds = await getBrands();
-      setBrands(brnds.brands || []);
     } catch (error) {
-      console.error("Failed to fetch dropdown data:", error);
+      console.error("Failed to fetch companies:", error);
     }
   };
+
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        // If user is a company, they don't have companyId state (it is empty), so the backend uses their token automatically.
+        // If they are admin, passing companyId filters the brands.
+        const res = await getBrands(companyId || undefined);
+        if (res.status === "success") setBrands(res.data?.brands || []);
+      } catch (error) {
+        console.error("Failed to fetch brands:", error);
+      }
+    };
+    fetchBrands();
+  }, [companyId]);
 
   const fetchLabels = async () => {
     try {

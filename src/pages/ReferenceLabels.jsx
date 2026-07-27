@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Plus, Search, FileText, X, Trash2, Tag, UploadCloud } from "lucide-react";
 import toast from "react-hot-toast";
 import { getReferenceLabels, uploadReferenceLabels, deleteReferenceLabel } from "../services/apiReferenceLabels";
+import { getCompanies } from "../services/apiCompanies";
+import { getBrands } from "../services/apiBrands";
 import Button from "../ui/Button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -21,10 +23,27 @@ export default function ReferenceLabels() {
   const [isUploading, setIsUploading] = useState(false);
   const [files, setFiles] = useState([]);
   const [companyId, setCompanyId] = useState("");
+  const [brandId, setBrandId] = useState("");
+  const [companies, setCompanies] = useState([]);
+  const [brands, setBrands] = useState([]);
 
   useEffect(() => {
     fetchLabels();
+    fetchDropdowns();
   }, []);
+
+  const fetchDropdowns = async () => {
+    try {
+      if (user?.type !== "company") {
+        const comps = await getCompanies();
+        setCompanies(comps.companies || []);
+      }
+      const brnds = await getBrands();
+      setBrands(brnds.brands || []);
+    } catch (error) {
+      console.error("Failed to fetch dropdown data:", error);
+    }
+  };
 
   const fetchLabels = async () => {
     try {
@@ -46,6 +65,7 @@ export default function ReferenceLabels() {
 
     const payload = new FormData();
     if (companyId) payload.append("companyId", companyId);
+    if (brandId) payload.append("brandId", brandId);
     
     Array.from(files).forEach((file) => {
       payload.append("files", file);
@@ -170,23 +190,41 @@ export default function ReferenceLabels() {
 
             <form onSubmit={handleUploadSubmit} className="p-6">
               <div className="space-y-5">
-                
-                {user?.type !== "company" && (
+                <div className="grid grid-cols-2 gap-4">
+                  {user?.type !== "company" && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Company (Optional)
+                      </label>
+                      <select
+                        value={companyId}
+                        onChange={(e) => setCompanyId(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      >
+                        <option value="">Global (All Companies)</option>
+                        {companies.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Company ID (Optional)
+                      Brand (Optional)
                     </label>
-                    <input
-                      type="text"
-                      value={companyId}
-                      onChange={(e) => setCompanyId(e.target.value)}
-                      placeholder="Leave blank for Global Reference"
+                    <select
+                      value={brandId}
+                      onChange={(e) => setBrandId(e.target.value)}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    />
+                    >
+                      <option value="">Global (All Brands)</option>
+                      {brands.map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
-
-                <div>
+                </div>                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Upload Documents (Max 10)
                   </label>

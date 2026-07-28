@@ -33,13 +33,13 @@ const navLinks = [
       { name: "Catalog Upload", path: "/products/catalog-upload" }
     ]
   },
+  { name: "EDA Requirements", path: "/eda-requirements", icon: FileCheck, permission: "read_eda_requirements" },
   { 
-    name: "Labels & EDA", 
+    name: "Labels", 
     icon: Tags,
     subLinks: [
       { name: "Manage Labels", path: "/labels" },
-      { name: "EDA Requirements", path: "/eda-requirements" },
-      { name: "AI Reference Labels", path: "/reference-labels" }
+      { name: "Reference Labels", path: "/reference-labels" }
     ]
   },
   { 

@@ -113,6 +113,37 @@ export default function LabelGenerator() {
     toast.success("Copied to clipboard!");
   };
 
+  if (generatedData) {
+    return (
+      <div className="max-w-5xl mx-auto pb-12 animate-in fade-in zoom-in-95">
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <Sparkles className="w-8 h-8 text-blue-600" /> Label Preview
+            </h1>
+            <p className="text-gray-500 mt-2">Your AI-generated label is ready.</p>
+          </div>
+          <div className="flex gap-3">
+            <button 
+              onClick={copyToClipboard}
+              className="flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-colors"
+            >
+              <Copy className="w-5 h-5" /> Copy Raw JSON
+            </button>
+            <button 
+              onClick={() => setGeneratedData(null)} 
+              className="bg-gray-800 hover:bg-gray-900 text-white rounded-xl px-5 py-2 font-bold transition-colors"
+            >
+              Generate Another
+            </button>
+          </div>
+        </div>
+        
+        <LabelPreview data={generatedData} />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto pb-12 animate-in fade-in zoom-in-95">
       <div className="mb-8">
@@ -187,34 +218,22 @@ export default function LabelGenerator() {
             <h3 className="font-bold text-gray-800 flex items-center gap-2">
               <FileText className="w-5 h-5 text-gray-500" /> Generated Label
             </h3>
-            {generatedData && (
-              <button 
-                onClick={copyToClipboard}
-                className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
-              >
-                <Copy className="w-4 h-4" /> Copy All
-              </button>
-            )}
           </div>
           
           <div className="p-6 overflow-y-auto flex-1 bg-white">
-            {generatedData ? (
-              <LabelPreview data={generatedData} />
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                {isGenerating ? (
-                  <div className="animate-pulse flex flex-col items-center">
-                    <Sparkles className="w-12 h-12 text-blue-300 mb-3" />
-                    <p>The AI is researching approved references...</p>
-                  </div>
-                ) : (
-                  <>
-                    <FileText className="w-12 h-12 mb-3 text-gray-300" />
-                    <p>Your generated label text will appear here.</p>
-                  </>
-                )}
-              </div>
-            )}
+            <div className="h-full flex flex-col items-center justify-center text-gray-400">
+              {isGenerating ? (
+                <div className="animate-pulse flex flex-col items-center">
+                  <Sparkles className="w-12 h-12 text-blue-300 mb-3" />
+                  <p>The AI is researching and designing your label...</p>
+                </div>
+              ) : (
+                <>
+                  <FileText className="w-12 h-12 mb-3 text-gray-300" />
+                  <p>Your beautiful generated label will appear in a new window.</p>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

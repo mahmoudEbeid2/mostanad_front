@@ -38,7 +38,7 @@ const navLinks = [
     name: "Labels", 
     icon: Tags,
     subLinks: [
-      { name: "Manage Labels", path: "/labels" },
+      { name: "Label Checker", path: "/labels" },
       { name: "Reference Labels", path: "/reference-labels" }
     ]
   },

@@ -3,6 +3,7 @@ import Select from "react-select";
 import countryList from "react-select-country-list";
 import iso6391 from "iso-639-1";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { generateLabelAi } from "../services/apiReferenceLabels";
 import { getTaskStatus } from "../services/apiProducts"; // Reuse existing task polling
 import { io } from "socket.io-client";
@@ -197,10 +198,10 @@ export default function LabelGenerator() {
             )}
           </div>
           
-          <div className="p-6 overflow-y-auto flex-1 bg-white">
+          <div className="p-6 overflow-y-auto flex-1 bg-white" dir="auto">
             {generatedText ? (
-              <div className="prose prose-sm max-w-none prose-blue prose-headings:font-bold prose-a:text-blue-600">
-                <ReactMarkdown>{generatedText}</ReactMarkdown>
+              <div className="prose prose-sm max-w-none prose-blue prose-headings:font-bold prose-a:text-blue-600 prose-table:w-full prose-th:bg-gray-50 prose-th:p-2 prose-td:p-2 prose-tr:border-b">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedText}</ReactMarkdown>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-gray-400">

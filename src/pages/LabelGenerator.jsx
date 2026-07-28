@@ -145,17 +145,15 @@ export default function LabelGenerator() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto pb-12 animate-in fade-in zoom-in-95">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+    <div className="max-w-3xl mx-auto pb-12 animate-in fade-in zoom-in-95">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-3">
           <Sparkles className="w-8 h-8 text-blue-600" /> AI Label Writer
         </h1>
         <p className="text-gray-500 mt-2">Generate a highly compliant, professional label text for any product by providing its details.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Side: Inputs */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+      <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
           <form onSubmit={handleGenerate} className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Product Formulation & Details</label>
@@ -211,32 +209,6 @@ export default function LabelGenerator() {
             </div>
           )}
         </div>
-
-        {/* Right Side: Output */}
-        <div className="bg-white flex flex-col rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[600px]">
-          <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center shrink-0">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-gray-500" /> Generated Label
-            </h3>
-          </div>
-          
-          <div className="p-6 overflow-y-auto flex-1 bg-white">
-            <div className="h-full flex flex-col items-center justify-center text-gray-400">
-              {isGenerating ? (
-                <div className="animate-pulse flex flex-col items-center">
-                  <Sparkles className="w-12 h-12 text-blue-300 mb-3" />
-                  <p>The AI is researching and designing your label...</p>
-                </div>
-              ) : (
-                <>
-                  <FileText className="w-12 h-12 mb-3 text-gray-300" />
-                  <p>Your beautiful generated label will appear in a new window.</p>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
   );
 }

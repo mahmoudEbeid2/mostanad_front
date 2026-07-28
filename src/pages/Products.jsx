@@ -803,76 +803,79 @@ export default function Products() {
                     </div>
                   </div>
                 )}
-              </div>
+                </>
+              )}
+            </div>
               
-              {/* Modal Footer */}
-              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center shrink-0 mt-6">
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center shrink-0 mt-6">
+              {modalMode === "view" ? (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => openEditModal(currentProduct)} 
+                    type="button"
+                    className="text-teal-600 border-teal-200 hover:bg-teal-50 hover:border-teal-300"
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit Product
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => {
+                      handleDelete(currentProduct.id);
+                      closeModal();
+                    }} 
+                    type="button"
+                    className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              ) : (
+                <div></div>
+              )}
+              
+              <div className="flex gap-3">
                 {modalMode === "view" ? (
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="secondary" 
-                      onClick={() => openEditModal(currentProduct)} 
-                      type="button"
-                      className="text-teal-600 border-teal-200 hover:bg-teal-50 hover:border-teal-300"
-                    >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit Product
-                    </Button>
-                    <Button 
-                      variant="secondary" 
-                      onClick={() => {
-                        handleDelete(currentProduct.id);
-                        closeModal();
-                      }} 
-                      type="button"
-                      className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
+                  <Button variant="secondary" onClick={closeModal} type="button">Close</Button>
                 ) : (
-                  <div></div>
-                )}
-                
-                <div className="flex gap-3">
-                  {modalMode === "view" ? (
-                    <Button variant="secondary" onClick={closeModal} type="button">Close</Button>
+                <>
+                  <Button variant="secondary" onClick={closeModal} type="button" disabled={isExtractingAi || isSubmitting}>
+                    Cancel
+                  </Button>
+                  
+                  {extractionMode === "manual" ? (
+                    <>
+                      {currentStep > 1 && (
+                        <Button variant="secondary" onClick={() => setCurrentStep(currentStep - 1)} type="button">
+                          Previous
+                        </Button>
+                      )}
+                      {currentStep < 4 ? (
+                        <Button type="button" onClick={() => setCurrentStep(currentStep + 1)} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                          Next
+                        </Button>
+                      ) : (
+                        <Button type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                          {modalMode === "add" ? "Create Product" : "Save Changes"}
+                        </Button>
+                      )}
+                    </>
                   ) : (
-                  <>
-                    <Button variant="secondary" onClick={closeModal} type="button" disabled={isExtractingAi || isSubmitting}>
-                      Cancel
+                    <Button type="submit" isLoading={isExtractingAi} className="bg-blue-600 hover:bg-blue-700 text-white border-none flex items-center gap-2">
+                      {isExtractingAi ? "Extracting..." : "Extract & Save"}
                     </Button>
-                    
-                    {extractionMode === "manual" ? (
-                      <>
-                        {currentStep > 1 && (
-                          <Button variant="secondary" onClick={() => setCurrentStep(currentStep - 1)} type="button">
-                            Previous
-                          </Button>
-                        )}
-                        {currentStep < 4 ? (
-                          <Button type="button" onClick={() => setCurrentStep(currentStep + 1)} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                            Next
-                          </Button>
-                        ) : (
-                          <Button type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                            {modalMode === "add" ? "Create Product" : "Save Changes"}
-                          </Button>
-                        )}
-                      </>
-                    ) : (
-                      <Button type="submit" isLoading={isExtractingAi} className="bg-blue-600 hover:bg-blue-700 text-white border-none flex items-center gap-2">
-                        {isExtractingAi ? "Extracting..." : "Extract & Save"}
-                      </Button>
-                    )}
-                  </>
-                )}
+                  )}
+                </>
+              )}
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
-      )}
-    </div>
+      </div>
+    )}
+  </div>
   );
 }

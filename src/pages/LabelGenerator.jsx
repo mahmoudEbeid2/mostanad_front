@@ -2,8 +2,7 @@ import { useState, useMemo } from "react";
 import Select from "react-select";
 import countryList from "react-select-country-list";
 import iso6391 from "iso-639-1";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import LabelPreview from "../components/LabelPreview";
 import { generateLabelAi } from "../services/apiReferenceLabels";
 import { getTaskStatus } from "../services/apiProducts"; // Reuse existing task polling
 import { io } from "socket.io-client";
@@ -29,7 +28,7 @@ export default function LabelGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [jobProgress, setJobProgress] = useState(0);
   const [jobMessage, setJobMessage] = useState("");
-  const [generatedText, setGeneratedText] = useState("");
+  const [generatedData, setGeneratedData] = useState(null);
 
   const handleGenerate = async (e) => {
     e.preventDefault();
@@ -40,7 +39,7 @@ export default function LabelGenerator() {
 
     try {
       setIsGenerating(true);
-      setGeneratedText("");
+      setGeneratedData(null);
       setJobProgress(0);
       setJobMessage("Starting AI label generation...");
 
@@ -69,8 +68,8 @@ export default function LabelGenerator() {
           if (currentStatus === "completed" || currentStatus === "failed") {
             setIsGenerating(false);
             if (currentStatus === "completed") {
-              const resultText = statusRes.data?.task?.result?.generatedText || statusRes.task?.result?.generatedText;
-              setGeneratedText(resultText || "No text was generated.");
+              const resultData = statusRes.data?.task?.result || statusRes.task?.result;
+              setGeneratedData(resultData);
               toast.success("Label generated successfully!");
             } else {
               setJobMessage("AI generation failed.");
@@ -90,8 +89,8 @@ export default function LabelGenerator() {
 
         if (data.status === "completed") {
           setIsGenerating(false);
-          const resultText = data.result?.generatedText;
-          setGeneratedText(resultText || "No text was generated.");
+          const resultData = data.result;
+          setGeneratedData(resultData);
           toast.success("Label generated successfully!");
           socket.disconnect();
         } else if (data.status === "failed") {
@@ -109,8 +108,8 @@ export default function LabelGenerator() {
   };
 
   const copyToClipboard = () => {
-    if (!generatedText) return;
-    navigator.clipboard.writeText(generatedText);
+    if (!generatedData) return;
+    navigator.clipboard.writeText(JSON.stringify(generatedData, null, 2));
     toast.success("Copied to clipboard!");
   };
 
@@ -186,9 +185,9 @@ export default function LabelGenerator() {
         <div className="bg-white flex flex-col rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[600px]">
           <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center shrink-0">
             <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-gray-500" /> Generated Text
+              <FileText className="w-5 h-5 text-gray-500" /> Generated Label
             </h3>
-            {generatedText && (
+            {generatedData && (
               <button 
                 onClick={copyToClipboard}
                 className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
@@ -198,11 +197,9 @@ export default function LabelGenerator() {
             )}
           </div>
           
-          <div className="p-6 overflow-y-auto flex-1 bg-white" dir="auto">
-            {generatedText ? (
-              <div className="prose prose-sm max-w-none prose-blue prose-headings:font-bold prose-a:text-blue-600 prose-table:w-full prose-th:bg-gray-50 prose-th:p-2 prose-td:p-2 prose-tr:border-b">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedText}</ReactMarkdown>
-              </div>
+          <div className="p-6 overflow-y-auto flex-1 bg-white">
+            {generatedData ? (
+              <LabelPreview data={generatedData} />
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-gray-400">
                 {isGenerating ? (

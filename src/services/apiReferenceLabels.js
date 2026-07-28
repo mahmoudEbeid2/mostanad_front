@@ -29,3 +29,12 @@ export const deleteReferenceLabel = async (id) => {
     throw new Error(error.response?.data?.message || "Failed to delete reference label");
   }
 };
+
+export const generateLabelAi = async (data) => {
+  try {
+    const response = await apiClient.post("/reference-labels/generate-text-ai", data);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to generate label with AI");
+  }
+};

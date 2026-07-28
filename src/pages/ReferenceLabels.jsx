@@ -20,6 +20,7 @@ export default function ReferenceLabels() {
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewingLabel, setViewingLabel] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [files, setFiles] = useState([]);
   const [companyId, setCompanyId] = useState("");
@@ -154,6 +155,7 @@ export default function ReferenceLabels() {
             {filteredLabels.map((lbl) => (
               <div
                 key={lbl.id}
+                onClick={() => setViewingLabel(lbl)}
                 className="group relative p-5 bg-white border border-gray-200 rounded-2xl hover:shadow-lg hover:border-blue-200 transition-all cursor-pointer"
               >
                 <div className="flex justify-between items-start mb-4">
@@ -162,7 +164,10 @@ export default function ReferenceLabels() {
                   </div>
                   {canDelete && (
                     <button
-                      onClick={(e) => handleDelete(lbl.id, e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(lbl.id, e);
+                      }}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -261,6 +266,53 @@ export default function ReferenceLabels() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW MODAL */}
+      {viewingLabel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-3xl overflow-hidden shadow-xl my-8 animate-in zoom-in-95">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 sticky top-0 z-10">
+              <h2 className="text-xl font-bold text-gray-900 truncate pr-4">{viewingLabel.name}</h2>
+              <button onClick={() => setViewingLabel(null)} className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 flex-shrink-0">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              {viewingLabel.extractedData ? (
+                <div className="space-y-6">
+                  <p className="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    This data was automatically extracted by the AI Engine to be used as a style guide for future labels.
+                  </p>
+                  
+                  {Object.entries(viewingLabel.extractedData).map(([key, value]) => (
+                    <div key={key} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">
+                        {key.replace(/_/g, ' ')}
+                      </h4>
+                      {typeof value === 'object' ? (
+                        <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono bg-white p-3 rounded-lg border border-gray-200">
+                          {JSON.stringify(value, null, 2)}
+                        </pre>
+                      ) : (
+                        <p className="text-gray-800 whitespace-pre-wrap">{String(value)}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-gray-500">No AI extracted data found for this label.</p>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+              <Button variant="secondary" onClick={() => setViewingLabel(null)}>
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}

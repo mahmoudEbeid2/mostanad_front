@@ -23,8 +23,6 @@ const navLinks = [
   { name: "Users", path: "/users", icon: Users, permission: "read_users" },
   { name: "Companies", path: "/companies", icon: Building2, permission: "read_companies" },
   { name: "Brands", path: "/brands", icon: Tag }, // Anyone can view brands right now
-  { name: "EDA Requirements", path: "/eda-requirements", icon: FileCheck, permission: "read_eda_requirements" },
-  { name: "Reference Labels", path: "/reference-labels", icon: FileCheck, permission: "read_eda_requirements" },
   { name: "Categories", path: "/categories", icon: FolderTree, permission: "read_categories" },
   { 
     name: "Products", 
@@ -35,7 +33,15 @@ const navLinks = [
       { name: "Catalog Upload", path: "/products/catalog-upload" }
     ]
   },
-  { name: "Labels", path: "/labels", icon: Tags },
+  { 
+    name: "Labels & EDA", 
+    icon: Tags,
+    subLinks: [
+      { name: "Manage Labels", path: "/labels" },
+      { name: "EDA Requirements", path: "/eda-requirements" },
+      { name: "AI Reference Labels", path: "/reference-labels" }
+    ]
+  },
   { 
     name: "Templates", 
     icon: FileCheck,

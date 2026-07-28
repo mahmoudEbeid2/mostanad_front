@@ -5,9 +5,12 @@ import iso6391 from "iso-639-1";
 import ReactMarkdown from "react-markdown";
 import { generateLabelAi } from "../services/apiReferenceLabels";
 import { getTaskStatus } from "../services/apiProducts"; // Reuse existing task polling
+import { io } from "socket.io-client";
 import { FileText, Copy, CheckCircle, Sparkles, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
+
+const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
 export default function LabelGenerator() {
   const [formulationText, setFormulationText] = useState("");
@@ -47,36 +50,56 @@ export default function LabelGenerator() {
       };
 
       const res = await generateLabelAi(payload);
-      const taskId = res.data?.taskId || res.taskId; // fallback depending on response format
+      const taskId = res.data?.taskId || res.taskId;
 
       toast.success("AI is writing your label... Please wait.");
 
-      // Poll for task status
-      const interval = setInterval(async () => {
+      // Use Sockets for Real-Time Updates
+      const socket = io(BACKEND_URL);
+
+      socket.on("connect", async () => {
+        console.log("Connected to WebSocket, joining job:", taskId);
+        socket.emit("join_job", taskId);
+        
         try {
           const statusRes = await getTaskStatus(taskId);
-          const status = statusRes.data?.task?.status || statusRes.task?.status;
+          const currentStatus = statusRes.data?.task?.status || statusRes.task?.status;
           
-          if (status === "completed") {
-            clearInterval(interval);
+          if (currentStatus === "completed" || currentStatus === "failed") {
             setIsGenerating(false);
-            const resultText = statusRes.data?.task?.result?.generatedText || statusRes.task?.result?.generatedText;
-            setGeneratedText(resultText || "No text was generated.");
-            toast.success("Label generated successfully!");
-          } else if (status === "failed") {
-            clearInterval(interval);
-            setIsGenerating(false);
-            setJobMessage("AI generation failed.");
-            toast.error("Generation failed. Please try again.");
-          } else {
-            // Processing... you could parse progress if needed, but simple animation is fine
-            setJobProgress(prev => (prev < 90 ? prev + 5 : 90));
-            setJobMessage("AI is writing the label text in " + selectedLanguage.value + "...");
+            if (currentStatus === "completed") {
+              const resultText = statusRes.data?.task?.result?.generatedText || statusRes.task?.result?.generatedText;
+              setGeneratedText(resultText || "No text was generated.");
+              toast.success("Label generated successfully!");
+            } else {
+              setJobMessage("AI generation failed.");
+              toast.error("Generation failed. Please try again.");
+            }
+            socket.disconnect();
           }
         } catch (err) {
-          console.error("Polling error", err);
+          console.error("Failed to fetch initial task status", err);
         }
-      }, 3000);
+      });
+
+      socket.on("job_status", (data) => {
+        console.log("Job Update:", data);
+        if (data.progress) setJobProgress(data.progress);
+        if (data.message) setJobMessage(data.message);
+
+        if (data.status === "completed") {
+          setIsGenerating(false);
+          const resultText = data.result?.generatedText;
+          setGeneratedText(resultText || "No text was generated.");
+          toast.success("Label generated successfully!");
+          socket.disconnect();
+        } else if (data.status === "failed") {
+          setIsGenerating(false);
+          setJobMessage(data.error || "AI generation failed.");
+          toast.error("Generation failed. Please try again.");
+          socket.disconnect();
+        }
+      });
 
     } catch (err) {
       toast.error(err.message || "Failed to start generation");

@@ -24,6 +24,11 @@ export const getTaskStatus = async (taskId) => {
   return response.data;
 };
 
+export const extractProductAi = async (data) => {
+  const response = await apiClient.post("/products/extract-ai", data);
+  return response.data;
+};
+
 export const createProduct = async (data) => {
   const response = await apiClient.post("/products", data);
   return response.data;

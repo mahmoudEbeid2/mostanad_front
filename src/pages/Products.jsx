@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { getProducts, createProduct, updateProduct, deleteProduct, getProductById } from "../services/apiProducts";
+import { getProducts, createProduct, updateProduct, deleteProduct, getProductById, extractProductAi, getTaskStatus } from "../services/apiProducts";
 import { getCompanies } from "../services/apiCompanies";
 import { getBrands } from "../services/apiBrands";
 import { getCategories } from "../services/apiCategories";
-import { Package, Search, Filter, Plus, Edit2, Trash2, X } from "lucide-react";
+import { Package, Search, Filter, Plus, Edit2, Trash2, X, Sparkles } from "lucide-react";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import toast from "react-hot-toast";
@@ -27,11 +27,13 @@ export default function Products() {
   const [modalMode, setModalMode] = useState("add"); // "add" | "edit" | "view"
   const [currentProduct, setCurrentProduct] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [extractionMode, setExtractionMode] = useState("manual"); // "manual" | "ai"
+  const [isExtractingAi, setIsExtractingAi] = useState(false);
   
   // Form State
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: "", gtin: "", categoryId: "", companyId: "", brandId: "",
+    name: "", gtin: "", categoryId: "", companyId: "", brandId: "", rawText: "",
     description: "", indications: "", physicalForm: "", appearance: "",
     dosage: "", mixingInstructions: "", withdrawalPeriod: "",
     contraindications: "", storage: "", packaging: "", registrationNumber: "",
@@ -125,9 +127,10 @@ export default function Products() {
   // Modal Handlers
   const openAddModal = () => {
     setModalMode("add");
+    setExtractionMode("manual");
     setCurrentStep(1);
     setFormData({ 
-      name: "", gtin: "", categoryId: "", companyId: "", brandId: "",
+      name: "", gtin: "", categoryId: "", companyId: "", brandId: "", rawText: "",
       description: "", indications: "", physicalForm: "", appearance: "",
       dosage: "", mixingInstructions: "", withdrawalPeriod: "",
       contraindications: "", storage: "", packaging: "", registrationNumber: "",
@@ -193,6 +196,51 @@ export default function Products() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+
+    if (modalMode === "add" && extractionMode === "ai") {
+      if (!formData.rawText.trim() || !formData.companyId) {
+        toast.error("Raw Text and Company are required for AI Extraction");
+        return;
+      }
+      try {
+        setIsExtractingAi(true);
+        const payload = {
+          rawText: formData.rawText,
+          companyId: formData.companyId,
+          brandId: formData.brandId || null,
+          categoryId: formData.categoryId || null
+        };
+        const res = await extractProductAi(payload);
+        const taskId = res.data.taskId;
+        toast.success("AI Extraction started! Please wait...");
+        
+        // Poll for status
+        const interval = setInterval(async () => {
+          try {
+            const statusRes = await getTaskStatus(taskId);
+            const status = statusRes.data.task.status;
+            if (status === "completed") {
+              clearInterval(interval);
+              setIsExtractingAi(false);
+              toast.success("AI successfully extracted and saved the product!");
+              fetchProducts();
+              closeModal();
+            } else if (status === "failed") {
+              clearInterval(interval);
+              setIsExtractingAi(false);
+              toast.error("AI extraction failed.");
+            }
+          } catch (err) {
+            console.error("Polling error", err);
+          }
+        }, 3000);
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Failed to start AI extraction");
+        setIsExtractingAi(false);
+      }
+      return;
+    }
+
     if (!formData.name.trim() || !formData.companyId) {
       toast.error("Name and Company are required");
       return;
@@ -526,24 +574,40 @@ export default function Products() {
                   </div>
                 ) : (
                   <>
-                    {/* Stepper Header */}
-                    <div className="flex items-center justify-between mb-6 px-2">
-                      {[1, 2, 3, 4].map((step) => (
-                        <div key={step} className="flex flex-col items-center flex-1">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${currentStep === step ? 'bg-teal-600 text-white' : currentStep > step ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-400'}`}>
-                            {step}
-                          </div>
+                    {/* Mode Toggle for Add */}
+                    {modalMode === "add" && (
+                      <div className="flex justify-center mb-6">
+                        <div className="bg-gray-100 p-1 rounded-lg inline-flex">
+                          <button type="button" onClick={() => setExtractionMode("manual")} className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${extractionMode === "manual" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                            Manual Setup
+                          </button>
+                          <button type="button" onClick={() => setExtractionMode("ai")} className={`px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${extractionMode === "ai" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                            <Sparkles className="w-4 h-4" /> AI Extract
+                          </button>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
 
-                    {currentStep === 1 && (
-                      <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 1: Basic Information</h3>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Product Name *</label>
-                          <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" required />
+                    {extractionMode === "manual" ? (
+                      <>
+                        {/* Stepper Header */}
+                        <div className="flex items-center justify-between mb-6 px-2">
+                          {[1, 2, 3, 4].map((step) => (
+                            <div key={step} className="flex flex-col items-center flex-1">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${currentStep === step ? 'bg-teal-600 text-white' : currentStep > step ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-400'}`}>
+                                {step}
+                              </div>
+                            </div>
+                          ))}
                         </div>
+
+                        {currentStep === 1 && (
+                          <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                            <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 1: Basic Information</h3>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-1">Product Name *</label>
+                              <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" required />
+                            </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-1">GTIN (Barcode)</label>
                           <input type="text" value={formData.gtin} onChange={(e) => setFormData({ ...formData, gtin: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
@@ -694,11 +758,55 @@ export default function Products() {
                       </div>
                     )}
                   </>
-                )}
+                ) : (
+                  <div className="space-y-4 animate-in fade-in zoom-in-95">
+                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-4">
+                      <h4 className="text-blue-800 font-bold flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4" /> AI Powered Extraction</h4>
+                      <p className="text-blue-600 text-sm">Paste any raw text from an email, document, or label. The AI will read it and automatically structure all the product details for you.</p>
+                    </div>
 
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Raw Text *</label>
+                      <textarea 
+                        value={formData.rawText} 
+                        onChange={(e) => setFormData({ ...formData, rawText: e.target.value })} 
+                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+                        rows="6" 
+                        placeholder="Paste product details here..." 
+                        required 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Company *</label>
+                        <select value={formData.companyId} onChange={(e) => setFormData({ ...formData, companyId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
+                          <option value="">Select Company...</option>
+                          {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Brand (Optional)</label>
+                        <select value={formData.brandId} onChange={(e) => setFormData({ ...formData, brandId: e.target.value })} disabled={!formData.companyId || modalBrands.length === 0} className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 disabled:opacity-50">
+                          <option value="">No Brand</option>
+                          {modalBrands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Category (Optional)</label>
+                      <select value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="">No Category</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
               
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center shrink-0">
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center shrink-0 mt-6">
                 {modalMode === "view" ? (
                   <div className="flex gap-2">
                     <Button 
@@ -729,31 +837,37 @@ export default function Products() {
                 
                 <div className="flex gap-3">
                   {modalMode === "view" ? (
-                    <Button variant="secondary" onClick={closeModal} type="button">
-                      Close
-                    </Button>
+                    <Button variant="secondary" onClick={closeModal} type="button">Close</Button>
                   ) : (
-                    <>
-                      <Button variant="secondary" onClick={closeModal} type="button">
-                        Cancel
+                  <>
+                    <Button variant="secondary" onClick={closeModal} type="button" disabled={isExtractingAi || isSubmitting}>
+                      Cancel
+                    </Button>
+                    
+                    {extractionMode === "manual" ? (
+                      <>
+                        {currentStep > 1 && (
+                          <Button variant="secondary" onClick={() => setCurrentStep(currentStep - 1)} type="button">
+                            Previous
+                          </Button>
+                        )}
+                        {currentStep < 4 ? (
+                          <Button type="button" onClick={() => setCurrentStep(currentStep + 1)} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                            Next
+                          </Button>
+                        ) : (
+                          <Button type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                            {modalMode === "add" ? "Create Product" : "Save Changes"}
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <Button type="submit" isLoading={isExtractingAi} className="bg-blue-600 hover:bg-blue-700 text-white border-none flex items-center gap-2">
+                        {isExtractingAi ? "Extracting..." : "Extract & Save"}
                       </Button>
-                      {currentStep > 1 && (
-                        <Button variant="secondary" onClick={() => setCurrentStep(currentStep - 1)} type="button">
-                          Previous
-                        </Button>
-                      )}
-                      {currentStep < 4 ? (
-                        <Button type="button" onClick={() => setCurrentStep(currentStep + 1)} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                          Next
-                        </Button>
-                      ) : (
-                        <Button type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                          {modalMode === "add" ? "Create Product" : "Save Changes"}
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
+                    )}
+                  </>
+                )}
               </div>
             </form>
           </div>

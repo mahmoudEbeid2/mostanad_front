@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Loader2, CheckCircle2, XCircle, ArrowLeft, FileText } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ArrowLeft, RefreshCw } from "lucide-react";
 import io from "socket.io-client";
 import Button from "../ui/Button";
+import toast from "react-hot-toast";
+import { retryReferenceLabelTask } from "../services/apiReferenceLabels";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
@@ -48,6 +50,21 @@ export default function BulkProcessing() {
       socket.disconnect();
     };
   }, [tasks.length, navigate]);
+
+  const handleRetry = async (taskId) => {
+    try {
+      setTasks(prev => prev.map(t => 
+        t.taskId === taskId ? { ...t, status: "pending", error: "", message: "Retrying..." } : t
+      ));
+      await retryReferenceLabelTask(taskId);
+      toast.success("Task queued for retry");
+    } catch (error) {
+      toast.error(error.message || "Failed to retry task");
+      setTasks(prev => prev.map(t => 
+        t.taskId === taskId ? { ...t, status: "failed", error: error.message || "Retry failed" } : t
+      ));
+    }
+  };
 
   const allCompleted = tasks.every(t => t.status === "completed" || t.status === "failed");
 
@@ -108,6 +125,15 @@ export default function BulkProcessing() {
                   ></div>
                 </div>
               </div>
+
+              {/* Action Buttons */}
+              {task.status === "failed" && (
+                <div className="shrink-0 ml-4">
+                  <Button variant="secondary" size="sm" onClick={() => handleRetry(task.taskId)} className="flex items-center gap-1 text-sm border-gray-300">
+                    <RefreshCw className="w-4 h-4" /> Try Again
+                  </Button>
+                </div>
+              )}
 
             </div>
           ))}

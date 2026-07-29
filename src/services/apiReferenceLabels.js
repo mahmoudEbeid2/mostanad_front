@@ -39,6 +39,15 @@ export const deleteReferenceLabel = async (id) => {
   }
 };
 
+export const retryReferenceLabelTask = async (taskId) => {
+  try {
+    const response = await apiClient.post(`/reference-labels/retry/${taskId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to retry reference label");
+  }
+};
+
 export const generateLabelAi = async (data) => {
   try {
     const response = await apiClient.post("/reference-labels/generate-text-ai", data);

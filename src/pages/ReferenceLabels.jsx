@@ -197,14 +197,15 @@ export default function ReferenceLabels() {
   const getCategoryName = (label) => label.category?.name || label.manualCategoryName || "Uncategorized";
 
   const getFlagEmoji = (countryName) => {
-    if (!countryName || countryName === "Global") return "🌍";
+    if (!countryName || countryName.trim().toLowerCase() === "global") return "🌍";
+    const cleanName = countryName.trim().toLowerCase();
     const data = countryList().getData();
-    const found = data.find(c => c.label === countryName);
+    const found = data.find(c => c.label.toLowerCase() === cleanName);
     if (!found) return "🌍";
     const codePoints = found.value
       .toUpperCase()
       .split('')
-      .map(char => 127397 + char.charCodeAt());
+      .map(char => 127397 + char.charCodeAt(0));
     return String.fromCodePoint(...codePoints);
   };
 

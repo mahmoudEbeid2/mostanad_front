@@ -118,10 +118,7 @@ export default function ReferenceLabels() {
       toast.error("Country is required.");
       return false;
     }
-    if (!form.categoryId && !form.manualCategoryName.trim()) {
-      toast.error("Choose a stored category or write a manual one.");
-      return false;
-    }
+    // Category is now optional. The AI will infer it based on ingredients.
     return true;
   };
 

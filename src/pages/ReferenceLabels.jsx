@@ -139,7 +139,9 @@ export default function ReferenceLabels() {
       toast.success(`${files.length} reference(s) queued for AI analysis`);
       resetModal();
       fetchLabels();
-      // Removed navigation to single processing page to support multiple file uploads
+      if (res?.tasks?.length) {
+        navigate("/processing-bulk", { state: { tasks: res.tasks, type: "reference_label_extraction" } });
+      }
     } catch (error) {
       toast.error(error.message || "Upload failed");
     } finally {

@@ -18,6 +18,7 @@ import Account from "./pages/Account";
 import AiTemplateGenerator from "./pages/AiTemplateGenerator";
 import CertificateGenerator from "./pages/CertificateGenerator";
 import Processing from "./pages/Processing";
+import BulkProcessing from "./pages/BulkProcessing";
 import Brands from "./pages/Brands";
 import EdaRequirements from "./pages/EdaRequirements";
 import ReferenceLabels from "./pages/ReferenceLabels";
@@ -58,6 +59,7 @@ function App() {
             <Route path="/eda-requirements" element={<RequirePermission permission="read_eda_requirements"><EdaRequirements /></RequirePermission>} />
             <Route path="/reference-labels" element={<RequirePermission permission="read_eda_requirements"><ReferenceLabels /></RequirePermission>} />
             <Route path="/processing/:jobId" element={<Processing />} />
+            <Route path="/processing-bulk" element={<BulkProcessing />} />
             <Route path="/account" element={<Account />} />
           </Route>
 

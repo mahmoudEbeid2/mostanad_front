@@ -136,11 +136,12 @@ export default function ReferenceLabels() {
     try {
       setIsSubmitting(true);
       const res = await uploadReferenceLabels(payload);
-      toast.success(`${files.length} reference(s) queued for AI analysis`);
+      toast.success(res.message || `${files.length} reference(s) queued for AI analysis`);
       resetModal();
       fetchLabels();
-      if (res?.tasks?.length) {
-        navigate("/processing-bulk", { state: { tasks: res.tasks, type: "reference_label_extraction" } });
+      const tasks = res?.data?.tasks || res?.tasks;
+      if (tasks?.length) {
+        navigate("/processing-bulk", { state: { tasks, type: "reference_label_extraction" } });
       }
     } catch (error) {
       toast.error(error.message || "Upload failed");
@@ -194,6 +195,18 @@ export default function ReferenceLabels() {
   });
 
   const getCategoryName = (label) => label.category?.name || label.manualCategoryName || "Uncategorized";
+
+  const getFlagEmoji = (countryName) => {
+    if (!countryName || countryName === "Global") return "🌍";
+    const data = countryList().getData();
+    const found = data.find(c => c.label === countryName);
+    if (!found) return "🌍";
+    const codePoints = found.value
+      .toUpperCase()
+      .split('')
+      .map(char => 127397 + char.charCodeAt());
+    return String.fromCodePoint(...codePoints);
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -256,10 +269,10 @@ export default function ReferenceLabels() {
                     </button>
                   )}
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1 truncate">{label.name}</h3>
+                <h3 className="font-semibold text-gray-900 mb-1 truncate pr-8" title={label.name}>{label.name}</h3>
                 <p className="text-sm text-gray-500 line-clamp-2">{label.fullText || "AI extraction data saved for this reference."}</p>
                 <div className="flex flex-wrap gap-2 mt-4">
-                  <Badge icon={Globe2}>{label.country || "No country"}</Badge>
+                  <Badge icon={Globe2}>{getFlagEmoji(label.country)} {label.country || "No country"}</Badge>
                   <Badge icon={FolderTree}>{getCategoryName(label)}</Badge>
                   <Badge icon={Tag}>{label.companyId ? "Company" : "Global"}</Badge>
                   <Badge icon={label.sourceType === "manual" ? PencilLine : UploadCloud}>{label.sourceType || "upload"}</Badge>

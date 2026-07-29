@@ -12,6 +12,8 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
+import Select from "react-select";
+import countryList from "react-select-country-list";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -137,10 +139,10 @@ export default function ReferenceLabels() {
     try {
       setIsSubmitting(true);
       const res = await uploadReferenceLabels(payload);
-      toast.success("Reference queued for AI analysis");
+      toast.success(`${files.length} reference(s) queued for AI analysis`);
       resetModal();
       fetchLabels();
-      if (res?.tasks?.length) navigate(`/processing/${res.tasks[0].taskId}?type=reference_label_extraction`);
+      // Removed navigation to single processing page to support multiple file uploads
     } catch (error) {
       toast.error(error.message || "Upload failed");
     } finally {
@@ -291,7 +293,7 @@ export default function ReferenceLabels() {
             </div>
 
             <form onSubmit={modalTab === "upload" ? handleUploadSubmit : handleManualSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-130px)]">
-              <ReferenceFields user={user} form={form} companies={companies} brands={brands} categories={categories} updateForm={updateForm} />
+              <ReferenceFields user={user} form={form} companies={companies} brands={brands} categories={categories} updateForm={updateForm} modalTab={modalTab} />
 
               {modalTab === "upload" ? (
                 <div className="mt-5">
@@ -356,14 +358,31 @@ export default function ReferenceLabels() {
   );
 }
 
-function ReferenceFields({ user, form, companies, brands, categories, updateForm }) {
+function ReferenceFields({ user, form, companies, brands, categories, updateForm, modalTab }) {
+  const countryOptions = useMemo(() => [
+    { label: "Global (Any)", value: "Global" },
+    ...countryList().getData()
+  ], []);
+
+  const selectedCountry = useMemo(() => {
+    return countryOptions.find(c => c.value === form.country) || null;
+  }, [form.country, countryOptions]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Reference Name">
-        <input value={form.name} onChange={(event) => updateForm("name", event.target.value)} className={fieldInputClass} placeholder="Optional for uploads, required for manual" />
-      </Field>
+      {modalTab === "manual" && (
+        <Field label="Reference Name">
+          <input value={form.name} onChange={(event) => updateForm("name", event.target.value)} className={fieldInputClass} placeholder="Required for manual entry" />
+        </Field>
+      )}
       <Field label="Accepted Country">
-        <input value={form.country} onChange={(event) => updateForm("country", event.target.value)} className={fieldInputClass} placeholder="e.g. Egypt" required />
+        <Select
+          options={countryOptions}
+          value={selectedCountry}
+          onChange={(opt) => updateForm("country", opt ? opt.value : "")}
+          className="text-sm z-50"
+          placeholder="Select country..."
+        />
       </Field>
       {!user?.isCompany && (
         <Field label="Company">

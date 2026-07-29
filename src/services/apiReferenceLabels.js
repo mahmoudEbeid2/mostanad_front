@@ -1,8 +1,8 @@
 import apiClient from "./apiClient";
 
-export const getReferenceLabels = async () => {
+export const getReferenceLabels = async (params = {}) => {
   try {
-    const response = await apiClient.get("/reference-labels");
+    const response = await apiClient.get("/reference-labels", { params });
     return response.data.data.referenceLabels;
   } catch (error) {
     throw new Error(error.response?.data?.message || "Failed to fetch reference labels");
@@ -19,6 +19,15 @@ export const uploadReferenceLabels = async (formData) => {
     return response.data.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || "Failed to upload reference labels");
+  }
+};
+
+export const createReferenceLabelManual = async (data) => {
+  try {
+    const response = await apiClient.post("/reference-labels/manual", data);
+    return response.data.data.referenceLabel;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to create reference label");
   }
 };
 

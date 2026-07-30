@@ -87,7 +87,7 @@ export default function BulkProcessing() {
               <div>
                 <p className="font-semibold mb-1">Background Processing Active</p>
                 <p className="text-sm">
-                  العملية شغالة في الخلفية، يمكنك مغادرة هذه الصفحة بأمان وسنقوم بإشعارك عند الانتهاء.
+                  The process is running in the background. You can safely leave this page and we will notify you when it's done.
                 </p>
               </div>
             </div>

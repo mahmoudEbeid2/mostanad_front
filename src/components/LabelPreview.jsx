@@ -8,25 +8,45 @@ const copyToClipboard = (text, section) => {
   toast.success(`Copied ${section} to clipboard!`);
 };
 
-const Section = ({ title, en, ar, icon: Icon, onCopy }) => {
+const Section = ({ titleEn, titleAr, icon: Icon, en, ar }) => {
   if (!en && !ar) return null;
   return (
-    <div className="group relative border-t border-blue-900/10 py-4 px-6 hover:bg-white/5 transition-colors">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-5 h-5 text-blue-800" />
-        <h4 className="font-bold text-blue-900 text-lg">{title}</h4>
+    <div className="border-t border-blue-900/10 py-6 px-6 bg-gray-50/50">
+      <div className="flex flex-col md:flex-row gap-8">
+        
+        {/* English Column */}
+        <div className="flex-1 group relative bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
+          <div className="flex items-center gap-2 mb-3 border-b border-gray-100 pb-3">
+            <Icon className="w-5 h-5 text-blue-600" />
+            <h4 className="font-bold text-blue-900 text-sm tracking-wide uppercase">{titleEn}</h4>
+          </div>
+          <div className="text-sm text-gray-800 leading-relaxed font-medium whitespace-pre-wrap">{en}</div>
+          <button 
+            onClick={() => copyToClipboard(en, titleEn)}
+            className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 text-blue-700 p-1.5 rounded-lg hover:bg-blue-100"
+            title={`Copy ${titleEn}`}
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Arabic Column */}
+        <div className="flex-1 group relative bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
+          <div className="flex items-center justify-start gap-2 mb-3 border-b border-gray-100 pb-3" dir="rtl">
+            <Icon className="w-5 h-5 text-blue-600" />
+            <h4 className="font-bold text-blue-900 text-base">{titleAr}</h4>
+          </div>
+          <div className="text-sm text-gray-800 leading-relaxed font-bold whitespace-pre-wrap text-right" dir="rtl">{ar}</div>
+          <button 
+            onClick={() => copyToClipboard(ar, titleAr)}
+            className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 text-blue-700 p-1.5 rounded-lg hover:bg-blue-100"
+            title={`Copy ${titleAr}`}
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+        </div>
+
       </div>
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="flex-1 text-sm text-gray-800 leading-relaxed font-medium">{en}</div>
-        <div className="flex-1 text-sm text-gray-800 leading-relaxed font-bold text-right" dir="rtl">{ar}</div>
-      </div>
-      <button 
-        onClick={() => onCopy(`${en}\n${ar}`)}
-        className="absolute top-4 right-6 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-100 text-blue-700 p-1.5 rounded hover:bg-blue-200"
-        title="Copy section"
-      >
-        <Copy className="w-4 h-4" />
-      </button>
     </div>
   );
 };
@@ -91,34 +111,34 @@ export default function LabelPreview({ data }) {
       </div>
 
       {/* Sections */}
-      <div className="bg-gray-50/50 border-t border-gray-200">
+      <div className="bg-gray-50/50">
         <Section 
-          title="Aim of Use / دواعي الاستعمال" 
+          titleEn="Aim of Use"
+          titleAr="دواعي الاستعمال" 
           icon={Info}
           en={data.aimOfUse?.en} 
           ar={data.aimOfUse?.target} 
-          onCopy={(t) => copyToClipboard(t, "Aim of Use")}
         />
         <Section 
-          title="Direction of Use / الجرعة وطريقة الاستخدام" 
+          titleEn="Direction of Use"
+          titleAr="الجرعة وطريقة الاستخدام"
           icon={Syringe}
           en={data.directionOfUse?.en} 
           ar={data.directionOfUse?.target} 
-          onCopy={(t) => copyToClipboard(t, "Direction of Use")}
         />
         <Section 
-          title="Storage / ظروف التخزين" 
+          titleEn="Storage"
+          titleAr="ظروف التخزين"
           icon={Settings}
           en={data.storage?.en} 
           ar={data.storage?.target} 
-          onCopy={(t) => copyToClipboard(t, "Storage")}
         />
         <Section 
-          title="Net Weight / الوزن الصافي" 
+          titleEn="Net Weight"
+          titleAr="الوزن الصافي"
           icon={Scale}
           en={data.netWeight?.en} 
           ar={data.netWeight?.target} 
-          onCopy={(t) => copyToClipboard(t, "Net Weight")}
         />
       </div>
 

@@ -372,62 +372,88 @@ export default function Labels() {
                   </p>
                 </div>
 
-                {/* Validation Issues List */}
+                {/* Validation Issues List - Premium Audit UI */}
                 {jobResults.validation.results && jobResults.validation.results.length > 0 && (
-                  <div className="mb-8 space-y-4">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="bg-red-100 p-2.5 rounded-xl border border-red-200">
-                        <AlertCircle className="w-6 h-6 text-red-600" />
-                      </div>
+                  <div className="mb-10">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 pb-4 border-b border-gray-200">
                       <div>
-                        <h4 className="text-xl font-extrabold text-gray-900">Actionable Feedback</h4>
-                        <p className="text-sm text-gray-500 font-medium">We found {jobResults.validation.results.length} issues that need your attention</p>
+                        <h4 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+                          <ShieldAlert className="w-8 h-8 text-red-600" />
+                          Compliance Audit Report
+                        </h4>
+                        <p className="text-sm text-gray-500 font-medium mt-1">
+                          We found <span className="font-bold text-red-600 px-2 py-0.5 bg-red-50 rounded-md mx-1">{jobResults.validation.results.length}</span> issues that require immediate attention.
+                        </p>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 gap-5">
-                      {jobResults.validation.results.map((item, idx) => (
-                        <div key={idx} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col md:flex-row hover:shadow-md transition-all duration-300 group">
-                          {/* Left Accent Bar */}
-                          <div className={`w-2 md:w-3 flex-shrink-0 ${
-                            item.category === 'regulatory' ? 'bg-amber-400' :
-                            item.category === 'technical_error' ? 'bg-red-500' : 'bg-blue-500'
-                          }`} />
-                          
-                          <div className="p-5 flex-1 flex flex-col justify-between">
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2 mb-3">
-                                <span className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-md ${
-                                  item.category === 'regulatory' ? 'bg-amber-50 text-amber-800 border border-amber-200' : 
-                                  item.category === 'technical_error' ? 'bg-red-50 text-red-800 border border-red-200' :
-                                  'bg-blue-50 text-blue-800 border border-blue-200'
-                                }`}>
-                                  {item.category === 'regulatory' ? <><ShieldAlert className="w-3.5 h-3.5" /> Regulatory Violation</> : 
-                                   item.category === 'technical_error' ? <><FlaskConical className="w-3.5 h-3.5" /> Critical Technical Error</> : 
-                                   <><Database className="w-3.5 h-3.5" /> Database Mismatch</>}
-                                </span>
-                                {item.location && (
-                                  <span className="text-xs font-bold text-gray-600 bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-md flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" /> {item.location}
-                                  </span>
-                                )}
-                              </div>
-                              <h5 className="text-gray-900 font-bold text-lg leading-snug mb-4 group-hover:text-blue-600 transition-colors">
-                                {item.issue}
-                              </h5>
-                            </div>
+                    <div className="space-y-12">
+                      {/* Grouped by category */}
+                      {['regulatory', 'technical_error', 'db_mismatch'].map((cat) => {
+                        const items = jobResults.validation.results.filter(r => r.category === cat);
+                        if (items.length === 0) return null;
+
+                        const catConfig = {
+                          regulatory: { title: "Regulatory Violations", icon: ShieldAlert, color: "amber", bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200" },
+                          technical_error: { title: "Critical Technical Errors", icon: FlaskConical, color: "red", bg: "bg-red-50", text: "text-red-800", border: "border-red-200" },
+                          db_mismatch: { title: "Database Mismatches", icon: Database, color: "blue", bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-200" },
+                        }[cat];
+
+                        const CatIcon = catConfig.icon;
+
+                        return (
+                          <div key={cat} className="space-y-5">
+                            <h5 className={`text-lg font-black uppercase tracking-widest flex items-center gap-2 ${catConfig.text}`}>
+                              <CatIcon className="w-5 h-5" /> {catConfig.title}
+                              <span className={`ml-2 text-xs px-2 py-1 rounded-full ${catConfig.bg} border ${catConfig.border}`}>
+                                {items.length}
+                              </span>
+                            </h5>
                             
-                            <div className="bg-emerald-50/80 rounded-xl p-4 border border-emerald-100/50 flex items-start gap-3 relative overflow-hidden mt-2">
-                              <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-100 rounded-bl-full opacity-50 -z-10" />
-                              <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <p className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-1">Recommended Fix</p>
-                                <p className="text-sm text-emerald-900 font-medium leading-relaxed">{item.solution}</p>
-                              </div>
+                            <div className="grid grid-cols-1 gap-6">
+                              {items.map((item, idx) => (
+                                <div key={idx} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col md:flex-row group">
+                                  {/* Number Indicator */}
+                                  <div className={`w-16 flex-shrink-0 flex flex-col items-center justify-start pt-6 border-r border-gray-100 ${catConfig.bg}`}>
+                                    <span className={`text-2xl font-black ${catConfig.text} opacity-50`}>
+                                      {(idx + 1).toString().padStart(2, '0')}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="flex-1">
+                                    {/* Issue Header */}
+                                    <div className="p-5 border-b border-gray-50 flex justify-between items-start">
+                                      <div>
+                                        {item.location && (
+                                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                            <MapPin className="w-3.5 h-3.5 text-gray-400" /> Location: {item.location}
+                                          </span>
+                                        )}
+                                        <h6 className="text-gray-900 font-bold text-lg leading-relaxed pr-4">
+                                          {item.issue}
+                                        </h6>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Solution Footer */}
+                                    <div className="p-5 bg-gray-50/50 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                                      <div className="flex-1 flex items-start gap-3">
+                                        <div className="bg-emerald-100 p-2 rounded-full mt-0.5">
+                                          <CheckCircle className="w-5 h-5 text-emerald-600" />
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-black text-emerald-700 uppercase tracking-widest mb-1">Action Required</p>
+                                          <p className="text-sm text-gray-700 font-medium leading-relaxed">{item.solution}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

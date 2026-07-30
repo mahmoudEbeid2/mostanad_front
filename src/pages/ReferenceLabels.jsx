@@ -136,7 +136,7 @@ export default function ReferenceLabels() {
     try {
       setIsSubmitting(true);
       const res = await uploadReferenceLabels(payload);
-      toast.success(res.message || `${files.length} reference(s) queued for AI analysis`);
+      toast.success(res.message || `Reference queued for AI analysis`);
       resetModal();
       fetchLabels();
       const tasks = res?.data?.tasks || res?.tasks;
@@ -310,15 +310,17 @@ export default function ReferenceLabels() {
 
               {modalTab === "upload" ? (
                 <div className="mt-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Documents (Max 10)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Document</label>
                   <label className="flex justify-center w-full h-36 px-4 bg-white border-2 border-gray-300 border-dashed rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/50">
-                    <span className="flex items-center gap-2">
+                    <span className="flex flex-col items-center justify-center gap-2">
                       <UploadCloud className="w-6 h-6 text-gray-400" />
-                      <span className="font-medium text-gray-600">
-                        {files.length > 0 ? `${files.length} file(s) selected` : "Drop files or click to upload"}
+                      <span className="text-center">
+                        <span className="text-blue-600 hover:text-blue-700">Click to upload</span> or drag and drop
+                        <br />
+                        <span className="text-xs text-gray-500 font-normal mt-1">Single PDF or Image up to 50MB</span>
                       </span>
                     </span>
-                    <input type="file" className="hidden" multiple accept="image/*,.pdf" onChange={(event) => setFiles(event.target.files)} />
+                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={(event) => setFiles(event.target.files)} />
                   </label>
                 </div>
               ) : (

@@ -1,5 +1,5 @@
 import React from "react";
-import { Copy, Dna, Info, Syringe, Settings, PackageOpen } from "lucide-react";
+import { Copy, Dna, Info, Syringe, Settings, PackageOpen, Scale, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 const copyToClipboard = (text, section) => {
@@ -43,10 +43,11 @@ export default function LabelPreview({ data }) {
         </div>
         <div className="relative z-10">
           <h2 className="text-4xl font-black tracking-tight mb-1">{data.productName?.en || "PRODUCT NAME"}</h2>
-          <h3 className="text-xl font-medium text-blue-200">{data.type || "Product Type"} | {data.targetSpecies || "Target Species"}</h3>
+          <h3 className="text-xl font-medium text-blue-200">{data.feedClassification?.en || "Classification"} | {data.targetAnimalSpecies?.en || "Target Species"}</h3>
         </div>
         <div className="relative z-10 text-right">
           <h2 className="text-4xl font-black tracking-tight mb-1" dir="rtl">{data.productName?.target || "اسم المنتج"}</h2>
+          <h3 className="text-xl font-medium text-blue-200" dir="rtl">{data.feedClassification?.target || "التصنيف"} | {data.targetAnimalSpecies?.target || "الحيوانات المستهدفة"}</h3>
         </div>
       </div>
 
@@ -112,7 +113,30 @@ export default function LabelPreview({ data }) {
           ar={data.storage?.target} 
           onCopy={(t) => copyToClipboard(t, "Storage")}
         />
+        <Section 
+          title="Net Weight / الوزن الصافي" 
+          icon={Scale}
+          en={data.netWeight?.en} 
+          ar={data.netWeight?.target} 
+          onCopy={(t) => copyToClipboard(t, "Net Weight")}
+        />
       </div>
+
+      {/* Mandatory Fields */}
+      {data.mandatoryFields && (
+        <div className="bg-gray-100 border-t border-gray-200 p-6">
+          <h4 className="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-gray-600" /> Mandatory Fields to Include
+          </h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Object.entries(data.mandatoryFields).map(([key, val]) => val && (
+              <div key={key} className="bg-white px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 capitalize shadow-sm">
+                {key.replace(/([A-Z])/g, ' $1').trim()}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* Footer */}
       <div className="bg-blue-900 text-white p-4 text-center text-xs font-medium tracking-wide">

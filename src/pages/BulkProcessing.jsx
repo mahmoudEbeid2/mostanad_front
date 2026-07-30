@@ -73,12 +73,25 @@ export default function BulkProcessing() {
       <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 p-8">
         
         <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Processing Documents</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">AI Bulk Processing Dashboard</h2>
           <p className="text-gray-500">
             {allCompleted 
               ? "All documents have finished processing."
-              : `Processing ${tasks.length} documents. Please wait...`}
+              : `Processing ${tasks.length} documents.`}
           </p>
+          {!allCompleted && (
+            <div className="mt-4 inline-flex items-start gap-3 p-4 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 text-left">
+              <div className="shrink-0 mt-0.5">
+                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+              </div>
+              <div>
+                <p className="font-semibold mb-1">Background Processing Active</p>
+                <p className="text-sm">
+                  العملية شغالة في الخلفية، يمكنك مغادرة هذه الصفحة بأمان وسنقوم بإشعارك عند الانتهاء.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4 mb-10">
@@ -140,7 +153,7 @@ export default function BulkProcessing() {
         </div>
 
         {allCompleted && (
-          <div className="flex justify-center animate-in fade-in zoom-in">
+          <div className="flex justify-center mt-10 animate-in fade-in zoom-in">
             <Button onClick={() => navigate("/labels")} className="px-8 flex items-center gap-2">
               <ArrowLeft className="w-5 h-5" /> Return to Labels
             </Button>

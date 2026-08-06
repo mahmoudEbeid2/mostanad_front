@@ -29,6 +29,19 @@ export default function LabelGenerator() {
   const [jobProgress, setJobProgress] = useState(0);
   const [jobMessage, setJobMessage] = useState("");
   const [generatedData, setGeneratedData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleFieldChange = (path, value) => {
+    setGeneratedData((prev) => {
+      const next = structuredClone(prev);
+      let cursor = next;
+      for (let i = 0; i < path.length - 1; i++) {
+        cursor = cursor[path[i]];
+      }
+      cursor[path[path.length - 1]] = value;
+      return next;
+    });
+  };
 
   const handleGenerate = async (e) => {
     e.preventDefault();
@@ -124,22 +137,36 @@ export default function LabelGenerator() {
             <p className="text-gray-500 mt-2">Your AI-generated label is ready.</p>
           </div>
           <div className="flex gap-3">
-            <button 
+            <button
+              onClick={() => setIsEditing((v) => !v)}
+              className={`flex items-center gap-1.5 font-bold px-4 py-2 rounded-xl transition-colors ${
+                isEditing ? "bg-green-600 hover:bg-green-700 text-white" : "bg-blue-50 hover:bg-blue-100 text-blue-600"
+              }`}
+            >
+              {isEditing ? "Done Editing" : "Edit Fields"}
+            </button>
+            <button
               onClick={copyToClipboard}
               className="flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-colors"
             >
               <Copy className="w-5 h-5" /> Copy Raw JSON
             </button>
-            <button 
-              onClick={() => setGeneratedData(null)} 
+            <button
+              onClick={() => { setGeneratedData(null); setIsEditing(false); }}
               className="bg-gray-800 hover:bg-gray-900 text-white rounded-xl px-5 py-2 font-bold transition-colors"
             >
               Generate Another
             </button>
           </div>
         </div>
-        
-        <LabelPreview data={generatedData} />
+
+        {isEditing && (
+          <p className="mb-4 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-2">
+            You're editing the generated text directly — no AI call needed, so this costs nothing to fix.
+          </p>
+        )}
+
+        <LabelPreview data={generatedData} editable={isEditing} onFieldChange={handleFieldChange} />
       </div>
     );
   }

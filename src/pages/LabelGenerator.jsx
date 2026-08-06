@@ -14,7 +14,10 @@ const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "htt
 
 export default function LabelGenerator() {
   const [formulationText, setFormulationText] = useState("");
-  
+  const [aimOfUseHint, setAimOfUseHint] = useState("");
+  const [targetSpeciesHint, setTargetSpeciesHint] = useState("");
+  const [directionOfUseHint, setDirectionOfUseHint] = useState("");
+
   const countryOptions = useMemo(() => [
     ...countryList().getData()
   ], []);
@@ -47,6 +50,7 @@ export default function LabelGenerator() {
     e.preventDefault();
     
     if (!formulationText.trim()) return toast.error("Please enter the product formulation/details.");
+    if (!aimOfUseHint.trim()) return toast.error("Please enter the confirmed Aim of Use — the AI will not guess this.");
     if (!selectedCountry) return toast.error("Please select a target country.");
     if (!selectedLanguage) return toast.error("Please select a target language.");
 
@@ -59,7 +63,10 @@ export default function LabelGenerator() {
       const payload = {
         formulationText,
         country: selectedCountry.label,
-        language: selectedLanguage.value
+        language: selectedLanguage.value,
+        aimOfUseHint,
+        targetSpeciesHint,
+        directionOfUseHint,
       };
 
       const res = await generateLabelAi(payload);
@@ -194,6 +201,51 @@ export default function LabelGenerator() {
                 required 
               />
               <p className="text-[11px] text-gray-500 mt-1">The more details you provide, the better the AI can construct the label sections.</p>
+            </div>
+
+            <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-4">
+              <span className="text-sm font-bold text-amber-900">
+                Expert Details — pin down facts the AI shouldn't guess
+              </span>
+              <p className="text-[11px] text-amber-800 mt-1">
+                Many active ingredients (e.g. Ammonium Chloride) have several valid veterinary uses. Telling the AI the exact indication here stops it from guessing between them and getting it wrong.
+              </p>
+
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Confirmed Aim of Use / Indication <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    value={aimOfUseHint}
+                    onChange={(e) => setAimOfUseHint(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    placeholder="Example: Urinary acidifier used to help prevent urinary calculi (urolithiasis) in ruminants"
+                    disabled={isGenerating}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Confirmed Target Animal Species</label>
+                  <input
+                    value={targetSpeciesHint}
+                    onChange={(e) => setTargetSpeciesHint(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    placeholder="Example: Cow, Buffalo, Camel, Sheep, Goat"
+                    disabled={isGenerating}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Confirmed Direction of Use / Dosage</label>
+                  <input
+                    value={directionOfUseHint}
+                    onChange={(e) => setDirectionOfUseHint(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    placeholder="Example: Sheep and Goats 5g/head/day; Cattle, Buffalo and Camels 30g/head/day, mixed with feed"
+                    disabled={isGenerating}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

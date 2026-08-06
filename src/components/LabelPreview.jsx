@@ -1,5 +1,5 @@
 import React from "react";
-import { Copy, Dna, Info, Syringe, Settings, PackageOpen, Scale, AlertCircle } from "lucide-react";
+import { Copy, Dna, Info, Syringe, Settings, PackageOpen, Scale, AlertCircle, FlaskConical, ClipboardCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
 const copyToClipboard = (text, section) => {
@@ -169,6 +169,67 @@ export default function LabelPreview({ data, editable = false, onFieldChange }) 
         </div>
       </div>
 
+      {/* Analysis (English only, per official feed labeling rules) */}
+      {(data.analysis?.items?.length > 0 || editable) && (
+        <div className="px-6 pb-6 relative group">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-bold text-blue-900 text-xl flex items-center gap-2">
+              <FlaskConical className="w-6 h-6" /> Analysis <span className="text-xs font-normal text-gray-500">(English only)</span>
+            </h4>
+            {!editable && data.analysis?.items?.length > 0 && (
+              <button
+                onClick={() => copyToClipboard(
+                  `${data.analysis?.basis || ""}\n` + data.analysis.items.map(i => `${i.name}: ${i.value}`).join("\n"),
+                  "Analysis"
+                )}
+                className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-xs font-semibold bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100"
+              >
+                <Copy className="w-3.5 h-3.5" /> Copy
+              </button>
+            )}
+          </div>
+
+          {editable ? (
+            <input
+              value={data.analysis?.basis || ""}
+              onChange={(e) => setField(["analysis", "basis"], e.target.value)}
+              className="w-full mb-3 px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Basis, e.g. per 1 kg"
+            />
+          ) : (
+            data.analysis?.basis && <p className="text-sm font-semibold text-gray-600 mb-2">{data.analysis.basis}</p>
+          )}
+
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-gray-50 border-b border-gray-200 text-gray-700">
+                <tr>
+                  <th className="px-4 py-3 font-bold w-1/2">Nutrient / Substance</th>
+                  <th className="px-4 py-3 font-bold w-1/2">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.analysis?.items?.map((item, idx) => (
+                  <tr key={idx} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/50">
+                    {editable ? (
+                      <>
+                        <td className="px-2 py-2"><input value={item.name || ""} onChange={(e) => setField(["analysis", "items", idx, "name"], e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded-lg font-medium text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" /></td>
+                        <td className="px-2 py-2"><input value={item.value || ""} onChange={(e) => setField(["analysis", "items", idx, "value"], e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-gray-700 outline-none focus:ring-2 focus:ring-blue-500" /></td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
+                        <td className="px-4 py-3 text-gray-700">{item.value}</td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Sections */}
       <div className="bg-gray-50/50">
         <Section
@@ -212,6 +273,39 @@ export default function LabelPreview({ data, editable = false, onFieldChange }) 
           onChangeAr={(v) => setField(["netWeight", "target"], v)}
         />
       </div>
+
+      {/* Usage Declaration */}
+      {(data.usageDeclaration?.length > 0) && (
+        <div className="px-6 py-5 border-t border-blue-900/10 bg-white group relative">
+          <h4 className="font-bold text-blue-900 text-sm tracking-wide uppercase flex items-center gap-2 mb-3">
+            <ClipboardCheck className="w-5 h-5 text-blue-600" /> Usage Declaration
+          </h4>
+          <div className="space-y-2">
+            {data.usageDeclaration.map((line, idx) => (
+              editable ? (
+                <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    value={line.en || ""}
+                    onChange={(e) => setField(["usageDeclaration", idx, "en"], e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    dir="rtl"
+                    value={line.target || ""}
+                    onChange={(e) => setField(["usageDeclaration", idx, "target"], e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              ) : (
+                <div key={idx} className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 text-sm">
+                  <span className="font-medium text-gray-800">{line.en}</span>
+                  <span className="font-bold text-gray-800" dir="rtl">{line.target}</span>
+                </div>
+              )
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Mandatory Fields */}
       {data.mandatoryFields && (

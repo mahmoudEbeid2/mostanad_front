@@ -12,6 +12,38 @@ import Button from "../ui/Button";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
+// Safety net only: catches a bare "x" placeholder if one slips through despite the AI being told to estimate instead.
+const PLACEHOLDER_PATTERN = /\bx\s?(g|gm|kg|ml|l|liter|litre|%|°|c\b)/i;
+
+const FIELD_LABELS = {
+  productName: "Product Name",
+  feedClassification: "Feed Classification",
+  ingredients: "Ingredients",
+  analysis: "Analysis",
+  aimOfUse: "Aim of Use",
+  targetAnimalSpecies: "Target Animal Species",
+  directionOfUse: "Direction of Use",
+  storage: "Storage",
+  netWeight: "Net Weight",
+  usageDeclaration: "Usage Declaration",
+};
+
+function findFieldsNeedingReview(data) {
+  if (!data) return [];
+  const estimated = (data.estimatedFields || []).map((key) => FIELD_LABELS[key] || key);
+
+  const placeholderChecks = [
+    { label: "Direction of Use", en: data.directionOfUse?.en, ar: data.directionOfUse?.target },
+    { label: "Target Animal Species", en: data.targetAnimalSpecies?.en, ar: data.targetAnimalSpecies?.target },
+    { label: "Analysis", en: (data.analysis?.items || []).map((i) => i.value).join(" ") },
+  ];
+  const leakedPlaceholders = placeholderChecks
+    .filter((c) => PLACEHOLDER_PATTERN.test(c.en || "") || PLACEHOLDER_PATTERN.test(c.ar || ""))
+    .map((c) => c.label);
+
+  return [...new Set([...estimated, ...leakedPlaceholders])];
+}
+
 export default function LabelGenerator() {
   const [formulationText, setFormulationText] = useState("");
   const [aimOfUseHint, setAimOfUseHint] = useState("");
@@ -172,6 +204,17 @@ export default function LabelGenerator() {
             You're editing the generated text directly — no AI call needed, so this costs nothing to fix.
           </p>
         )}
+
+        {(() => {
+          const reviewFields = findFieldsNeedingReview(generatedData);
+          if (reviewFields.length === 0) return null;
+          return (
+            <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2">
+              💡 <strong>{reviewFields.join(", ")}</strong> {reviewFields.length > 1 ? "were" : "was"} filled in with the AI's best scientific estimate (no confirmed hint or exact-match reference was available) — please verify before use.
+              {" "}Use <strong>Edit Fields</strong> above to correct anything, or fill the confirmed <strong>Target Animal Species</strong> / <strong>Direction of Use</strong> hints next time so the AI uses your real numbers instead of estimating.
+            </p>
+          );
+        })()}
 
         <LabelPreview data={generatedData} editable={isEditing} onFieldChange={handleFieldChange} />
       </div>

@@ -12,6 +12,34 @@ import Button from "../ui/Button";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
+const DETAIL_FIELDS = [
+  { key: "name", label: "Product Name" },
+  { key: "productCode", label: "Product Code" },
+  { key: "targetSpecies", label: "Target Species", type: "array" },
+  { key: "physicalForm", label: "Physical Form" },
+  { key: "appearance", label: "Appearance" },
+  { key: "dosage", label: "Dosage", full: true },
+  { key: "mixingInstructions", label: "Mixing Instructions", full: true },
+  { key: "withdrawalPeriod", label: "Withdrawal Period" },
+  { key: "userSafety", label: "User Safety", type: "array" },
+  { key: "storage", label: "Storage", full: true },
+  { key: "packaging", label: "Packaging" },
+  { key: "registrationNumber", label: "Registration Number" },
+  { key: "origin", label: "Origin" },
+  { key: "producer", label: "Producer" },
+  { key: "indications", label: "Indications", full: true },
+  { key: "contraindications", label: "Contraindications", full: true },
+  { key: "description", label: "Description", full: true },
+];
+
+const normalize = (v) => (v || "").toString().trim().toLowerCase();
+const textDiffers = (a, b) => normalize(a) !== normalize(b);
+const arrayDiffers = (a, b) => {
+  const na = [...new Set((a || []).map(normalize))].sort();
+  const nb = [...new Set((b || []).map(normalize))].sort();
+  return JSON.stringify(na) !== JSON.stringify(nb);
+};
+
 export default function Labels() {
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState("");
@@ -288,13 +316,18 @@ export default function Labels() {
         </div>
       ) : (
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Label</h2>
-            <p className="text-gray-500">Job ID: <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{jobId}</span></p>
+          <div className="flex items-center justify-center gap-4 mb-8">
+            {previewUrl && file?.type.startsWith("image/") && (
+              <img src={previewUrl} alt="Uploaded label" className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm flex-shrink-0" />
+            )}
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Label</h2>
+              <p className="text-gray-500">Job ID: <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{jobId}</span></p>
+            </div>
           </div>
 
           <div className="max-w-3xl mx-auto space-y-8">
-            
+
             {/* Status Indicator */}
             <div className="flex items-center justify-center gap-4">
               {jobStatus === "pending" || jobStatus === "processing" ? (
@@ -458,19 +491,89 @@ export default function Labels() {
                   </div>
                 )}
 
-                {/* Extracted Product Info Summary */}
+                {/* Extracted vs Database Comparison (when a DB match exists) */}
+                {jobResults.product?.existsInDb && jobResults.product?.dbProduct && (
+                  <div className="mb-10 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                    <div className="bg-blue-50 border-b border-blue-100 px-6 py-4 flex items-center justify-between">
+                      <h4 className="font-bold text-blue-900 flex items-center gap-2">
+                        <Database className="w-5 h-5 text-blue-600" />
+                        Label vs. Database ({jobResults.product.isExactMatch ? "Exact Match" : "Closest Alternative"})
+                      </h4>
+                      <span className="text-xs font-semibold text-blue-700 bg-white px-2.5 py-1 rounded-full border border-blue-200">
+                        {jobResults.product.dbProduct.name}
+                      </span>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      <div className="grid grid-cols-3 gap-4 px-6 py-3 bg-gray-50 text-xs font-black text-gray-500 uppercase tracking-wider">
+                        <span>Field</span><span>On the Label</span><span>In the Database</span>
+                      </div>
+                      {DETAIL_FIELDS.map(({ key, label, type }) => {
+                        const labelVal = jobResults.product.extractedDetails?.[key];
+                        const dbVal = jobResults.product.dbProduct?.[key];
+                        if (!labelVal && !dbVal) return null;
+                        const differs = type === "array" ? arrayDiffers(labelVal, dbVal) : textDiffers(labelVal, dbVal);
+                        return (
+                          <div key={key} className={`grid grid-cols-3 gap-4 px-6 py-3 text-sm ${differs ? "bg-red-50/60" : ""}`}>
+                            <span className="text-gray-500 font-semibold">{label}</span>
+                            <span className={differs ? "text-red-700 font-semibold" : "text-gray-800"}>
+                              {type === "array" ? (labelVal || []).join(", ") || "—" : labelVal || "—"}
+                            </span>
+                            <span className={differs ? "text-red-700 font-semibold" : "text-gray-800"}>
+                              {type === "array" ? (dbVal || []).join(", ") || "—" : dbVal || "—"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {(() => {
+                        const labelIngr = jobResults.product.extractedDetails?.activeIngredients || [];
+                        const dbIngr = jobResults.product.dbProduct?.activeIngredients || [];
+                        if (labelIngr.length === 0 && dbIngr.length === 0) return null;
+                        return (
+                          <div className="grid grid-cols-3 gap-4 px-6 py-3 text-sm">
+                            <span className="text-gray-500 font-semibold">Active Ingredients</span>
+                            <span className="text-gray-800">{labelIngr.map((i) => `${i.name} (${i.concentration})`).join(", ") || "—"}</span>
+                            <span className="text-gray-800">{dbIngr.map((i) => `${i.name} (${i.concentration})`).join(", ") || "—"}</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Extracted Product Info (full detail, always shown) */}
                 {jobResults.product && jobResults.product.extractedDetails && (
                   <div className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
-                    <div className="bg-gray-100 border-b border-gray-200 px-6 py-4">
+                    <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                       <h4 className="font-bold text-gray-800 flex items-center gap-2">
                         <FileText className="w-5 h-5 text-gray-500" /> Extracted Label Information
                       </h4>
+                      {!jobResults.product.existsInDb && (
+                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                          Not found in database — evaluated on expert knowledge alone
+                        </span>
+                      )}
                     </div>
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                      <div><span className="text-gray-500 block mb-1">Product Name</span><span className="font-semibold text-gray-900">{jobResults.product.extractedDetails.name || 'N/A'}</span></div>
-                      <div><span className="text-gray-500 block mb-1">Producer</span><span className="font-semibold text-gray-900">{jobResults.product.extractedDetails.producer || 'N/A'}</span></div>
-                      <div><span className="text-gray-500 block mb-1">Dosage</span><span className="font-semibold text-gray-900">{jobResults.product.extractedDetails.dosage || 'N/A'}</span></div>
-                      <div><span className="text-gray-500 block mb-1">Storage</span><span className="font-semibold text-gray-900">{jobResults.product.extractedDetails.storage || 'N/A'}</span></div>
+                      {DETAIL_FIELDS.map(({ key, label, type, full }) => {
+                        const val = jobResults.product.extractedDetails?.[key];
+                        if (!val || (type === "array" && val.length === 0)) return null;
+                        return (
+                          <div key={key} className={full ? "md:col-span-2" : ""}>
+                            <span className="text-gray-500 block mb-1">{label}</span>
+                            <span className="font-semibold text-gray-900">
+                              {type === "array" ? val.join(", ") : val}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {jobResults.product.extractedDetails?.activeIngredients?.length > 0 && (
+                        <div className="md:col-span-2">
+                          <span className="text-gray-500 block mb-1">Active Ingredients</span>
+                          <span className="font-semibold text-gray-900">
+                            {jobResults.product.extractedDetails.activeIngredients.map((i) => `${i.name} (${i.concentration})`).join(", ")}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

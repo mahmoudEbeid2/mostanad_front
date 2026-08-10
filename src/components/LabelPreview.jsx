@@ -1,6 +1,49 @@
 import React from "react";
-import { Copy, Dna, Info, Syringe, Settings, PackageOpen, Scale, AlertCircle, FlaskConical, ClipboardCheck } from "lucide-react";
+import { Copy, Dna, Info, Syringe, Settings, PackageOpen, Scale, AlertCircle, FlaskConical, ClipboardCheck, CheckCircle2, BookMarked, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
+
+// Target Animals provenance badge — backend computes this deterministically (see
+// labelGeneratorWorker.js: targetAnimalsSource / matchedReferenceLabels), never something the
+// frontend infers on its own, so it always reflects what actually drove the result:
+//   "reference"  -> copied from an uploaded reference sharing the same active ingredient(s)
+//   "confirmed"  -> the user typed the target species hint directly
+//   "inferred"   -> no matching reference existed, AI estimated it from product info
+const TargetAnimalsSourceBadge = ({ source, matchedReferenceLabels }) => {
+  if (!source) return null;
+
+  const config = {
+    reference: {
+      icon: BookMarked,
+      text: "Target animals matched from an approved reference (same active ingredient)",
+      classes: "bg-green-50 text-green-800 border-green-200",
+    },
+    confirmed: {
+      icon: CheckCircle2,
+      text: "Target animals confirmed by user input",
+      classes: "bg-blue-50 text-blue-800 border-blue-200",
+    },
+    inferred: {
+      icon: Sparkles,
+      text: "Target animals AI-inferred — no matching reference found, please verify",
+      classes: "bg-amber-50 text-amber-800 border-amber-200",
+    },
+  }[source];
+
+  if (!config) return null;
+  const { icon: Icon, text, classes } = config;
+
+  return (
+    <div className={`mx-6 mt-4 flex items-start gap-2 text-xs font-medium px-3 py-2 rounded-lg border ${classes}`}>
+      <Icon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+      <span>
+        {text}
+        {source === "reference" && matchedReferenceLabels?.length > 0 && (
+          <> — <span className="font-semibold">{matchedReferenceLabels.map((r) => r.name).join(", ")}</span></>
+        )}
+      </span>
+    </div>
+  );
+};
 
 const copyToClipboard = (text, section) => {
   if (!text) return;
@@ -117,6 +160,8 @@ export default function LabelPreview({ data, editable = false, onFieldChange }) 
           )}
         </div>
       </div>
+
+      <TargetAnimalsSourceBadge source={data.targetAnimalsSource} matchedReferenceLabels={data.matchedReferenceLabels} />
 
       {/* Ingredients */}
       <div className="p-6 relative group">

@@ -4,6 +4,7 @@ import { ArrowLeft, Tags, RefreshCw, CheckCircle2, AlertCircle, ShieldAlert } fr
 import toast from "react-hot-toast";
 import { getLabel, postValidate } from "../services/apiGeneratedLabels";
 import LabelFieldsPanel from "../components/LabelFieldsPanel";
+import VersionsTab from "../components/label-detail/VersionsTab";
 import Button from "../ui/Button";
 
 const STATUS_CLASSES = {
@@ -15,7 +16,10 @@ const STATUS_CLASSES = {
   archived: "bg-gray-50 text-gray-500 border-gray-200",
 };
 
-const TABS = [{ key: "overview", label: "Label & Validation" }];
+const TABS = [
+  { key: "overview", label: "Label & Validation" },
+  { key: "versions", label: "Version History" },
+];
 
 export default function LabelDetail() {
   const { id } = useParams();
@@ -161,6 +165,17 @@ export default function LabelDetail() {
           labelData={label.labelData}
           verdicts={latestValidation?.verdicts}
           provenance={provenance}
+        />
+      )}
+
+      {activeTab === "versions" && (
+        <VersionsTab
+          labelId={id}
+          currentVersion={label.currentVersion}
+          onRestored={async () => {
+            await load();
+            setActiveTab("overview");
+          }}
         />
       )}
     </div>

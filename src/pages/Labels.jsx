@@ -6,39 +6,26 @@ import { getBrands } from "../services/apiBrands";
 import { verifyLabel } from "../services/apiLabels";
 import { getTaskStatus } from "../services/apiProducts"; // reuse for checking task status
 import { io } from "socket.io-client";
-import { CheckCircle, AlertCircle, Image as ImageIcon, Loader2, PlayCircle, ShieldCheck, FileText, MapPin, Database, Cpu, CloudUpload, Search, FileCheck, Scan, ShieldAlert, FlaskConical } from "lucide-react";
+import { CheckCircle, AlertCircle, Image as ImageIcon, ShieldCheck, FileText, Database, CloudUpload, FileCheck, Scan, ShieldAlert } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
+import LocalizedField from "../components/LocalizedField";
+import VerdictList from "../components/VerdictList";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
-const DETAIL_FIELDS = [
+// The old-shape Product row (dbProduct) is unchanged by Phase 2 — these are its own
+// flat fields, still valid as-is.
+const DB_PRODUCT_FIELDS = [
   { key: "name", label: "Product Name" },
   { key: "productCode", label: "Product Code" },
   { key: "targetSpecies", label: "Target Species", type: "array" },
   { key: "physicalForm", label: "Physical Form" },
-  { key: "appearance", label: "Appearance" },
   { key: "dosage", label: "Dosage", full: true },
-  { key: "mixingInstructions", label: "Mixing Instructions", full: true },
   { key: "withdrawalPeriod", label: "Withdrawal Period" },
-  { key: "userSafety", label: "User Safety", type: "array" },
   { key: "storage", label: "Storage", full: true },
-  { key: "packaging", label: "Packaging" },
   { key: "registrationNumber", label: "Registration Number" },
-  { key: "origin", label: "Origin" },
-  { key: "producer", label: "Producer" },
-  { key: "indications", label: "Indications", full: true },
-  { key: "contraindications", label: "Contraindications", full: true },
-  { key: "description", label: "Description", full: true },
 ];
-
-const normalize = (v) => (v || "").toString().trim().toLowerCase();
-const textDiffers = (a, b) => normalize(a) !== normalize(b);
-const arrayDiffers = (a, b) => {
-  const na = [...new Set((a || []).map(normalize))].sort();
-  const nb = [...new Set((b || []).map(normalize))].sort();
-  return JSON.stringify(na) !== JSON.stringify(nb);
-};
 
 export default function Labels() {
   const [companies, setCompanies] = useState([]);
@@ -392,191 +379,124 @@ export default function Labels() {
               )}
             </div>
 
-            {/* Results Section */}
+            {/* Results Section — result.validation is now a ValidationReport
+                (deterministic engine, §10.2), not the old AI-judged
+                {compliant, results:[]} shape. See API-CHANGES.md Phase 2. */}
             {jobStatus === "completed" && jobResults && jobResults.validation && (
               <div className="mt-8">
-                {/* Compliant or Not */}
-                <div className={`p-6 rounded-2xl border-2 text-center mb-8 ${jobResults.validation.compliant ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800'}`}>
+                {/* Pass/Fail summary */}
+                <div className={`p-6 rounded-2xl border-2 text-center mb-6 ${jobResults.validation.passed ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800'}`}>
                   <h3 className="text-3xl font-black mb-2 uppercase tracking-wide">
-                    {jobResults.validation.compliant ? "Compliant" : "Non-Compliant"}
+                    {jobResults.validation.passed ? "Passed" : "Failed"}
                   </h3>
                   <p className="text-sm opacity-80 font-medium">
-                    According to regulations in {jobResults.validation.country || selectedCountry}
+                    {jobResults.validation.errorCount} error(s), {jobResults.validation.warningCount} warning(s)
+                    {" "}— engine {jobResults.validation.engineVersion}
                   </p>
+                  {jobResults.validation.rulesetIds?.length === 0 && (
+                    <p className="text-xs opacity-70 mt-2">
+                      No country-specific regulatory rules were applied to this check — this endpoint always
+                      validates against schema/structure rules only, not a country's ruleset.
+                    </p>
+                  )}
                 </div>
 
-                {/* Validation Issues List - Premium Audit UI */}
-                {jobResults.validation.results && jobResults.validation.results.length > 0 && (
-                  <div className="mb-10">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 pb-4 border-b border-gray-200">
-                      <div>
-                        <h4 className="text-2xl font-black text-gray-900 flex items-center gap-3">
-                          <ShieldAlert className="w-8 h-8 text-red-600" />
-                          Compliance Audit Report
-                        </h4>
-                        <p className="text-sm text-gray-500 font-medium mt-1">
-                          We found <span className="font-bold text-red-600 px-2 py-0.5 bg-red-50 rounded-md mx-1">{jobResults.validation.results.length}</span> issues that require immediate attention.
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-12">
-                      {/* Grouped by category */}
-                      {['regulatory', 'technical_error', 'db_mismatch'].map((cat) => {
-                        const items = jobResults.validation.results.filter(r => r.category === cat);
-                        if (items.length === 0) return null;
-
-                        const catConfig = {
-                          regulatory: { title: "Regulatory Violations", icon: ShieldAlert, color: "amber", bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200" },
-                          technical_error: { title: "Critical Technical Errors", icon: FlaskConical, color: "red", bg: "bg-red-50", text: "text-red-800", border: "border-red-200" },
-                          db_mismatch: { title: "Database Mismatches", icon: Database, color: "blue", bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-200" },
-                        }[cat];
-
-                        const CatIcon = catConfig.icon;
-
-                        return (
-                          <div key={cat} className="space-y-5">
-                            <h5 className={`text-lg font-black uppercase tracking-widest flex items-center gap-2 ${catConfig.text}`}>
-                              <CatIcon className="w-5 h-5" /> {catConfig.title}
-                              <span className={`ml-2 text-xs px-2 py-1 rounded-full ${catConfig.bg} border ${catConfig.border}`}>
-                                {items.length}
-                              </span>
-                            </h5>
-                            
-                            <div className="grid grid-cols-1 gap-6">
-                              {items.map((item, idx) => (
-                                <div key={idx} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col md:flex-row group">
-                                  {/* Number Indicator */}
-                                  <div className={`w-16 flex-shrink-0 flex flex-col items-center justify-start pt-6 border-r border-gray-100 ${catConfig.bg}`}>
-                                    <span className={`text-2xl font-black ${catConfig.text} opacity-50`}>
-                                      {(idx + 1).toString().padStart(2, '0')}
-                                    </span>
-                                  </div>
-                                  
-                                  <div className="flex-1">
-                                    {/* Issue Header */}
-                                    <div className="p-5 border-b border-gray-50 flex justify-between items-start">
-                                      <div>
-                                        {item.location && (
-                                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                                            <MapPin className="w-3.5 h-3.5 text-gray-400" /> Location: {item.location}
-                                          </span>
-                                        )}
-                                        <h6 className="text-gray-900 font-bold text-lg leading-relaxed pr-4">
-                                          {item.issue}
-                                        </h6>
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Solution Footer */}
-                                    <div className="p-5 bg-gray-50/50 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                                      <div className="flex-1 flex items-start gap-3">
-                                        <div className="bg-emerald-100 p-2 rounded-full mt-0.5">
-                                          <CheckCircle className="w-5 h-5 text-emerald-600" />
-                                        </div>
-                                        <div>
-                                          <p className="text-xs font-black text-emerald-700 uppercase tracking-widest mb-1">Action Required</p>
-                                          <p className="text-sm text-gray-700 font-medium leading-relaxed">{item.solution}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                {/* Field-by-field verdicts */}
+                <div className="mb-10">
+                  <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+                    <ShieldAlert className="w-7 h-7 text-gray-700" />
+                    <h4 className="text-2xl font-black text-gray-900">Field-by-Field Report</h4>
                   </div>
-                )}
+                  <VerdictList verdicts={jobResults.validation.verdicts} />
+                </div>
 
-                {/* Extracted vs Database Comparison (when a DB match exists) */}
+                {/* Database match banner (existsInDb/isExactMatch/dbProduct are unchanged by
+                    Phase 2 — only extractedDetails changed shape, so this stays a plain banner
+                    rather than a merged field-by-field diff table, since the two sides no
+                    longer share a common field vocabulary). */}
                 {jobResults.product?.existsInDb && jobResults.product?.dbProduct && (
-                  <div className="mb-10 bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                    <div className="bg-blue-50 border-b border-blue-100 px-6 py-4 flex items-center justify-between">
-                      <h4 className="font-bold text-blue-900 flex items-center gap-2">
-                        <Database className="w-5 h-5 text-blue-600" />
-                        Label vs. Database ({jobResults.product.isExactMatch ? "Exact Match" : "Closest Alternative"})
-                      </h4>
-                      <span className="text-xs font-semibold text-blue-700 bg-white px-2.5 py-1 rounded-full border border-blue-200">
-                        {jobResults.product.dbProduct.name}
-                      </span>
-                    </div>
-                    <div className="divide-y divide-gray-100">
-                      <div className="grid grid-cols-3 gap-4 px-6 py-3 bg-gray-50 text-xs font-black text-gray-500 uppercase tracking-wider">
-                        <span>Field</span><span>On the Label</span><span>In the Database</span>
-                      </div>
-                      {DETAIL_FIELDS.map(({ key, label, type }) => {
-                        const labelVal = jobResults.product.extractedDetails?.[key];
-                        const dbVal = jobResults.product.dbProduct?.[key];
-                        if (!labelVal && !dbVal) return null;
-                        const differs = type === "array" ? arrayDiffers(labelVal, dbVal) : textDiffers(labelVal, dbVal);
-                        return (
-                          <div key={key} className={`grid grid-cols-3 gap-4 px-6 py-3 text-sm ${differs ? "bg-red-50/60" : ""}`}>
-                            <span className="text-gray-500 font-semibold">{label}</span>
-                            <span className={differs ? "text-red-700 font-semibold" : "text-gray-800"}>
-                              {type === "array" ? (labelVal || []).join(", ") || "—" : labelVal || "—"}
-                            </span>
-                            <span className={differs ? "text-red-700 font-semibold" : "text-gray-800"}>
-                              {type === "array" ? (dbVal || []).join(", ") || "—" : dbVal || "—"}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {(() => {
-                        const labelIngr = jobResults.product.extractedDetails?.activeIngredients || [];
-                        const dbIngr = jobResults.product.dbProduct?.activeIngredients || [];
-                        if (labelIngr.length === 0 && dbIngr.length === 0) return null;
-                        return (
-                          <div className="grid grid-cols-3 gap-4 px-6 py-3 text-sm">
-                            <span className="text-gray-500 font-semibold">Active Ingredients</span>
-                            <span className="text-gray-800">{labelIngr.map((i) => `${i.name} (${i.concentration})`).join(", ") || "—"}</span>
-                            <span className="text-gray-800">{dbIngr.map((i) => `${i.name} (${i.concentration})`).join(", ") || "—"}</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
+                  <div className="mb-6 bg-blue-50 border border-blue-100 rounded-2xl px-6 py-4 flex items-center gap-3">
+                    <Database className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                    <p className="text-sm text-blue-900">
+                      {jobResults.product.isExactMatch ? "Exact match" : "Closest alternative"} found in database:{" "}
+                      <span className="font-bold">{jobResults.product.dbProduct.name}</span>
+                    </p>
                   </div>
                 )}
 
-                {/* Extracted Product Info (full detail, always shown) */}
-                {jobResults.product && jobResults.product.extractedDetails && (
-                  <div className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
-                    <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                      <h4 className="font-bold text-gray-800 flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-gray-500" /> Extracted Label Information
-                      </h4>
-                      {!jobResults.product.existsInDb && (
-                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                          Not found in database — evaluated on expert knowledge alone
-                        </span>
-                      )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Extracted Label Information — extractedDetails is now a partial
+                      labelSchema object, e.g. productName.translations.en, not the old
+                      flat {name, category, productCode, ...} shape. */}
+                  {jobResults.product?.extractedDetails && (
+                    <div className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
+                      <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                        <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                          <FileText className="w-5 h-5 text-gray-500" /> Extracted from Label
+                        </h4>
+                        {!jobResults.product.existsInDb && (
+                          <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                            Not found in database
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-6 space-y-4">
+                        <LocalizedField label="Product Name" value={jobResults.product.extractedDetails.productName} />
+                        <LocalizedField label="Withdrawal Period" value={jobResults.product.extractedDetails.withdrawalPeriod} />
+                        <LocalizedField label="Storage" value={jobResults.product.extractedDetails.storage} />
+                        <LocalizedField label="Registration Number" value={jobResults.product.extractedDetails.registrationNumber ? { translations: { en: jobResults.product.extractedDetails.registrationNumber }, primary: "en" } : null} />
+                        {jobResults.product.extractedDetails.targetAnimalSpecies?.list?.length > 0 && (
+                          <div>
+                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wide block mb-1">Target Animal Species</span>
+                            <span className="text-sm text-gray-900">{jobResults.product.extractedDetails.targetAnimalSpecies.list.join(", ")}</span>
+                          </div>
+                        )}
+                        {jobResults.product.extractedDetails.activeIngredients?.length > 0 && (
+                          <div>
+                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wide block mb-1">Active Ingredients</span>
+                            <ul className="text-sm text-gray-900 space-y-0.5">
+                              {jobResults.product.extractedDetails.activeIngredients.map((ing, idx) => (
+                                <li key={idx}>{ing.translations?.en} — {ing.amount}{ing.unit || ""}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                      {DETAIL_FIELDS.map(({ key, label, type, full }) => {
-                        const val = jobResults.product.extractedDetails?.[key];
-                        if (!val || (type === "array" && val.length === 0)) return null;
-                        return (
-                          <div key={key} className={full ? "md:col-span-2" : ""}>
-                            <span className="text-gray-500 block mb-1">{label}</span>
-                            <span className="font-semibold text-gray-900">
-                              {type === "array" ? val.join(", ") : val}
+                  )}
+
+                  {/* Database Product — dbProduct's own unchanged shape, shown as its own
+                      panel rather than forced into the same rows as extractedDetails. */}
+                  {jobResults.product?.dbProduct && (
+                    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                      <div className="bg-blue-50 border-b border-blue-100 px-6 py-4">
+                        <h4 className="font-bold text-blue-900 flex items-center gap-2">
+                          <Database className="w-5 h-5 text-blue-600" /> Database Product
+                        </h4>
+                      </div>
+                      <div className="p-6 space-y-4 text-sm">
+                        {DB_PRODUCT_FIELDS.map(({ key, label, type }) => {
+                          const val = jobResults.product.dbProduct?.[key];
+                          if (!val || (type === "array" && val.length === 0)) return null;
+                          return (
+                            <div key={key}>
+                              <span className="text-gray-500 text-xs font-bold uppercase tracking-wide block mb-1">{label}</span>
+                              <span className="text-gray-900">{type === "array" ? val.join(", ") : val}</span>
+                            </div>
+                          );
+                        })}
+                        {jobResults.product.dbProduct?.activeIngredients?.length > 0 && (
+                          <div>
+                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wide block mb-1">Active Ingredients</span>
+                            <span className="text-gray-900">
+                              {jobResults.product.dbProduct.activeIngredients.map((i) => `${i.name} (${i.concentration})`).join(", ")}
                             </span>
                           </div>
-                        );
-                      })}
-                      {jobResults.product.extractedDetails?.activeIngredients?.length > 0 && (
-                        <div className="md:col-span-2">
-                          <span className="text-gray-500 block mb-1">Active Ingredients</span>
-                          <span className="font-semibold text-gray-900">
-                            {jobResults.product.extractedDetails.activeIngredients.map((i) => `${i.name} (${i.concentration})`).join(", ")}
-                          </span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 

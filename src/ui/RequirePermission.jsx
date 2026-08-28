@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { hasPermission } from "../utils/permissions";
 
 export default function RequirePermission({ children, permission }) {
   const { user, isLoading } = useAuth();
@@ -12,17 +13,7 @@ export default function RequirePermission({ children, permission }) {
     );
   }
 
-  // user.role.permissions is an array of RolePermission objects, e.g. { permission: { slug: '...' } }
-  // wait, from Roles.jsx I saw: const assignedSlugs = role.permissions?.map(p => p.permission.slug) || [];
-  let assignedSlugs = [];
-  if (user?.role?.permissions) {
-    // some queries return strings directly, let's handle both
-    assignedSlugs = user.role.permissions.map(p => typeof p === 'string' ? p : p?.permission?.slug).filter(Boolean);
-  }
-
-  const hasAccess = assignedSlugs.includes(permission);
-
-  if (!hasAccess) {
+  if (!hasPermission(user, permission)) {
     return <Navigate to="/dashboard" replace />;
   }
 

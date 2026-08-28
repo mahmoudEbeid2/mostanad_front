@@ -12,6 +12,7 @@ import LocalizedField from "../components/LocalizedField";
 import { io } from "socket.io-client";
 import { Copy, Sparkles, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 import Button from "../ui/Button";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
@@ -279,6 +280,12 @@ export default function LabelGenerator() {
             <p className="text-gray-500 mt-2 font-mono text-xs">Label ID: {labelId}</p>
           </div>
           <div className="flex gap-3">
+            <Link
+              to={`/labels/detail/${labelId}`}
+              className="flex items-center gap-1.5 font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl transition-colors"
+            >
+              <ExternalLink className="w-5 h-5" /> Open Full Detail
+            </Link>
             <button
               onClick={copyRawJson}
               disabled={!labelDetail?.label}
@@ -336,8 +343,8 @@ export default function LabelGenerator() {
           <>
             <p className="mb-4 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-2">
               <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-              This is a read-only summary of what was generated. The full editable view with
-              per-field validation and provenance is on the label detail screen (coming soon).
+              This is a read-only summary of what was generated. Open the full detail screen above for
+              per-field validation, provenance, editing, chat, versions, and approval.
             </p>
             <GeneratedLabelSummary
               label={labelDetail.label}

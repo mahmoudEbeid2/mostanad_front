@@ -38,6 +38,7 @@ const navLinks = [
     name: "Labels", 
     icon: Tags,
     subLinks: [
+      { name: "Generated Labels", path: "/labels/browse" },
       { name: "Label Checker", path: "/labels" },
       { name: "AI Label Writer", path: "/labels/generator" },
       { name: "Reference Labels", path: "/reference-labels" }

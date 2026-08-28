@@ -8,6 +8,8 @@ import Roles from "./pages/Roles";
 import Categories from "./pages/Categories";
 import Products from "./pages/Products";
 import Labels from "./pages/Labels";
+import LabelsList from "./pages/LabelsList";
+import LabelDetail from "./pages/LabelDetail";
 import LabelGenerator from "./pages/LabelGenerator";
 import TemplatesList from "./pages/TemplatesList";
 import Certificates from "./pages/Certificates";
@@ -48,6 +50,8 @@ function App() {
             <Route path="/products" element={<RequirePermission permission="read_products"><Products /></RequirePermission>} />
             <Route path="/products/catalog-upload" element={<RequirePermission permission="create_products"><Catalogs /></RequirePermission>} />
             <Route path="/labels" element={<Labels />} />
+            <Route path="/labels/browse" element={<RequirePermission permission="read_labels"><LabelsList /></RequirePermission>} />
+            <Route path="/labels/detail/:id" element={<RequirePermission permission="read_labels"><LabelDetail /></RequirePermission>} />
             <Route path="/labels/generator" element={<LabelGenerator />} />
             <Route path="/templates" element={<RequirePermission permission="read_templates"><TemplatesList /></RequirePermission>} />
             <Route path="/templates/editor" element={<RequirePermission permission="update_templates"><Certificates /></RequirePermission>} />

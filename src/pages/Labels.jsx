@@ -6,81 +6,12 @@ import { getBrands } from "../services/apiBrands";
 import { verifyLabel } from "../services/apiLabels";
 import { getTaskStatus } from "../services/apiProducts"; // reuse for checking task status
 import { io } from "socket.io-client";
-import { CheckCircle, AlertCircle, Image as ImageIcon, ShieldCheck, FileText, Database, CloudUpload, FileCheck, Scan, ShieldAlert } from "lucide-react";
+import { CheckCircle, AlertCircle, Image as ImageIcon, ShieldCheck, CloudUpload, FileCheck, Scan, Database } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
-import LocalizedField from "../components/LocalizedField";
-import VerdictList from "../components/VerdictList";
+import CheckLabelReport from "../components/label-verify/CheckLabelReport";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
-
-// The old-shape Product row (dbProduct) is unchanged by Phase 2 — these are its own
-// flat fields, still valid as-is.
-const DB_PRODUCT_FIELDS = [
-  { key: "name", label: "Product Name" },
-  { key: "productCode", label: "Product Code" },
-  { key: "targetSpecies", label: "Target Species", type: "array" },
-  { key: "physicalForm", label: "Physical Form" },
-  { key: "dosage", label: "Dosage", full: true },
-  { key: "withdrawalPeriod", label: "Withdrawal Period" },
-  { key: "storage", label: "Storage", full: true },
-  { key: "registrationNumber", label: "Registration Number" },
-];
-
-function countStatuses(verdicts = []) {
-  return verdicts.reduce((acc, verdict) => {
-    acc[verdict.status] = (acc[verdict.status] || 0) + 1;
-    return acc;
-  }, {});
-}
-
-function verificationBand(validation) {
-  const counts = countStatuses(validation?.verdicts || []);
-  const failCount = counts.FAIL || 0;
-  const confirmCount = counts.NEEDS_CONFIRMATION || 0;
-  const reviewCount = counts.NEEDS_REVIEW || 0;
-  const unverifiableCount = counts.UNVERIFIABLE || 0;
-  const warnCount = counts.WARN || 0;
-
-  if (failCount > 0) {
-    return {
-      title: `Not ready - ${failCount} ${failCount === 1 ? "thing must" : "things must"} be fixed`,
-      body: "Start with Must fix below. The label should not be treated as ready.",
-      classes: "bg-red-50 border-red-400 text-red-900",
-      icon: AlertCircle,
-    };
-  }
-  if (confirmCount + reviewCount > 0) {
-    return {
-      title: `Needs you - ${confirmCount + reviewCount} ${confirmCount + reviewCount === 1 ? "thing" : "things"} to confirm`,
-      body: "Some values need a human decision before relying on the result.",
-      classes: "bg-orange-50 border-orange-300 text-orange-900",
-      icon: ShieldAlert,
-    };
-  }
-  if (unverifiableCount > 0) {
-    return {
-      title: "Cannot fully check",
-      body: `${unverifiableCount} ${unverifiableCount === 1 ? "rule could" : "rules could"} not be checked with the approved rules on file.`,
-      classes: "bg-indigo-50 border-indigo-300 text-indigo-900",
-      icon: ShieldAlert,
-    };
-  }
-  if (warnCount > 0) {
-    return {
-      title: "Ready with notes",
-      body: `${warnCount} ${warnCount === 1 ? "thing is" : "things are"} worth a look, but nothing is blocking.`,
-      classes: "bg-amber-50 border-amber-300 text-amber-900",
-      icon: CheckCircle,
-    };
-  }
-  return {
-    title: "Ready - nothing blocking",
-    body: "No blocking failures were found.",
-    classes: "bg-green-50 border-green-400 text-green-900",
-    icon: CheckCircle,
-  };
-}
 
 export default function Labels() {
   const [companies, setCompanies] = useState([]);
@@ -358,19 +289,22 @@ export default function Labels() {
         </div>
       ) : (
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-center gap-4 mb-8">
-            {previewUrl && file?.type.startsWith("image/") && (
-              <img src={previewUrl} alt="Uploaded label" className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm flex-shrink-0" />
-            )}
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Label</h2>
-              <p className="text-gray-500">Job ID: <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{jobId}</span></p>
+          {jobStatus !== "completed" && (
+            <div className="flex items-center justify-center gap-4 mb-8">
+              {previewUrl && file?.type.startsWith("image/") && (
+                <img src={previewUrl} alt="Uploaded label" className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm flex-shrink-0" />
+              )}
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Label</h2>
+                <p className="text-gray-500">Job ID: <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{jobId}</span></p>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="max-w-3xl mx-auto space-y-8">
 
             {/* Status Indicator */}
+            {jobStatus !== "completed" && (
             <div className="flex items-center justify-center gap-4">
               {jobStatus === "pending" || jobStatus === "processing" ? (
                 <div className="flex flex-col w-full max-w-2xl mx-auto bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
@@ -420,11 +354,6 @@ export default function Labels() {
                     </div>
                   </div>
                 </div>
-              ) : jobStatus === "completed" ? (
-                <div className="flex flex-col items-center text-green-600">
-                  <ShieldCheck className="w-20 h-20 mb-4" />
-                  <span className="font-bold text-2xl text-gray-900">Verification Complete!</span>
-                </div>
               ) : (
                 <div className="flex flex-col items-center text-red-600">
                   <AlertCircle className="w-16 h-16 mb-4" />
@@ -433,144 +362,23 @@ export default function Labels() {
                 </div>
               )}
             </div>
+            )}
 
-            {/* Results Section — result.validation is now a ValidationReport
-                (deterministic engine, §10.2), not the old AI-judged
-                {compliant, results:[]} shape. See API-CHANGES.md Phase 2. */}
+            {/* Results — one answer, one action (§ Check a Label redesign). result.validation
+                is a ValidationReport (deterministic engine, §10.2). The uploaded image and
+                headline here ARE the identity — no separate "Verification Complete" banner. */}
             {jobStatus === "completed" && jobResults && jobResults.validation && (
-              <div className="mt-8">
-                {(() => {
-                  const band = verificationBand(jobResults.validation);
-                  const BandIcon = band.icon;
-                  return (
-                    <div className={`p-6 rounded-2xl border-2 mb-6 ${band.classes}`}>
-                      <div className="flex items-start gap-3">
-                        <BandIcon className="w-7 h-7 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <h3 className="text-2xl font-black mb-1">{band.title}</h3>
-                          <p className="text-sm">{band.body}</p>
-                          <p className="text-xs opacity-75 mt-2">
-                            Checked {jobResults.validation.rulesetIds?.length || 0} ruleset(s) - {jobResults.validation.coveragePercent != null ? `${jobResults.validation.coveragePercent.toFixed(1)}% document coverage` : "no coverage figure recorded"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Detailed engine result */}
-                <div className="p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 mb-6">
-                  <h3 className="text-sm font-bold text-gray-800 mb-1">
-                    Detailed result
-                  </h3>
-                  <p className="text-sm opacity-80 font-medium">
-                    {jobResults.validation.errorCount} error(s), {jobResults.validation.warningCount} warning(s)
-                    {" "}— engine {jobResults.validation.engineVersion}
-                  </p>
-                  {jobResults.validation.rulesetIds?.length === 0 && (
-                    <p className="text-xs opacity-70 mt-2">
-                      No country-specific regulatory rules were applied to this check — this endpoint always
-                      validates against schema/structure rules only, not a country's ruleset.
-                    </p>
-                  )}
-                </div>
-
-                {/* Field-by-field verdicts */}
-                <div className="mb-10">
-                  <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-                    <ShieldAlert className="w-7 h-7 text-gray-700" />
-                    <h4 className="text-2xl font-black text-gray-900">Field-by-Field Report</h4>
-                  </div>
-                  <VerdictList verdicts={jobResults.validation.verdicts} />
-                </div>
-
-                {/* Database match banner (existsInDb/isExactMatch/dbProduct are unchanged by
-                    Phase 2 — only extractedDetails changed shape, so this stays a plain banner
-                    rather than a merged field-by-field diff table, since the two sides no
-                    longer share a common field vocabulary). */}
-                {jobResults.product?.existsInDb && jobResults.product?.dbProduct && (
-                  <div className="mb-6 bg-blue-50 border border-blue-100 rounded-2xl px-6 py-4 flex items-center gap-3">
-                    <Database className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                    <p className="text-sm text-blue-900">
-                      {jobResults.product.isExactMatch ? "Exact match" : "Closest alternative"} found in database:{" "}
-                      <span className="font-bold">{jobResults.product.dbProduct.name}</span>
-                    </p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Extracted Label Information — extractedDetails is now a partial
-                      labelSchema object, e.g. productName.translations.en, not the old
-                      flat {name, category, productCode, ...} shape. */}
-                  {jobResults.product?.extractedDetails && (
-                    <div className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
-                      <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                        <h4 className="font-bold text-gray-800 flex items-center gap-2">
-                          <FileText className="w-5 h-5 text-gray-500" /> Extracted from Label
-                        </h4>
-                        {!jobResults.product.existsInDb && (
-                          <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                            Not found in database
-                          </span>
-                        )}
-                      </div>
-                      <div className="p-6 space-y-4">
-                        <LocalizedField label="Product Name" value={jobResults.product.extractedDetails.productName} />
-                        <LocalizedField label="Withdrawal Period" value={jobResults.product.extractedDetails.withdrawalPeriod} />
-                        <LocalizedField label="Storage" value={jobResults.product.extractedDetails.storage} />
-                        <LocalizedField label="Registration Number" value={jobResults.product.extractedDetails.registrationNumber ? { translations: { en: jobResults.product.extractedDetails.registrationNumber }, primary: "en" } : null} />
-                        {jobResults.product.extractedDetails.targetAnimalSpecies?.list?.length > 0 && (
-                          <div>
-                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wide block mb-1">Target Animal Species</span>
-                            <span className="text-sm text-gray-900">{jobResults.product.extractedDetails.targetAnimalSpecies.list.join(", ")}</span>
-                          </div>
-                        )}
-                        {jobResults.product.extractedDetails.activeIngredients?.length > 0 && (
-                          <div>
-                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wide block mb-1">Active Ingredients</span>
-                            <ul className="text-sm text-gray-900 space-y-0.5">
-                              {jobResults.product.extractedDetails.activeIngredients.map((ing, idx) => (
-                                <li key={idx}>{ing.translations?.en} — {ing.amount}{ing.unit || ""}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Database Product — dbProduct's own unchanged shape, shown as its own
-                      panel rather than forced into the same rows as extractedDetails. */}
-                  {jobResults.product?.dbProduct && (
-                    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                      <div className="bg-blue-50 border-b border-blue-100 px-6 py-4">
-                        <h4 className="font-bold text-blue-900 flex items-center gap-2">
-                          <Database className="w-5 h-5 text-blue-600" /> Database Product
-                        </h4>
-                      </div>
-                      <div className="p-6 space-y-4 text-sm">
-                        {DB_PRODUCT_FIELDS.map(({ key, label, type }) => {
-                          const val = jobResults.product.dbProduct?.[key];
-                          if (!val || (type === "array" && val.length === 0)) return null;
-                          return (
-                            <div key={key}>
-                              <span className="text-gray-500 text-xs font-bold uppercase tracking-wide block mb-1">{label}</span>
-                              <span className="text-gray-900">{type === "array" ? val.join(", ") : val}</span>
-                            </div>
-                          );
-                        })}
-                        {jobResults.product.dbProduct?.activeIngredients?.length > 0 && (
-                          <div>
-                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wide block mb-1">Active Ingredients</span>
-                            <span className="text-gray-900">
-                              {jobResults.product.dbProduct.activeIngredients.map((i) => `${i.name} (${i.concentration})`).join(", ")}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <CheckLabelReport
+                jobResults={jobResults}
+                previewUrl={previewUrl}
+                fileIsImage={file?.type?.startsWith("image/")}
+                country={selectedCountry?.label}
+              />
+            )}
+            {jobStatus === "completed" && (!jobResults || !jobResults.validation) && (
+              <div className="flex flex-col items-center text-green-600">
+                <ShieldCheck className="w-16 h-16 mb-4" />
+                <span className="font-bold text-xl text-gray-900">Verification complete, but no report was returned.</span>
               </div>
             )}
 

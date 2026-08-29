@@ -1,10 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Tags, RefreshCw, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Tags, RefreshCw, CheckCircle2, AlertCircle, ShieldAlert, MessageSquare, Award, FileSearch, History } from "lucide-react";
 import toast from "react-hot-toast";
 import { getLabel, postValidate } from "../services/apiGeneratedLabels";
 import LabelFieldsPanel from "../components/LabelFieldsPanel";
 import VersionsTab from "../components/label-detail/VersionsTab";
+import EditFieldModal from "../components/label-detail/EditFieldModal";
+import ChatTab from "../components/label-detail/ChatTab";
+import ApprovalTab from "../components/label-detail/ApprovalTab";
+import ExtractionTab from "../components/label-detail/ExtractionTab";
 import Button from "../ui/Button";
 
 const STATUS_CLASSES = {
@@ -18,6 +22,9 @@ const STATUS_CLASSES = {
 
 const TABS = [
   { key: "overview", label: "Label & Validation" },
+  { key: "chat", label: "Chat & AI Edits" },
+  { key: "extraction", label: "Verification (§14.5)" },
+  { key: "approval", label: "Approval & Release" },
   { key: "versions", label: "Version History" },
 ];
 
@@ -29,6 +36,9 @@ export default function LabelDetail() {
   const [loadError, setLoadError] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Direct Field Edit State
+  const [editingField, setEditingField] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -43,7 +53,9 @@ export default function LabelDetail() {
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleRunValidation = async () => {
     try {
@@ -83,7 +95,10 @@ export default function LabelDetail() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <button onClick={() => navigate("/labels/browse")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-4">
+      <button
+        onClick={() => navigate("/labels/browse")}
+        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-4 transition-colors"
+      >
         <ArrowLeft className="w-4 h-4" /> Back to labels
       </button>
 
@@ -101,6 +116,11 @@ export default function LabelDetail() {
             <span className="text-xs text-gray-500">{label.country} · {label.language}</span>
             {label.riskScore != null && (
               <span className="text-xs text-gray-500">Risk score: {label.riskScore} ({label.autonomyTier})</span>
+            )}
+            {label.needsReview && (
+              <span className="text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-300">
+                Needs Review
+              </span>
             )}
           </div>
         </div>
@@ -146,12 +166,13 @@ export default function LabelDetail() {
         </div>
       )}
 
-      <div className="border-b border-gray-200 mb-6 flex gap-6">
+      {/* Navigation Tabs */}
+      <div className="border-b border-gray-200 mb-6 flex gap-6 overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
-            className={`pb-3 text-sm font-bold border-b-2 -mb-px transition-colors ${
+            className={`pb-3 text-sm font-bold border-b-2 -mb-px transition-colors whitespace-nowrap ${
               activeTab === t.key ? "border-blue-600 text-blue-700" : "border-transparent text-gray-500 hover:text-gray-800"
             }`}
           >
@@ -160,14 +181,45 @@ export default function LabelDetail() {
         ))}
       </div>
 
+      {/* Tab 1: Label Fields & Verdicts Overview */}
       {activeTab === "overview" && (
         <LabelFieldsPanel
           labelData={label.labelData}
           verdicts={latestValidation?.verdicts}
           provenance={provenance}
+          onEditField={(field) => setEditingField(field)}
         />
       )}
 
+      {/* Tab 2: Chat & AI Edits */}
+      {activeTab === "chat" && (
+        <ChatTab
+          labelId={id}
+          currentVersion={label.currentVersion}
+          onLabelUpdated={load}
+        />
+      )}
+
+      {/* Tab 3: Extraction Verification (§14.5) */}
+      {activeTab === "extraction" && (
+        <ExtractionTab
+          labelId={id}
+          currentVersion={label.currentVersion}
+          onFieldConfirmed={load}
+        />
+      )}
+
+      {/* Tab 4: Approval & Release */}
+      {activeTab === "approval" && (
+        <ApprovalTab
+          label={label}
+          latestValidation={latestValidation}
+          currentVersion={label.currentVersion}
+          onApprovalChanged={load}
+        />
+      )}
+
+      {/* Tab 5: Versions History & Diff */}
       {activeTab === "versions" && (
         <VersionsTab
           labelId={id}
@@ -175,6 +227,22 @@ export default function LabelDetail() {
           onRestored={async () => {
             await load();
             setActiveTab("overview");
+          }}
+        />
+      )}
+
+      {/* Direct Field Edit Modal */}
+      {editingField && (
+        <EditFieldModal
+          isOpen={Boolean(editingField)}
+          field={editingField}
+          currentValue={label.labelData?.[editingField.path]}
+          labelId={id}
+          expectedVersion={label.currentVersion}
+          onClose={() => setEditingField(null)}
+          onSuccess={() => {
+            load();
+            setEditingField(null);
           }}
         />
       )}

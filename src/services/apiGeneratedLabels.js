@@ -65,3 +65,9 @@ export const getApprovals = (id) =>
 
 export const postRevoke = (id, approvalId, reason) =>
   unwrap(apiClient.post(`/labels/${id}/approvals/${approvalId}/revoke`, { reason }), "Failed to revoke approval").then((d) => d.data);
+
+export const getLabelExtraction = (id) =>
+  unwrap(apiClient.get(`/labels/${id}/extraction`), "Failed to fetch extraction data").then((d) => d.data);
+
+export const postConfirmField = (id, { path, value, expectedVersion }) =>
+  unwrap(apiClient.post(`/labels/${id}/confirm-field`, { path, value, expectedVersion }), "Failed to confirm field").then((d) => d.data);

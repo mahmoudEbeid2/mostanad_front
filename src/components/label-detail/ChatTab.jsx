@@ -1,10 +1,10 @@
 ﻿import { useState, useEffect, useCallback, useRef } from "react";
-import { Send, Bot, User, ShieldAlert, FileText, CheckCircle2, AlertTriangle, RefreshCw, CornerDownRight } from "lucide-react";
+import { Send, Bot, User, ShieldAlert, FileText, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import { getChat, postChat } from "../../services/apiGeneratedLabels";
 import Button from "../../ui/Button";
 
-export default function ChatTab({ labelId, currentVersion, onLabelUpdated }) {
+export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initialMessage = "" }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +27,10 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated }) {
   useEffect(() => {
     loadHistory();
   }, [loadHistory]);
+
+  useEffect(() => {
+    if (initialMessage) setInputMessage(initialMessage);
+  }, [initialMessage]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -199,20 +203,22 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated }) {
               <span>Regulatory Conflict: The proposed change was NOT applied</span>
             </div>
 
-            {activeConflict.wouldViolate && (
-              <div className="bg-white rounded-xl p-4 border border-rose-200 text-xs space-y-2">
-                <p className="font-bold text-gray-900">
-                  Violated Rule: {activeConflict.wouldViolate.ruleKey} · {activeConflict.wouldViolate.ruleName || "Regulatory requirement"}
-                </p>
-                {activeConflict.wouldViolate.citation && (
-                  <div className="flex items-start gap-2 text-gray-700 italic bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                    <FileText className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                    <span>&ldquo;{activeConflict.wouldViolate.citation}&rdquo;</span>
+            {activeConflict.wouldViolate?.length > 0 && (
+              <div className="space-y-2">
+                {activeConflict.wouldViolate.map((violation, idx) => (
+                  <div key={`${violation.ruleKey || idx}-${violation.path || idx}`} className="bg-white rounded-xl p-4 border border-rose-200 text-xs space-y-2">
+                    <p className="font-bold text-gray-900">
+                      Violated Rule: {violation.ruleKey || "(unknown)"}{violation.path ? ` · ${violation.path}` : ""}
+                    </p>
+                    {violation.message && <p className="text-gray-800">{violation.message}</p>}
+                    {violation.citation && (
+                      <div className="flex items-start gap-2 text-gray-700 italic bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                        <FileText className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <span>&ldquo;{violation.citation}&rdquo;</span>
+                      </div>
+                    )}
                   </div>
-                )}
-                {activeConflict.wouldViolate.sourceDocumentId && (
-                  <p className="text-gray-500 font-mono text-[10px]">Source Document: {activeConflict.wouldViolate.sourceDocumentId}</p>
-                )}
+                ))}
               </div>
             )}
 

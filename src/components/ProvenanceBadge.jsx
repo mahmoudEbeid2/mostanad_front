@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { ShieldCheck, FileSearch, BookMarked, Globe2, PenLine, ChevronDown } from "lucide-react";
 
-// §8.2's tier ladder + §14.4's provenance graph, surfaced per field so a user can see
-// exactly how confident the system is in a value and where it came from.
 const PROVENANCE_CONFIG = {
   confirmed: { label: "Confirmed", icon: ShieldCheck, classes: "bg-green-50 text-green-800 border-green-200" },
   extracted: { label: "Extracted", icon: FileSearch, classes: "bg-amber-50 text-amber-800 border-amber-200" },
@@ -10,6 +8,12 @@ const PROVENANCE_CONFIG = {
   external: { label: "External", icon: Globe2, classes: "bg-purple-50 text-purple-800 border-purple-200" },
   inferred: { label: "Inferred", icon: FileSearch, classes: "bg-amber-50 text-amber-800 border-amber-200" },
   manual: { label: "Manual Edit", icon: PenLine, classes: "bg-gray-50 text-gray-700 border-gray-200" },
+};
+
+const SIMPLE_PROVENANCE_CONFIG = {
+  confirmed: { label: "Confirmed", icon: ShieldCheck, classes: "bg-green-50 text-green-800 border-green-200" },
+  reference: { label: "Approved reference", icon: BookMarked, classes: "bg-sky-50 text-sky-800 border-sky-200" },
+  estimate: { label: "AI estimate", icon: FileSearch, classes: "bg-amber-50 text-amber-900 border-amber-300" },
 };
 
 function sourceRefSummary(sourceRef) {
@@ -24,18 +28,27 @@ function sourceRefSummary(sourceRef) {
   }
 }
 
-// entries: provenanceForField() output — usually 1, sometimes several nested paths
-// under one field (e.g. targetAnimalSpecies.list vs. .translations.en).
-export default function ProvenanceBadge({ entries }) {
+function simplifiedProvenance(provenance) {
+  if (provenance === "inferred" || provenance === "external") return "estimate";
+  if (provenance === "reference") return "reference";
+  return "confirmed";
+}
+
+export default function ProvenanceBadge({ entries, detailed = false }) {
   const [open, setOpen] = useState(false);
   if (!entries || entries.length === 0) return null;
 
   const primary = entries[0];
-  const config = PROVENANCE_CONFIG[primary.provenance] || {
-    label: primary.provenance || "Unknown",
-    icon: FileSearch,
-    classes: "bg-gray-50 text-gray-600 border-gray-200",
-  };
+  const simpleKey = simplifiedProvenance(primary.provenance);
+  if (!detailed && simpleKey === "confirmed") return null;
+
+  const config = detailed
+    ? PROVENANCE_CONFIG[primary.provenance] || {
+        label: primary.provenance || "Unknown",
+        icon: FileSearch,
+        classes: "bg-gray-50 text-gray-600 border-gray-200",
+      }
+    : SIMPLE_PROVENANCE_CONFIG[simpleKey];
   const Icon = config.icon;
 
   return (
@@ -46,7 +59,7 @@ export default function ProvenanceBadge({ entries }) {
         className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${config.classes}`}
       >
         <Icon className="w-3 h-3" /> {config.label}
-        {primary.tier != null && <span className="opacity-70">· tier {primary.tier}</span>}
+        {detailed && primary.tier != null && <span className="opacity-70">tier {primary.tier}</span>}
         {entries.length > 1 && <ChevronDown className="w-3 h-3" />}
       </button>
       {open && (
@@ -54,7 +67,10 @@ export default function ProvenanceBadge({ entries }) {
           {entries.map((e) => (
             <div key={e.key} className="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
               <p className="font-mono text-[10px] text-gray-400">{e.key}</p>
-              <p className="font-bold text-gray-900">{PROVENANCE_CONFIG[e.provenance]?.label || e.provenance} · tier {e.tier}</p>
+              <p className="font-bold text-gray-900">
+                {PROVENANCE_CONFIG[e.provenance]?.label || e.provenance}
+                {e.tier != null ? ` - tier ${e.tier}` : ""}
+              </p>
               {sourceRefSummary(e.sourceRef) && <p className="mt-0.5">{sourceRefSummary(e.sourceRef)}</p>}
               {e.selfConsistency && (
                 <p className="mt-0.5 text-gray-500">

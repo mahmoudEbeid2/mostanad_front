@@ -1,8 +1,8 @@
 // diff entries: [{ path, op, before, after }] — computed server-side (versionService.diff).
+// op is one of "add" | "remove" | "replace" (versionService.js's `diff`).
 const OP_CLASSES = {
+  add: "bg-green-50 text-green-700 border-green-200",
   replace: "bg-blue-50 text-blue-700 border-blue-200",
-  append: "bg-green-50 text-green-700 border-green-200",
-  insert: "bg-green-50 text-green-700 border-green-200",
   remove: "bg-red-50 text-red-700 border-red-200",
 };
 

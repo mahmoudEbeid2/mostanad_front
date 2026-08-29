@@ -4,7 +4,24 @@ import toast from "react-hot-toast";
 import { getLabelExtraction, postConfirmField } from "../../services/apiGeneratedLabels";
 import Button from "../../ui/Button";
 
-export default function ExtractionTab({ labelId, currentVersion, onFieldConfirmed }) {
+// The backend's extractionMeta entries never carry the field's actual value —
+// only confidence/snippet/bbox/ambiguous (§14.5.3 metadata about the extraction,
+// not the extracted content itself). The real current value always lives in
+// labelData, so confirmation must read from there.
+function isEmptyValue(v) {
+  if (v === undefined || v === null) return true;
+  if (typeof v === "string") return v.trim() === "";
+  if (typeof v === "object") return Object.keys(v).length === 0;
+  return false;
+}
+
+function formatValue(v) {
+  if (isEmptyValue(v)) return "(empty)";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
+export default function ExtractionTab({ labelId, labelData, currentVersion, onFieldConfirmed }) {
   const [extraction, setExtraction] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [editingPath, setEditingPath] = useState(null);
@@ -28,16 +45,21 @@ export default function ExtractionTab({ labelId, currentVersion, onFieldConfirme
   }, [loadExtraction]);
 
   const handleConfirm = async (path, customValue) => {
+    const val = customValue !== undefined ? customValue : labelData?.[path];
+    if (isEmptyValue(val)) {
+      toast.error("There is no value to confirm for this field.");
+      return;
+    }
+
     try {
       setIsConfirming(true);
-      const val = customValue !== undefined ? customValue : extraction?.extractionMeta?.[path]?.value;
       const result = await postConfirmField(labelId, {
         path,
         value: val,
         expectedVersion: currentVersion,
       });
 
-      toast.success(`Confirmed ${path} as verified truth (100% confidence). Version bumped to v${result.resultVersion}.`);
+      toast.success(`Confirmed ${path} as human-verified. Version bumped to v${result.version}.`);
       setEditingPath(null);
       await loadExtraction();
       onFieldConfirmed?.();
@@ -79,7 +101,9 @@ export default function ExtractionTab({ labelId, currentVersion, onFieldConfirme
             <FileSearch className="w-5 h-5 text-blue-600" /> §14.5 Verification & OCR Ground Truth
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Review extraction confidence scores and visual snippets from the source document. Confirming a field sets it to 100% human-verified confidence.
+            Review extraction confidence scores and visual snippets from the source document. Confirming a field
+            records your verification as ground truth — it does not rewrite the original extraction confidence score,
+            which is kept for measuring extraction accuracy.
           </p>
         </div>
         {extraction?.sourceFileRef && (
@@ -95,6 +119,8 @@ export default function ExtractionTab({ labelId, currentVersion, onFieldConfirme
           const isLow = confidence != null && confidence < 80;
           const isConfirmed = Boolean(data.confirmedByUser);
           const isEditingThis = editingPath === path;
+          const fieldValue = labelData?.[path];
+          const canConfirm = !isEmptyValue(fieldValue);
 
           return (
             <div
@@ -128,9 +154,9 @@ export default function ExtractionTab({ labelId, currentVersion, onFieldConfirme
                       <Check className="w-3 h-3" /> Human Confirmed
                     </span>
                   )}
-                  {data.ambiguityFlags?.length > 0 && (
+                  {data.ambiguous && (
                     <span className="text-[10px] font-bold uppercase text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
-                      {data.ambiguityFlags.join(", ")}
+                      Ambiguous
                     </span>
                   )}
                 </div>
@@ -147,6 +173,7 @@ export default function ExtractionTab({ labelId, currentVersion, onFieldConfirme
                     <Button
                       onClick={() => handleConfirm(path, editValue)}
                       isLoading={isConfirming}
+                      disabled={isEmptyValue(editValue)}
                       className="text-xs px-3 py-1.5"
                     >
                       Save & Confirm
@@ -160,15 +187,15 @@ export default function ExtractionTab({ labelId, currentVersion, onFieldConfirme
                   </div>
                 ) : (
                   <p className="text-sm text-gray-800 font-medium">
-                    {typeof data.value === "object" ? JSON.stringify(data.value) : String(data.value ?? "(empty)")}
+                    {formatValue(fieldValue)}
                   </p>
                 )}
 
                 {/* Snippet / OCR source reference */}
-                {data.rawSnippet && (
+                {data.snippet && (
                   <div className="flex items-start gap-1.5 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-200 font-mono">
                     <ImageIcon className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-gray-400" />
-                    <span>OCR Snippet: &ldquo;{data.rawSnippet}&rdquo;</span>
+                    <span>OCR Snippet: &ldquo;{data.snippet}&rdquo;</span>
                   </div>
                 )}
               </div>
@@ -179,15 +206,17 @@ export default function ExtractionTab({ labelId, currentVersion, onFieldConfirme
                   <button
                     onClick={() => {
                       setEditingPath(path);
-                      setEditValue(typeof data.value === "object" ? JSON.stringify(data.value) : String(data.value ?? ""));
+                      setEditValue(isEmptyValue(fieldValue) ? "" : formatValue(fieldValue));
                     }}
                     className="flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-900 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50"
                   >
                     <Pencil className="w-3.5 h-3.5" /> Correct
                   </button>
                   <Button
-                    onClick={() => handleConfirm(path, data.value)}
+                    onClick={() => handleConfirm(path, fieldValue)}
                     isLoading={isConfirming}
+                    disabled={!canConfirm}
+                    title={canConfirm ? undefined : "No value in the current label to confirm — use Correct to enter one."}
                     className="text-xs px-3 py-1.5"
                   >
                     <Check className="w-3.5 h-3.5" /> Confirm Field

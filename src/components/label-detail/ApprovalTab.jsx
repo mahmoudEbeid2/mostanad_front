@@ -2,9 +2,15 @@
 import { CheckCircle2, XCircle, AlertCircle, ShieldCheck, ShieldAlert, Award, RotateCcw, AlertTriangle, Users, BookOpen } from "lucide-react";
 import toast from "react-hot-toast";
 import { getApprovals, postApprove, postRevoke } from "../../services/apiGeneratedLabels";
+import { useAuth } from "../../context/AuthContext";
 import Button from "../../ui/Button";
 
 export default function ApprovalTab({ label, latestValidation, currentVersion, onApprovalChanged }) {
+  const { user } = useAuth();
+  // Mirrors the backend's assertCanPublishGlobal (labelApprovalController.js):
+  // a company account can never publish globally, and a system user needs the
+  // specific publish_global_reference grant, not just approve_labels.
+  const canPublishGlobal = !user?.isCompany && Boolean(user?.role?.permissions?.includes("publish_global_reference"));
   const [approvals, setApprovals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -268,8 +274,13 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, o
                 className="w-full text-sm rounded-xl border border-gray-300 p-2.5 bg-white"
               >
                 <option value="company">Company (Private Reference for this tenant)</option>
-                <option value="global">Global (Requires publish_global_reference permission)</option>
+                {canPublishGlobal && <option value="global">Global (Publish as an authoritative reference for all tenants)</option>}
               </select>
+              {!canPublishGlobal && (
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Global promotion requires the publish_global_reference permission on a system account.
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Approval Note (Optional)</label>

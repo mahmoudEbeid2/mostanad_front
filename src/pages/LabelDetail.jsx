@@ -1,9 +1,10 @@
 ﻿import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Tags, RefreshCw, CheckCircle2, AlertCircle, ShieldAlert, MessageSquare, Award, FileSearch, History } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Tags, RefreshCw, CheckCircle2, AlertCircle, ShieldAlert, SlidersHorizontal } from "lucide-react";
 import toast from "react-hot-toast";
 import { getLabel, postValidate } from "../services/apiGeneratedLabels";
 import LabelFieldsPanel from "../components/LabelFieldsPanel";
+import VerdictList from "../components/VerdictList";
 import VersionsTab from "../components/label-detail/VersionsTab";
 import EditFieldModal from "../components/label-detail/EditFieldModal";
 import ChatTab from "../components/label-detail/ChatTab";
@@ -21,12 +22,83 @@ const STATUS_CLASSES = {
 };
 
 const TABS = [
-  { key: "overview", label: "Label & Validation" },
-  { key: "chat", label: "Chat & AI Edits" },
-  { key: "extraction", label: "Verification (§14.5)" },
-  { key: "approval", label: "Approval & Release" },
-  { key: "versions", label: "Version History" },
+  { key: "overview", label: "Report" },
+  { key: "chat", label: "Assistant" },
+  { key: "approval", label: "Sign-off" },
+  { key: "extraction", label: "Extraction", detailedOnly: true },
+  { key: "versions", label: "Versions", detailedOnly: true },
 ];
+
+function countStatuses(verdicts = []) {
+  return verdicts.reduce((acc, verdict) => {
+    acc[verdict.status] = (acc[verdict.status] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function verdictBand(latestValidation) {
+  const counts = countStatuses(latestValidation?.verdicts || []);
+  const failCount = counts.FAIL || 0;
+  const confirmCount = counts.NEEDS_CONFIRMATION || 0;
+  const reviewCount = counts.NEEDS_REVIEW || 0;
+  const unverifiableCount = counts.UNVERIFIABLE || 0;
+  const warnCount = counts.WARN || 0;
+
+  if (!latestValidation) {
+    return {
+      title: "Cannot fully check yet",
+      body: "Run validation to get a field-by-field report.",
+      icon: ShieldAlert,
+      classes: "bg-amber-50 border-amber-300 text-amber-900",
+    };
+  }
+  if (failCount > 0) {
+    return {
+      title: `Not ready - ${failCount} ${failCount === 1 ? "thing must" : "things must"} be fixed`,
+      body: "Start with Must fix below. Nothing blocking is hidden.",
+      icon: AlertCircle,
+      classes: "bg-red-50 border-red-400 text-red-900",
+    };
+  }
+  if (confirmCount + reviewCount > 0) {
+    return {
+      title: `Needs you - ${confirmCount + reviewCount} ${confirmCount + reviewCount === 1 ? "thing" : "things"} to confirm`,
+      body: "The label may be close, but these values need a human decision.",
+      icon: ShieldAlert,
+      classes: "bg-orange-50 border-orange-300 text-orange-900",
+    };
+  }
+  if (unverifiableCount > 0) {
+    return {
+      title: "Cannot fully check",
+      body: `${unverifiableCount} ${unverifiableCount === 1 ? "rule could" : "rules could"} not be checked with the approved rules on file.`,
+      icon: ShieldAlert,
+      classes: "bg-indigo-50 border-indigo-300 text-indigo-900",
+    };
+  }
+  if (warnCount > 0) {
+    return {
+      title: "Ready with notes",
+      body: `${warnCount} ${warnCount === 1 ? "thing is" : "things are"} worth a look, but nothing is blocking.`,
+      icon: CheckCircle2,
+      classes: "bg-amber-50 border-amber-300 text-amber-900",
+    };
+  }
+  return {
+    title: "Ready - nothing blocking",
+    body: "No blocking failures were found.",
+    icon: CheckCircle2,
+    classes: "bg-green-50 border-green-400 text-green-900",
+  };
+}
+
+function validationContext(latestValidation) {
+  if (!latestValidation) return null;
+  const rules = latestValidation.ruleCount ?? latestValidation.rulesApplied ?? latestValidation.rulesetIds?.length;
+  const coverage = latestValidation.coveragePercent != null ? `${latestValidation.coveragePercent.toFixed(1)}% document coverage` : "no coverage figure recorded";
+  const rulesText = rules != null ? `${rules} ${rules === 1 ? "rule" : "rules"}` : `${latestValidation.rulesetIds?.length || 0} rulesets`;
+  return `Checked at v${latestValidation.versionNumber} - ${rulesText} - ${coverage}`;
+}
 
 export default function LabelDetail() {
   const { id } = useParams();
@@ -36,6 +108,8 @@ export default function LabelDetail() {
   const [loadError, setLoadError] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [detailedView, setDetailedView] = useState(() => localStorage.getItem("labelDetailDetailedView") === "true");
+  const [assistantDraft, setAssistantDraft] = useState("");
 
   // Direct Field Edit State
   const [editingField, setEditingField] = useState(null);
@@ -57,6 +131,13 @@ export default function LabelDetail() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    localStorage.setItem("labelDetailDetailedView", detailedView ? "true" : "false");
+    if (!detailedView && (activeTab === "extraction" || activeTab === "versions")) {
+      setActiveTab("overview");
+    }
+  }, [activeTab, detailedView]);
+
   const handleRunValidation = async () => {
     try {
       setIsValidating(true);
@@ -68,6 +149,11 @@ export default function LabelDetail() {
     } finally {
       setIsValidating(false);
     }
+  };
+
+  const handleAskAssistant = (message) => {
+    setAssistantDraft(message);
+    setActiveTab("chat");
   };
 
   if (isLoading) {
@@ -92,6 +178,9 @@ export default function LabelDetail() {
 
   if (!detail?.label) return null;
   const { label, latestValidation, provenance } = detail;
+  const band = verdictBand(latestValidation);
+  const BandIcon = band.icon;
+  const visibleTabs = TABS.filter((tab) => detailedView || !tab.detailedOnly);
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
@@ -124,9 +213,21 @@ export default function LabelDetail() {
             )}
           </div>
         </div>
-        <Button onClick={handleRunValidation} isLoading={isValidating} variant="secondary">
-          <RefreshCw className="w-4 h-4" /> Re-run Validation
-        </Button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm">
+            <input
+              type="checkbox"
+              checked={detailedView}
+              onChange={(event) => setDetailedView(event.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600"
+            />
+            <SlidersHorizontal className="w-4 h-4 text-gray-500" />
+            Detailed view
+          </label>
+          <Button onClick={handleRunValidation} isLoading={isValidating} variant="secondary">
+            <RefreshCw className="w-4 h-4" /> Re-run Validation
+          </Button>
+        </div>
       </div>
 
       {!latestValidation ? (
@@ -142,33 +243,27 @@ export default function LabelDetail() {
             version {label.currentVersion}. Re-run validation before relying on it.
           </span>
         </div>
-      ) : (
-        <div className={`mb-6 p-5 rounded-2xl border-2 flex items-center justify-between flex-wrap gap-3 ${
-          latestValidation.passed ? "bg-green-50 border-green-500 text-green-800" : "bg-red-50 border-red-500 text-red-800"
-        }`}>
-          <div className="flex items-center gap-3">
-            {latestValidation.passed ? <CheckCircle2 className="w-7 h-7 flex-shrink-0" /> : <AlertCircle className="w-7 h-7 flex-shrink-0" />}
-            <div>
-              <p className="text-xl font-black uppercase tracking-wide">{latestValidation.passed ? "Passed" : "Failed"}</p>
-              <p className="text-sm opacity-80">
-                {latestValidation.errorCount} error(s), {latestValidation.warningCount} warning(s) · engine {latestValidation.engineVersion}
-              </p>
-            </div>
-          </div>
-          <div className="text-right text-sm">
-            {latestValidation.coveragePercent != null ? (
-              <p className="font-bold">Document coverage: {latestValidation.coveragePercent.toFixed(1)}%</p>
-            ) : (
-              <p className="text-xs opacity-70">No coverage figure recorded</p>
+      ) : null}
+
+      <div className={`mb-6 rounded-2xl border-2 p-5 ${band.classes}`}>
+        <div className="flex items-start gap-3">
+          <BandIcon className="w-7 h-7 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xl font-black">{band.title}</p>
+            <p className="text-sm mt-1">{band.body}</p>
+            {validationContext(latestValidation) && (
+              <p className="text-xs mt-2 opacity-75">{validationContext(latestValidation)}</p>
             )}
-            <p className="text-xs opacity-70">{latestValidation.rulesetIds?.length || 0} rule(s) applied</p>
+            {detailedView && latestValidation?.engineVersion && (
+              <p className="text-xs mt-1 opacity-75">Engine {latestValidation.engineVersion}</p>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Navigation Tabs */}
       <div className="border-b border-gray-200 mb-6 flex gap-6 overflow-x-auto">
-        {TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
@@ -183,12 +278,29 @@ export default function LabelDetail() {
 
       {/* Tab 1: Label Fields & Verdicts Overview */}
       {activeTab === "overview" && (
-        <LabelFieldsPanel
-          labelData={label.labelData}
-          verdicts={latestValidation?.verdicts}
-          provenance={provenance}
-          onEditField={(field) => setEditingField(field)}
-        />
+        <div className="space-y-6">
+          {latestValidation?.verdicts?.length > 0 && (
+            <div>
+              <h2 className="text-lg font-black text-gray-900 mb-3">What needs attention</h2>
+              <VerdictList
+                verdicts={latestValidation.verdicts}
+                detailedView={detailedView}
+                onEditField={(field) => setEditingField(field)}
+                onAskAssistant={handleAskAssistant}
+              />
+            </div>
+          )}
+          <div>
+            <h2 className="text-lg font-black text-gray-900 mb-3">Label fields</h2>
+            <LabelFieldsPanel
+              labelData={label.labelData}
+              verdicts={latestValidation?.verdicts}
+              provenance={provenance}
+              onEditField={(field) => setEditingField(field)}
+              detailedView={detailedView}
+            />
+          </div>
+        </div>
       )}
 
       {/* Tab 2: Chat & AI Edits */}
@@ -196,6 +308,7 @@ export default function LabelDetail() {
         <ChatTab
           labelId={id}
           currentVersion={label.currentVersion}
+          initialMessage={assistantDraft}
           onLabelUpdated={load}
         />
       )}
@@ -204,6 +317,7 @@ export default function LabelDetail() {
       {activeTab === "extraction" && (
         <ExtractionTab
           labelId={id}
+          labelData={label.labelData}
           currentVersion={label.currentVersion}
           onFieldConfirmed={load}
         />

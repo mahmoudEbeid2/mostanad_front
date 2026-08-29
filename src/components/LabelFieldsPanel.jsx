@@ -77,7 +77,7 @@ function FieldValue({ field, value }) {
 
 // The core detail surface: every label field alongside its per-field verdicts and
 // provenance, in one place — not a 6-field summary, not a raw-JSON dump.
-export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEditField }) {
+export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEditField, detailedView = false }) {
   if (!labelData) return null;
   const estimatedFields = labelData.estimatedFields || [];
 
@@ -100,7 +100,7 @@ export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEd
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-gray-500 text-xs font-bold uppercase tracking-wide">{field.label}</span>
                 {isEstimated && <EstimatedBadge />}
-                <ProvenanceBadge entries={fieldProvenance} />
+                <ProvenanceBadge entries={fieldProvenance} detailed={detailedView} />
               </div>
               {onEditField && (
                 <button
@@ -115,9 +115,9 @@ export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEd
 
             <FieldValue field={field} value={labelData[field.path]} />
 
-            {fieldVerdicts.length > 0 && (
+            {detailedView && fieldVerdicts.length > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-100">
-                <VerdictList verdicts={fieldVerdicts} />
+                <VerdictList verdicts={fieldVerdicts} detailedView={detailedView} onEditField={onEditField} />
               </div>
             )}
           </div>

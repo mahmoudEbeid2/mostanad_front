@@ -49,9 +49,9 @@ export default function LabelsList() {
     <div className="max-w-6xl mx-auto pb-12">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <Tags className="w-8 h-8 text-blue-600" /> Generated Labels
+          <Tags className="w-8 h-8 text-blue-600" /> My Labels
         </h1>
-        <p className="text-gray-500 mt-2">Every label produced by the AI Label Writer or scanned via label verification.</p>
+        <p className="text-gray-500 mt-2">Every label you created or checked, ready to open for review, edits, and sign-off.</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -78,7 +78,8 @@ export default function LabelsList() {
                 <tr>
                   <td colSpan="6" className="px-6 py-16 text-center text-gray-400">
                     <Tags className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p className="text-lg font-medium text-gray-500">No labels yet</p>
+                    <p className="text-lg font-bold text-gray-700">No labels yet</p>
+                    <p className="text-sm mt-1">Create a label from product data or check an existing label to see it here.</p>
                   </td>
                 </tr>
               ) : (

@@ -189,20 +189,24 @@ export default function EditFieldModal({
                 <span>Regulatory Conflict: This edit violates a compliance rule</span>
               </div>
 
-              {conflict.wouldViolate && (
-                <div className="bg-white/80 rounded-lg p-3 border border-rose-200 space-y-1">
-                  <p className="font-semibold text-gray-900">
-                    Rule {conflict.wouldViolate.ruleKey}: {conflict.wouldViolate.ruleName || "Regulatory requirement"}
-                  </p>
-                  {conflict.wouldViolate.citation && (
-                    <div className="flex items-start gap-1.5 text-gray-700 italic">
-                      <FileText className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                      <span>&ldquo;{conflict.wouldViolate.citation}&rdquo;</span>
+              {conflict.wouldViolate?.length > 0 && (
+                <div className="space-y-2">
+                  {conflict.wouldViolate.map((violation, idx) => (
+                    <div key={`${violation.ruleKey || idx}-${violation.path || idx}`} className="bg-white/80 rounded-lg p-3 border border-rose-200 space-y-1">
+                      <p className="font-semibold text-gray-900">
+                        Rule {violation.ruleKey || "(unknown)"}{violation.path ? ` — ${violation.path}` : ""}
+                      </p>
+                      {violation.message && (
+                        <p className="text-gray-800">{violation.message}</p>
+                      )}
+                      {violation.citation && (
+                        <div className="flex items-start gap-1.5 text-gray-700 italic">
+                          <FileText className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                          <span>&ldquo;{violation.citation}&rdquo;</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {conflict.wouldViolate.sourceDocumentId && (
-                    <p className="text-[10px] text-gray-500">Source: {conflict.wouldViolate.sourceDocumentId}</p>
-                  )}
+                  ))}
                 </div>
               )}
 

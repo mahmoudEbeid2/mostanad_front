@@ -27,6 +27,61 @@ const DB_PRODUCT_FIELDS = [
   { key: "registrationNumber", label: "Registration Number" },
 ];
 
+function countStatuses(verdicts = []) {
+  return verdicts.reduce((acc, verdict) => {
+    acc[verdict.status] = (acc[verdict.status] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function verificationBand(validation) {
+  const counts = countStatuses(validation?.verdicts || []);
+  const failCount = counts.FAIL || 0;
+  const confirmCount = counts.NEEDS_CONFIRMATION || 0;
+  const reviewCount = counts.NEEDS_REVIEW || 0;
+  const unverifiableCount = counts.UNVERIFIABLE || 0;
+  const warnCount = counts.WARN || 0;
+
+  if (failCount > 0) {
+    return {
+      title: `Not ready - ${failCount} ${failCount === 1 ? "thing must" : "things must"} be fixed`,
+      body: "Start with Must fix below. The label should not be treated as ready.",
+      classes: "bg-red-50 border-red-400 text-red-900",
+      icon: AlertCircle,
+    };
+  }
+  if (confirmCount + reviewCount > 0) {
+    return {
+      title: `Needs you - ${confirmCount + reviewCount} ${confirmCount + reviewCount === 1 ? "thing" : "things"} to confirm`,
+      body: "Some values need a human decision before relying on the result.",
+      classes: "bg-orange-50 border-orange-300 text-orange-900",
+      icon: ShieldAlert,
+    };
+  }
+  if (unverifiableCount > 0) {
+    return {
+      title: "Cannot fully check",
+      body: `${unverifiableCount} ${unverifiableCount === 1 ? "rule could" : "rules could"} not be checked with the approved rules on file.`,
+      classes: "bg-indigo-50 border-indigo-300 text-indigo-900",
+      icon: ShieldAlert,
+    };
+  }
+  if (warnCount > 0) {
+    return {
+      title: "Ready with notes",
+      body: `${warnCount} ${warnCount === 1 ? "thing is" : "things are"} worth a look, but nothing is blocking.`,
+      classes: "bg-amber-50 border-amber-300 text-amber-900",
+      icon: CheckCircle,
+    };
+  }
+  return {
+    title: "Ready - nothing blocking",
+    body: "No blocking failures were found.",
+    classes: "bg-green-50 border-green-400 text-green-900",
+    icon: CheckCircle,
+  };
+}
+
 export default function Labels() {
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState("");
@@ -191,9 +246,9 @@ export default function Labels() {
     <div className="max-w-5xl mx-auto pb-12">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <ShieldCheck className="w-8 h-8 text-blue-600" /> AI Label Verification
+          <ShieldCheck className="w-8 h-8 text-blue-600" /> Check a Label
         </h1>
-        <p className="text-gray-500 mt-2">Upload product labels to verify compliance with country-specific regulations.</p>
+        <p className="text-gray-500 mt-2">Upload an existing label and see whether it is ready, what must be fixed, and what could not be checked.</p>
       </div>
 
       {!jobId ? (
@@ -384,10 +439,29 @@ export default function Labels() {
                 {compliant, results:[]} shape. See API-CHANGES.md Phase 2. */}
             {jobStatus === "completed" && jobResults && jobResults.validation && (
               <div className="mt-8">
-                {/* Pass/Fail summary */}
-                <div className={`p-6 rounded-2xl border-2 text-center mb-6 ${jobResults.validation.passed ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800'}`}>
-                  <h3 className="text-3xl font-black mb-2 uppercase tracking-wide">
-                    {jobResults.validation.passed ? "Passed" : "Failed"}
+                {(() => {
+                  const band = verificationBand(jobResults.validation);
+                  const BandIcon = band.icon;
+                  return (
+                    <div className={`p-6 rounded-2xl border-2 mb-6 ${band.classes}`}>
+                      <div className="flex items-start gap-3">
+                        <BandIcon className="w-7 h-7 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="text-2xl font-black mb-1">{band.title}</h3>
+                          <p className="text-sm">{band.body}</p>
+                          <p className="text-xs opacity-75 mt-2">
+                            Checked {jobResults.validation.rulesetIds?.length || 0} ruleset(s) - {jobResults.validation.coveragePercent != null ? `${jobResults.validation.coveragePercent.toFixed(1)}% document coverage` : "no coverage figure recorded"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Detailed engine result */}
+                <div className="p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 mb-6">
+                  <h3 className="text-sm font-bold text-gray-800 mb-1">
+                    Detailed result
                   </h3>
                   <p className="text-sm opacity-80 font-medium">
                     {jobResults.validation.errorCount} error(s), {jobResults.validation.warningCount} warning(s)

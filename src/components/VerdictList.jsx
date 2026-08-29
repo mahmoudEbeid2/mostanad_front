@@ -1,12 +1,8 @@
+import { useState } from "react";
 import VerdictStatusBadge from "./VerdictStatusBadge";
-import { FileText, MapPin, Wrench, ShieldOff } from "lucide-react";
+import { FileText, MapPin, Wrench, ShieldOff, ChevronDown, Pencil, MessageSquareText } from "lucide-react";
+import { LABEL_FIELD_CATALOG } from "../utils/labelFieldCatalog";
 
-// D1: FAIL always shows its citation — the user needs to see which rule and which
-// source document, not just that something failed. UNVERIFIABLE/NEEDS_CONFIRMATION/
-// NEEDS_REVIEW/NOT_APPLICABLE are each rendered with their own distinct badge (see
-// VerdictStatusBadge), never folded into PASS or WARN. An unrecognized status sorts
-// near the top, not the bottom — burying a status this UI doesn't understand would be
-// a silent misrepresentation of a regulated result.
 const SEVERITY_ORDER = {
   FAIL: 0,
   NEEDS_CONFIRMATION: 1,
@@ -16,14 +12,16 @@ const SEVERITY_ORDER = {
   NOT_APPLICABLE: 5,
   PASS: 6,
 };
-const unknownRank = 0.5; // between FAIL and NEEDS_CONFIRMATION — impossible to miss
+const unknownRank = 0.5;
 
-const rankOf = (status) => (status in SEVERITY_ORDER ? SEVERITY_ORDER[status] : unknownRank);
+const ACTION_GROUPS = [
+  { key: "mustFix", title: "Must fix", statuses: ["FAIL"], defaultOpen: true, classes: "border-red-200 bg-red-50/50", countClasses: "bg-red-100 text-red-800 border-red-200" },
+  { key: "confirm", title: "Confirm this", statuses: ["NEEDS_CONFIRMATION"], defaultOpen: true, classes: "border-orange-200 bg-orange-50/50", countClasses: "bg-orange-100 text-orange-800 border-orange-200" },
+  { key: "look", title: "Worth a look", statuses: ["WARN", "NEEDS_REVIEW"], defaultOpen: false, classes: "border-amber-200 bg-amber-50/40", countClasses: "bg-amber-100 text-amber-900 border-amber-200" },
+  { key: "unchecked", title: "Could not check", statuses: ["UNVERIFIABLE"], defaultOpen: false, classes: "border-indigo-200 bg-indigo-50/40", countClasses: "bg-indigo-100 text-indigo-900 border-indigo-200" },
+  { key: "fine", title: "Fine", statuses: ["PASS", "NOT_APPLICABLE"], defaultOpen: false, classes: "border-gray-200 bg-gray-50/50", countClasses: "bg-white text-gray-600 border-gray-200" },
+];
 
-// §14.5.1: comparison tells the user WHERE a failure came from — a wrong printed
-// number (data_mismatch) is a different problem from a missing legal warning
-// (regulatory), and both are different from an internal contradiction (coherence)
-// or a merely-suspicious value (plausibility). Never rendered as interchangeable.
 const COMPARISON_CONFIG = {
   data_mismatch: { label: "Data mismatch", classes: "bg-rose-50 text-rose-700 border-rose-200" },
   regulatory: { label: "Regulatory", classes: "bg-red-50 text-red-700 border-red-200" },
@@ -38,15 +36,49 @@ const REMEDIATION_SOURCE_LABEL = {
   none: "no sourced fix available",
 };
 
+const FIELD_BY_PATH = Object.fromEntries(LABEL_FIELD_CATALOG.map((field) => [field.path, field]));
+const rankOf = (status) => (status in SEVERITY_ORDER ? SEVERITY_ORDER[status] : unknownRank);
+
+function fieldForVerdict(v) {
+  return FIELD_BY_PATH[v.path] || LABEL_FIELD_CATALOG.find(
+    (field) => v.path?.startsWith(`${field.path}.`) || v.path?.startsWith(`${field.path}[`)
+  );
+}
+
+function plainStatusCopy(v) {
+  switch (v.status) {
+    case "FAIL":
+      return "This must be fixed before the label is ready.";
+    case "NEEDS_CONFIRMATION":
+      return "We could not read this confidently. Please confirm the value.";
+    case "NEEDS_REVIEW":
+      return "This is unusual and worth checking. Treat it as unsourced until a reviewer confirms it.";
+    case "UNVERIFIABLE":
+      return v.reason || "We could not check this with the approved rules currently on file.";
+    case "NOT_APPLICABLE":
+      return v.reason || "This rule does not apply to this label.";
+    case "WARN":
+      return "This is not blocking, but it deserves a look.";
+    case "PASS":
+      return "This check is fine.";
+    default:
+      return "This status is not recognized by the UI. Check it manually.";
+  }
+}
+
+function suggestedAction(v) {
+  if (v.remediation?.action) return v.remediation.action;
+  if (v.remediation?.suggested) return "Use the suggested value";
+  if (v.status === "FAIL") return "Fix this value";
+  if (v.status === "NEEDS_CONFIRMATION") return "Confirm the value";
+  return null;
+}
+
 function RemediationBlock({ remediation }) {
   if (!remediation) return null;
   const sourceIsNone = remediation.source === "none" || !remediation.source;
   return (
-    <div
-      className={`flex items-start gap-2 text-xs rounded-lg px-3 py-2 mt-1 border ${
-        sourceIsNone ? "bg-gray-50 border-gray-200 text-gray-500" : "bg-blue-50 border-blue-200 text-blue-900"
-      }`}
-    >
+    <div className={`flex items-start gap-2 text-xs rounded-lg px-3 py-2 mt-1 border ${sourceIsNone ? "bg-gray-50 border-gray-200 text-gray-500" : "bg-blue-50 border-blue-200 text-blue-900"}`}>
       {sourceIsNone ? <ShieldOff className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" /> : <Wrench className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />}
       <div>
         {sourceIsNone ? (
@@ -59,7 +91,7 @@ function RemediationBlock({ remediation }) {
             </p>
             <p className="mt-0.5 text-blue-700">
               {REMEDIATION_SOURCE_LABEL[remediation.source] || remediation.source}
-              {remediation.sourceRef?.ruleKey && ` — ${remediation.sourceRef.ruleKey}`}
+              {remediation.sourceRef?.ruleKey && ` - ${remediation.sourceRef.ruleKey}`}
             </p>
           </>
         )}
@@ -68,73 +100,143 @@ function RemediationBlock({ remediation }) {
   );
 }
 
-function VerdictCard({ v }) {
+function assistantPrompt(v, field) {
+  const fieldName = field?.label || v.label?.en || v.path || "this field";
+  if (v.remediation?.suggested) return `Fix ${fieldName} by using "${v.remediation.suggested}".`;
+  return `Fix ${fieldName}: ${v.message || plainStatusCopy(v)}`;
+}
+
+function VerdictCard({ v, detailedView, onEditField, onAskAssistant }) {
   const known = v.status in SEVERITY_ORDER;
+  const field = fieldForVerdict(v);
+  const action = suggestedAction(v);
+  const canEditInline = Boolean(onEditField && field && ["FAIL", "NEEDS_CONFIRMATION", "WARN", "NEEDS_REVIEW"].includes(v.status));
+
   return (
-    <div
-      className={`bg-white rounded-xl border p-4 flex flex-col gap-2 ${
-        known ? "border-gray-200" : "border-fuchsia-300 ring-1 ring-fuchsia-200"
-      }`}
-    >
+    <div className={`bg-white rounded-xl border p-4 flex flex-col gap-2 ${known ? "border-gray-200" : "border-fuchsia-300 ring-1 ring-fuchsia-200"}`}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="font-bold text-gray-900 text-sm truncate">
-            {v.label?.en || v.path}
-          </span>
-          {v.label?.ar && (
-            <span className="text-gray-500 text-sm" dir="rtl">{v.label.ar}</span>
-          )}
+          <span className="font-bold text-gray-900 text-sm truncate">{v.label?.en || field?.label || v.path}</span>
+          {v.label?.ar && <span className="text-gray-500 text-sm" dir="rtl">{v.label.ar}</span>}
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          {v.comparison && COMPARISON_CONFIG[v.comparison] && (
+          {detailedView && v.comparison && COMPARISON_CONFIG[v.comparison] && (
             <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${COMPARISON_CONFIG[v.comparison].classes}`}>
               {COMPARISON_CONFIG[v.comparison].label}
             </span>
           )}
-          <VerdictStatusBadge status={v.status} />
+          {detailedView && <VerdictStatusBadge status={v.status} />}
         </div>
       </div>
 
-      {v.message && <p className="text-sm text-gray-700">{v.message}</p>}
+      <p className="text-sm text-gray-800">{v.message || plainStatusCopy(v)}</p>
+      {v.message && <p className="text-xs text-gray-500">{plainStatusCopy(v)}</p>}
+
+      {action && (
+        <p className="text-sm font-semibold text-gray-900">
+          {v.remediation?.suggested ? `-> ${action}: "${v.remediation.suggested}"` : `-> ${action}`}
+        </p>
+      )}
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {canEditInline && (
+          <button
+            type="button"
+            onClick={() => onEditField(field)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800 hover:bg-blue-100"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit {field.label}
+          </button>
+        )}
+        {v.status === "FAIL" && !canEditInline && (
+          <button
+            type="button"
+            onClick={() => onAskAssistant?.(assistantPrompt(v, field))}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700"
+            title="This needs the assistant because it is not mapped to a simple editable field."
+          >
+            <MessageSquareText className="w-3.5 h-3.5" /> Ask the assistant to fix this
+          </button>
+        )}
+      </div>
 
       {v.status === "FAIL" && !v.citation && (
         <p className="text-xs text-gray-400 italic">No citation available for this failure (schema-layer check, not a cited rule).</p>
       )}
 
       {(v.citation || v.sourceDocumentId) && (
-        <div className="flex items-start gap-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mt-1">
-          <FileText className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-          <div>
-            {v.citation && <p className="italic">&ldquo;{v.citation}&rdquo;</p>}
-            {v.sourceDocumentId && (
-              <p className="mt-1 flex items-center gap-1 text-gray-500">
-                <MapPin className="w-3 h-3" /> Source document: {v.sourceDocumentId}
-              </p>
-            )}
+        <details className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mt-1">
+          <summary className="cursor-pointer font-bold text-gray-700">Show rule</summary>
+          <div className="flex items-start gap-2 mt-2">
+            <FileText className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <div>
+              {v.citation && <p className="italic">"{v.citation}"</p>}
+              {v.sourceDocumentId && (
+                <p className="mt-1 flex items-center gap-1 text-gray-500">
+                  <MapPin className="w-3 h-3" /> Source document: {v.sourceDocumentId}
+                </p>
+              )}
+              {v.ruleKey && <p className="mt-1 font-mono text-gray-400">{v.ruleKey}</p>}
+            </div>
           </div>
-        </div>
+        </details>
       )}
 
-      <RemediationBlock remediation={v.remediation} />
+      {detailedView && <RemediationBlock remediation={v.remediation} />}
 
-      <div className="flex items-center gap-3 text-[10px] text-gray-400 font-mono uppercase tracking-wide">
-        <span>{v.path}</span>
-        {v.ruleKey && <span>· {v.ruleKey}</span>}
-        {v.autoFixable && <span className="text-blue-500 font-bold">· auto-fixable</span>}
-      </div>
+      {detailedView && (
+        <div className="flex items-center gap-3 text-[10px] text-gray-400 font-mono uppercase tracking-wide">
+          <span>{v.path}</span>
+          {v.ruleKey && <span>- {v.ruleKey}</span>}
+          {v.autoFixable && <span className="text-blue-500 font-bold">- auto-fixable</span>}
+        </div>
+      )}
     </div>
   );
 }
 
-export default function VerdictList({ verdicts }) {
+function ActionGroup({ group, verdicts, detailedView, onEditField, onAskAssistant }) {
+  const [open, setOpen] = useState(group.defaultOpen);
+
+  return (
+    <section className={`rounded-2xl border ${group.classes}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+      >
+        <span className="font-black text-gray-900">{group.title}</span>
+        <span className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-bold ${group.countClasses}`}>
+          {verdicts.length}
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+      {open && (
+        <div className="space-y-3 px-4 pb-4">
+          {verdicts.length > 0 ? (
+            verdicts.map((v, idx) => (
+              <VerdictCard
+                key={`${v.path}-${v.ruleKey || v.status}-${idx}`}
+                v={v}
+                detailedView={detailedView}
+                onEditField={onEditField}
+                onAskAssistant={onAskAssistant}
+              />
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 italic">Nothing in this group.</p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default function VerdictList({ verdicts, detailedView = false, onEditField, onAskAssistant }) {
   if (!verdicts || verdicts.length === 0) {
     return <p className="text-sm text-gray-500 italic">No verdicts to show.</p>;
   }
 
-  // Group by path so sibling verdicts on the same field (e.g. two layers judging
-  // activeIngredients differently) stay visually adjacent — severest first within
-  // the group — instead of being scattered by a flat global sort. Groups themselves
-  // are ordered by their most severe member. Nothing is deduplicated or dropped.
   const groups = new Map();
   for (const v of verdicts) {
     if (!groups.has(v.path)) groups.set(v.path, []);
@@ -147,15 +249,42 @@ export default function VerdictList({ verdicts }) {
     ([, a], [, b]) => rankOf(a[0].status) - rankOf(b[0].status)
   );
 
+  const orderedVerdicts = orderedGroups.flatMap(([, group]) => group);
+  const rendered = new Set();
+  const actionGroups = ACTION_GROUPS.map((group) => {
+    const groupVerdicts = orderedVerdicts.filter((v) => group.statuses.includes(v.status));
+    groupVerdicts.forEach((v) => rendered.add(v));
+    return { ...group, verdicts: groupVerdicts };
+  });
+  const unknownVerdicts = orderedVerdicts.filter((v) => !rendered.has(v));
+
   return (
     <div className="space-y-3">
-      {orderedGroups.map(([path, group]) => (
-        <div key={path} className={group.length > 1 ? "space-y-1.5 border-l-2 border-gray-200 pl-3" : ""}>
-          {group.map((v, idx) => (
-            <VerdictCard key={`${path}-${idx}`} v={v} />
-          ))}
-        </div>
+      {actionGroups.map((group) => (
+        <ActionGroup
+          key={group.key}
+          group={group}
+          verdicts={group.verdicts}
+          detailedView={detailedView}
+          onEditField={onEditField}
+          onAskAssistant={onAskAssistant}
+        />
       ))}
+      {unknownVerdicts.length > 0 && (
+        <ActionGroup
+          group={{
+            key: "unknown",
+            title: "Needs manual check",
+            defaultOpen: true,
+            classes: "border-fuchsia-200 bg-fuchsia-50/50",
+            countClasses: "bg-fuchsia-100 text-fuchsia-900 border-fuchsia-200",
+          }}
+          verdicts={unknownVerdicts}
+          detailedView
+          onEditField={onEditField}
+          onAskAssistant={onAskAssistant}
+        />
+      )}
     </div>
   );
 }

@@ -275,7 +275,7 @@ export default function LabelGenerator() {
         <div className="mb-6 flex justify-between items-center flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-blue-600" /> Generated Label
+              <Sparkles className="w-8 h-8 text-blue-600" /> Created Label
             </h1>
             <p className="text-gray-500 mt-2 font-mono text-xs">Label ID: {labelId}</p>
           </div>
@@ -360,9 +360,9 @@ export default function LabelGenerator() {
     <div className="max-w-3xl mx-auto pb-12 animate-in fade-in zoom-in-95">
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-3">
-          <Sparkles className="w-8 h-8 text-blue-600" /> AI Label Writer
+          <Sparkles className="w-8 h-8 text-blue-600" /> Create a Label
         </h1>
-        <p className="text-gray-500 mt-2">Generate a highly compliant, professional label text for any product by providing its details.</p>
+        <p className="text-gray-500 mt-2">Generate label text from product data, then review the field-by-field report before sign-off.</p>
       </div>
 
       <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
@@ -386,7 +386,7 @@ export default function LabelGenerator() {
                   <p className="text-xs text-red-600 mt-1">{companiesError}</p>
                 )}
                 <p className="text-[11px] text-gray-500 mt-1">
-                  Required — this label is always scoped to one company, there is no global option.
+                  Required - this label is always scoped to one company, there is no global option.
                 </p>
               </div>
             )}
@@ -407,10 +407,10 @@ export default function LabelGenerator() {
 
             <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-4">
               <span className="text-sm font-bold text-amber-900">
-                Expert Details — pin down facts the AI shouldn't guess
+                Product facts - pin down details the AI should not guess
               </span>
               <p className="text-[11px] text-amber-800 mt-1">
-                Many active ingredients (e.g. Ammonium Chloride) have several valid veterinary uses. Telling the AI the exact indication here stops it from guessing between them and getting it wrong.
+                These hints become guardrails for the label text. They reduce guesses around indications, species, and dose instructions.
               </p>
 
               <div className="mt-4 space-y-3">
@@ -426,6 +426,7 @@ export default function LabelGenerator() {
                     disabled={isGenerating}
                     required
                   />
+                  <p className="text-[11px] text-gray-500 mt-1">Required because the same ingredients can legally support different claims depending on intended use.</p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Confirmed Target Animal Species</label>
@@ -436,6 +437,7 @@ export default function LabelGenerator() {
                     placeholder="Example: Cow, Buffalo, Camel, Sheep, Goat"
                     disabled={isGenerating}
                   />
+                  <p className="text-[11px] text-gray-500 mt-1">Species can change required warnings, withdrawal periods, and whether a rule applies.</p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Confirmed Direction of Use / Dosage</label>
@@ -446,6 +448,7 @@ export default function LabelGenerator() {
                     placeholder="Example: Sheep and Goats 5g/head/day; Cattle, Buffalo and Camels 30g/head/day, mixed with feed"
                     disabled={isGenerating}
                   />
+                  <p className="text-[11px] text-gray-500 mt-1">Dosage wording is often a compliance-critical value, so the label should not invent it.</p>
                 </div>
               </div>
             </div>
@@ -460,6 +463,7 @@ export default function LabelGenerator() {
                   className="text-sm"
                   isDisabled={isGenerating}
                 />
+                <p className="text-[11px] text-gray-500 mt-1">Chooses which country's regulatory wording and validation context the label should target.</p>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Target Language</label>
@@ -470,6 +474,7 @@ export default function LabelGenerator() {
                   className="text-sm"
                   isDisabled={isGenerating}
                 />
+                <p className="text-[11px] text-gray-500 mt-1">Controls the language the generated label text is written in.</p>
               </div>
             </div>
 

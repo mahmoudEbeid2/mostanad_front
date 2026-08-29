@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+﻿import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -23,6 +23,7 @@ import Processing from "./pages/Processing";
 import BulkProcessing from "./pages/BulkProcessing";
 import Brands from "./pages/Brands";
 import EdaRequirements from "./pages/EdaRequirements";
+import RegulatoryDocuments from "./pages/RegulatoryDocuments";
 import ReferenceLabels from "./pages/ReferenceLabels";
 
 import ProtectedRoute from "./ui/ProtectedRoute";
@@ -60,6 +61,7 @@ function App() {
             <Route path="/users" element={<RequirePermission permission="read_users"><Users /></RequirePermission>} />
             <Route path="/companies" element={<RequirePermission permission="read_companies"><Companies /></RequirePermission>} />
             <Route path="/brands" element={<Brands />} />
+            <Route path="/regulatory-documents" element={<RequirePermission permission="read_eda_requirements"><RegulatoryDocuments /></RequirePermission>} />
             <Route path="/eda-requirements" element={<RequirePermission permission="read_eda_requirements"><EdaRequirements /></RequirePermission>} />
             <Route path="/reference-labels" element={<RequirePermission permission="read_eda_requirements"><ReferenceLabels /></RequirePermission>} />
             <Route path="/processing/:jobId" element={<Processing />} />

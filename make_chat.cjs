@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+﻿const fs = require("fs");
+const code = `import { useState, useEffect, useCallback, useRef } from "react";
 import { Send, Bot, User, ShieldAlert, FileText, CheckCircle2, AlertTriangle, RefreshCw, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { getChat, postChat } from "../../services/apiGeneratedLabels";
@@ -84,7 +85,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
             createdAt: new Date().toISOString(),
           },
         ]);
-        toast.success(`Label updated to v${result.resultVersion}`);
+        toast.success(\`Label updated to v\${result.resultVersion}\`);
         onLabelUpdated?.();
       }
     } catch (err) {
@@ -156,7 +157,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
           className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg transition-colors"
           title="Refresh chat history"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={\`w-4 h-4 \${isLoading ? "animate-spin" : ""}\`} />
         </button>
       </div>
 
@@ -266,7 +267,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
             {activeConflict.wouldViolate?.length > 0 && (
               <div className="space-y-3">
                 {activeConflict.wouldViolate.map((violation, idx) => (
-                  <div key={`${violation.ruleKey || idx}-${violation.path || idx}`} className="bg-white rounded-xl p-4 border border-rose-200 text-sm space-y-2">
+                  <div key={\`\${violation.ruleKey || idx}-\${violation.path || idx}\`} className="bg-white rounded-xl p-4 border border-rose-200 text-sm space-y-2">
                     {violation.message && <p className="text-gray-900 font-medium">{violation.message}</p>}
                     {violation.citation && (
                       <div className="flex items-start gap-2 text-gray-600 italic bg-gray-50 p-2.5 rounded-lg border border-gray-200 text-xs">
@@ -291,7 +292,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
                 onClick={() => handleConflictOption("edit")}
                 className="px-4 py-2.5 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 text-sm font-bold hover:bg-blue-100 w-full text-center transition-colors"
               >
-                Fix the blocker first {activeConflict.wouldViolate?.[0]?.path ? `— ${activeConflict.wouldViolate[0].path.split(".").pop()}` : ""}
+                Fix the blocker first {activeConflict.wouldViolate?.[0]?.path ? \`— \${activeConflict.wouldViolate[0].path.split(".").pop()}\` : ""}
               </button>
 
               <button
@@ -330,4 +331,6 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
       </div>
     </div>
   );
-}
+}`;
+fs.writeFileSync("src/components/label-detail/ChatTab.jsx", code);
+

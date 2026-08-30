@@ -1,17 +1,34 @@
-import { Pencil } from "lucide-react";
+import { Pencil, MessageSquarePlus } from "lucide-react";
 import VerdictList from "./VerdictList";
 import ProvenanceBadge from "./ProvenanceBadge";
 import { LABEL_FIELD_CATALOG, fieldHasContent, verdictsForField, provenanceForField } from "../utils/labelFieldCatalog";
 
-function EstimatedBadge() {
+function EstimatedSourceInfo({ entries }) {
+  if (!entries || entries.length === 0) return <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border-amber-200 px-1.5 py-0.5 rounded-full border">AI Estimate</span>;
+  const primary = entries[0];
+  let text = "Estimated by AI from general knowledge. This is the least trustworthy value on the page.";
+  if (primary.provenance === "reference") {
+    text = `From approved reference: ${primary.sourceRef?.id || "Unknown"}`;
+  } else if (primary.provenance === "external") {
+    text = `From authoritative source${primary.sourceUrl ? " (has citation)" : ""}`;
+  }
   return (
-    <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
-      Estimated
-    </span>
+    <div className="text-xs text-amber-900 bg-amber-50 border border-amber-300 px-2 py-1 rounded-md flex flex-col">
+      <span className="font-bold uppercase text-[10px] tracking-wide mb-0.5">Estimated Value</span>
+      <span>{text}</span>
+      {primary.sourceUrl && <a href={primary.sourceUrl} target="_blank" rel="noreferrer" className="underline mt-0.5 break-all">{primary.sourceUrl}</a>}
+    </div>
   );
 }
 
-function FieldValue({ field, value }) {
+function FieldValue({ field, value, provenance }) {
+  const primaryProv = provenance?.[0];
+  const refusalReason = primaryProv?.refusalReason;
+  
+  if (refusalReason && (value === null || value === undefined || value === "")) {
+    return <p className="text-sm text-gray-500 italic bg-gray-50 border-l-2 border-gray-300 pl-3 py-1 flex-1">{refusalReason}</p>;
+  }
+
   switch (field.type) {
     case "localized":
       if (!value?.translations) return <p className="text-sm text-gray-400 italic flex-1">Not applicable to this product.</p>;
@@ -77,11 +94,14 @@ function FieldValue({ field, value }) {
 
 // The core detail surface: every label field alongside its per-field verdicts and
 // provenance, in one place — not a 6-field summary, not a raw-JSON dump.
-export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEditField, detailedView = false }) {
+export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEditField, onAskAssistant, detailedView = false, showOnlyEstimated = false }) {
   if (!labelData) return null;
   const estimatedFields = labelData.estimatedFields || [];
 
-  const rows = LABEL_FIELD_CATALOG.filter((f) => fieldHasContent(labelData, f));
+  let rows = LABEL_FIELD_CATALOG.filter((f) => fieldHasContent(labelData, f) || provenanceForField(provenance, f.path)?.[0]?.refusalReason);
+  if (showOnlyEstimated) {
+    rows = rows.filter(f => estimatedFields.includes(f.path));
+  }
 
   if (rows.length === 0) {
     return <p className="text-sm text-gray-500 italic">This label has no populated fields.</p>;
@@ -95,25 +115,39 @@ export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEd
         const isEstimated = estimatedFields.includes(field.path);
 
         return (
-          <div key={field.path} className="bg-white rounded-2xl border border-gray-200 p-5">
-            <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-gray-500 text-xs font-bold uppercase tracking-wide">{field.label}</span>
-                {isEstimated && <EstimatedBadge />}
-                <ProvenanceBadge entries={fieldProvenance} detailed={detailedView} />
+          <div key={field.path} className={`rounded-2xl border p-5 ${isEstimated ? "bg-amber-50/30 border-amber-400 border-l-4" : "bg-white border-gray-200"}`}>
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-gray-500 text-xs font-bold uppercase tracking-wide">{field.label}</span>
+                  <ProvenanceBadge entries={fieldProvenance} detailed={detailedView} />
+                </div>
+                {isEstimated && <EstimatedSourceInfo entries={fieldProvenance} />}
               </div>
-              {onEditField && (
-                <button
-                  type="button"
-                  onClick={() => onEditField(field)}
-                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
-                >
-                  <Pencil className="w-3.5 h-3.5" /> Edit
-                </button>
-              )}
+              
+              <div className="flex items-center gap-3">
+                {isEstimated && onAskAssistant && (
+                  <button
+                    type="button"
+                    onClick={() => onAskAssistant(`I need to correct the ${field.label}. `)}
+                    className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 bg-purple-50 px-2 py-1 rounded"
+                  >
+                    <MessageSquarePlus className="w-3.5 h-3.5" /> Ask Assistant
+                  </button>
+                )}
+                {onEditField && (
+                  <button
+                    type="button"
+                    onClick={() => onEditField(field)}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
+                )}
+              </div>
             </div>
 
-            <FieldValue field={field} value={labelData[field.path]} />
+            <FieldValue field={field} value={labelData[field.path]} provenance={fieldProvenance} />
 
             {detailedView && fieldVerdicts.length > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-100">

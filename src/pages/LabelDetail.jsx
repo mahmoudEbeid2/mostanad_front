@@ -110,6 +110,7 @@ export default function LabelDetail() {
   const [activeTab, setActiveTab] = useState("overview");
   const [detailedView, setDetailedView] = useState(() => localStorage.getItem("labelDetailDetailedView") === "true");
   const [assistantDraft, setAssistantDraft] = useState("");
+  const [showOnlyEstimated, setShowOnlyEstimated] = useState(false);
 
   // Direct Field Edit State
   const [editingField, setEditingField] = useState(null);
@@ -245,6 +246,22 @@ export default function LabelDetail() {
         </div>
       ) : null}
 
+      {detail?.label?.labelData?.estimatedFields?.length > 0 && (
+        <div className="mb-6 flex items-center justify-between gap-3 text-amber-900 bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span className="font-semibold">
+              {detail.label.labelData.estimatedFields.length} {detail.label.labelData.estimatedFields.length === 1 ? "value is" : "values are"} the system's estimate — check them before approving.
+            </span>
+          </div>
+          <button
+            onClick={() => { setActiveTab("overview"); setShowOnlyEstimated(!showOnlyEstimated); }}
+            className={`px-3 py-1.5 text-sm font-bold rounded-lg border transition-colors ${showOnlyEstimated ? "bg-amber-200 border-amber-400 text-amber-900" : "bg-white border-amber-300 text-amber-800 hover:bg-amber-100"}`}
+          >
+            {showOnlyEstimated ? "Show all fields" : "Show estimates"}
+          </button>
+        </div>
+      )}
       <div className={`mb-6 rounded-2xl border-2 p-5 ${band.classes}`}>
         <div className="flex items-start gap-3">
           <BandIcon className="w-7 h-7 flex-shrink-0 mt-0.5" />
@@ -297,7 +314,9 @@ export default function LabelDetail() {
               verdicts={latestValidation?.verdicts}
               provenance={provenance}
               onEditField={(field) => setEditingField(field)}
+              onAskAssistant={handleAskAssistant}
               detailedView={detailedView}
+              showOnlyEstimated={showOnlyEstimated}
             />
           </div>
         </div>

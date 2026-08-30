@@ -310,7 +310,7 @@ export default function LabelGenerator() {
           }`}>
             {genSummary.validation.passed ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
             <span>
-              First-pass validation: {genSummary.validation.passed ? "passed" : "failed"} —{" "}
+              Validation: {genSummary.validation.passed ? "passed" : "failed"} —{" "}
               {genSummary.validation.errorCount} error(s), {genSummary.validation.warningCount} warning(s).
               This is a quick summary from generation; run full validation on the label detail screen for the field-by-field report.
             </span>

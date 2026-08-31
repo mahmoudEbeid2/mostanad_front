@@ -203,7 +203,7 @@ export default function LabelGenerator() {
         if (newLabelId) {
           setLabelId(newLabelId);
           toast.success("Label generated successfully!");
-          navigate(`/labels/${newLabelId}`);
+          navigate(`/labels/detail/${newLabelId}`);
         } else {
           // Contract says this can't happen post-Phase-1, but don't silently show
           // nothing if it ever does.

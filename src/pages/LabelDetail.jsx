@@ -46,18 +46,20 @@ function verdictBand(latestValidation) {
   }
   if (failCount > 0) {
     return {
-      title: `Not ready - ${failCount} ${failCount === 1 ? "thing must" : "things must"} be fixed`,
-      body: "Start with Must fix below. Nothing blocking is hidden.",
+      title: `Not ready for approval - ${failCount} ${failCount === 1 ? "thing must" : "things must"} be fixed`,
+      body: "AI-generated text is a first draft, not a pre-approved label - it still has to pass the same compliance rules as any other label. See exactly what's wrong in “What needs attention” below.",
       icon: AlertCircle,
       classes: "bg-red-50 border-red-400 text-red-900",
+      jumpTo: true,
     };
   }
   if (confirmCount + reviewCount > 0) {
     return {
-      title: `Needs you - ${confirmCount + reviewCount} ${confirmCount + reviewCount === 1 ? "thing" : "things"} to confirm`,
-      body: "The label may be close, but these values need a human decision.",
+      title: `Needs your review - ${confirmCount + reviewCount} ${confirmCount + reviewCount === 1 ? "thing" : "things"} to confirm`,
+      body: "Nothing failed outright, but these values need a human decision before this label can be approved. See “What needs attention” below.",
       icon: ShieldAlert,
       classes: "bg-orange-50 border-orange-300 text-orange-900",
+      jumpTo: true,
     };
   }
   if (unverifiableCount > 0) {
@@ -267,13 +269,22 @@ export default function LabelDetail() {
                 {detailedView && latestValidation?.engineVersion && (
                   <p className="text-xs mt-1 opacity-75">Engine {latestValidation.engineVersion}</p>
                 )}
+                {band.jumpTo && (
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById("verdict-list")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    className="text-sm font-bold underline mt-2 hover:opacity-75"
+                  >
+                    See what needs attention ↓
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
           <div className="space-y-6">
             {latestValidation?.verdicts?.length > 0 && (
-              <div>
+              <div id="verdict-list">
                 <h2 className="text-lg font-black text-gray-900 mb-3">What needs attention</h2>
                 <VerdictList
                   verdicts={latestValidation.verdicts}

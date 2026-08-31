@@ -1,7 +1,7 @@
 import { Pencil, MessageSquarePlus } from "lucide-react";
 import VerdictList from "./VerdictList";
 import ProvenanceBadge from "./ProvenanceBadge";
-import { LABEL_FIELD_CATALOG, fieldHasContent, verdictsForField, provenanceForField } from "../utils/labelFieldCatalog";
+import { LABEL_FIELD_CATALOG, LABEL_SECTIONS, fieldHasContent, verdictsForField, provenanceForField } from "../utils/labelFieldCatalog";
 
 function EstimatedSourceInfo({ entries }) {
   if (!entries || entries.length === 0) return <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border-amber-200 px-1.5 py-0.5 rounded-full border">AI Estimate</span>;
@@ -92,8 +92,83 @@ function FieldValue({ field, value, provenance }) {
   }
 }
 
+function IconButton({ onClick, title, tone = "gray", children }) {
+  const toneClasses = {
+    gray: "text-gray-400 hover:text-gray-700 hover:bg-gray-100",
+    purple: "text-purple-500 hover:text-purple-700 hover:bg-purple-50",
+    blue: "text-blue-500 hover:text-blue-700 hover:bg-blue-50",
+  };
+  return (
+    <button type="button" onClick={onClick} title={title} aria-label={title} className={`p-1.5 rounded-md transition-colors ${toneClasses[tone]}`}>
+      {children}
+    </button>
+  );
+}
+
+function EstimatedPill() {
+  return (
+    <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
+      Estimated
+    </span>
+  );
+}
+
+function ProductNameMasthead({ value }) {
+  if (!value?.translations) return <p className="text-sm text-gray-400 italic">Product name not set.</p>;
+  return (
+    <>
+      {value.translations.en && (
+        <p className="text-2xl font-black uppercase tracking-wide text-gray-900">{value.translations.en}</p>
+      )}
+      {value.translations.ar && (
+        <p className="text-lg font-bold text-gray-700 mt-1" dir="rtl">{value.translations.ar}</p>
+      )}
+    </>
+  );
+}
+
+function FieldRow({ field, labelData, fieldVerdicts, fieldProvenance, isEstimated, detailedView, onEditField, onAskAssistant }) {
+  return (
+    <div className="py-3 first:pt-0 last:pb-0">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{field.label}</span>
+          <ProvenanceBadge entries={fieldProvenance} detailed={detailedView} />
+          {isEstimated && <EstimatedPill />}
+        </div>
+        <div className="flex items-center gap-0.5">
+          {isEstimated && onAskAssistant && (
+            <IconButton tone="purple" title="Ask assistant to fix this" onClick={() => onAskAssistant(`I need to correct the ${field.label}. `)}>
+              <MessageSquarePlus className="w-3.5 h-3.5" />
+            </IconButton>
+          )}
+          {onEditField && (
+            <IconButton tone="blue" title="Edit" onClick={() => onEditField(field)}>
+              <Pencil className="w-3.5 h-3.5" />
+            </IconButton>
+          )}
+        </div>
+      </div>
+
+      {isEstimated && <div className="mt-1.5"><EstimatedSourceInfo entries={fieldProvenance} /></div>}
+
+      <div className="mt-1">
+        <FieldValue field={field} value={labelData[field.path]} provenance={fieldProvenance} />
+      </div>
+
+      {detailedView && fieldVerdicts.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
+          <VerdictList verdicts={fieldVerdicts} detailedView={detailedView} onEditField={onEditField} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // The core detail surface: every label field alongside its per-field verdicts and
-// provenance, in one place — not a 6-field summary, not a raw-JSON dump.
+// provenance, laid out like the printed label itself — a title masthead followed by
+// the same panels (composition, usage, safety, storage, regulatory) a real product
+// label carries — rather than a flat settings-style field list.
 export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEditField, onAskAssistant, detailedView = false, showOnlyEstimated = false }) {
   if (!labelData) return null;
   const estimatedFields = labelData.estimatedFields || [];
@@ -107,56 +182,63 @@ export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEd
     return <p className="text-sm text-gray-500 italic">This label has no populated fields.</p>;
   }
 
+  const titleField = rows.find((f) => f.path === "productName");
+  const bodyRows = rows.filter((f) => f.path !== "productName");
+  const sections = LABEL_SECTIONS
+    .map((section) => ({ ...section, rows: bodyRows.filter((f) => f.section === section.key) }))
+    .filter((section) => section.rows.length > 0);
+
+  const isTitleEstimated = titleField && estimatedFields.includes(titleField.path);
+  const titleProvenance = titleField ? provenanceForField(provenance, titleField.path) : [];
+
   return (
-    <div className="space-y-4">
-      {rows.map((field) => {
-        const fieldVerdicts = verdictsForField(verdicts, field.path);
-        const fieldProvenance = provenanceForField(provenance, field.path);
-        const isEstimated = estimatedFields.includes(field.path);
-
-        return (
-          <div key={field.path} className={`rounded-2xl border p-5 ${isEstimated ? "bg-amber-50/30 border-amber-400 border-l-4" : "bg-white border-gray-200"}`}>
-            <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-gray-500 text-xs font-bold uppercase tracking-wide">{field.label}</span>
-                  <ProvenanceBadge entries={fieldProvenance} detailed={detailedView} />
-                </div>
-                {isEstimated && <EstimatedSourceInfo entries={fieldProvenance} />}
-              </div>
-              
-              <div className="flex items-center gap-3">
-                {isEstimated && onAskAssistant && (
-                  <button
-                    type="button"
-                    onClick={() => onAskAssistant(`I need to correct the ${field.label}. `)}
-                    className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 bg-purple-50 px-2 py-1 rounded"
-                  >
-                    <MessageSquarePlus className="w-3.5 h-3.5" /> Ask Assistant
-                  </button>
-                )}
-                {onEditField && (
-                  <button
-                    type="button"
-                    onClick={() => onEditField(field)}
-                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
-                  >
-                    <Pencil className="w-3.5 h-3.5" /> Edit
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <FieldValue field={field} value={labelData[field.path]} provenance={fieldProvenance} />
-
-            {detailedView && fieldVerdicts.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <VerdictList verdicts={fieldVerdicts} detailedView={detailedView} onEditField={onEditField} />
-              </div>
+    <div className="rounded-lg border-2 border-gray-900 bg-white shadow-sm overflow-hidden">
+      {titleField && (
+        <div className="relative px-6 py-6 text-center border-b-2 border-gray-900 bg-gray-50/60">
+          <div className="absolute top-3 right-3 flex items-center gap-1">
+            {isTitleEstimated && <EstimatedPill />}
+            {isTitleEstimated && onAskAssistant && (
+              <IconButton tone="purple" title="Ask assistant to fix this" onClick={() => onAskAssistant(`I need to correct the ${titleField.label}. `)}>
+                <MessageSquarePlus className="w-3.5 h-3.5" />
+              </IconButton>
+            )}
+            {onEditField && (
+              <IconButton tone="blue" title="Edit" onClick={() => onEditField(titleField)}>
+                <Pencil className="w-3.5 h-3.5" />
+              </IconButton>
             )}
           </div>
-        );
-      })}
+          <ProductNameMasthead value={labelData[titleField.path]} />
+          {isTitleEstimated && (
+            <div className="mt-3 max-w-md mx-auto text-left">
+              <EstimatedSourceInfo entries={titleProvenance} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {sections.map((section) => (
+        <div key={section.key} className="border-t border-gray-200 first:border-t-0">
+          <div className="px-6 pt-4 pb-1 bg-gray-50/40">
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400">{section.label}</h3>
+          </div>
+          <div className="divide-y divide-gray-100 px-6 pb-4">
+            {section.rows.map((field) => (
+              <FieldRow
+                key={field.path}
+                field={field}
+                labelData={labelData}
+                fieldVerdicts={verdictsForField(verdicts, field.path)}
+                fieldProvenance={provenanceForField(provenance, field.path)}
+                isEstimated={estimatedFields.includes(field.path)}
+                detailedView={detailedView}
+                onEditField={onEditField}
+                onAskAssistant={onAskAssistant}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

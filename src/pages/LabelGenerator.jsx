@@ -196,7 +196,21 @@ export default function LabelGenerator() {
 
       toast.success("AI is writing your label... Please wait.");
 
+      let settled = false;
+      let pollInterval = null;
+      let socket = null;
+
+      const cleanup = () => {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = null;
+        if (socket) socket.disconnect();
+        socket = null;
+      };
+
       const handleCompletion = async (result) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
         setIsGenerating(false);
         const newLabelId = result?.labelId;
         setGenSummary({ validation: result?.validation, riskScore: result?.riskScore, autonomyTier: result?.autonomyTier });
@@ -211,44 +225,58 @@ export default function LabelGenerator() {
         }
       };
 
-      // Use Sockets for Real-Time Updates
-      const socket = io(BACKEND_URL);
+      const handleFailure = (message) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        setIsGenerating(false);
+        setJobError(message || "AI generation failed.");
+        toast.error("Generation failed. Please try again.");
+      };
+
+      const applyStatus = (status, data) => {
+        if (status === "completed") {
+          handleCompletion(data?.result);
+        } else if (status === "failed") {
+          handleFailure(data?.error);
+        }
+      };
+
+      // Sockets give near-instant updates, but the job can complete before the
+      // "join_job" ack lands (or the socket connection can drop/never connect on some
+      // networks/proxies) and we'd otherwise sit on "Generating..." forever with no
+      // way out. Poll the REST endpoint as a backstop regardless of socket state.
+      pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await getTaskStatus(taskId);
+          applyStatus(statusRes.data?.status, statusRes.data);
+        } catch (err) {
+          console.error("Failed to poll task status", err);
+        }
+      }, 4000);
+
+      socket = io(BACKEND_URL);
 
       socket.on("connect", async () => {
         socket.emit("join_job", taskId);
 
         try {
           const statusRes = await getTaskStatus(taskId);
-          const currentStatus = statusRes.data?.status;
-
-          if (currentStatus === "completed" || currentStatus === "failed") {
-            if (currentStatus === "completed") {
-              await handleCompletion(statusRes.data?.result);
-            } else {
-              setIsGenerating(false);
-              setJobError(statusRes.data?.error || "AI generation failed.");
-              toast.error("Generation failed. Please try again.");
-            }
-            socket.disconnect();
-          }
+          applyStatus(statusRes.data?.status, statusRes.data);
         } catch (err) {
           console.error("Failed to fetch initial task status", err);
         }
       });
 
+      socket.on("connect_error", (err) => {
+        console.error("Socket connection failed, relying on polling", err);
+      });
+
       socket.on("job_status", (data) => {
+        if (data.taskId && data.taskId !== taskId) return;
         if (data.progress) setJobProgress(data.progress);
         if (data.message) setJobMessage(data.message);
-
-        if (data.status === "completed") {
-          handleCompletion(data.result);
-          socket.disconnect();
-        } else if (data.status === "failed") {
-          setIsGenerating(false);
-          setJobError(data.error || "AI generation failed.");
-          toast.error("Generation failed. Please try again.");
-          socket.disconnect();
-        }
+        applyStatus(data.status, data);
       });
 
     } catch (err) {

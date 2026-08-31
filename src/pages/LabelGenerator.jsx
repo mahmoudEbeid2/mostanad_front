@@ -12,7 +12,7 @@ import LocalizedField from "../components/LocalizedField";
 import { io } from "socket.io-client";
 import { Copy, Sparkles, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../ui/Button";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
@@ -75,6 +75,7 @@ function GeneratedLabelSummary({ label, estimatedFields }) {
 }
 
 export default function LabelGenerator() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const companyUser = isCompanyUser(user);
 
@@ -202,7 +203,7 @@ export default function LabelGenerator() {
         if (newLabelId) {
           setLabelId(newLabelId);
           toast.success("Label generated successfully!");
-          fetchGeneratedLabel(newLabelId);
+          navigate(`/labels/${newLabelId}`);
         } else {
           // Contract says this can't happen post-Phase-1, but don't silently show
           // nothing if it ever does.

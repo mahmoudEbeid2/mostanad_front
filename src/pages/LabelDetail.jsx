@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Tags, RefreshCw, CheckCircle2, AlertCircle, ShieldAlert, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Tags, RefreshCw, CheckCircle2, AlertCircle, ShieldAlert, SlidersHorizontal, MessageSquarePlus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { getLabel, postValidate } from "../services/apiGeneratedLabels";
 import LabelFieldsPanel from "../components/LabelFieldsPanel";
@@ -21,13 +21,7 @@ const STATUS_CLASSES = {
   archived: "bg-gray-50 text-gray-500 border-gray-200",
 };
 
-const TABS = [
-  { key: "overview", label: "Report" },
-  { key: "chat", label: "Assistant" },
-  { key: "approval", label: "Sign-off" },
-  { key: "extraction", label: "Extraction", detailedOnly: true },
-  { key: "versions", label: "Versions", detailedOnly: true },
-];
+
 
 function countStatuses(verdicts = []) {
   return verdicts.reduce((acc, verdict) => {
@@ -107,10 +101,10 @@ export default function LabelDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showOnlyEstimated, setShowOnlyEstimated] = useState(false);
   const [detailedView, setDetailedView] = useState(() => localStorage.getItem("labelDetailDetailedView") === "true");
   const [assistantDraft, setAssistantDraft] = useState("");
-  const [showOnlyEstimated, setShowOnlyEstimated] = useState(false);
 
   // Direct Field Edit State
   const [editingField, setEditingField] = useState(null);
@@ -181,187 +175,177 @@ export default function LabelDetail() {
   const { label, latestValidation, provenance } = detail;
   const band = verdictBand(latestValidation);
   const BandIcon = band.icon;
-  const visibleTabs = TABS.filter((tab) => detailedView || !tab.detailedOnly);
+  
 
   return (
-    <div className="max-w-5xl mx-auto pb-16">
-      <button
-        onClick={() => navigate("/labels/browse")}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-4 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back to labels
-      </button>
-
-      <div className="mb-6 flex justify-between items-start flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Tags className="w-8 h-8 text-blue-600" />
-            {label.labelData?.productName?.translations?.en || "Generated Label"}
-          </h1>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${STATUS_CLASSES[label.status] || STATUS_CLASSES.draft}`}>
-              {label.status?.replace(/_/g, " ")}
-            </span>
-            <span className="text-xs text-gray-500 font-mono">v{label.currentVersion}</span>
-            <span className="text-xs text-gray-500">{label.country} · {label.language}</span>
-            {label.riskScore != null && (
-              <span className="text-xs text-gray-500">Risk score: {label.riskScore} ({label.autonomyTier})</span>
-            )}
-            {label.needsReview && (
-              <span className="text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-300">
-                Needs Review
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <label className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm">
-            <input
-              type="checkbox"
-              checked={detailedView}
-              onChange={(event) => setDetailedView(event.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600"
-            />
-            <SlidersHorizontal className="w-4 h-4 text-gray-500" />
-            Detailed view
-          </label>
-          <Button onClick={handleRunValidation} isLoading={isValidating} variant="secondary">
-            <RefreshCw className="w-4 h-4" /> Re-run Validation
-          </Button>
-        </div>
-      </div>
-
-      {!latestValidation ? (
-        <div className="mb-6 flex items-center gap-3 text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-          <ShieldAlert className="w-5 h-5 flex-shrink-0" />
-          <span>This label has not been validated at its current version yet. Run validation to get a field-by-field report.</span>
-        </div>
-      ) : latestValidation.versionNumber !== label.currentVersion ? (
-        <div className="mb-6 flex items-center gap-3 text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-          <ShieldAlert className="w-5 h-5 flex-shrink-0" />
-          <span>
-            The latest validation report is for version {latestValidation.versionNumber}, but this label is now at
-            version {label.currentVersion}. Re-run validation before relying on it.
-          </span>
-        </div>
-      ) : null}
-
-      {detail?.label?.labelData?.estimatedFields?.length > 0 && (
-        <div className="mb-6 flex items-center justify-between gap-3 text-amber-900 bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 shadow-sm">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <span className="font-semibold">
-              {detail.label.labelData.estimatedFields.length} {detail.label.labelData.estimatedFields.length === 1 ? "value is" : "values are"} the system's estimate — check them before approving.
-            </span>
-          </div>
+    <div className="flex relative min-h-screen bg-white overflow-hidden">
+      {/* Main Content (Left) */}
+      <div className={`flex-1 transition-all duration-300 pb-16 px-4 h-screen overflow-y-auto ${isChatOpen ? 'mr-[400px]' : ''}`}>
+        <div className="max-w-5xl mx-auto pt-6">
           <button
-            onClick={() => { setActiveTab("overview"); setShowOnlyEstimated(!showOnlyEstimated); }}
-            className={`px-3 py-1.5 text-sm font-bold rounded-lg border transition-colors ${showOnlyEstimated ? "bg-amber-200 border-amber-400 text-amber-900" : "bg-white border-amber-300 text-amber-800 hover:bg-amber-100"}`}
+            onClick={() => navigate("/labels/browse")}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-4 transition-colors"
           >
-            {showOnlyEstimated ? "Show all fields" : "Show estimates"}
+            <ArrowLeft className="w-4 h-4" /> Back to labels
           </button>
-        </div>
-      )}
-      <div className={`mb-6 rounded-2xl border-2 p-5 ${band.classes}`}>
-        <div className="flex items-start gap-3">
-          <BandIcon className="w-7 h-7 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-xl font-black">{band.title}</p>
-            <p className="text-sm mt-1">{band.body}</p>
-            {validationContext(latestValidation) && (
-              <p className="text-xs mt-2 opacity-75">{validationContext(latestValidation)}</p>
-            )}
-            {detailedView && latestValidation?.engineVersion && (
-              <p className="text-xs mt-1 opacity-75">Engine {latestValidation.engineVersion}</p>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Navigation Tabs */}
-      <div className="border-b border-gray-200 mb-6 flex gap-6 overflow-x-auto">
-        {visibleTabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
-            className={`pb-3 text-sm font-bold border-b-2 -mb-px transition-colors whitespace-nowrap ${
-              activeTab === t.key ? "border-blue-600 text-blue-700" : "border-transparent text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab 1: Label Fields & Verdicts Overview */}
-      {activeTab === "overview" && (
-        <div className="space-y-6">
-          {latestValidation?.verdicts?.length > 0 && (
+          <div className="mb-6 flex justify-between items-start flex-wrap gap-4">
             <div>
-              <h2 className="text-lg font-black text-gray-900 mb-3">What needs attention</h2>
-              <VerdictList
-                verdicts={latestValidation.verdicts}
-                detailedView={detailedView}
-                onEditField={(field) => setEditingField(field)}
-                onAskAssistant={handleAskAssistant}
-              />
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <Tags className="w-8 h-8 text-blue-600" />
+                {label.labelData?.productName?.translations?.en || "Generated Label"}
+              </h1>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${STATUS_CLASSES[label.status] || STATUS_CLASSES.draft}`}>
+                  {label.status?.replace(/_/g, " ")}
+                </span>
+                <span className="text-xs text-gray-500 font-mono">v{label.currentVersion}</span>
+                <span className="text-xs text-gray-500">{label.country} - {label.language}</span>
+                {label.riskScore != null && (
+                  <span className="text-xs text-gray-500">Risk score: {label.riskScore} ({label.autonomyTier})</span>
+                )}
+                {label.needsReview && (
+                  <span className="text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-300">
+                    Needs Review
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <label className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm">
+                <input
+                  type="checkbox"
+                  checked={detailedView}
+                  onChange={(event) => setDetailedView(event.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                />
+                <SlidersHorizontal className="w-4 h-4 text-gray-500" />
+                Detailed view
+              </label>
+              <Button onClick={handleRunValidation} isLoading={isValidating} variant="secondary">
+                <RefreshCw className="w-4 h-4" /> Re-run Validation
+              </Button>
+            </div>
+          </div>
+
+          {!latestValidation ? (
+            <div className="mb-6 flex items-center gap-3 text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <ShieldAlert className="w-5 h-5 flex-shrink-0" />
+              <span>This label has not been validated at its current version yet. Run validation to get a field-by-field report.</span>
+            </div>
+          ) : latestValidation.versionNumber !== label.currentVersion ? (
+            <div className="mb-6 flex items-center gap-3 text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <ShieldAlert className="w-5 h-5 flex-shrink-0" />
+              <span>
+                The latest validation report is for version {latestValidation.versionNumber}, but this label is now at
+                version {label.currentVersion}. Re-run validation before relying on it.
+              </span>
+            </div>
+          ) : null}
+
+          {detail?.label?.labelData?.estimatedFields?.length > 0 && (
+            <div className="mb-6 flex items-center justify-between gap-3 text-amber-900 bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="font-semibold">
+                  {detail.label.labelData.estimatedFields.length} {detail.label.labelData.estimatedFields.length === 1 ? "value is" : "values are"} the system's estimate - check them before approving.
+                </span>
+              </div>
+              <button
+                onClick={() => setShowOnlyEstimated(!showOnlyEstimated)}
+                className={`px-3 py-1.5 text-sm font-bold rounded-lg border transition-colors ${showOnlyEstimated ? 'bg-amber-200 border-amber-400 text-amber-900' : 'bg-white border-amber-300 text-amber-800 hover:bg-amber-100'}`}
+              >
+                {showOnlyEstimated ? "Show all fields" : "Show estimates"}
+              </button>
             </div>
           )}
-          <div>
-            <h2 className="text-lg font-black text-gray-900 mb-3">Label fields</h2>
-            <LabelFieldsPanel
-              labelData={label.labelData}
-              verdicts={latestValidation?.verdicts}
-              provenance={provenance}
-              onEditField={(field) => setEditingField(field)}
-              onAskAssistant={handleAskAssistant}
-              detailedView={detailedView}
-              showOnlyEstimated={showOnlyEstimated}
+
+          <div className={`mb-6 rounded-2xl border-2 p-5 ${band.classes}`}>
+            <div className="flex items-start gap-3">
+              <BandIcon className="w-7 h-7 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xl font-black">{band.title}</p>
+                <p className="text-sm mt-1">{band.body}</p>
+                {validationContext(latestValidation) && (
+                  <p className="text-xs mt-2 opacity-75">{validationContext(latestValidation)}</p>
+                )}
+                {detailedView && latestValidation?.engineVersion && (
+                  <p className="text-xs mt-1 opacity-75">Engine {latestValidation.engineVersion}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {latestValidation?.verdicts?.length > 0 && (
+              <div>
+                <h2 className="text-lg font-black text-gray-900 mb-3">What needs attention</h2>
+                <VerdictList
+                  verdicts={latestValidation.verdicts}
+                  detailedView={detailedView}
+                  onEditField={(field) => setEditingField(field)}
+                  onAskAssistant={handleAskAssistant}
+                />
+              </div>
+            )}
+            <div>
+              <h2 className="text-lg font-black text-gray-900 mb-3">Label fields</h2>
+              <LabelFieldsPanel
+                labelData={label.labelData}
+                verdicts={latestValidation?.verdicts}
+                provenance={provenance}
+                onEditField={(field) => setEditingField(field)}
+                onAskAssistant={handleAskAssistant}
+                detailedView={detailedView}
+                showOnlyEstimated={showOnlyEstimated}
+              />
+            </div>
+
+            <div className="mt-12 pt-8 border-t border-gray-200">
+              <h2 className="text-xl font-black mb-4">Final Sign-off</h2>
+              <ApprovalTab
+                label={label}
+                latestValidation={latestValidation}
+                currentVersion={label.currentVersion}
+                onApprovalChanged={load}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Chat Sidebar (Right) */}
+      <div className={`fixed top-0 right-0 h-screen bg-gray-50 border-l border-gray-200 shadow-xl transition-transform duration-300 z-40 w-[400px] ${isChatOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="h-full flex flex-col pt-[72px]">
+          <div className="flex-1 overflow-y-auto">
+            <ChatTab
+              labelId={id}
+              currentVersion={label.currentVersion}
+              initialMessage={assistantDraft}
+              onLabelUpdated={load}
             />
           </div>
         </div>
+      </div>
+
+      {/* Floating Bot Button (if chat closed) */}
+      {!isChatOpen && (
+        <button 
+          onClick={() => setIsChatOpen(true)} 
+          className="fixed bottom-6 right-6 p-4 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 transition-colors z-50 group flex items-center justify-center"
+        >
+          <MessageSquarePlus className="w-6 h-6" />
+        </button>
       )}
 
-      {/* Tab 2: Chat & AI Edits */}
-      {activeTab === "chat" && (
-        <ChatTab
-          labelId={id}
-          currentVersion={label.currentVersion}
-          initialMessage={assistantDraft}
-          onLabelUpdated={load}
-        />
-      )}
-
-      {/* Tab 3: Extraction Verification (§14.5) */}
-      {activeTab === "extraction" && (
-        <ExtractionTab
-          labelId={id}
-          labelData={label.labelData}
-          currentVersion={label.currentVersion}
-          onFieldConfirmed={load}
-        />
-      )}
-
-      {/* Tab 4: Approval & Release */}
-      {activeTab === "approval" && (
-        <ApprovalTab
-          label={label}
-          latestValidation={latestValidation}
-          currentVersion={label.currentVersion}
-          onApprovalChanged={load}
-        />
-      )}
-
-      {/* Tab 5: Versions History & Diff */}
-      {activeTab === "versions" && (
-        <VersionsTab
-          labelId={id}
-          currentVersion={label.currentVersion}
-          onRestored={async () => {
-            await load();
-            setActiveTab("overview");
-          }}
-        />
+      {/* Close Bot Button (if chat open) */}
+      {isChatOpen && (
+        <button 
+          onClick={() => setIsChatOpen(false)} 
+          className="fixed top-6 right-[416px] p-2 bg-white text-gray-500 hover:text-gray-900 rounded-full shadow-md z-50 transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
       )}
 
       {/* Direct Field Edit Modal */}

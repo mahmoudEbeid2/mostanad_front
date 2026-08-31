@@ -5,11 +5,9 @@ import toast from "react-hot-toast";
 import { getLabel, postValidate } from "../services/apiGeneratedLabels";
 import LabelFieldsPanel from "../components/LabelFieldsPanel";
 import VerdictList from "../components/VerdictList";
-import VersionsTab from "../components/label-detail/VersionsTab";
 import EditFieldModal from "../components/label-detail/EditFieldModal";
 import ChatTab from "../components/label-detail/ChatTab";
 import ApprovalTab from "../components/label-detail/ApprovalTab";
-import ExtractionTab from "../components/label-detail/ExtractionTab";
 import Button from "../ui/Button";
 
 const STATUS_CLASSES = {
@@ -128,10 +126,7 @@ export default function LabelDetail() {
 
   useEffect(() => {
     localStorage.setItem("labelDetailDetailedView", detailedView ? "true" : "false");
-    if (!detailedView && (activeTab === "extraction" || activeTab === "versions")) {
-      setActiveTab("overview");
-    }
-  }, [activeTab, detailedView]);
+  }, [detailedView]);
 
   const handleRunValidation = async () => {
     try {
@@ -148,7 +143,7 @@ export default function LabelDetail() {
 
   const handleAskAssistant = (message) => {
     setAssistantDraft(message);
-    setActiveTab("chat");
+    setIsChatOpen(true);
   };
 
   if (isLoading) {

@@ -225,6 +225,19 @@ export default function LabelDetail() {
             </div>
           </div>
 
+          <div className="mb-6">
+            <h2 className="text-lg font-black text-gray-900 mb-3">Label fields</h2>
+            <LabelFieldsPanel
+              labelData={label.labelData}
+              verdicts={latestValidation?.verdicts}
+              provenance={provenance}
+              onEditField={(field) => setEditingField(field)}
+              onAskAssistant={handleAskAssistant}
+              detailedView={detailedView}
+              showOnlyEstimated={showOnlyEstimated}
+            />
+          </div>
+
           {!latestValidation ? (
             <div className="mb-6 flex items-center gap-3 text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
               <ShieldAlert className="w-5 h-5 flex-shrink-0" />
@@ -294,18 +307,6 @@ export default function LabelDetail() {
                 />
               </div>
             )}
-            <div>
-              <h2 className="text-lg font-black text-gray-900 mb-3">Label fields</h2>
-              <LabelFieldsPanel
-                labelData={label.labelData}
-                verdicts={latestValidation?.verdicts}
-                provenance={provenance}
-                onEditField={(field) => setEditingField(field)}
-                onAskAssistant={handleAskAssistant}
-                detailedView={detailedView}
-                showOnlyEstimated={showOnlyEstimated}
-              />
-            </div>
 
             <div className="mt-12 pt-8 border-t border-gray-200">
               <h2 className="text-xl font-black mb-4">Final Sign-off</h2>
@@ -322,15 +323,13 @@ export default function LabelDetail() {
 
       {/* Chat Sidebar (Right) */}
       <div className={`fixed top-0 right-0 h-screen bg-gray-50 border-l border-gray-200 shadow-xl transition-transform duration-300 z-40 w-[400px] ${isChatOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="h-full flex flex-col pt-[72px]">
-          <div className="flex-1 overflow-y-auto">
-            <ChatTab
-              labelId={id}
-              currentVersion={label.currentVersion}
-              initialMessage={assistantDraft}
-              onLabelUpdated={load}
-            />
-          </div>
+        <div className="h-full flex flex-col pt-[72px] pb-4 px-3">
+          <ChatTab
+            labelId={id}
+            currentVersion={label.currentVersion}
+            initialMessage={assistantDraft}
+            onLabelUpdated={load}
+          />
         </div>
       </div>
 

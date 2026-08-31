@@ -12,6 +12,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
   const [activeConflict, setActiveConflict] = useState(null);
   const [staleError, setStaleError] = useState(null);
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -36,6 +37,13 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, activeConflict, isSending, staleError]);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [inputMessage]);
 
   const handleSendMessage = async (overrideAcknowledged = false, textToSend = null) => {
     const text = textToSend || (overrideAcknowledged ? activeConflict?.originalMessage : inputMessage.trim());
@@ -143,7 +151,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
   };
 
   return (
-    <div className="flex flex-col h-[650px] bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot className="w-5 h-5 text-blue-600" />
@@ -186,7 +194,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
              return (
               <div key={idx} className="flex gap-3 justify-end">
                 <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-blue-600 text-white rounded-br-none">
-                  <p className="whitespace-pre-wrap">{m.content}</p>
+                  <p className="whitespace-pre-wrap break-words">{m.content}</p>
                   <div className="text-[10px] text-blue-100 mt-1 text-right">
                     {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
                   </div>
@@ -204,7 +212,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
                 <Bot className="w-4 h-4" />
               </div>
               <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-gray-100 text-gray-900 rounded-bl-none space-y-2 border border-gray-200">
-                {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
+                {m.content && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
 
                 {m.status === "applied" && (
                   <div className="bg-white rounded-xl p-4 border-2 border-green-200">
@@ -313,15 +321,22 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
             e.preventDefault();
             handleSendMessage(false);
           }}
-          className="flex items-center gap-3"
+          className="flex items-end gap-3"
         >
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage(false);
+              }
+            }}
             disabled={isSending}
-            placeholder="Type an edit instruction or question..."
-            className="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+            placeholder="Type an edit instruction or question... (Shift+Enter for a new line)"
+            rows={1}
+            className="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm leading-normal resize-none overflow-y-auto max-h-40 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
           />
           <Button type="submit" disabled={!inputMessage.trim() || isSending} isLoading={isSending}>
             <Send className="w-4 h-4" /> Send

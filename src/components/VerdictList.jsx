@@ -160,7 +160,7 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant }) {
             <Pencil className="w-3.5 h-3.5" /> Edit {field.label || "Field"}
           </button>
         )}
-        {v.status === "FAIL" && !canEditInline && (
+        {Boolean(onAskAssistant) && (
           <button
             type="button"
             onClick={() => onAskAssistant?.(assistantPrompt(v, field))}

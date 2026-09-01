@@ -137,8 +137,8 @@ function FieldRow({ field, labelData, fieldVerdicts, fieldProvenance, isEstimate
           {isEstimated && <EstimatedPill />}
         </div>
         <div className="flex items-center gap-0.5">
-          {isEstimated && onAskAssistant && (
-            <IconButton tone="purple" title="Ask assistant to fix this" onClick={() => onAskAssistant(`I need to correct the ${field.label}. `)}>
+          {onAskAssistant && (
+            <IconButton tone="purple" title="Ask assistant to review/edit this" onClick={() => onAskAssistant(`Please help me update or complete the ${field.label} field.`)}>
               <MessageSquarePlus className="w-3.5 h-3.5" />
             </IconButton>
           )}
@@ -197,8 +197,8 @@ export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEd
         <div className="relative px-6 py-6 text-center border-b-2 border-gray-900 bg-gray-50/60">
           <div className="absolute top-3 right-3 flex items-center gap-1">
             {isTitleEstimated && <EstimatedPill />}
-            {isTitleEstimated && onAskAssistant && (
-              <IconButton tone="purple" title="Ask assistant to fix this" onClick={() => onAskAssistant(`I need to correct the ${titleField.label}. `)}>
+            {onAskAssistant && (
+              <IconButton tone="purple" title="Ask assistant to review/edit this" onClick={() => onAskAssistant(`Please help me update or complete the ${titleField.label} field.`)}>
                 <MessageSquarePlus className="w-3.5 h-3.5" />
               </IconButton>
             )}

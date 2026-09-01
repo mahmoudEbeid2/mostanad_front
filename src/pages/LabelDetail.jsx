@@ -99,6 +99,7 @@ export default function LabelDetail() {
   const navigate = useNavigate();
   const [detail, setDetail] = useState(null); // { label, currentVersion, latestValidation, provenance }
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -111,7 +112,8 @@ export default function LabelDetail() {
 
   const load = useCallback(async () => {
     try {
-      setIsLoading(true);
+      if (!detail) setIsLoading(true);
+      else setIsRefreshing(true);
       setLoadError(null);
       const d = await getLabel(id);
       setDetail(d);
@@ -119,6 +121,7 @@ export default function LabelDetail() {
       setLoadError(err.message || "Failed to load label");
     } finally {
       setIsLoading(false);
+        setIsRefreshing(false);
     }
   }, [id]);
 

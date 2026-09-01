@@ -103,6 +103,7 @@ function RemediationBlock({ remediation }) {
 function assistantPrompt(v, field) {
   const isVirtualPath = v.path?.startsWith("_");
   const fieldName = field?.label || v.label?.en || (isVirtualPath ? "the label" : v.path) || "this field";
+  if (v.path === "_localized_text") return `Fix ${fieldName} by ensuring that for each listed field, the language code specified in the "primary" property is also present as a key in the "translations" object with the corresponding text. Do not remove any existing translation keys. ${v.message}`;
   if (v.remediation?.suggested) return `Fix ${fieldName} by using "${v.remediation.suggested}".`;
   return `Fix ${fieldName}: ${v.message || plainStatusCopy(v)}`;
 }

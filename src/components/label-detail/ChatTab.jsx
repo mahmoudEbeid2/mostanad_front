@@ -214,7 +214,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
               <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-gray-100 text-gray-900 rounded-bl-none space-y-2 border border-gray-200">
                 {m.content && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
 
-                {m.status === "applied" && (
+                {(m.status === "applied" || Boolean(m.resultVersion) || Boolean(m.appliedPatch)) && (
                   <div className="bg-white rounded-xl p-4 border-2 border-green-200">
                     <div className="flex items-center gap-2 font-bold text-green-700 mb-2">
                       <CheckCircle2 className="w-5 h-5" />
@@ -225,7 +225,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
                         <AlertTriangle className="w-3.5 h-3.5" /> Override recorded
                       </p>
                     )}
-                    {getPatchDiffHtml(m.patch)}
+                    {getPatchDiffHtml(m.appliedPatch || m.patch)}
                   </div>
                 )}
 

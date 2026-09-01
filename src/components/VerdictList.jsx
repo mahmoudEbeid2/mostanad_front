@@ -112,11 +112,14 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant }) {
   const action = suggestedAction(v);
   const canEditInline = Boolean(onEditField && field && ["FAIL", "NEEDS_CONFIRMATION", "WARN", "NEEDS_REVIEW"].includes(v.status));
 
+  // Determine a friendly name for the field
+  const friendlyName = v.label?.en || field?.label || (detailedView ? v.path : "This field");
+
   return (
-    <div className={`bg-white rounded-xl border p-4 flex flex-col gap-2 ${known ? "border-gray-200" : "border-fuchsia-300 ring-1 ring-fuchsia-200"}`}>
+    <div className={`bg-white rounded-xl border p-4 flex flex-col gap-3 ${known ? "border-gray-200" : "border-fuchsia-300 ring-1 ring-fuchsia-200"}`}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="font-bold text-gray-900 text-sm truncate">{v.label?.en || field?.label || v.path}</span>
+          <span className="font-bold text-gray-900 text-sm truncate">{friendlyName}</span>
           {v.label?.ar && <span className="text-gray-500 text-sm" dir="rtl">{v.label.ar}</span>}
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -130,38 +133,45 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant }) {
       </div>
 
       <p className="text-sm text-gray-800">{v.message || plainStatusCopy(v)}</p>
-      {v.message && <p className="text-xs text-gray-500">{plainStatusCopy(v)}</p>}
+      
+      {/* Only show duplicate plain status copy if detailedView is true to avoid clutter */}
+      {detailedView && v.message && <p className="text-xs text-gray-500">{plainStatusCopy(v)}</p>}
 
-      {action && (
-        <p className="text-sm font-semibold text-gray-900">
-          {v.remediation?.suggested ? `-> ${action}: "${v.remediation.suggested}"` : `-> ${action}`}
-        </p>
+      {/* Hide the raw "-> add" transition text in normal view, show suggested value plainly */}
+      {v.remediation?.suggested && (
+        <div className="bg-gray-50 border rounded-lg p-2 text-sm text-gray-800">
+          <span className="font-semibold text-gray-600 mr-2">Suggestion:</span>
+          {v.remediation.suggested}
+        </div>
+      )}
+      {detailedView && action && !v.remediation?.suggested && (
+         <p className="text-xs font-mono text-gray-400">{"->"} {action}</p>
       )}
 
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap mt-1">
         {canEditInline && (
           <button
             type="button"
             onClick={() => onEditField(field)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800 hover:bg-blue-100"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800 hover:bg-blue-100 transition-colors shadow-sm"
           >
-            <Pencil className="w-3.5 h-3.5" /> Edit {field.label}
+            <Pencil className="w-3.5 h-3.5" /> Edit {field.label || "Field"}
           </button>
         )}
         {v.status === "FAIL" && !canEditInline && (
           <button
             type="button"
             onClick={() => onAskAssistant?.(assistantPrompt(v, field))}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700"
-            title="This needs the assistant because it is not mapped to a simple editable field."
+            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-800 hover:bg-purple-100 transition-colors shadow-sm"
+            title="Ask the AI Assistant to resolve this issue"
           >
-            <MessageSquareText className="w-3.5 h-3.5" /> Ask the assistant to fix this
+            <MessageSquareText className="w-3.5 h-3.5" /> 💬 Ask Assistant to fix
           </button>
         )}
       </div>
 
-      {v.status === "FAIL" && !v.citation && (
-        <p className="text-xs text-gray-400 italic">No citation available for this failure (schema-layer check, not a cited rule).</p>
+      {detailedView && v.status === "FAIL" && !v.citation && (
+        <p className="text-xs text-gray-400 italic mt-2">No citation available for this failure (schema-layer check, not a cited rule).</p>
       )}
 
       {(v.citation || v.sourceDocumentId) && (
@@ -185,7 +195,7 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant }) {
       {detailedView && <RemediationBlock remediation={v.remediation} />}
 
       {detailedView && (
-        <div className="flex items-center gap-3 text-[10px] text-gray-400 font-mono uppercase tracking-wide">
+        <div className="flex items-center gap-3 text-[10px] text-gray-400 font-mono uppercase tracking-wide mt-2">
           <span>{v.path}</span>
           {v.ruleKey && <span>- {v.ruleKey}</span>}
           {v.autoFixable && <span className="text-blue-500 font-bold">- auto-fixable</span>}

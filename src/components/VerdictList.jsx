@@ -101,7 +101,8 @@ function RemediationBlock({ remediation }) {
 }
 
 function assistantPrompt(v, field) {
-  const fieldName = field?.label || v.label?.en || v.path || "this field";
+  const isVirtualPath = v.path?.startsWith("_");
+  const fieldName = field?.label || v.label?.en || (isVirtualPath ? "the label" : v.path) || "this field";
   if (v.remediation?.suggested) return `Fix ${fieldName} by using "${v.remediation.suggested}".`;
   return `Fix ${fieldName}: ${v.message || plainStatusCopy(v)}`;
 }

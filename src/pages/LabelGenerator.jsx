@@ -3,76 +3,17 @@ import Select from "react-select";
 import countryList from "react-select-country-list";
 import iso6391 from "iso-639-1";
 import { generateLabelAi } from "../services/apiReferenceLabels";
-import { getLabel } from "../services/apiGeneratedLabels";
 import { getTaskStatus } from "../services/apiProducts"; // Reuse existing task polling
 import { getCompanies } from "../services/apiCompanies";
 import { useAuth } from "../context/AuthContext";
 import { isCompanyUser } from "../utils/permissions";
-import LocalizedField from "../components/LocalizedField";
 import { io } from "socket.io-client";
-import { Copy, Sparkles, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Button from "../ui/Button";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
-
-// Read-only, correct against the new labelSchema. Not the rich editable/provenance
-// view — that's the label detail screen (B1). This just shows what generation
-// produced without lying about a field's shape.
-function GeneratedLabelSummary({ label, estimatedFields }) {
-  if (!label) return null;
-  const isEstimated = (path) => (estimatedFields || []).includes(path);
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
-      <div className="p-6">
-        <LocalizedField label="Product Name" value={label.productName} estimated={isEstimated("productName")} />
-      </div>
-      <div className="p-6 space-y-4">
-        <LocalizedField label="Aim of Use" value={label.aimOfUse} estimated={isEstimated("aimOfUse")} />
-        <LocalizedField label="Direction of Use" value={label.directionOfUse} estimated={isEstimated("directionOfUse")} />
-        <LocalizedField label="Withdrawal Period" value={label.withdrawalPeriod} estimated={isEstimated("withdrawalPeriod")} />
-        <LocalizedField label="Storage" value={label.storage} estimated={isEstimated("storage")} />
-      </div>
-      {label.targetAnimalSpecies?.list?.length > 0 && (
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-gray-500 text-xs font-bold uppercase tracking-wide">Target Animal Species</span>
-            {isEstimated("targetAnimalSpecies") && (
-              <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                Estimated
-              </span>
-            )}
-            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-full">
-              source: {label.targetAnimalSpecies.source}
-            </span>
-          </div>
-          <p className="text-sm text-gray-900">{label.targetAnimalSpecies.list.join(", ")}</p>
-        </div>
-      )}
-      {label.activeIngredients?.length > 0 && (
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-gray-500 text-xs font-bold uppercase tracking-wide">Active Ingredients</span>
-            {isEstimated("activeIngredients") && (
-              <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                Estimated
-              </span>
-            )}
-          </div>
-          <ul className="space-y-1">
-            {label.activeIngredients.map((ing, idx) => (
-              <li key={idx} className="text-sm text-gray-900">
-                {ing.translations?.en} {ing.translations?.ar ? `(${ing.translations.ar})` : ""} — {ing.amount}{ing.unit || ""}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function LabelGenerator() {
   const navigate = useNavigate();
@@ -132,28 +73,6 @@ export default function LabelGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [jobProgress, setJobProgress] = useState(0);
   const [jobMessage, setJobMessage] = useState("");
-  const [jobError, setJobError] = useState(null);
-
-  // A1: the task result no longer carries the label as the thing to trust directly —
-  // once the task completes we fetch the authoritative record from GET /labels/:labelId.
-  const [labelId, setLabelId] = useState(null);
-  const [genSummary, setGenSummary] = useState(null); // { validation, riskScore, autonomyTier } from the task result
-  const [labelDetail, setLabelDetail] = useState(null); // { label, currentVersion, latestValidation, provenance }
-  const [isFetchingLabel, setIsFetchingLabel] = useState(false);
-  const [fetchLabelError, setFetchLabelError] = useState(null);
-
-  const fetchGeneratedLabel = async (id) => {
-    try {
-      setIsFetchingLabel(true);
-      setFetchLabelError(null);
-      const detail = await getLabel(id);
-      setLabelDetail(detail);
-    } catch (err) {
-      setFetchLabelError(err.message || "Failed to load the generated label");
-    } finally {
-      setIsFetchingLabel(false);
-    }
-  };
 
   const handleGenerate = async (e) => {
     e.preventDefault();
@@ -168,11 +87,6 @@ export default function LabelGenerator() {
 
     try {
       setIsGenerating(true);
-      setJobError(null);
-      setLabelId(null);
-      setGenSummary(null);
-      setLabelDetail(null);
-      setFetchLabelError(null);
       setJobProgress(0);
       setJobMessage("Starting AI label generation...");
 
@@ -213,15 +127,13 @@ export default function LabelGenerator() {
         cleanup();
         setIsGenerating(false);
         const newLabelId = result?.labelId;
-        setGenSummary({ validation: result?.validation, riskScore: result?.riskScore, autonomyTier: result?.autonomyTier });
         if (newLabelId) {
-          setLabelId(newLabelId);
           toast.success("Label generated successfully!");
           navigate(`/labels/detail/${newLabelId}`);
         } else {
           // Contract says this can't happen post-Phase-1, but don't silently show
           // nothing if it ever does.
-          setJobError("The generation task completed but returned no labelId.");
+          toast.error("The generation task completed but returned no labelId.");
         }
       };
 
@@ -230,8 +142,7 @@ export default function LabelGenerator() {
         settled = true;
         cleanup();
         setIsGenerating(false);
-        setJobError(message || "AI generation failed.");
-        toast.error("Generation failed. Please try again.");
+        toast.error(message || "AI generation failed.");
       };
 
       const applyStatus = (status, data) => {
@@ -284,106 +195,6 @@ export default function LabelGenerator() {
       setIsGenerating(false);
     }
   };
-
-  const copyRawJson = () => {
-    if (!labelDetail?.label) return;
-    navigator.clipboard.writeText(JSON.stringify(labelDetail.label, null, 2));
-    toast.success("Copied to clipboard!");
-  };
-
-  const startOver = () => {
-    setLabelId(null);
-    setGenSummary(null);
-    setLabelDetail(null);
-    setFetchLabelError(null);
-  };
-
-  if (labelId) {
-    return (
-      <div className="max-w-5xl mx-auto pb-12 animate-in fade-in zoom-in-95">
-        <div className="mb-6 flex justify-between items-center flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-blue-600" /> Created Label
-            </h1>
-            <p className="text-gray-500 mt-2 font-mono text-xs">Label ID: {labelId}</p>
-          </div>
-          <div className="flex gap-3">
-            <Link
-              to={`/labels/detail/${labelId}`}
-              className="flex items-center gap-1.5 font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl transition-colors"
-            >
-              <ExternalLink className="w-5 h-5" /> Open Full Detail
-            </Link>
-            <button
-              onClick={copyRawJson}
-              disabled={!labelDetail?.label}
-              className="flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 px-4 py-2 rounded-xl transition-colors"
-            >
-              <Copy className="w-5 h-5" /> Copy Raw JSON
-            </button>
-            <button
-              onClick={startOver}
-              className="bg-gray-800 hover:bg-gray-900 text-white rounded-xl px-5 py-2 font-bold transition-colors"
-            >
-              Generate Another
-            </button>
-          </div>
-        </div>
-
-        {genSummary?.validation && (
-          <div className={`mb-4 text-sm px-4 py-3 rounded-xl border flex items-center gap-2 ${
-            genSummary.validation.passed
-              ? "text-green-800 bg-green-50 border-green-200"
-              : "text-red-800 bg-red-50 border-red-200"
-          }`}>
-            {genSummary.validation.passed ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-            <span>
-              Validation: {genSummary.validation.passed ? "passed" : "failed"} —{" "}
-              {genSummary.validation.errorCount} error(s), {genSummary.validation.warningCount} warning(s).
-              This is a quick summary from generation; run full validation on the label detail screen for the field-by-field report.
-            </span>
-          </div>
-        )}
-
-        {isFetchingLabel && (
-          <div className="flex items-center gap-3 text-gray-500 py-12 justify-center">
-            <span className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            Loading generated label...
-          </div>
-        )}
-
-        {fetchLabelError && (
-          <div className="flex items-center gap-3 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <span>{fetchLabelError}</span>
-            <button onClick={() => fetchGeneratedLabel(labelId)} className="ml-auto font-bold underline">Retry</button>
-          </div>
-        )}
-
-        {jobError && (
-          <div className="mb-4 flex items-center gap-3 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <span>{jobError}</span>
-          </div>
-        )}
-
-        {labelDetail?.label && (
-          <>
-            <p className="mb-4 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-2">
-              <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-              This is a read-only summary of what was generated. Open the full detail screen above for
-              per-field validation, provenance, editing, chat, versions, and approval.
-            </p>
-            <GeneratedLabelSummary
-              label={labelDetail.label}
-              estimatedFields={labelDetail.label.estimatedFields}
-            />
-          </>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-3xl mx-auto pb-12 animate-in fade-in zoom-in-95">

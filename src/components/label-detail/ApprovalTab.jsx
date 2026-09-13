@@ -4,8 +4,22 @@ import toast from "react-hot-toast";
 import { getApprovals, postApprove, postRevoke } from "../../services/apiGeneratedLabels";
 import { useAuth } from "../../context/AuthContext";
 import Button from "../../ui/Button";
+import { LABEL_FIELD_CATALOG, provenanceForField } from "../../utils/labelFieldCatalog";
 
-export default function ApprovalTab({ label, latestValidation, currentVersion, onApprovalChanged }) {
+// Turns a raw field path ("activeIngredients[0].amount") into something a
+// signer can actually read without knowing the schema.
+function friendlyFieldLabel(path) {
+  const nested = path.match(/^([a-zA-Z]+)\[(\d+)\]\.(.+)$/);
+  if (nested) {
+    const [, base, idx, sub] = nested;
+    const entry = LABEL_FIELD_CATALOG.find((f) => f.path === base);
+    return `${entry?.label || base} — ingredient ${Number(idx) + 1} ${sub}`;
+  }
+  const entry = LABEL_FIELD_CATALOG.find((f) => f.path === path);
+  return entry?.label || path;
+}
+
+export default function ApprovalTab({ label, latestValidation, currentVersion, provenance, onApprovalChanged }) {
   const { user } = useAuth();
   // Mirrors the backend's assertCanPublishGlobal (labelApprovalController.js):
   // a company account can never publish globally, and a system user needs the
@@ -208,17 +222,23 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, o
                   <p className="text-xs text-amber-800">
                     Signing an estimated value is a legal commitment on regulated output. Check each field deliberately:
                   </p>
-                  {estimatedFields.map((field) => (
-                    <label key={field} className="flex items-center gap-2 text-xs text-gray-700 bg-amber-50/50 p-2.5 rounded-lg border border-amber-200 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={signedEstimated.includes(field)}
-                        onChange={() => toggleSignEstimated(field)}
-                        className="rounded text-amber-600"
-                      />
-                      <span>I formally verify and sign the estimated value for: <strong>{field}</strong></span>
-                    </label>
-                  ))}
+                  {estimatedFields.map((field) => {
+                    const basis = provenanceForField(provenance, field).find((p) => p.key === field)?.estimateBasis;
+                    return (
+                      <label key={field} className="flex items-start gap-2 text-xs text-gray-700 bg-amber-50/50 p-2.5 rounded-lg border border-amber-200 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={signedEstimated.includes(field)}
+                          onChange={() => toggleSignEstimated(field)}
+                          className="rounded text-amber-600 mt-0.5"
+                        />
+                        <span>
+                          I formally verify and sign the estimated value for: <strong>{friendlyFieldLabel(field)}</strong>
+                          {basis && <span className="block mt-1 text-amber-800 italic">{basis}</span>}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </div>

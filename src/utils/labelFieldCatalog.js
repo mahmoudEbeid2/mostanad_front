@@ -51,9 +51,24 @@ export const LABEL_SECTIONS = [
   { key: "regulatory", label: "Regulatory & Manufacturer Information" },
 ];
 
+// Mirrors groundingPolicy.js's NEVER_GUESS_FIELDS — the backend now always
+// generates something for these (grounded, or Tier 6 "estimated" with a real
+// value), so an empty-looking value is a genuine gap worth a visible row, not
+// a not-applicable field to hide. FieldValue renders the gap explicitly.
+const NEVER_HIDE_FIELDS = new Set([
+  "strength",
+  "activeIngredients",
+  "withdrawalPeriod",
+  "shelfLifeAfterOpening",
+  "registrationNumber",
+  "batchNo",
+  "expiryDate",
+]);
+
 // Whether a field has any content worth a row — used to skip fully-empty
 // not-applicable fields from a screen that otherwise renders ~30 rows.
 export function fieldHasContent(labelData, field) {
+  if (NEVER_HIDE_FIELDS.has(field.path)) return true;
   const v = labelData?.[field.path];
   if (v === null || v === undefined) return false;
   switch (field.type) {

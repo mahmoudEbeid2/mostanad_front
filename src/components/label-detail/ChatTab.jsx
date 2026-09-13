@@ -3,8 +3,9 @@ import { Send, Bot, User, ShieldAlert, FileText, CheckCircle2, AlertTriangle, Re
 import toast from "react-hot-toast";
 import { getChat, postChat } from "../../services/apiGeneratedLabels";
 import Button from "../../ui/Button";
+import { provenanceForField } from "../../utils/labelFieldCatalog";
 
-export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initialMessage = "" }) {
+export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initialMessage = "", estimatedFields = [], provenance = null }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -131,21 +132,40 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
     if (!patchList || !patchList.length) return null;
     return (
       <div className="mt-3 space-y-2">
-        {patchList.map((op, i) => (
-          <div key={i} className="bg-white rounded p-2 text-xs border border-gray-200">
-            <div className="font-mono font-semibold text-gray-700 mb-1">{op.path}</div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-red-50 text-red-800 p-1.5 rounded border border-red-100">
-                <span className="block text-[10px] text-red-500 uppercase font-bold mb-0.5">Before</span>
-                {JSON.stringify(op.oldValue) || "empty"}
+        {patchList.map((op, i) => {
+          // Current-state lookup only — chat history doesn't persist per-message
+          // provenance, so this reflects whether op.path is estimated NOW, not
+          // necessarily at the moment this message was sent.
+          const isEstimated = estimatedFields.includes(op.path);
+          const basis = provenanceForField(provenance, op.path).find((p) => p.key === op.path)?.estimateBasis;
+          return (
+            <div key={i} className={`rounded p-2 text-xs border ${isEstimated ? "bg-amber-50 border-amber-300" : "bg-white border-gray-200"}`}>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="font-mono font-semibold text-gray-700">{op.path}</div>
+                {isEstimated && (
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-full">
+                    Estimated
+                  </span>
+                )}
               </div>
-              <div className="bg-green-50 text-green-800 p-1.5 rounded border border-green-100">
-                <span className="block text-[10px] text-green-500 uppercase font-bold mb-0.5">After</span>
-                {JSON.stringify(op.value)}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-red-50 text-red-800 p-1.5 rounded border border-red-100">
+                  <span className="block text-[10px] text-red-500 uppercase font-bold mb-0.5">Before</span>
+                  {op.oldValue === undefined || op.oldValue === null ? "empty" : JSON.stringify(op.oldValue)}
+                </div>
+                <div className={`p-1.5 rounded border ${isEstimated ? "bg-amber-100 text-amber-900 border-amber-300 font-bold" : "bg-green-50 text-green-800 border-green-100"}`}>
+                  <span className={`block text-[10px] uppercase font-bold mb-0.5 ${isEstimated ? "text-amber-700" : "text-green-500"}`}>After</span>
+                  {JSON.stringify(op.value)}
+                </div>
               </div>
+              {isEstimated && (
+                <p className="mt-1.5 text-amber-900 italic">
+                  {basis || "Estimated by AI — no confirmed source for this value. Requires human review before approval."}
+                </p>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };

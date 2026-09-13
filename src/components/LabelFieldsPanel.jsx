@@ -4,12 +4,14 @@ import ProvenanceBadge from "./ProvenanceBadge";
 import { LABEL_FIELD_CATALOG, LABEL_SECTIONS, fieldHasContent, verdictsForField, provenanceForField } from "../utils/labelFieldCatalog";
 
 function EstimatedSourceInfo({ entries }) {
-  if (!entries || entries.length === 0) return <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border-amber-200 px-1.5 py-0.5 rounded-full border">AI Estimate</span>;
-  const primary = entries[0];
-  let text = "Estimated by AI from general knowledge. This is the least trustworthy value on the page.";
-  if (primary.provenance === "reference") {
+  const primary = (entries || []).find((e) => e.estimated) || entries?.[0];
+  if (!primary) return <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border-amber-200 px-1.5 py-0.5 rounded-full border">AI Estimate</span>;
+  // estimateBasis is the backend's plain-language "what it was inferred from" —
+  // always prefer it over the generic provenance-tier text below.
+  let text = primary.estimateBasis || "Estimated by AI from general knowledge. This is the least trustworthy value on the page.";
+  if (!primary.estimateBasis && primary.provenance === "reference") {
     text = `From approved reference: ${primary.sourceRef?.id || "Unknown"}`;
-  } else if (primary.provenance === "external") {
+  } else if (!primary.estimateBasis && primary.provenance === "external") {
     text = `From authoritative source${primary.sourceUrl ? " (has citation)" : ""}`;
   }
   return (
@@ -32,6 +34,13 @@ function FieldValue({ field, value, provenance }) {
   switch (field.type) {
     case "localized":
       if (!value?.translations) return <p className="text-sm text-gray-400 italic flex-1">Not applicable to this product.</p>;
+      if (!value.translations.en && !value.translations.ar && !value.primary) {
+        return (
+          <p className="text-sm text-amber-800 italic bg-amber-50 border-l-2 border-amber-300 pl-3 py-1 flex-1">
+            Present but empty — the system generated no value for this field. Requires human input before approval.
+          </p>
+        );
+      }
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1">
           {value.translations.en && <p className="text-sm text-gray-900">{value.translations.en}</p>}
@@ -52,13 +61,36 @@ function FieldValue({ field, value, provenance }) {
     case "ingredients":
       return (
         <ul className="space-y-1 flex-1">
-          {(value || []).map((ing, i) => (
-            <li key={i} className="text-sm text-gray-900">
-              {ing.translations?.en} {ing.translations?.ar ? `(${ing.translations.ar})` : ""} — {ing.amount}
-              {ing.unit || ""}
-              {ing.normalizedName && <span className="text-gray-400 text-xs ml-1">[{ing.normalizedName}]</span>}
-            </li>
-          ))}
+          {(value || []).map((ing, i) => {
+            const amountPath = `activeIngredients[${i}].amount`;
+            const amountProv = (provenance || []).find((p) => p.key === amountPath);
+            const amountEstimated = Boolean(amountProv?.estimated);
+            return (
+              <li key={i} className="text-sm text-gray-900">
+                <span>
+                  {ing.translations?.en} {ing.translations?.ar ? `(${ing.translations.ar})` : ""} —{" "}
+                  {amountEstimated ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="font-bold text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded">
+                        {ing.amount || "(none)"}{ing.unit || ""}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                        Estimated
+                      </span>
+                    </span>
+                  ) : (
+                    <>{ing.amount}{ing.unit || ""}</>
+                  )}
+                  {ing.normalizedName && <span className="text-gray-400 text-xs ml-1">[{ing.normalizedName}]</span>}
+                </span>
+                {amountEstimated && (
+                  <p className="mt-0.5 text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                    {amountProv.estimateBasis || "Estimated by AI — no confirmed source for this amount. Requires human review."}
+                  </p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       );
     case "analysis":
@@ -88,7 +120,14 @@ function FieldValue({ field, value, provenance }) {
       return <p className="text-sm text-gray-900 flex-1">{value ? "Yes" : "No"}</p>;
     case "string":
     default:
-      return <p className="text-sm text-gray-900 flex-1">{value ?? "—"}</p>;
+      if (value === "" && NEVER_EMPTY_STRING_FIELDS.has(field.path)) {
+        return (
+          <p className="text-sm text-amber-800 italic bg-amber-50 border-l-2 border-amber-300 pl-3 py-1 flex-1">
+            Present but empty — the system generated no value for this field. Requires human input before approval.
+          </p>
+        );
+      }
+      return <p className="text-sm text-gray-900 flex-1">{value === "" ? "—" : value ?? "—"}</p>;
   }
 }
 
@@ -104,6 +143,11 @@ function IconButton({ onClick, title, tone = "gray", children }) {
     </button>
   );
 }
+
+// groundingPolicy.js NEVER_GUESS_FIELDS that stay plain strings — schema
+// requires min(1) so an empty string here means the backend genuinely
+// couldn't fill it, which is a real gap, not just "not set".
+const NEVER_EMPTY_STRING_FIELDS = new Set(["registrationNumber", "batchNo", "expiryDate"]);
 
 function EstimatedPill() {
   return (
@@ -230,7 +274,7 @@ export default function LabelFieldsPanel({ labelData, verdicts, provenance, onEd
                 labelData={labelData}
                 fieldVerdicts={verdictsForField(verdicts, field.path)}
                 fieldProvenance={provenanceForField(provenance, field.path)}
-                isEstimated={estimatedFields.includes(field.path)}
+                isEstimated={estimatedFields.includes(field.path) || provenanceForField(provenance, field.path).some((p) => p.estimated)}
                 detailedView={detailedView}
                 onEditField={onEditField}
                 onAskAssistant={onAskAssistant}

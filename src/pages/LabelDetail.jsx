@@ -317,6 +317,7 @@ export default function LabelDetail() {
                 label={label}
                 latestValidation={latestValidation}
                 currentVersion={label.currentVersion}
+                provenance={provenance}
                 onApprovalChanged={load}
               />
             </div>
@@ -332,6 +333,8 @@ export default function LabelDetail() {
             currentVersion={label.currentVersion}
             initialMessage={assistantDraft}
             onLabelUpdated={load}
+            estimatedFields={label.labelData?.estimatedFields}
+            provenance={provenance}
           />
         </div>
       </div>

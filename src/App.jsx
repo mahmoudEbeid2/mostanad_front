@@ -11,14 +11,10 @@ import Labels from "./pages/Labels";
 import LabelsList from "./pages/LabelsList";
 import LabelDetail from "./pages/LabelDetail";
 import LabelGenerator from "./pages/LabelGenerator";
-import TemplatesList from "./pages/TemplatesList";
-import Certificates from "./pages/Certificates";
 import Catalogs from "./pages/Catalogs";
 import Users from "./pages/Users";
 import Companies from "./pages/Companies";
 import Account from "./pages/Account";
-import AiTemplateGenerator from "./pages/AiTemplateGenerator";
-import CertificateGenerator from "./pages/CertificateGenerator";
 import Processing from "./pages/Processing";
 import BulkProcessing from "./pages/BulkProcessing";
 import Brands from "./pages/Brands";
@@ -61,10 +57,6 @@ function App() {
             <Route path="/labels/browse" element={<RequirePermission permission="read_labels"><LabelsList /></RequirePermission>} />
             <Route path="/labels/detail/:id" element={<RequirePermission permission="read_labels"><LabelDetail /></RequirePermission>} />
             <Route path="/labels/generator" element={<LabelGenerator />} />
-            <Route path="/templates" element={<RequirePermission permission="read_templates"><TemplatesList /></RequirePermission>} />
-            <Route path="/templates/editor" element={<RequirePermission permission="update_templates"><Certificates /></RequirePermission>} />
-            <Route path="/templates/ai" element={<RequirePermission permission="create_templates"><AiTemplateGenerator /></RequirePermission>} />
-            <Route path="/certificates/generate" element={<RequirePermission permission="create_certificates"><CertificateGenerator /></RequirePermission>} />
             {/* Certificates V2 (CERTIFICATES_V2_PLAN.md §13.1) */}
             <Route path="/certificates/types" element={<RequirePermission permission="read_certificate_types"><CertificateTypes /></RequirePermission>} />
             <Route path="/certificates/templates" element={<RequirePermission permission="read_certificate_templates"><CertificateTemplates /></RequirePermission>} />

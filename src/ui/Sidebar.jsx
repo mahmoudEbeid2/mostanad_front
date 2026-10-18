@@ -14,8 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
   Tag,
-  Scale,
-  Archive
+  Scale
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -64,17 +63,6 @@ const navLinks = [
       { name: "Generated certificates", path: "/certificates", permission: "read_certificates" },
     ]
   },
-  {
-    // V1 — hidden here until Phase 8 removes it
-    name: "Legacy",
-    icon: Archive,
-    subLinks: [
-      { name: "Templates List", path: "/templates", permission: "read_templates" },
-      { name: "Template Editor", path: "/templates/editor", permission: "update_templates" },
-      { name: "AI Generator", path: "/templates/ai", permission: "create_templates" },
-      { name: "Certificate Generator", path: "/certificates/generate", permission: "create_certificates" }
-    ]
-  },
 ];
 
 export default function Sidebar() {
@@ -84,8 +72,7 @@ export default function Sidebar() {
     Products: location.pathname.startsWith("/products"),
     "Regulatory & EDA": location.pathname.startsWith("/regulatory") || location.pathname.startsWith("/eda"),
     Labels: location.pathname.startsWith("/labels") || location.pathname.startsWith("/reference-labels"),
-    Certificates: location.pathname.startsWith("/certificates") || location.pathname.startsWith("/invoices"),
-    Legacy: location.pathname.startsWith("/templates") || location.pathname === "/certificates/generate"
+    Certificates: location.pathname.startsWith("/certificates") || location.pathname.startsWith("/invoices")
   });
 
   const toggleDropdown = (name) => {

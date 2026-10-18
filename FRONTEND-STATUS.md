@@ -51,3 +51,24 @@ The following backend endpoints exist in `mostanad` backend routes but do not ye
    - Backend has endpoints to inspect model disagreements, golden benchmark runs, and shadow comparison records.
 3. **Adversarial Audit Trigger (`POST /labels/:id/audit`) & Replay (`POST /labels/:id/replay`)**:
    - Backend supports on-demand adversarial auditing and determinism replays.
+
+---
+
+## Certificates V2 — manual QA script (CERTIFICATES_V2_PLAN.md §16.3)
+
+Automated equivalent: `node tests/certificates-v2/ui-smoke.mjs --user <qa> --password-file <file>` in the backend repo (phases 1–5, 87 checks). Run against `npm run dev:test` + `npx vite`. Every step: no console errors; every failure shows the backend's message.
+
+| Screen | Route | Check |
+|---|---|---|
+| Types | `/certificates/types` | Empty state → "New type" → create COA; edit; deactivate; delete an unused type; deleting a used one is refused with the reason. |
+| Templates list | `/certificates/templates` | Empty states (no types → link to Types; no templates → upload); cards show thumbnail, type, scope, brand, country, active/latest version; filters; archive. |
+| Wizard · upload | `/certificates/templates/new` | Upload ADDVET `.ai` → named conversion stages → sanitized preview (pixel-identical); a non-PDF `.ai` → "Create PDF Compatible File" hint; outlined text → "converted to outlines" hint; same slot twice → "Open it" link. |
+| Wizard · fields | `…/versions/:id?step=fields` | Select a value → floating "Make field"; Ctrl-select two → "Make fields (2)"; a 2-line selection → 2 fields; highlights never alter the document; label → key slug; source picker; date format only for date sources; autosave "All changes saved". |
+| Wizard · settings / prepare | `?step=settings`, `?step=prepare` | Slot warning names the template to be superseded; Prepare → gate report (pass/fail per check, per-field Δ, diff image); test fill from a product and ad-hoc values, flags inline. |
+| Wizard · activate | `?step=activate` | Lists what is superseded; unconfirmed fields block it; after: "Generate certificates from an invoice". |
+| Invoices | `/invoices` | Upload panel (brand hint, destination country) + recent invoices; search by number/customer; action per status (View progress / Review / Open / See error). |
+| Invoice reading | `/invoices/:id` (extracting) | Original beside the 3 named stages; failure card quotes the real reason, "No certificates were created", Try again. |
+| Invoice review | `/invoices/:id` (review/ready) | Original beside details; "edited" chips; amber ambiguous dates; needs-match banner; cells edit in place (Enter saves, Esc reverts); ✓ code / name / you chips; candidates with scores + catalogue search; ignore / use again; add / delete line; Confirm & continue disabled until every line is matched or ignored; plan preview + gaps with "Create template". |
+| Generation | `/invoices/:id?batch=` | "Generate N certificates" → progress "x of N", ready / needs attention / rendering / failed counts, cards with thumbnails, gaps banner, Download all (ZIP), Generate again (new run, run selector). |
+| Generated certificates | `/certificates` | Filters (search, type, status, only with issues), paging, cards link to the editor. |
+| Editor | `/certificates/:id` | Server render in the frame; typing updates it instantly, saved after 1 s ("Saved hh:mm", vN+1); Esc reverts; Ctrl+S; edit from another session → conflict dialog (Reload / Overwrite with mine); reset to source; Versions drawer (view old = read-only banner; restore = new version); Export PDF downloads `{type}-{product}-{batch}.pdf`; Finalize disabled with "N issues left"; final = read-only + Download PDF + Duplicate as draft. |

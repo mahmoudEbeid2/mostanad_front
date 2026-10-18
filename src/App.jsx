@@ -25,6 +25,13 @@ import Brands from "./pages/Brands";
 import EdaRequirements from "./pages/EdaRequirements";
 import RegulatoryDocuments from "./pages/RegulatoryDocuments";
 import ReferenceLabels from "./pages/ReferenceLabels";
+import CertificateTypes from "./pages/CertificateTypes";
+import CertificateTemplates from "./pages/CertificateTemplates";
+import CertificateTemplateWizard from "./pages/CertificateTemplateWizard";
+import Invoices from "./pages/Invoices";
+import InvoiceReview from "./pages/InvoiceReview";
+import CertificatesList from "./pages/CertificatesList";
+import CertificateEditor from "./pages/CertificateEditor";
 
 import ProtectedRoute from "./ui/ProtectedRoute";
 import AppLayout from "./ui/AppLayout";
@@ -58,6 +65,17 @@ function App() {
             <Route path="/templates/editor" element={<RequirePermission permission="update_templates"><Certificates /></RequirePermission>} />
             <Route path="/templates/ai" element={<RequirePermission permission="create_templates"><AiTemplateGenerator /></RequirePermission>} />
             <Route path="/certificates/generate" element={<RequirePermission permission="create_certificates"><CertificateGenerator /></RequirePermission>} />
+            {/* Certificates V2 (CERTIFICATES_V2_PLAN.md §13.1) */}
+            <Route path="/certificates/types" element={<RequirePermission permission="read_certificate_types"><CertificateTypes /></RequirePermission>} />
+            <Route path="/certificates/templates" element={<RequirePermission permission="read_certificate_templates"><CertificateTemplates /></RequirePermission>} />
+            <Route path="/certificates/templates/new" element={<RequirePermission permission="create_certificate_templates"><CertificateTemplateWizard /></RequirePermission>} />
+            <Route path="/certificates/templates/:templateId" element={<RequirePermission permission="read_certificate_templates"><CertificateTemplateWizard /></RequirePermission>} />
+            <Route path="/certificates/templates/:templateId/versions/:versionId" element={<RequirePermission permission="update_certificate_templates"><CertificateTemplateWizard /></RequirePermission>} />
+            <Route path="/invoices" element={<RequirePermission permission="read_invoices"><Invoices /></RequirePermission>} />
+            <Route path="/invoices/new" element={<RequirePermission permission="read_invoices"><Invoices /></RequirePermission>} />
+            <Route path="/invoices/:id" element={<RequirePermission permission="read_invoices"><InvoiceReview /></RequirePermission>} />
+            <Route path="/certificates" element={<RequirePermission permission="read_certificates"><CertificatesList /></RequirePermission>} />
+            <Route path="/certificates/:id" element={<RequirePermission permission="read_certificates"><CertificateEditor /></RequirePermission>} />
             <Route path="/users" element={<RequirePermission permission="read_users"><Users /></RequirePermission>} />
             <Route path="/companies" element={<RequirePermission permission="read_companies"><Companies /></RequirePermission>} />
             <Route path="/brands" element={<Brands />} />

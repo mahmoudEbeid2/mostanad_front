@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoice review</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f9fafb}
+a{color:#2563eb;text-decoration:none}a:hover{color:#1d4ed8;text-decoration:underline}
+.nav-a{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:8px;font-size:14px;font-weight:500;color:#4b5563}
+.nav-a:hover{background:#f3f4f6;color:#111827;text-decoration:none}
+.nav-on{background:#eff6ff;color:#1d4ed8}
+.nav-sub{display:block;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#4b5563}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border-radius:12px;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.btn-p{background:#2563eb;color:#fff;border:1px solid #2563eb;box-shadow:0 4px 10px rgba(37,99,235,.2)}
+.btn-s{background:#fff;color:#374151;border:1px solid #d1d5db}
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px}
+.inp{min-height:36px;border:1px solid #d1d5db;border-radius:8px;padding:0 10px;background:#fff;font:13px Inter,system-ui,sans-serif;color:#111827;box-sizing:border-box;width:100%}
+.lbl{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:#4b5563}
+th{font-size:12px;font-weight:600;color:#4b5563;text-align:left;padding:10px 12px;border-bottom:1px solid #e5e7eb;background:#f9fafb;white-space:nowrap}
+td{font-size:13px;padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;white-space:nowrap}
+</style>
+</head>
+<body>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; font-family: Inter, system-ui, sans-serif; color: #111827; background: #f9fafb">
+
+<nav aria-label="Main" style="flex: 1 1 240px; background: #ffffff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column">
+  <div style="padding: 24px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 12px">
+    <div style="width: 32px; height: 32px; border-radius: 8px; background: #2563eb; display: flex; align-items: center; justify-content: center">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="m9 15 2 2 4-4"></path></svg>
+    </div>
+    <span style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">Dossira</span>
+  </div>
+  <div style="padding: 16px 12px; display: flex; flex-direction: column; gap: 4px">
+    <a class="nav-a" href="#">Dashboard</a>
+    <a class="nav-a" href="#">Products</a>
+    <a class="nav-a" href="#">Labels</a>
+    <a class="nav-a nav-on" href="#">Certificates</a>
+    <div style="margin: 4px 0 4px 16px; padding-left: 12px; border-left: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 2px">
+      <a class="nav-sub" href="A1-templates-list.html">Templates</a>
+      <a class="nav-sub" href="#">Types</a>
+      <a class="nav-sub" href="#" style="background: #eff6ff; color: #1d4ed8">Invoices</a>
+      <a class="nav-sub" href="B5-certificate-editor.html">Generated certificates</a>
+    </div>
+  </div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; padding: 32px">
+  <div style="max-width: 1152px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px">
+      <div>
+        <a href="#" style="font-size: 13px; font-weight: 500">← Invoices</a>
+        <h1 style="margin: 6px 0 0; font-size: 22px; font-weight: 700">Invoice INV-2026-0142 <span class="pill" style="background: #fffbeb; color: #92400e; vertical-align: middle; margin-left: 6px">review</span></h1>
+        <p style="margin: 4px 0 0; font-size: 13px; color: #6b7280">Check what was read from the invoice, match every line to a product, then generate.</p>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap">
+        <button type="button" class="btn btn-s">Re-run matching</button>
+        <button type="button" class="btn btn-p" disabled="" style="opacity: .55; cursor: not-allowed">Confirm &amp; continue</button>
+      </div>
+    </div>
+
+    <div role="status" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 14px">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+      <span><b>1 line needs a product match</b> before you can confirm. Pick one of the suggestions or search the catalogue.</span>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+      <section class="card" aria-label="Original invoice" style="flex: 1 1 300px; min-width: 0; overflow: hidden">
+        <div style="padding: 12px 14px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; font-size: 13px">
+          <b>Original invoice</b><a href="#">Open full size</a>
+        </div>
+        <div style="background: #e5e7eb; padding: 18px; display: flex; justify-content: center">
+          <div aria-hidden="true" style="width: 100%; max-width: 300px; aspect-ratio: 210 / 297; background: #fff; box-shadow: 0 4px 14px rgba(17,24,39,.15); padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 7px">
+            <div style="display: flex; justify-content: space-between"><div style="width: 60px; height: 14px; background: #d1d5db"></div><div style="width: 70px; height: 6px; background: #e5e7eb"></div></div>
+            <div style="height: 8px; width: 40%; background: #9ca3af; margin-top: 8px"></div>
+            <div style="height: 4px; width: 60%; background: #e5e7eb"></div><div style="height: 4px; width: 50%; background: #e5e7eb"></div>
+            <div style="height: 10px; background: #dbeafe; margin-top: 10px"></div>
+            <div style="height: 5px; background: #e5e7eb"></div><div style="height: 5px; background: #fde68a"></div><div style="height: 5px; background: #e5e7eb"></div><div style="height: 5px; background: #e5e7eb"></div>
+            <div style="margin-top: auto; align-self: flex-end; width: 40%; height: 8px; background: #9ca3af"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="hdr" style="flex: 2 1 480px; min-width: 0; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <h2 id="hdr" style="margin: 0; font-size: 15px; font-weight: 600">Invoice details</h2>
+          <span style="font-size: 12px; color: #6b7280">Read by AI · edited fields are marked</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px">
+          <label class="lbl">Invoice number<input class="inp" value="INV-2026-0142"></label>
+          <label class="lbl">Invoice date<input class="inp" value="2026-10-12"></label>
+          <label class="lbl"><span>Customer <span class="pill" style="background: #eff6ff; color: #1d4ed8; margin-left: 4px">edited</span></span><input class="inp" value="Gulf Animal Health LLC"></label>
+          <label class="lbl">Destination country<select class="inp"><option>Saudi Arabia (SA)</option></select></label>
+        </div>
+
+        <h3 style="margin: 8px 0 0; font-size: 15px; font-weight: 600">Plan preview</h3>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px">
+            <span class="pill" style="background: #f3f4f6; color: #374151; font-family: ui-monospace, monospace">COA</span>
+            <span style="flex: 1">3 certificates · one per product</span><span style="color: #6b7280">COA — Brand A v2</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px">
+            <span class="pill" style="background: #f3f4f6; color: #374151; font-family: ui-monospace, monospace">FSC</span>
+            <span style="flex: 1">1 certificate · whole invoice</span><span style="color: #6b7280">Free Sale — SA v1</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px dashed #fca5a5; border-radius: 10px; background: #fef2f2; color: #991b1b">
+            <span style="flex: 1">Line 4 has no COA template for <b>Brand C · SA</b></span><a href="A1-templates-list.html" style="color: #b91c1c; font-weight: 600">Create template</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" aria-labelledby="items" style="overflow: hidden">
+      <div style="padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb">
+        <h2 id="items" style="margin: 0; font-size: 15px; font-weight: 600">Lines <span style="color: #6b7280; font-weight: 500">· 4</span></h2>
+        <button type="button" class="btn btn-s" style="min-height: 36px; padding: 0 12px; font-size: 13px">+ Add line</button>
+      </div>
+      <div style="overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; min-width: 960px">
+          <thead><tr><th>#</th><th>Name on invoice</th><th>Code</th><th>Batch</th><th>Production</th><th>Expiry</th><th>Qty</th><th style="min-width: 240px">Product match</th></tr></thead>
+          <tbody>
+            
+              <tr style="">
+                <td style="color: #6b7280">1</td>
+                <td style="font-weight: 500">ADD-E120 1L</td>
+                <td style="font-family: ui-monospace, monospace">AE-120</td>
+                <td style="font-family: ui-monospace, monospace">AVVS1124011</td>
+                <td>06/2024</td>
+                <td>06/2027</td>
+                <td>400 btl</td>
+                <td>
+                  
+                    <span style="display: inline-flex; align-items: center; gap: 8px"><span class="pill" style="background: #ecfdf5; color: #047857">✓ code</span><span>ADD-E120</span></span>
+                  
+                  
+                </td>
+              </tr>
+            
+              <tr style="">
+                <td style="color: #6b7280">2</td>
+                <td style="font-weight: 500">ADD ZINC E 150</td>
+                <td style="font-family: ui-monospace, monospace">—</td>
+                <td style="font-family: ui-monospace, monospace">AVVS1124012</td>
+                <td>06/2024</td>
+                <td>06/2027</td>
+                <td>250 btl</td>
+                <td>
+                  
+                    <span style="display: inline-flex; align-items: center; gap: 8px"><span class="pill" style="background: #ecfdf5; color: #047857">✓ name</span><span>ADD-ZINC E150</span></span>
+                  
+                  
+                </td>
+              </tr>
+            
+              <tr style="background: #fffdf5">
+                <td style="color: #6b7280">3</td>
+                <td style="font-weight: 500">Selenium plus oral</td>
+                <td style="font-family: ui-monospace, monospace">—</td>
+                <td style="font-family: ui-monospace, monospace">AVVS1124019</td>
+                <td>07/2024</td>
+                <td>07/2026</td>
+                <td>120 btl</td>
+                <td>
+                  
+                  
+                    <label style="display: flex; align-items: center; gap: 8px"><span class="pill" style="background: #fffbeb; color: #92400e">needs match</span>
+                      <select class="inp" aria-label="Choose product" style="border-color: #f59e0b"><option>Choose… (3 suggestions)</option><option>ADD-SELEN Plus · 0.82</option><option>ADD-SELEN · 0.77</option></select>
+                    </label>
+                  
+                </td>
+              </tr>
+            
+              <tr style="">
+                <td style="color: #6b7280">4</td>
+                <td style="font-weight: 500">C-VIT 500</td>
+                <td style="font-family: ui-monospace, monospace">CV-500</td>
+                <td style="font-family: ui-monospace, monospace">CV240611</td>
+                <td>06/2024</td>
+                <td>12/2026</td>
+                <td>80 btl</td>
+                <td>
+                  
+                    <span style="display: inline-flex; align-items: center; gap: 8px"><span class="pill" style="background: #ecfdf5; color: #047857">✓ code</span><span>C-VIT 500 (Brand C)</span></span>
+                  
+                  
+                </td>
+              </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</main>
+</div>
+</body>
+</html>

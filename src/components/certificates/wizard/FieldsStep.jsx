@@ -1,0 +1,242 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { AlertCircle, Check, CopyPlus, Loader2 } from "lucide-react";
+import Button from "../../../ui/Button";
+import DocumentFrame from "../DocumentFrame";
+import FieldMarker from "../FieldMarker";
+import FieldPanel from "../FieldPanel";
+import { getFieldSources, getVersionHtml, newVersionFrom, saveFields, suggestFields } from "../../../services/apiCertificateTemplates";
+import { slugKey, sourceOptions } from "../../../utils/certificateFieldSources";
+import { describeCertificateError } from "../../../utils/certificateErrors";
+
+// Wizard step 2 — mark fields (plan §13.4). The document is the sanitized
+// design; the field list autosaves (800 ms debounce) with PUT …/fields, which
+// validates offsets in the server's layout and returns measured suggestions.
+
+const STR = {
+  saving: "Saving…",
+  saved: "All changes saved",
+  invalid: "Not saved — fix:",
+  failed: "Not saved:",
+  next: "Next: settings",
+  newVersion: "Create a new version to edit",
+  aiNone: "No new suggestions.",
+  aiDisabled: "AI suggestions are turned off.",
+};
+
+let uidSeq = 0;
+const nextUid = () => `f${++uidSeq}`;
+
+const toDraft = (f) => ({ ...f, uid: nextUid(), keyEdited: true });
+const toPayload = (drafts) =>
+  drafts.map((f, i) => ({
+    key: f.key,
+    label: f.label,
+    page: f.page,
+    lineId: f.lineId,
+    charStart: f.charStart,
+    charEnd: f.charEnd,
+    sampleValue: f.sampleValue,
+    source: f.source,
+    format: f.format || null,
+    required: f.required !== false,
+    align: f.align || "left",
+    origin: f.origin || "manual",
+    confirmed: f.confirmed !== false,
+    sortOrder: i,
+  }));
+
+const uniqueKey = (base, taken) => {
+  let k = base;
+  for (let n = 2; taken.has(k); n++) k = `${base}_${n}`;
+  return k;
+};
+
+export default function FieldsStep({ scope, version, onSaved, onNext }) {
+  const navigate = useNavigate();
+  const readOnly = version.status !== "draft";
+  const [drafts, setDrafts] = useState(() => (version.fields || []).map(toDraft));
+  const [activeUid, setActiveUid] = useState(null);
+  const [frameInfo, setFrameInfo] = useState(null);
+  const [catalogue, setCatalogue] = useState(null);
+  const [save, setSave] = useState({ state: "saved" });
+  const [suggestions, setSuggestions] = useState({});
+  const [aiChips, setAiChips] = useState([]);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(true);
+  const dirty = useRef(false);
+  const onSavedRef = useRef(onSaved);
+  onSavedRef.current = onSaved;
+
+  useEffect(() => {
+    getFieldSources(scope)
+      .then(setCatalogue)
+      .catch((err) => toast.error(err.message));
+  }, [scope]);
+  const options = useMemo(() => sourceOptions(catalogue), [catalogue]);
+
+  const update = (fn) => {
+    dirty.current = true;
+    setDrafts(fn);
+  };
+
+  // autosave, debounced 800 ms (plan §13.4)
+  useEffect(() => {
+    if (readOnly || !dirty.current) return undefined;
+    setSave({ state: "pending" });
+    const t = setTimeout(async () => {
+      setSave({ state: "saving" });
+      try {
+        const res = await saveFields(scope, version.id, toPayload(drafts));
+        setSuggestions(res.suggestions || {});
+        setSave({ state: "saved" });
+        onSavedRef.current?.(res);
+      } catch (err) {
+        setSave({ state: err.code === "INVALID_FIELDS" ? "invalid" : "error", message: describeCertificateError(err), problems: err.data?.problems || [] });
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [drafts, readOnly, scope, version.id]);
+
+  // drafts are built outside the state updater: StrictMode runs updaters twice
+  const draftsRef = useRef(drafts);
+  draftsRef.current = drafts;
+  const make = useCallback((segments) => {
+    const cur = draftsRef.current;
+    const taken = new Set(cur.map((f) => f.key));
+    const added = segments.map((s, i) => {
+      const label = `Field ${cur.length + i + 1}`;
+      const key = uniqueKey(slugKey(label), taken);
+      taken.add(key);
+      return { ...s, uid: nextUid(), key, label, source: { kind: "manual" }, format: null, required: true, align: "left", origin: "manual", confirmed: true, keyEdited: false };
+    });
+    update((list) => [...list, ...added]);
+    setActiveUid(added[added.length - 1]?.uid ?? null);
+  }, []);
+
+  const change = (uid, patch) => update((cur) => cur.map((f) => (f.uid === uid ? { ...f, ...patch } : f)));
+  const remove = (uid) => update((cur) => cur.filter((f) => f.uid !== uid));
+  const move = (i, d) =>
+    update((cur) => {
+      const next = cur.slice();
+      [next[i], next[i + d]] = [next[i + d], next[i]];
+      return next;
+    });
+  const confirm = (key) => update((cur) => cur.map((f) => (f.key === key ? { ...f, confirmed: true } : f)));
+
+  const suggest = async () => {
+    setAiBusy(true);
+    try {
+      const res = await suggestFields(scope, version.id);
+      const fresh = res.suggestions.filter((s) => !drafts.some((f) => f.lineId === s.lineId && f.charStart < s.charEnd && s.charStart < f.charEnd));
+      setAiChips(fresh);
+      if (!fresh.length) toast(STR.aiNone);
+    } catch (err) {
+      if (err.code === "ASSIST_DISABLED") {
+        setAiEnabled(false);
+        toast(STR.aiDisabled);
+      } else toast.error(err.message);
+    } finally {
+      setAiBusy(false);
+    }
+  };
+  const acceptChip = (c) => {
+    setAiChips((cur) => cur.filter((x) => x !== c));
+    update((cur) => {
+      const taken = new Set(cur.map((f) => f.key));
+      return [...cur, { ...c, uid: nextUid(), key: uniqueKey(c.key, taken), keyEdited: true }];
+    });
+  };
+
+  const forkVersion = async () => {
+    try {
+      const res = await newVersionFrom(scope, version.id);
+      navigate(`/certificates/templates/${res.templateId}/versions/${res.versionId}?step=fields`);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const activeKey = drafts.find((f) => f.uid === activeUid)?.key;
+  const selectByKey = useCallback((key) => setActiveUid((cur) => drafts.find((f) => f.key === key)?.uid ?? cur), [drafts]);
+
+  const status = (
+    <span className="text-xs flex items-center gap-1" data-testid="save-state">
+      {["saving", "pending"].includes(save.state) && (
+        <>
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> {STR.saving}
+        </>
+      )}
+      {save.state === "saved" && !readOnly && (
+        <span className="text-emerald-700 flex items-center gap-1">
+          <Check className="w-3.5 h-3.5" /> {STR.saved}
+        </span>
+      )}
+    </span>
+  );
+
+  return (
+    <div className="space-y-3">
+      {["invalid", "error"].includes(save.state) && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" data-testid="save-error">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium">{save.state === "invalid" ? STR.invalid : STR.failed}</p>
+            {save.problems?.length ? (
+              <ul className="list-disc ml-4">
+                {save.problems.map((p, i) => (
+                  <li key={i}>
+                    <span className="font-mono">{p.key}</span>: {p.message}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>{save.message}</p>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="flex items-center justify-end gap-2">
+        {readOnly && (
+          <Button variant="secondary" onClick={forkVersion}>
+            <CopyPlus className="w-4 h-4" /> {STR.newVersion}
+          </Button>
+        )}
+        <Button onClick={onNext} disabled={!readOnly && (save.state !== "saved" || !drafts.length)}>
+          {STR.next}
+        </Button>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
+        <DocumentFrame
+          load={() => getVersionHtml(scope, version.id, "sanitized")}
+          reloadKey={version.id}
+          minHeight={720}
+          onReady={setFrameInfo}
+          overlay={(scale) => (
+            <FieldMarker frameInfo={frameInfo} fields={drafts} activeKey={activeKey} onMake={make} onSelect={selectByKey} disabled={readOnly} scale={scale} />
+          )}
+        />
+        <FieldPanel
+          fields={drafts}
+          options={options}
+          activeUid={activeUid}
+          onActivate={setActiveUid}
+          onChange={change}
+          onRemove={remove}
+          onMove={move}
+          onConfirm={readOnly ? null : confirm}
+          suggestions={suggestions}
+          readOnly={readOnly}
+          aiEnabled={aiEnabled}
+          aiChips={aiChips}
+          aiBusy={aiBusy}
+          onSuggest={suggest}
+          onAcceptChip={acceptChip}
+          onRejectChip={(c) => setAiChips((cur) => cur.filter((x) => x !== c))}
+          header={status}
+        />
+      </div>
+    </div>
+  );
+}

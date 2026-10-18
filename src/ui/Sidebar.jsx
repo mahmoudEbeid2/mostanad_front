@@ -14,7 +14,8 @@ import {
   ChevronDown,
   ChevronUp,
   Tag,
-  Scale
+  Scale,
+  Archive
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -52,22 +53,26 @@ const navLinks = [
       { name: "Reference Labels", path: "/reference-labels" }
     ]
   },
-  { 
-    name: "Templates", 
-    icon: FileCheck,
-    permission: "read_templates",
+  {
+    // Certificates V2 (CERTIFICATES_V2_PLAN.md §13.1)
+    name: "Certificates",
+    icon: Sparkles,
     subLinks: [
-      { name: "Templates List", path: "/templates" },
-      { name: "Template Editor", path: "/templates/editor" },
-      { name: "AI Generator", path: "/templates/ai" }
+      { name: "Templates", path: "/certificates/templates", permission: "read_certificate_templates" },
+      { name: "Types", path: "/certificates/types", permission: "read_certificate_types" },
+      { name: "Invoices", path: "/invoices", permission: "read_invoices" },
+      { name: "Generated certificates", path: "/certificates", permission: "read_certificates" },
     ]
   },
-  { 
-    name: "Certificates", 
-    icon: Sparkles,
-    permission: "read_certificates",
+  {
+    // V1 — hidden here until Phase 8 removes it
+    name: "Legacy",
+    icon: Archive,
     subLinks: [
-      { name: "Generator", path: "/certificates/generate" }
+      { name: "Templates List", path: "/templates", permission: "read_templates" },
+      { name: "Template Editor", path: "/templates/editor", permission: "update_templates" },
+      { name: "AI Generator", path: "/templates/ai", permission: "create_templates" },
+      { name: "Certificate Generator", path: "/certificates/generate", permission: "create_certificates" }
     ]
   },
 ];
@@ -79,8 +84,8 @@ export default function Sidebar() {
     Products: location.pathname.startsWith("/products"),
     "Regulatory & EDA": location.pathname.startsWith("/regulatory") || location.pathname.startsWith("/eda"),
     Labels: location.pathname.startsWith("/labels") || location.pathname.startsWith("/reference-labels"),
-    Templates: location.pathname.startsWith("/templates"),
-    Certificates: location.pathname.startsWith("/certificates")
+    Certificates: location.pathname.startsWith("/certificates") || location.pathname.startsWith("/invoices"),
+    Legacy: location.pathname.startsWith("/templates") || location.pathname === "/certificates/generate"
   });
 
   const toggleDropdown = (name) => {
@@ -108,8 +113,10 @@ export default function Sidebar() {
           }
 
           if (link.subLinks) {
+            const subLinks = link.subLinks.filter(sub => !sub.permission || assignedSlugs.includes(sub.permission));
+            if (subLinks.length === 0) return null;
             const isOpen = openDropdowns[link.name];
-            const isActive = link.subLinks.some(sub => location.pathname === sub.path);
+            const isActive = subLinks.some(sub => location.pathname === sub.path);
             return (
               <div key={link.name} className="flex flex-col">
                 <button
@@ -126,11 +133,11 @@ export default function Sidebar() {
                 </button>
                 {isOpen && (
                   <div className="mt-1 ml-4 pl-4 border-l border-gray-200 flex flex-col space-y-1">
-                    {link.subLinks.map(sub => (
+                    {subLinks.map(sub => (
                       <NavLink
                         key={sub.name}
                         to={sub.path}
-                        end={sub.path === "/products" || sub.path === "/regulatory-documents"}
+                        end={sub.path === "/products" || sub.path === "/regulatory-documents" || sub.path === "/certificates"}
                         className={({ isActive: subActive }) =>
                           `block px-3 py-2 rounded-lg text-sm transition-colors ${
                             subActive ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"

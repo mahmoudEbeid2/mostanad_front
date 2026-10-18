@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Certificate editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f9fafb}
+a{color:#2563eb;text-decoration:none}a:hover{color:#1d4ed8;text-decoration:underline}
+.nav-a{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:8px;font-size:14px;font-weight:500;color:#4b5563}
+.nav-a:hover{background:#f3f4f6;color:#111827;text-decoration:none}
+.nav-on{background:#eff6ff;color:#1d4ed8}
+.nav-sub{display:block;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#4b5563}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border-radius:12px;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.btn-p{background:#2563eb;color:#fff;border:1px solid #2563eb;box-shadow:0 4px 10px rgba(37,99,235,.2)}
+.btn-s{background:#fff;color:#374151;border:1px solid #d1d5db}
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px}
+.inp{min-height:40px;border:1px solid #d1d5db;border-radius:8px;padding:0 12px;background:#fff;font:14px Inter,system-ui,sans-serif;color:#111827;box-sizing:border-box;width:100%}
+.cert td{border:1px solid #f3c6a8;padding:5px 8px;vertical-align:top}
+.v{background:#eff6ff;border-radius:2px}
+</style>
+</head>
+<body>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; font-family: Inter, system-ui, sans-serif; color: #111827; background: #f9fafb">
+
+<nav aria-label="Main" style="flex: 1 1 240px; background: #ffffff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column">
+  <div style="padding: 24px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 12px">
+    <div style="width: 32px; height: 32px; border-radius: 8px; background: #2563eb; display: flex; align-items: center; justify-content: center">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="m9 15 2 2 4-4"></path></svg>
+    </div>
+    <span style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">Dossira</span>
+  </div>
+  <div style="padding: 16px 12px; display: flex; flex-direction: column; gap: 4px">
+    <a class="nav-a" href="#">Dashboard</a>
+    <a class="nav-a" href="#">Products</a>
+    <a class="nav-a" href="#">Labels</a>
+    <a class="nav-a nav-on" href="#">Certificates</a>
+    <div style="margin: 4px 0 4px 16px; padding-left: 12px; border-left: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 2px">
+      <a class="nav-sub" href="A1-templates-list.html">Templates</a>
+      <a class="nav-sub" href="#">Types</a>
+      <a class="nav-sub" href="B3-review-and-match.html">Invoices</a>
+      <a class="nav-sub" href="#" style="background: #eff6ff; color: #1d4ed8">Generated certificates</a>
+    </div>
+  </div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; padding: 32px">
+  <div style="max-width: 1152px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px">
+      <div>
+        <div style="font-size: 13px; color: #6b7280"><a href="B3-review-and-match.html">INV-2026-0142</a> / Batch #1</div>
+        <h1 style="margin: 6px 0 0; font-size: 22px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; gap: 10px">COA · ADD-ZINC E150
+          <span class="pill" style="background: #fffbeb; color: #92400e">draft</span>
+          <span class="pill" style="background: #f3f4f6; color: #374151">v3</span>
+        </h1>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+        <button type="button" class="btn btn-s">Versions (3)</button>
+        <button type="button" class="btn btn-s">Export PDF</button>
+        <span style="display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px">
+          <button type="button" class="btn btn-p" disabled="" aria-describedby="fin" style="opacity: .55; cursor: not-allowed">Finalize</button>
+          <span id="fin" style="font-size: 11px; color: #b91c1c">2 issues left</span>
+        </span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+      <section class="card" aria-label="Certificate" style="flex: 3 1 520px; min-width: 0; overflow: hidden">
+        <div style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #4b5563; display: flex; justify-content: space-between">
+          <span>Rendered on the server · matches the PDF</span><span style="color: #047857">Saved 10:42</span>
+        </div>
+        <div style="background: #e5e7eb; padding: 28px; display: flex; justify-content: center; overflow: auto">
+          <div class="cert" style="width: 520px; min-height: 690px; background: #fff; box-shadow: 0 6px 24px rgba(17,24,39,.18); padding: 36px 40px; box-sizing: border-box; font-family: Arial, sans-serif; font-size: 12px; color: #1f2937">
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <div style="width: 92px; height: 38px; border: 1px dashed #cbd5e1; color: #94a3b8; font-size: 10px; display: flex; align-items: center; justify-content: center">[LOGO]</div>
+              <div style="text-align: right; font-size: 10px; color: #64748b; line-height: 1.5">Sample Vet Co.<br>Industrial Zone, Istanbul</div>
+            </div>
+            <div style="text-align: center; color: #0f766e; font-size: 17px; font-weight: 700; letter-spacing: .08em; margin: 22px 0 18px">CERTIFICATE OF ANALYSIS</div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; line-height: 1.6">
+              <div>Product Name: <span class="v">ADD-ZINC E150</span></div>
+              <div>Batch No.: <span class="v">AVVS1124012</span></div>
+              <div>Production Date: <span class="v">06/2024</span></div>
+              <div>Expiry Date: <span style="display: inline-block; min-width: 54px; border-bottom: 2px solid #dc2626">​</span></div>
+              <div>Document No.: <span class="v">COAAVVS1124012</span></div>
+              <div>Producer: Sample Vet Co.</div>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 26px; font-size: 11.5px">
+              <tbody><tr style="background: #0f766e; color: #fff; font-weight: 700"><td style="border-color: #0f766e">Test</td><td style="border-color: #0f766e">Specification</td><td style="border-color: #0f766e; text-align: center">Result</td></tr>
+              <tr><td>Appearance</td><td>Clear yellow liquid</td><td style="text-align: center">Complies</td></tr>
+              <tr><td>pH</td><td>3.0 – 5.0</td><td style="text-align: center"><span class="v">4.2</span></td></tr>
+              <tr><td>Constituents (per Litre)</td><td>Vitamin E<br><span class="v" style="font-size: 10px; background: #fef3c7">Zinc sulphate monohydrate</span><br>Distillate water up to</td><td style="text-align: center">150000 mg<br><span class="v">250 mg</span><br>1000 mL</td></tr>
+              <tr><td>Sterility</td><td>Sterile</td><td style="text-align: center">Complies</td></tr>
+            </tbody></table>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 56px">
+              <div style="font-size: 11px; color: #475569">Quality Control Manager<div style="width: 140px; border-bottom: 1px solid #94a3b8; height: 32px"></div></div>
+              <div aria-hidden="true" style="width: 74px; height: 74px; border-radius: 50%; border: 2px solid #60a5fa; opacity: .6"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="card" aria-label="Values" style="flex: 2 1 340px; min-width: 0; display: flex; flex-direction: column">
+        <div style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">Values</h2>
+          <span style="font-size: 12px; color: #6b7280">Tab · Ctrl+S saves</span>
+        </div>
+        <div style="padding: 8px 16px; display: flex; flex-direction: column">
+          
+            <div style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+                <label for="f1" style="font-size: 13px; font-weight: 600">Product name</label>
+                <span class="pill" style="background: #f3f4f6; color: #4b5563; font-weight: 500">Product · name</span>
+              </div>
+              <input id="f1" class="inp" value="ADD-ZINC E150" placeholder="" style="">
+              
+            </div>
+          
+            <div style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+                <label for="f2" style="font-size: 13px; font-weight: 600">Batch number</label>
+                <span class="pill" style="background: #f3f4f6; color: #4b5563; font-weight: 500">Invoice line · batch</span>
+              </div>
+              <input id="f2" class="inp" value="AVVS1124012" placeholder="" style="">
+              
+            </div>
+          
+            <div style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+                <label for="f3" style="font-size: 13px; font-weight: 600">Production date</label>
+                <span class="pill" style="background: #f3f4f6; color: #4b5563; font-weight: 500">Invoice line · production</span>
+              </div>
+              <input id="f3" class="inp" value="06/2024" placeholder="" style="">
+              
+            </div>
+          
+            <div style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+                <label for="f4" style="font-size: 13px; font-weight: 600">Expiry date</label>
+                <span class="pill" style="background: #f3f4f6; color: #4b5563; font-weight: 500">Invoice line · expiry</span>
+              </div>
+              <input id="f4" class="inp" value="" placeholder="MM/YYYY" style="border-color: #dc2626">
+              
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px">
+                  <span class="pill" style="background: #fef2f2; color: #b91c1c">missing</span><span style="color: #4b5563">Required value missing — not on the invoice</span>
+                </div>
+              
+            </div>
+          
+            <div style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+                <label for="f5" style="font-size: 13px; font-weight: 600">Document number</label>
+                <span class="pill" style="background: #f3f4f6; color: #4b5563; font-weight: 500">Template · COA + batch</span>
+              </div>
+              <input id="f5" class="inp" value="COAAVVS1124012" placeholder="" style="">
+              
+            </div>
+          
+            <div style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+                <label for="f6" style="font-size: 13px; font-weight: 600">pH result</label>
+                <span class="pill" style="background: #f3f4f6; color: #4b5563; font-weight: 500">Manual</span>
+              </div>
+              <input id="f6" class="inp" value="4.2" placeholder="" style="">
+              
+            </div>
+          
+            <div style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+                <label for="f7" style="font-size: 13px; font-weight: 600">Constituent 2 name</label>
+                <span class="pill" style="background: #f3f4f6; color: #4b5563; font-weight: 500">Product · ingredient</span>
+              </div>
+              <input id="f7" class="inp" value="Zinc sulphate monohydrate" placeholder="" style="border-color: #dc2626">
+              
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px">
+                  <span class="pill" style="background: #fef2f2; color: #b91c1c">overflow</span><span style="color: #4b5563">Doesn’t fit even at 80 % — shorten it</span>
+                </div>
+              
+            </div>
+          
+        </div>
+        <div style="margin-top: auto; padding: 14px 16px; border-top: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 10px">
+          <h3 style="margin: 0; font-size: 13px; font-weight: 600">History</h3>
+          <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #4b5563">
+            <li><b style="color: #111827">v3</b> · you · ph_result: 4.0 → 4.2</li>
+            <li><b style="color: #111827">v2</b> · you · batch_no reset to invoice value</li>
+            <li><b style="color: #111827">v1</b> · generated from INV-2026-0142</li>
+          </ol>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+</div>
+</body>
+</html>

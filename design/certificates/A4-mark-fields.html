@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template wizard — Mark fields</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f9fafb}
+a{color:#2563eb;text-decoration:none}a:hover{color:#1d4ed8;text-decoration:underline}
+.nav-a{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:8px;font-size:14px;font-weight:500;color:#4b5563}
+.nav-a:hover{background:#f3f4f6;color:#111827;text-decoration:none}
+.nav-on{background:#eff6ff;color:#1d4ed8}
+.nav-sub{display:block;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#4b5563}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border-radius:12px;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.btn-p{background:#2563eb;color:#fff;border:1px solid #2563eb;box-shadow:0 4px 10px rgba(37,99,235,.2)}
+.btn-s{background:#fff;color:#374151;border:1px solid #d1d5db}
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px}
+.inp{min-height:40px;border:1px solid #d1d5db;border-radius:8px;padding:0 12px;background:#fff;font:14px Inter,system-ui,sans-serif;color:#111827;box-sizing:border-box;width:100%}
+.lbl{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:#4b5563}
+.f{background:rgba(37,99,235,.12);outline:1.5px solid #2563eb;border-radius:2px;position:relative}
+.ftag{position:absolute;top:-15px;left:-1px;background:#2563eb;color:#fff;font:600 9px/13px ui-monospace,monospace;padding:0 4px;border-radius:3px;white-space:nowrap}
+.cert td{border:1px solid #f3c6a8;padding:5px 8px;vertical-align:top}
+</style>
+</head>
+<body>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; font-family: Inter, system-ui, sans-serif; color: #111827; background: #f9fafb">
+
+<nav aria-label="Main" style="flex: 1 1 240px; background: #ffffff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column">
+  <div style="padding: 24px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 12px">
+    <div style="width: 32px; height: 32px; border-radius: 8px; background: #2563eb; display: flex; align-items: center; justify-content: center">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="m9 15 2 2 4-4"></path></svg>
+    </div>
+    <span style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">Dossira</span>
+  </div>
+  <div style="padding: 16px 12px; display: flex; flex-direction: column; gap: 4px">
+    <a class="nav-a" href="#">Dashboard</a>
+    <a class="nav-a" href="#">Products</a>
+    <a class="nav-a" href="#">Labels</a>
+    <a class="nav-a nav-on" href="#">Certificates</a>
+    <div style="margin: 4px 0 4px 16px; padding-left: 12px; border-left: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 2px">
+      <a class="nav-sub" href="A1-templates-list.html" style="background: #eff6ff; color: #1d4ed8">Templates</a>
+      <a class="nav-sub" href="#">Types</a>
+      <a class="nav-sub" href="B3-review-and-match.html">Invoices</a>
+      <a class="nav-sub" href="B5-certificate-editor.html">Generated certificates</a>
+    </div>
+  </div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; padding: 32px">
+  <div style="max-width: 1152px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+      <div>
+        <a href="A1-templates-list.html" style="font-size: 13px; font-weight: 500">← Templates</a>
+        <h1 style="margin: 6px 0 0; font-size: 22px; font-weight: 700">COA — Brand B (Turkey) <span style="font-weight: 500; color: #6b7280; font-size: 16px">· v1</span></h1>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span class="pill" style="background: #fffbeb; color: #92400e">draft</span>
+        <span style="font-size: 13px; color: #047857; display: inline-flex; align-items: center; gap: 6px">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 12 5 5 9-10"></path></svg>
+          Saved
+        </span>
+      </div>
+    </div>
+
+    <ol aria-label="Steps" style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px">
+      <li style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #ecfdf5; color: #047857; font-size: 13px; font-weight: 600">✓ 1 Upload</li>
+      <li aria-current="step" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #2563eb; color: #fff; font-size: 13px; font-weight: 600">2 Mark fields</li>
+      <li style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid #e5e7eb; color: #4b5563; font-size: 13px; font-weight: 600">3 Settings</li>
+      <li style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid #e5e7eb; color: #4b5563; font-size: 13px; font-weight: 600">4 Prepare &amp; test</li>
+      <li style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid #e5e7eb; color: #4b5563; font-size: 13px; font-weight: 600">5 Activate</li>
+    </ol>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+      <section class="card" aria-label="Certificate preview" style="flex: 3 1 520px; min-width: 0; overflow: hidden">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #4b5563">
+          <span>Select the text that changes. <b style="color: #111827">Ctrl</b> + select to add several.</span>
+          <div style="display: flex; align-items: center; gap: 4px">
+            <button type="button" aria-label="Zoom out" class="btn btn-s" style="min-height: 32px; padding: 0 10px">−</button>
+            <span style="min-width: 48px; text-align: center">90 %</span>
+            <button type="button" aria-label="Zoom in" class="btn btn-s" style="min-height: 32px; padding: 0 10px">+</button>
+          </div>
+        </div>
+        <div style="background: #e5e7eb; padding: 28px; display: flex; justify-content: center; overflow: auto">
+          <div class="cert" style="width: 520px; min-height: 700px; background: #fff; box-shadow: 0 6px 24px rgba(17,24,39,.18); padding: 36px 40px; box-sizing: border-box; font-family: Arial, sans-serif; font-size: 12px; color: #1f2937; position: relative">
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <div style="width: 92px; height: 38px; border: 1px dashed #cbd5e1; color: #94a3b8; font-size: 10px; display: flex; align-items: center; justify-content: center">[LOGO]</div>
+              <div style="text-align: right; font-size: 10px; color: #64748b; line-height: 1.5">Sample Vet Co.<br>Industrial Zone, Istanbul</div>
+            </div>
+            <div style="text-align: center; color: #0f766e; font-size: 17px; font-weight: 700; letter-spacing: .08em; margin: 22px 0 18px">CERTIFICATE OF ANALYSIS</div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; line-height: 1.6; margin-top: 6px">
+              <div>Product Name: <span class="f">ADD-E120<span class="ftag">product_name</span></span></div>
+              <div>Batch No.: <span class="f">AVVS1122005<span class="ftag">batch_no</span></span></div>
+              <div>Production Date: <span class="f">11/2023<span class="ftag">production</span></span></div>
+              <div>Expiry Date: <span style="background: #bfdbfe; border-radius: 2px">11/2025</span></div>
+              <div>Document No.: <span class="f">COAAVVS1122005<span class="ftag">document_no</span></span></div>
+              <div>Producer: Sample Vet Co.</div>
+            </div>
+            <div style="position: absolute; left: 330px; top: 196px">
+              <button type="button" class="btn btn-p" style="min-height: 36px; padding: 0 12px; font-size: 13px; border-radius: 10px">+ Make field <span style="opacity: .8; font-weight: 500">Enter</span></button>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 11.5px">
+              <tbody><tr style="background: #0f766e; color: #fff; font-weight: 700"><td style="border-color: #0f766e">Test</td><td style="border-color: #0f766e">Specification</td><td style="border-color: #0f766e; text-align: center">Result</td></tr>
+              <tr><td>Appearance</td><td>Clear yellow liquid</td><td style="text-align: center">Complies</td></tr>
+              <tr><td>pH</td><td>3.0 – 5.0</td><td style="text-align: center"><span class="f">4.0<span class="ftag">ph_result</span></span></td></tr>
+              <tr><td>Constituents (per Litre)</td><td>Vitamin E<br><span class="f" style="display: inline-block; margin-top: 14px">Sodium selenite<span class="ftag">constituent_2_name</span></span><br>Distillate water up to</td><td style="text-align: center">120000 mg<br><span class="f" style="display: inline-block; margin-top: 14px">60 mg<span class="ftag">constituent_2_amount</span></span><br>1000 mL</td></tr>
+              <tr><td>Sterility</td><td>Sterile</td><td style="text-align: center">Complies</td></tr>
+            </tbody></table>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 56px">
+              <div style="font-size: 11px; color: #475569">Quality Control Manager<div style="width: 140px; border-bottom: 1px solid #94a3b8; height: 32px"></div></div>
+              <div aria-hidden="true" style="width: 74px; height: 74px; border-radius: 50%; border: 2px solid #60a5fa; opacity: .6"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="card" aria-label="Fields" style="flex: 2 1 340px; min-width: 0; display: flex; flex-direction: column">
+        <div style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; gap: 8px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">Fields <span style="color: #6b7280; font-weight: 500">· 6</span></h2>
+          <button type="button" class="btn btn-s" style="min-height: 36px; padding: 0 12px; font-size: 13px">✦ Suggest fields (AI)</button>
+        </div>
+
+        <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px">
+          
+            <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; flex: none"></span>
+              <div style="flex: 1; min-width: 0">
+                <div style="font: 600 13px ui-monospace, monospace">product_name</div>
+                <div style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">“ADD-E120”</div>
+              </div>
+              <span class="pill" style="background: #f3f4f6; color: #374151">Product · name</span>
+              <span class="pill" style="background: #fff; border: 1px solid #e5e7eb; color: #4b5563">L</span>
+            </div>
+          
+            <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; flex: none"></span>
+              <div style="flex: 1; min-width: 0">
+                <div style="font: 600 13px ui-monospace, monospace">batch_no</div>
+                <div style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">“AVVS1122005”</div>
+              </div>
+              <span class="pill" style="background: #f3f4f6; color: #374151">Item · batchNo</span>
+              <span class="pill" style="background: #fff; border: 1px solid #e5e7eb; color: #4b5563">L</span>
+            </div>
+          
+            <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; flex: none"></span>
+              <div style="flex: 1; min-width: 0">
+                <div style="font: 600 13px ui-monospace, monospace">production</div>
+                <div style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">“11/2023”</div>
+              </div>
+              <span class="pill" style="background: #f3f4f6; color: #374151">Item · productionDate</span>
+              <span class="pill" style="background: #fff; border: 1px solid #e5e7eb; color: #4b5563">L</span>
+            </div>
+          
+            <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; flex: none"></span>
+              <div style="flex: 1; min-width: 0">
+                <div style="font: 600 13px ui-monospace, monospace">document_no</div>
+                <div style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">“COAAVVS1122005”</div>
+              </div>
+              <span class="pill" style="background: #f3f4f6; color: #374151">Template · COA + batch</span>
+              <span class="pill" style="background: #fff; border: 1px solid #e5e7eb; color: #4b5563">L</span>
+            </div>
+          
+            <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; flex: none"></span>
+              <div style="flex: 1; min-width: 0">
+                <div style="font: 600 13px ui-monospace, monospace">ph_result</div>
+                <div style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">“4.0”</div>
+              </div>
+              <span class="pill" style="background: #f3f4f6; color: #374151">Manual</span>
+              <span class="pill" style="background: #fff; border: 1px solid #e5e7eb; color: #4b5563">C</span>
+            </div>
+          
+            <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; flex: none"></span>
+              <div style="flex: 1; min-width: 0">
+                <div style="font: 600 13px ui-monospace, monospace">constituent_2_name</div>
+                <div style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">“Sodium selenite”</div>
+              </div>
+              <span class="pill" style="background: #f3f4f6; color: #374151">Product · ingredient</span>
+              <span class="pill" style="background: #fff; border: 1px solid #e5e7eb; color: #4b5563">L</span>
+            </div>
+          
+
+          <div style="border: 2px solid #2563eb; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; background: #f8fbff">
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span style="font-size: 13px; font-weight: 600">New field from selection</span>
+              <span style="font-size: 12px; color: #4b5563">“11/2025”</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+              <label class="lbl">Label<input class="inp" value="Expiry date"></label>
+              <label class="lbl">Key<input class="inp" value="expiry" style="font-family: ui-monospace, monospace"></label>
+            </div>
+            <label class="lbl">Value comes from
+              <select class="inp"><option>Invoice item · Expiry date</option><option>Invoice · Invoice number</option><option>Product · Name</option><option>Static text</option><option>Manual entry</option><option>Today</option></select>
+            </label>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+              <label class="lbl">Format<select class="inp"><option>MM/YYYY</option><option>DD/MM/YYYY</option></select></label>
+              <div class="lbl">Align
+                <div role="group" aria-label="Align" style="display: flex; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; min-height: 40px">
+                  <button type="button" style="flex: 1; border: 0; background: #2563eb; color: #fff; font: 600 13px Inter, sans-serif">Left</button>
+                  <button type="button" style="flex: 1; border: 0; border-left: 1px solid #d1d5db; background: #fff; font: 500 13px Inter, sans-serif">Center</button>
+                  <button type="button" style="flex: 1; border: 0; border-left: 1px solid #d1d5db; background: #fff; font: 500 13px Inter, sans-serif">Right</button>
+                </div>
+              </div>
+            </div>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px"><input type="checkbox" checked="" style="width: 16px; height: 16px"> Required — flag the certificate if empty</label>
+            <div style="display: flex; gap: 8px; justify-content: flex-end">
+              <button type="button" class="btn btn-s" style="min-height: 38px">Cancel</button>
+              <button type="button" class="btn btn-p" style="min-height: 38px">Add field</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: auto; padding: 14px 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center">
+          <a href="A1-templates-list.html" style="font-size: 14px; font-weight: 600; color: #4b5563">Back</a>
+          <a href="A5-prepare-test-activate.html" class="btn btn-p" style="text-decoration: none">Next: Settings →</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+</div>
+</body>
+</html>

@@ -44,7 +44,7 @@ export default function ReferenceLabels() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const assignedSlugs = user?.role?.permissions?.map(p => typeof p === "string" ? p : p?.permission?.slug).filter(Boolean) || [];
-  const canDelete = assignedSlugs.includes("delete_eda_requirements") || user?.isCompany;
+  const canDelete = assignedSlugs.includes("delete_eda_requirements");
 
   const [labels, setLabels] = useState([]);
   const [companies, setCompanies] = useState([]);

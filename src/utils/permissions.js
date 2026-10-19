@@ -7,15 +7,10 @@ export function getPermissionSlugs(user) {
     .filter(Boolean);
 }
 
-// A company account works on its own data in these modules: the API lets a
-// company token through every route on them (backend authMiddleware
-// COMPANY_ALLOWED_MODULES), but GET /auth/me gives it a fixed slug list that
-// names none of them — so without this the routes, sidebar and buttons hid
-// Certificates V2 from the very accounts it was built for.
-const COMPANY_MODULES = ["certificates", "certificate_types", "certificate_templates", "invoices"];
-
+// GET /auth/me lists exactly the slugs the API grants — for a company account
+// too (its effective permissions on the company-allowed modules), so there is
+// no company special case here.
 export function hasPermission(user, slug) {
-  if (user?.isCompany && COMPANY_MODULES.includes(slug.slice(slug.indexOf("_") + 1))) return true;
   return getPermissionSlugs(user).includes(slug);
 }
 

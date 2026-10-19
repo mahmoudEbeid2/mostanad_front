@@ -39,9 +39,9 @@ export default function CertificateTypes() {
   const scopeState = useCompanyScope();
   const { scope } = scopeState;
   const { user } = useAuth();
-  const canCreate = hasPermission(user, "create_certificate_types") || scopeState.isCompany;
-  const canUpdate = hasPermission(user, "update_certificate_types") || scopeState.isCompany;
-  const canDelete = hasPermission(user, "delete_certificate_types") || scopeState.isCompany;
+  const canCreate = hasPermission(user, "create_certificate_types");
+  const canUpdate = hasPermission(user, "update_certificate_types");
+  const canDelete = hasPermission(user, "delete_certificate_types");
 
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);

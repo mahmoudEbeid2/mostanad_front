@@ -56,18 +56,22 @@ The following backend endpoints exist in `mostanad` backend routes but do not ye
 
 ## Certificates V2 — manual QA script (CERTIFICATES_V2_PLAN.md §16.3)
 
-Automated equivalent: `node tests/certificates-v2/ui-smoke.mjs --user <qa> --password-file <file>` in the backend repo (phases 1–5, 87 checks). Run against `npm run dev:test` + `npx vite`. Every step: no console errors; every failure shows the backend's message.
+Automated equivalent: `node tests/certificates-v2/ui-smoke.mjs --user <qa> --password-file <file>` in the backend repo (phases 1–5, 112 checks incl. 15 accessibility audits and a company-account pass). Run against a fresh `npm run dev:test` (writes `.test-bypass-secret`) + `npx vite`. The login is a throwaway local Admin — create it for the run, delete it after. Every step: no console errors; every failure shows the backend's message.
+
+Run every screen twice: as a **system admin** (indigo "System admin" banner, company picker) and as a **company account** (green "Company account · <name>" banner, the company's name read-only where the picker would be, Certificates in the sidebar, no 403/redirect on any certificates page).
+
+**Accessibility, every screen:** Tab reaches every control with a visible focus ring; every input/select has a label (a placeholder alone doesn't count); icon-only buttons announce a name; progress bars read their value (convert, invoice reading, prepare, generation); stage lists say done / in progress / not started; flags are words (code pill + sentence), never colour alone.
 
 | Screen | Route | Check |
 |---|---|---|
 | Types | `/certificates/types` | Empty state → "New type" → create COA; edit; deactivate; delete an unused type; deleting a used one is refused with the reason. |
-| Templates list | `/certificates/templates` | Empty states (no types → link to Types; no templates → upload); cards show thumbnail, type, scope, brand, country, active/latest version; filters; archive. |
+| Templates list | `/certificates/templates` | Empty states (no types → link to Types; no templates → upload); filter card (Company · Type · Brand) + status pills; cards show thumbnail, type/brand/country/scope pills, status hint, version line, status-specific action; an active card reads "N fields · round-trip x %" (a ready one shows it under "Passed the gate"); dashed "Upload a design" tile; archive. |
 | Wizard · upload | `/certificates/templates/new` | Upload ADDVET `.ai` → named conversion stages → sanitized preview (pixel-identical); a non-PDF `.ai` → "Create PDF Compatible File" hint; outlined text → "converted to outlines" hint; same slot twice → "Open it" link. |
 | Wizard · fields | `…/versions/:id?step=fields` | Select a value → floating "Make field"; Ctrl-select two → "Make fields (2)"; a 2-line selection → 2 fields; highlights never alter the document; label → key slug; source picker; date format only for date sources; autosave "All changes saved". |
-| Wizard · settings / prepare | `?step=settings`, `?step=prepare` | Slot warning names the template to be superseded; Prepare → gate report (pass/fail per check, per-field Δ, diff image); test fill from a product and ad-hoc values, flags inline. |
+| Wizard · settings / prepare | `?step=settings`, `?step=prepare` | Slot warning names the template to be superseded; Prepare → gate report (pass/fail per check, per-field Δ, diff image); test fill from a product, an optional **Invoice item** (confirmed invoices' lines, grouped by invoice, ignored lines left out — its values render; clearing it falls back to the product / typed values) and ad-hoc values, flags inline. |
 | Wizard · activate | `?step=activate` | Lists what is superseded; unconfirmed fields block it; after: "Generate certificates from an invoice". |
-| Invoices | `/invoices` | Upload panel (brand hint, destination country) + recent invoices; search by number/customer; action per status (View progress / Review / Open / See error). |
-| Invoice reading | `/invoices/:id` (extracting) | Original beside the 3 named stages; failure card quotes the real reason, "No certificates were created", Try again. |
+| Invoices | `/invoices` | Upload panel (Company as the first field — read-only name for a company account —, brand hint, destination country) + recent invoices; search by number/customer; action per status (View progress / Review / Open / See error). |
+| Invoice reading | `/invoices/:id` (extracting) | Original beside the 3 named stages, progress bar and the review-screen skeleton; failure card quotes the real reason, "No certificates were created", Try again. |
 | Invoice review | `/invoices/:id` (review/ready) | Original beside details; "edited" chips; amber ambiguous dates; needs-match banner; cells edit in place (Enter saves, Esc reverts); ✓ code / name / you chips; candidates with scores + catalogue search; ignore / use again; add / delete line; Confirm & continue disabled until every line is matched or ignored; plan preview + gaps with "Create template". |
 | Generation | `/invoices/:id?batch=` | "Generate N certificates" → progress "x of N", ready / needs attention / rendering / failed counts, cards with thumbnails, gaps banner, Download all (ZIP), Generate again (new run, run selector). |
 | Generated certificates | `/certificates` | Filters (search, type, status, only with issues), paging, cards link to the editor. |

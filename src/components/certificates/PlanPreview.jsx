@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 // to create the missing template.
 const STR = {
   title: "Plan preview",
+  // I19: the preview is advisory — Generate re-runs the selection on the server
+  recalculated: "A preview of the current templates — the plan is recalculated when you click Generate.",
   perProduct: (n) => `${n} certificate${n === 1 ? "" : "s"} · one per product`,
   perInvoice: (n, lines) => `${n} certificate${n === 1 ? "" : "s"} · whole invoice (${lines} line${lines === 1 ? "" : "s"})`,
   nothing: "No active template applies to any line yet.",
@@ -29,6 +31,7 @@ export default function PlanPreview({ plan }) {
   return (
     <div className="space-y-2" data-testid="plan-preview">
       <h3 className="font-semibold text-gray-900">{STR.title}</h3>
+      <p className="text-xs text-gray-500">{STR.recalculated}</p>
       {plan.summary.length === 0 && <p className="text-sm text-gray-500">{STR.nothing}</p>}
       {plan.summary.map((s) => (
         <div key={s.templateVersionId} className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2.5 text-sm">

@@ -250,7 +250,7 @@ export default function CertificateEditor() {
   const final = cert.status === "final";
   const dirty = Object.keys(drafts).length > 0;
   const blocking = Object.entries(cert.flags || {})
-    .filter(([, f]) => f.some((x) => x === "missing" || x === "overflow" || x === "missing_span" || x.startsWith("glyph")))
+    .filter(([, f]) => f.some((x) => x === "missing" || x === "overflow" || x === "missing_span" || x.startsWith("glyph:")))
     .map(([k]) => fields.find((f) => f.key === k)?.label || k);
   const title = `${cert.certificateType?.code || ""} · ${cert.scope === "per_invoice" ? STR.whole : cert.product?.name || "—"}`;
   const saveText =

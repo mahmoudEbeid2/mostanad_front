@@ -57,6 +57,7 @@ const STR = {
     </>
   ),
   ambiguousDates: "Some dates are ambiguous (amber). Write them unambiguously so they can be formatted on the certificates.",
+  ambiguousQuantities: "Some quantities are ambiguous (amber): \"1.250\" could be 1250 or 1.25. Type the number without the separator (1250) or with a decimal part (1.25).",
   readyNote: "Confirmed — editing anything sends it back to review.",
   notEditable: (s) => `This invoice is ${s.replace("_", " ")} and can no longer be edited.`,
   details: "Invoice details",
@@ -313,6 +314,7 @@ export default function InvoiceReview() {
   const ambiguous =
     items.some((it) => it.matchStatus !== "ignored" && ["productionDate", "expiryDate"].some((k) => it.data?.[k]?.raw && !it.data[k].iso)) ||
     (invoice.header?.invoiceDate?.raw && !invoice.header.invoiceDate.iso);
+  const ambiguousQty = items.some((it) => it.matchStatus !== "ignored" && it.data?.quantityAmbiguous === true);
   const warnings = invoice.extraction?.warnings || [];
   const title = invoice.header?.invoiceNumber ? STR.title(invoice.header.invoiceNumber) : invoice.source?.originalName || STR.title("");
   const batches = invoice.batches || [];
@@ -413,6 +415,7 @@ export default function InvoiceReview() {
             </div>
           )}
           {ambiguous && <p className="text-sm text-amber-700">{STR.ambiguousDates}</p>}
+          {ambiguousQty && <p className="text-sm text-amber-700">{STR.ambiguousQuantities}</p>}
           {invoice.status === "ready" && <p className="text-sm text-emerald-700">{STR.readyNote}</p>}
           {!EDITABLE.has(invoice.status) && !inBatches && <p className="text-sm text-gray-600">{STR.notEditable(invoice.status)}</p>}
 

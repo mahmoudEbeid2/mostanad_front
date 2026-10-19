@@ -12,6 +12,7 @@ const STR = {
   line: "#",
   edited: "Edited — read from the invoice as",
   noIso: "Ambiguous date — write it unambiguously (e.g. 2025-04-03 or 04/2025)",
+  ambiguousQty: "Ambiguous quantity — thousands or decimal? Write it without the separator (1250) or with a decimal part (1.25)",
   match: "Product match",
   matchedBy: { exact_code: "code", exact_name: "name", user: "you" },
   needsMatch: "needs match",
@@ -50,7 +51,8 @@ function CellInput({ item, col, editable, onSave }) {
   const cancelled = useRef(false);
   const extracted = cellText(item.dataExtracted, col);
   const edited = Object.keys(item.dataExtracted || {}).length > 0 && shown !== extracted;
-  const ambiguous = col.date && shown && !item.data?.[col.key]?.iso;
+  const ambiguousQty = col.number && item.data?.quantityAmbiguous === true;
+  const ambiguous = (col.date && shown && !item.data?.[col.key]?.iso) || ambiguousQty;
 
   const commit = () => {
     const next = (draft ?? shown).trim();
@@ -82,7 +84,7 @@ function CellInput({ item, col, editable, onSave }) {
             e.currentTarget.blur();
           }
         }}
-        title={edited ? `${STR.edited} "${extracted}"` : ambiguous ? STR.noIso : undefined}
+        title={edited ? `${STR.edited} "${extracted}"` : ambiguous ? (ambiguousQty ? STR.ambiguousQty : STR.noIso) : undefined}
         className={`w-full px-1.5 py-1 rounded border bg-transparent text-sm text-gray-900 placeholder:text-gray-300 disabled:text-gray-700 ${col.mono ? "font-mono text-xs" : ""} ${
           ambiguous ? "border-amber-400 bg-amber-50" : "border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white"
         }`}

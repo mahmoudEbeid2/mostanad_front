@@ -17,6 +17,7 @@ import {
   Scale
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { hasPermission } from "../utils/permissions";
 
 const navLinks = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, permission: "read_dashboard" },
@@ -93,14 +94,12 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {navLinks.map((link) => {
-          const assignedSlugs = user?.role?.permissions?.map(p => typeof p === 'string' ? p : p?.permission?.slug).filter(Boolean) || [];
-          
-          if (link.permission && !assignedSlugs.includes(link.permission)) {
+          if (link.permission && !hasPermission(user, link.permission)) {
             return null;
           }
 
           if (link.subLinks) {
-            const subLinks = link.subLinks.filter(sub => !sub.permission || assignedSlugs.includes(sub.permission));
+            const subLinks = link.subLinks.filter(sub => !sub.permission || hasPermission(user, sub.permission));
             if (subLinks.length === 0) return null;
             const isOpen = openDropdowns[link.name];
             const isActive = subLinks.some(sub => location.pathname === sub.path);

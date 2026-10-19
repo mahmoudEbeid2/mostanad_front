@@ -15,7 +15,10 @@ const STR = {
   supersedes: (n) => `Version ${n} (active now) will be superseded. Certificates already generated keep the exact design they used.`,
   unconfirmedTitle: "These fields were suggested, not marked by hand. Confirm each one before activating:",
   confirmAll: "Confirm all",
-  activate: "Activate",
+  replaces: "Activating replaces",
+  inSlot: "in this slot.",
+  noActive: "no active version",
+  activate: (n) => `Activate v${n}`,
   activated: "Version activated",
   isActive: "This version is active.",
   isSuperseded: "This version was replaced by a newer one. It stays readable; certificates that used it are unaffected.",
@@ -62,7 +65,7 @@ export default function ActivateStep({ scope, template, version, onChanged, goSt
 
   if (version.status === "active" || version.status === "superseded") {
     return (
-      <div className="max-w-2xl bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm" data-testid="activate-done">
+      <div className="max-w-2xl bg-white border border-gray-200 rounded-xl p-6 space-y-4" data-testid="activate-done">
         <p className="flex items-center gap-2 font-semibold text-gray-900">
           <CheckCircle2 className={`w-5 h-5 ${version.status === "active" ? "text-emerald-600" : "text-gray-400"}`} />
           {version.status === "active" ? STR.isActive : STR.isSuperseded}
@@ -96,7 +99,7 @@ export default function ActivateStep({ scope, template, version, onChanged, goSt
   }
 
   return (
-    <div className="max-w-2xl bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
+    <div className="max-w-2xl bg-white border border-gray-200 rounded-xl p-6 space-y-4">
       <h3 className="font-semibold text-gray-900 flex items-center gap-2">
         <ShieldCheck className="w-5 h-5 text-blue-600" /> {STR.title}
       </h3>
@@ -119,8 +122,11 @@ export default function ActivateStep({ scope, template, version, onChanged, goSt
           </Button>
         </div>
       )}
-      <Button onClick={activate} isLoading={busy} disabled={unconfirmed.length > 0}>
-        {STR.activate}
+      <p className="text-xs text-gray-600">
+        {STR.replaces} <b>{current && current.id !== version.id ? `v${current.versionNumber}` : STR.noActive}</b> {STR.inSlot}
+      </p>
+      <Button onClick={activate} isLoading={busy} disabled={unconfirmed.length > 0} className="!bg-emerald-700 hover:!bg-emerald-800 !shadow-none">
+        {STR.activate(version.versionNumber)}
       </Button>
     </div>
   );

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import Spinner from "../ui/Spinner";
 import Button from "../ui/Button";
 import CompanyPicker from "../components/certificates/CompanyPicker";
+import RoleBanner from "../components/certificates/RoleBanner";
 import StatusBadge from "../components/certificates/StatusBadge";
 import DocumentFrame from "../components/certificates/DocumentFrame";
 import UploadStep from "../components/certificates/wizard/UploadStep";
@@ -19,20 +20,37 @@ import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { getTemplate, getVersion, getVersionHtml } from "../services/apiCertificateTemplates";
 
 const STR = {
-  newTitle: "Upload a certificate template",
-  back: "Templates",
+  newTitle: "New certificate template",
+  back: "← Templates",
   steps: { upload: "Upload", fields: "Mark fields", settings: "Settings", prepare: "Prepare & test", activate: "Activate" },
-  converting: "Converting the design…",
+  convertingStep: "converting…",
+  stageState: { done: "done", active: "in progress", pending: "not started" },
+  // A3 — converting
+  converting: "Converting your design",
+  convertingHint: "Usually under 10 seconds. You can leave — we’ll keep going.",
+  stages: (html) => [
+    "File uploaded",
+    html ? "HTML design read" : "Converted to HTML (pdf2htmlEX)",
+    "Cleaned — scripts and external links removed",
+    "Measuring text lines and fonts",
+    "Creating thumbnail",
+  ],
+  previewTitle: "Preview",
+  previewHint: "The thumbnail appears when conversion finishes.",
+  failedTitle: { NO_PDF_CONTENT: "This file has no PDF content", NO_LIVE_TEXT: "The text was converted to outlines" },
   convertFailed: "Conversion failed",
-  tryAgain: "Upload a corrected file below as a new version.",
+  uploadNew: "Upload a new file",
   converted: "Converted — this is exactly how the design will print.",
   next: "Next: mark the fields",
-  version: "Version",
   pickCompany: "Pick a company first.",
   lines: (n) => `${n} text lines`,
+  saving: "Saving…",
+  saved: "All changes saved",
+  notSaved: "Not saved",
 };
 
 const STEP_ORDER = ["upload", "fields", "settings", "prepare", "activate"];
+const FILE_INPUT_ID = "template-file";
 
 function defaultStep(version) {
   if (!version) return "upload";
@@ -40,6 +58,116 @@ function defaultStep(version) {
   if (version.status === "draft") return "fields";
   if (["preparing", "ready"].includes(version.status)) return "prepare";
   return "activate";
+}
+
+// convert job progress (templateService.convertVersion): 15 converting, 45 sanitizing, 65 analysing, 85 thumbnail
+const stageOf = (progress) => (progress >= 85 ? 4 : progress >= 65 ? 3 : progress >= 45 ? 2 : 1);
+
+function ConvertingCard({ task, version }) {
+  const progress = Math.round(task.progress || 0);
+  const stage = stageOf(progress);
+  const stages = STR.stages(version.sourceFormat === "html");
+  return (
+    <div className="flex flex-wrap gap-5 items-stretch">
+      <section className="flex-[3_1_420px] min-w-0 bg-white border border-gray-200 rounded-xl p-7 space-y-5" data-testid="converting">
+        <div className="flex items-center gap-4">
+          <Spinner />
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">{STR.converting}</h2>
+            <p className="text-sm text-gray-600 mt-1">{STR.convertingHint}</p>
+          </div>
+        </div>
+        <div>
+          <div className="flex justify-between text-[13px] text-gray-600 mb-2">
+            <span aria-live="polite">{stages[stage]}</span>
+            <span className="tabular-nums font-semibold text-gray-900">{progress} %</span>
+          </div>
+          <div role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label={STR.converting} className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${Math.max(progress, 5)}%` }} />
+          </div>
+        </div>
+        <ol className="space-y-1">
+          {stages.map((label, i) => {
+            const done = i < stage;
+            const active = i === stage;
+            return (
+              <li key={label} aria-current={active ? "step" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${active ? "bg-blue-50" : ""}`}>
+                <span
+                  aria-hidden="true"
+                  className={`w-[26px] h-[26px] rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 ${
+                    done ? "bg-emerald-700 text-white" : active ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {done ? <Check className="w-4 h-4" /> : i + 1}
+                </span>
+                <span className={`flex-1 text-sm ${active ? "font-bold text-gray-900" : "font-medium text-gray-800"}`}>
+                  {label}
+                  <span className="sr-only"> — {done ? STR.stageState.done : active ? STR.stageState.active : STR.stageState.pending}</span>
+                </span>
+                {active && (
+                  <span aria-hidden="true" className="text-xs text-gray-500">
+                    …
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+      <aside className="flex-[2_1_300px] min-w-0">
+        <div className="bg-white border border-gray-200 rounded-xl p-[18px] space-y-3">
+          <h3 className="text-sm font-semibold text-gray-900">{STR.previewTitle}</h3>
+          <div className="bg-gray-100 rounded-lg p-[18px] flex justify-center">
+            <div aria-hidden="true" className="w-[150px] h-[210px] bg-white shadow p-3 flex flex-col gap-2 animate-pulse">
+              <div className="h-3 w-2/5 bg-gray-200 rounded" />
+              <div className="h-1.5 w-3/4 bg-gray-200 rounded mx-auto my-1.5" />
+              <div className="h-1 bg-gray-200 rounded" />
+              <div className="h-1 w-4/5 bg-gray-200 rounded" />
+              <div className="h-1 w-3/5 bg-gray-200 rounded" />
+              <div className="h-2.5 bg-gray-200 rounded mt-1.5" />
+              <div className="h-1 bg-gray-200 rounded" />
+              <div className="h-1 bg-gray-200 rounded" />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">{STR.previewHint}</p>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+// the label opens UploadStep's file input below (same id) — a new version of this template
+function FailureCard({ error }) {
+  const code = typeof error === "string" ? error.split(":")[0] : error?.code;
+  const human = describeCertificateError(error);
+  return (
+    <section className="bg-red-50 border border-red-300 rounded-xl p-[18px] space-y-2.5" data-testid="convert-failed">
+      <h3 className="text-[15px] font-bold text-red-800">{STR.failedTitle[code] || STR.convertFailed}</h3>
+      <p className="text-[13px] text-red-900">{human}</p>
+      {typeof error === "string" && human !== error && <p className="text-xs text-red-700 break-words">{error}</p>}
+      <label htmlFor={FILE_INPUT_ID} className="inline-flex items-center px-4 py-2.5 rounded-xl border border-red-300 bg-white text-sm font-semibold text-red-800 cursor-pointer hover:bg-red-100">
+        {STR.uploadNew}
+      </label>
+    </section>
+  );
+}
+
+function SaveState({ state }) {
+  return (
+    <span role="status" aria-live="polite" className="text-[13px] flex items-center gap-1.5" data-testid="save-state">
+      {["saving", "pending"].includes(state) && (
+        <>
+          <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin text-gray-500" /> {STR.saving}
+        </>
+      )}
+      {state === "saved" && (
+        <span className="text-emerald-700 flex items-center gap-1.5">
+          <Check aria-hidden="true" className="w-3.5 h-3.5" /> {STR.saved}
+        </span>
+      )}
+      {["invalid", "error"].includes(state) && <span className="text-red-700">{STR.notSaved}</span>}
+    </span>
+  );
 }
 
 export default function CertificateTemplateWizard() {
@@ -53,6 +181,7 @@ export default function CertificateTemplateWizard() {
   const [template, setTemplate] = useState(null);
   const [version, setVersion] = useState(null);
   const [loading, setLoading] = useState(!!templateId);
+  const [saveState, setSaveState] = useState(null); // step 2 autosave state, shown in the header
   const taskId = params.get("task");
   const task = useTaskProgress(taskId);
 
@@ -112,6 +241,7 @@ export default function CertificateTemplateWizard() {
   if (!scope) {
     return (
       <div className="space-y-4">
+        <RoleBanner scope={scopeState} />
         <CompanyPicker scope={scopeState} />
         <p className="text-sm text-gray-500">{STR.pickCompany}</p>
       </div>
@@ -131,41 +261,50 @@ export default function CertificateTemplateWizard() {
   const stepEnabled = (s) =>
     s === "upload" ||
     (!!version && !converting && version.status !== "failed" && (s !== "activate" || ["ready", "active", "superseded"].includes(version.status)));
+  const fieldsEditable = step === "fields" && version?.status === "draft";
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="space-y-1">
-          <Link to="/certificates/templates" className="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> {STR.back}
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <Link to="/certificates/templates" className="text-[13px] font-medium text-blue-600 hover:underline">
+            {STR.back}
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="mt-1.5 text-[22px] font-bold text-gray-900">
             {template ? template.name : STR.newTitle}
-            {version && (
-              <span className="text-base font-normal text-gray-500">
-                {STR.version} {version.versionNumber}
-              </span>
-            )}
-            {version && <StatusBadge status={version.status} />}
+            {version && <span className="ml-1 text-base font-medium text-gray-500">· v{version.versionNumber}</span>}
           </h1>
         </div>
-        {!templateId && <CompanyPicker scope={scopeState} />}
+        {version && (
+          <div className="flex items-center gap-3">
+            <StatusBadge status={version.status} />
+            {fieldsEditable && saveState && <SaveState state={saveState} />}
+          </div>
+        )}
       </div>
 
-      <ol className="flex flex-wrap gap-2 text-sm">
+      <RoleBanner scope={scopeState} />
+
+      <ol aria-label="Steps" className="flex flex-wrap gap-2">
         {STEP_ORDER.map((s, i) => {
           const enabled = stepEnabled(s);
           const current = s === step;
+          const done = i < reached && !current;
           return (
             <li key={s}>
               <button
                 type="button"
                 disabled={!enabled}
+                aria-current={current ? "step" : undefined}
                 onClick={() => goStep(s)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${current ? "border-blue-600 bg-blue-600 text-white" : i < reached ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-gray-200 bg-white text-gray-600"} disabled:opacity-40`}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold border ${
+                  current ? "border-blue-600 bg-blue-600 text-white" : done ? "border-emerald-50 bg-emerald-50 text-emerald-700" : "border-gray-200 bg-white text-gray-600"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {i < reached && !current ? <Check className="w-3.5 h-3.5" /> : <span className="w-4 text-center">{i + 1}</span>}
-                {STR.steps[s]}
+                {done && <Check aria-hidden="true" className="w-3.5 h-3.5" />}
+                {i + 1} {STR.steps[s]}
+                {done && <span className="sr-only"> — {STR.stageState.done}</span>}
+                {s === "upload" && converting && ` · ${STR.convertingStep}`}
               </button>
             </li>
           );
@@ -173,25 +312,9 @@ export default function CertificateTemplateWizard() {
       </ol>
 
       {step === "upload" && (
-        <div className="space-y-6">
-          {converting && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4">
-              <Spinner size="sm" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">{task.message || STR.converting}</p>
-                <div className="mt-2 h-1.5 bg-gray-100 rounded">
-                  <div className="h-1.5 bg-blue-600 rounded transition-all" style={{ width: `${Math.max(5, task.progress || 0)}%` }} />
-                </div>
-              </div>
-            </div>
-          )}
-          {version?.status === "failed" && (
-            <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 text-sm">
-              <p className="font-semibold">{STR.convertFailed}</p>
-              <p>{describeCertificateError(version.error)}</p>
-              <p className="text-red-700 mt-1">{STR.tryAgain}</p>
-            </div>
-          )}
+        <div className="space-y-5">
+          {converting && <ConvertingCard task={task} version={version} />}
+          {version?.status === "failed" && <FailureCard error={version.error} />}
           {version && !converting && version.status !== "failed" ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -206,12 +329,14 @@ export default function CertificateTemplateWizard() {
             !converting && (
               <UploadStep
                 scope={scope}
+                scopeState={scopeState}
                 companyId={companyId}
                 types={types}
                 onTypesChanged={loadTypes}
                 onUploaded={onUploaded}
                 existingTemplate={template}
                 initialTypeId={params.get("certificateTypeId")}
+                inputId={FILE_INPUT_ID}
               />
             )
           )}
@@ -219,12 +344,12 @@ export default function CertificateTemplateWizard() {
       )}
 
       {step === "fields" && version && stepEnabled("fields") && (
-        <FieldsStep key={version.id} scope={scope} version={version} onSaved={loadVersion} onNext={() => goStep("settings")} />
+        <FieldsStep key={version.id} scope={scope} version={version} onSaved={loadVersion} onNext={() => goStep("settings")} onBack={() => goStep("upload")} onSaveState={setSaveState} />
       )}
       {step === "settings" && version && template && stepEnabled("settings") && (
         <SettingsStep key={template.updatedAt} scope={scope} companyId={companyId} template={template} version={version} types={types} onSaved={loadVersion} onNext={() => goStep("prepare")} />
       )}
-      {step === "prepare" && version && stepEnabled("prepare") && <PrepareStep scope={scope} version={version} onChanged={loadVersion} goStep={goStep} />}
+      {step === "prepare" && version && stepEnabled("prepare") && <PrepareStep scope={scope} template={template} version={version} onChanged={loadVersion} goStep={goStep} />}
       {step === "activate" && version && template && stepEnabled("activate") && (
         <ActivateStep scope={scope} template={template} version={version} onChanged={loadVersion} goStep={goStep} />
       )}

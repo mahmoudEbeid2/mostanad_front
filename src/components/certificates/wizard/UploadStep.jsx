@@ -3,43 +3,59 @@ import { Link } from "react-router-dom";
 import Select from "react-select";
 import countryList from "react-select-country-list";
 import toast from "react-hot-toast";
-import { Plus, UploadCloud } from "lucide-react";
+import { ArrowRight, Upload } from "lucide-react";
 import Button from "../../../ui/Button";
+import CompanyPicker from "../CompanyPicker";
 import { createCertificateType } from "../../../services/apiCertificateTypes";
 import { uploadTemplate, uploadTemplateVersion } from "../../../services/apiCertificateTemplates";
 import { getBrands } from "../../../services/apiBrands";
 import { describeCertificateError } from "../../../utils/certificateErrors";
 
 const STR = {
-  drop: "Drop the certificate design here",
-  dropHint: ".ai (saved with “Create PDF Compatible File”), .pdf or .html — up to 60 MB",
-  choose: "or click to choose a file",
+  drop: "Drop the certificate design here, or",
+  browse: "browse",
+  dropHint: "Illustrator .ai (saved with “Create PDF Compatible File”), .pdf or .html · up to 60 MB",
+  liveText: "Keep the text as live text — don’t convert it to outlines.",
+  replace: "Replace",
+  companyHint: "you can create for any company",
   name: "Template name",
   type: "Certificate type",
-  newType: "New type",
+  orNewType: "or",
+  newType: "create a new type",
   typeName: "Type name",
   typeCode: "Code",
   createType: "Create",
-  brand: "Brand (optional)",
+  cancel: "Cancel",
+  brand: "Brand",
+  brandHint: "optional · this company’s brands",
   anyBrand: "Any brand",
-  country: "Country (optional)",
-  anyCountry: "Any country",
-  scope: "One certificate per…",
-  perProduct: "Product",
-  perProductHint: "Each invoice line gets its own certificate (e.g. a COA per batch).",
-  perInvoice: "Invoice",
-  perInvoiceHint: "One certificate covers the whole invoice (invoice-level fields only for now).",
-  upload: "Upload and convert",
+  country: "Country",
+  optional: "optional",
+  anyCountry: "All countries",
+  scope: "One certificate for…",
+  perProduct: "Each product",
+  perProductHint: "An invoice with 5 products gives 5 certificates.",
+  perInvoice: "The whole invoice",
+  // plan §17: repeating groups (product lists) are Phase 7 — not built yet
+  perInvoiceHint: "One certificate for the whole invoice (invoice-level fields only for now).",
+  upload: "Upload & convert",
   uploadVersion: "Upload as a new version",
   slotTaken: "Another template already covers this type, brand, country and scope.",
   openExisting: "Open it",
 };
 
+const FORMAT_BADGE = { ai: "bg-orange-50 text-orange-700", pdf: "bg-red-50 text-red-700", html: "bg-blue-50 text-blue-700", htm: "bg-blue-50 text-blue-700" };
+const lbl = "flex flex-col gap-1.5 text-xs font-semibold text-gray-600";
+const inp = "min-h-11 w-full border border-gray-300 rounded-lg px-3 bg-white text-sm font-normal text-gray-900";
+const hint = "font-normal text-gray-500";
+const selectStyles = { control: (b) => ({ ...b, minHeight: 44, borderRadius: 8, borderColor: "#d1d5db" }), valueContainer: (b) => ({ ...b, fontWeight: 400 }) };
+
 /**
- * Step 1 (plan §13.4). New template: full form. `existingTemplate`: only a
- * file — uploads a new design version (vN+1) of that template.
+ * Step 1 (plan §13.4; mockup A2). New template: file + company + name, type,
+ * brand, country, scope. `existingTemplate`: only a file — uploads a new
+ * design version (vN+1) of that template.
  */
-export default function UploadStep({ scope, companyId, types, onTypesChanged, onUploaded, existingTemplate, initialTypeId }) {
+export default function UploadStep({ scope, scopeState, companyId, types, onTypesChanged, onUploaded, existingTemplate, initialTypeId, inputId = "template-file" }) {
   const [file, setFile] = useState(null);
   const [over, setOver] = useState(false);
   const [name, setName] = useState("");
@@ -99,9 +115,11 @@ export default function UploadStep({ scope, companyId, types, onTypesChanged, on
     }
   };
 
+  const ext = file?.name.split(".").pop().toLowerCase();
+
   return (
-    <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div
+    <form onSubmit={submit} className="max-w-[960px] bg-white border border-gray-200 rounded-xl p-6 flex flex-col gap-5">
+      <label
         onDragOver={(e) => {
           e.preventDefault();
           setOver(true);
@@ -112,44 +130,68 @@ export default function UploadStep({ scope, companyId, types, onTypesChanged, on
           setOver(false);
           pick(e.dataTransfer.files?.[0]);
         }}
-        className={`rounded-xl border-2 border-dashed p-10 text-center flex flex-col items-center justify-center gap-3 transition-colors ${over ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-white"}`}
+        className={`relative flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center cursor-pointer transition-colors ${
+          over ? "border-blue-500 bg-blue-50" : "border-blue-300 bg-blue-50/30 hover:bg-blue-50/60"
+        }`}
       >
-        <UploadCloud className="w-12 h-12 text-gray-400" />
-        <p className="font-semibold text-gray-800">{file ? file.name : STR.drop}</p>
-        <p className="text-xs text-gray-500">{file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : STR.dropHint}</p>
-        <label className="text-sm text-blue-600 hover:underline cursor-pointer">
-          {STR.choose}
-          <input type="file" accept=".ai,.pdf,.html,.htm" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
-        </label>
-      </div>
+        <span className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center">
+          <Upload className="w-6 h-6 text-blue-700" />
+        </span>
+        <span className="text-base font-semibold text-gray-900">
+          {STR.drop} <span className="text-blue-600">{STR.browse}</span>
+        </span>
+        <span className="text-[13px] text-gray-600">{STR.dropHint}</span>
+        <span className="text-xs text-gray-500">{STR.liveText}</span>
+        <input id={inputId} type="file" accept=".ai,.pdf,.html,.htm" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
+      </label>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 shadow-sm">
-        {!existingTemplate && (
-          <>
-            <label className="block text-sm">
-              <span className="font-medium text-gray-700">{STR.name}</span>
-              <input required minLength={2} value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" />
+      {file && (
+        <div className="flex items-center gap-3.5 rounded-lg border border-gray-200 px-3.5 py-3">
+          <span className={`w-10 h-10 rounded-lg flex items-center justify-center font-mono text-xs font-bold uppercase ${FORMAT_BADGE[ext] || "bg-gray-100 text-gray-700"}`}>{ext}</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-gray-900 truncate">{file.name}</div>
+            <div className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(1)} MB</div>
+          </div>
+          <label htmlFor={inputId} className="inline-flex items-center px-3 py-2 rounded-xl border border-gray-300 bg-white text-[13px] font-semibold text-gray-700 cursor-pointer hover:bg-gray-50">
+            {STR.replace}
+          </label>
+        </div>
+      )}
+
+      {!existingTemplate && (
+        <>
+          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
+            {scopeState && <CompanyPicker scope={scopeState} variant="field" hint={STR.companyHint} />}
+            <label className={lbl}>
+              {STR.name}
+              <input required minLength={2} value={name} onChange={(e) => setName(e.target.value)} className={inp} />
             </label>
-
-            <div className="text-sm">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-700">{STR.type}</span>
+            <div className={lbl}>
+              <span>
+                {STR.type}
                 {!newType && (
-                  <button type="button" onClick={() => setNewType({ name: "", code: "" })} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                    <Plus className="w-3 h-3" /> {STR.newType}
-                  </button>
+                  <span className={hint}>
+                    {" "}
+                    · {STR.orNewType}{" "}
+                    <button type="button" onClick={() => setNewType({ name: "", code: "" })} className="text-blue-600 hover:underline">
+                      {STR.newType}
+                    </button>
+                  </span>
                 )}
-              </div>
+              </span>
               {newType ? (
-                <div className="mt-1 grid grid-cols-[1fr_90px_auto] gap-2">
-                  <input placeholder={STR.typeName} value={newType.name} onChange={(e) => setNewType({ ...newType, name: e.target.value })} className="border border-gray-300 rounded-lg px-2 py-2" />
-                  <input placeholder={STR.typeCode} value={newType.code} onChange={(e) => setNewType({ ...newType, code: e.target.value.toUpperCase() })} className="border border-gray-300 rounded-lg px-2 py-2 font-mono" />
+                <div className="grid grid-cols-[1fr_90px_auto_auto] gap-2">
+                  <input placeholder={STR.typeName} value={newType.name} onChange={(e) => setNewType({ ...newType, name: e.target.value })} className={inp} />
+                  <input placeholder={STR.typeCode} value={newType.code} onChange={(e) => setNewType({ ...newType, code: e.target.value.toUpperCase() })} className={`${inp} font-mono`} />
                   <Button type="button" variant="secondary" className="!py-2" onClick={createType} disabled={newType.name.length < 2 || !newType.code}>
                     {STR.createType}
                   </Button>
+                  <Button type="button" variant="ghost" className="!py-2 !px-2" onClick={() => setNewType(null)}>
+                    {STR.cancel}
+                  </Button>
                 </div>
               ) : (
-                <select required value={certificateTypeId} onChange={(e) => setTypeId(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white">
+                <select required value={certificateTypeId} onChange={(e) => setTypeId(e.target.value)} className={inp}>
                   <option value="" disabled>
                     —
                   </option>
@@ -157,16 +199,17 @@ export default function UploadStep({ scope, companyId, types, onTypesChanged, on
                     .filter((t) => t.isActive)
                     .map((t) => (
                       <option key={t.id} value={t.id}>
-                        {t.name} ({t.code})
+                        {t.code} — {t.name}
                       </option>
                     ))}
                 </select>
               )}
             </div>
-
-            <label className="block text-sm">
-              <span className="font-medium text-gray-700">{STR.brand}</span>
-              <select value={brandId} onChange={(e) => setBrandId(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white">
+            <label className={lbl}>
+              <span>
+                {STR.brand} <span className={hint}>· {STR.brandHint}</span>
+              </span>
+              <select value={brandId} onChange={(e) => setBrandId(e.target.value)} className={inp}>
                 <option value="">{STR.anyBrand}</option>
                 {brands.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -175,43 +218,58 @@ export default function UploadStep({ scope, companyId, types, onTypesChanged, on
                 ))}
               </select>
             </label>
-
-            <div className="text-sm">
-              <span className="font-medium text-gray-700">{STR.country}</span>
-              <Select className="mt-1" options={countries} value={country} onChange={setCountry} isClearable placeholder={STR.anyCountry} />
+            <div className={lbl}>
+              <span>
+                {STR.country} <span className={hint}>· {STR.optional}</span>
+              </span>
+              <Select options={countries} value={country} onChange={setCountry} isClearable placeholder={STR.anyCountry} styles={selectStyles} />
             </div>
+          </div>
 
-            <fieldset className="text-sm space-y-2">
-              <legend className="font-medium text-gray-700 mb-1">{STR.scope}</legend>
+          <fieldset className="flex flex-col gap-2.5">
+            <legend className="text-[13px] font-semibold text-gray-700 mb-2.5">{STR.scope}</legend>
+            <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
               {[
                 ["per_product", STR.perProduct, STR.perProductHint],
                 ["per_invoice", STR.perInvoice, STR.perInvoiceHint],
-              ].map(([value, label, hint]) => (
-                <label key={value} className={`flex gap-2 p-2 rounded-lg border cursor-pointer ${templateScope === value ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}>
-                  <input type="radio" name="scope" value={value} checked={templateScope === value} onChange={() => setTemplateScope(value)} />
-                  <span>
-                    <span className="font-medium text-gray-800">{label}</span>
-                    <span className="block text-xs text-gray-500">{hint}</span>
-                  </span>
-                </label>
-              ))}
-            </fieldset>
-          </>
-        )}
+              ].map(([value, label, help]) => {
+                const on = templateScope === value;
+                return (
+                  <label key={value} className={`flex gap-3 rounded-xl px-4 py-3.5 cursor-pointer ${on ? "border-2 border-blue-600 bg-blue-50" : "border border-gray-300 bg-white m-px"}`}>
+                    <input type="radio" name="scope" value={value} checked={on} onChange={() => setTemplateScope(value)} className="w-[18px] h-[18px] mt-0.5" />
+                    <span>
+                      <span className="block text-sm font-bold text-gray-900">{label}</span>
+                      <span className="block text-[13px] text-gray-600">{help}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        </>
+      )}
 
-        {error && (
-          <div className="text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 space-y-1">
-            <p>{error.code === "TEMPLATE_SLOT_TAKEN" ? STR.slotTaken : describeCertificateError(error)}</p>
-            {error.code === "TEMPLATE_SLOT_TAKEN" && error.data?.existingTemplateId && (
-              <Link className="font-medium underline" to={`/certificates/templates/${error.data.existingTemplateId}`}>
-                {STR.openExisting}
-              </Link>
-            )}
-          </div>
-        )}
+      {error && (
+        <div className="text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 space-y-1">
+          <p>{error.code === "TEMPLATE_SLOT_TAKEN" ? STR.slotTaken : describeCertificateError(error)}</p>
+          {error.code === "TEMPLATE_SLOT_TAKEN" && error.data?.existingTemplateId && (
+            <Link className="font-medium underline" to={`/certificates/templates/${error.data.existingTemplateId}`}>
+              {STR.openExisting}
+            </Link>
+          )}
+        </div>
+      )}
 
-        <Button type="submit" className="w-full" isLoading={busy} disabled={!file || (!existingTemplate && !certificateTypeId)}>
-          {existingTemplate ? STR.uploadVersion : STR.upload}
+      <div className="flex justify-end gap-3 pt-1.5 border-t border-gray-100">
+        {!existingTemplate && (
+          <Link to="/certificates/templates">
+            <Button type="button" variant="secondary">
+              {STR.cancel}
+            </Button>
+          </Link>
+        )}
+        <Button type="submit" isLoading={busy} disabled={!file || (!existingTemplate && !certificateTypeId)}>
+          {existingTemplate ? STR.uploadVersion : STR.upload} <ArrowRight className="w-4 h-4" />
         </Button>
       </div>
     </form>

@@ -35,6 +35,7 @@ const STR = {
   ),
   create: "Create the template",
   zip: "Download all (ZIP)",
+  progress: "Certificates rendered",
 };
 const RUNNING = new Set(["queued", "running"]);
 
@@ -104,8 +105,11 @@ export default function BatchView({ scope, batchId, taskId, onFinished, canExpor
     <div className="space-y-5" data-testid="batch-view" data-status={batch.status}>
       <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center gap-3">
-          {running ? <Spinner /> : <CheckCircle2 className={`w-6 h-6 ${live.failed ? "text-orange-500" : "text-emerald-600"}`} />}
-          <h2 className="font-semibold text-gray-900">{heading}</h2>
+          {running ? <Spinner /> : <CheckCircle2 aria-hidden="true" className={`w-6 h-6 ${live.failed ? "text-orange-500" : "text-emerald-600"}`} />}
+          {/* the heading changes only with the batch status — announced once per change */}
+          <h2 className="font-semibold text-gray-900" aria-live="polite">
+            {heading}
+          </h2>
           <span className="ml-auto font-semibold text-gray-900">{STR.of(done, live.planned)}</span>
           {canExport && !running && live.rendered > 0 && (
             <Button variant="secondary" className="!py-2 text-sm" isLoading={zipping} onClick={downloadZip}>
@@ -113,7 +117,15 @@ export default function BatchView({ scope, batchId, taskId, onFinished, canExpor
             </Button>
           )}
         </div>
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div
+          role="progressbar"
+          aria-label={STR.progress}
+          aria-valuenow={done}
+          aria-valuemin={0}
+          aria-valuemax={live.planned}
+          aria-valuetext={STR.of(done, live.planned)}
+          className="h-2 bg-gray-100 rounded-full overflow-hidden"
+        >
           <div className="h-full bg-blue-600 transition-all" style={{ width: `${live.planned ? Math.max((100 * done) / live.planned, running ? 4 : 0) : 0}%` }} />
         </div>
         <p className="text-sm text-gray-600 flex flex-wrap gap-x-5 gap-y-1">

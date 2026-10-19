@@ -33,7 +33,8 @@ const STR = {
 //  - `overlay(scale)` renders above the document in the frame's coordinate
 //    space (unscaled document px) — field highlights fallback, the floating
 //    "Make field" button. It never touches the document.
-export default function DocumentFrame({ load, reloadKey, onReady, overlay, fit = true, className = "", minHeight = 480, title = "Document preview" }) {
+//  - `hint`: optional instruction shown at the left of the toolbar
+export default function DocumentFrame({ load, reloadKey, onReady, overlay, hint, fit = true, className = "", minHeight = 480, title = "Document preview" }) {
   const containerRef = useRef(null);
   const frameRef = useRef(null);
   const [html, setHtml] = useState(null);
@@ -145,8 +146,9 @@ export default function DocumentFrame({ load, reloadKey, onReady, overlay, fit =
 
   return (
     <div className={`flex flex-col rounded-xl border border-gray-200 bg-gray-100 overflow-hidden ${className}`}>
-      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white border-b border-gray-200 text-xs text-gray-600">
-        <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-white border-b border-gray-200 text-xs text-gray-600">
+        <div className="flex items-center gap-3">
+          {hint}
           {size.pages.length > 1 && (
             <>
               <button type="button" className="p-1 rounded hover:bg-gray-100 disabled:opacity-40" disabled={page <= 1} onClick={() => goTo(page - 1)} aria-label="Previous page">

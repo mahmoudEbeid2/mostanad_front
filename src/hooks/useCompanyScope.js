@@ -51,6 +51,9 @@ export default function useCompanyScope() {
 
   const scope = useMemo(() => (isCompany ? {} : companyId ? { companyId } : null), [isCompany, companyId]);
 
+  // a company session shows its own name read-only where system users get the picker
+  const companyName = isCompany ? user?.company?.name || user?.name || "" : companies.find((c) => c.id === companyId)?.name || "";
+
   // `scope` is null until a system user has a company selected — pages wait for it.
-  return { isCompany, companies, companyId: isCompany ? user?.id : companyId, setCompanyId, scope, loading };
+  return { isCompany, companies, companyId: isCompany ? user?.id : companyId, companyName, setCompanyId, scope, loading };
 }

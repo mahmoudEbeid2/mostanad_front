@@ -3,12 +3,13 @@ import { findOption } from "../../utils/certificateFieldSources";
 
 // Grouped source picker (plan §13.2) over the server catalogue. Fixed text and
 // combinations get their extra input right below.
-export default function SourcePicker({ options, value, onChange, inputId }) {
+export default function SourcePicker({ options, value, onChange, inputId, ariaLabel = "Value comes from" }) {
   const selected = findOption(options, value);
   return (
     <div className="space-y-2">
       <Select
         inputId={inputId}
+        aria-label={ariaLabel}
         options={options}
         value={selected}
         onChange={(o) => onChange(o ? { ...o.source, ...(o.source.kind === "static" ? { text: value?.text || "" } : {}), ...(o.source.kind === "template" ? { template: value?.template || "" } : {}) } : { kind: "manual" })}
@@ -33,6 +34,7 @@ export default function SourcePicker({ options, value, onChange, inputId }) {
           value={value.text || ""}
           onChange={(e) => onChange({ kind: "static", text: e.target.value })}
           placeholder="Text printed on every certificate"
+          aria-label="Fixed text"
           className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
         />
       )}
@@ -42,6 +44,7 @@ export default function SourcePicker({ options, value, onChange, inputId }) {
             value={value.template || ""}
             onChange={(e) => onChange({ kind: "template", template: e.target.value })}
             placeholder="COA{{item.batchNo}}"
+            aria-label="Combination"
             className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm font-mono"
           />
           <p className="mt-1 text-[11px] text-gray-500">

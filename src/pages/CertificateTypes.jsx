@@ -5,6 +5,7 @@ import { BadgeCheck, Edit2, Plus, Trash2, X } from "lucide-react";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
+import RoleBanner from "../components/certificates/RoleBanner";
 import useCompanyScope from "../hooks/useCompanyScope";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
@@ -129,6 +130,8 @@ export default function CertificateTypes() {
           )}
         </div>
       </div>
+
+      <RoleBanner scope={scopeState} />
 
       {editing && (
         <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-5 grid gap-4 md:grid-cols-[1fr_180px] shadow-sm">

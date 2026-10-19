@@ -45,7 +45,7 @@ const cellText = (data, col) => {
   return v ?? "";
 };
 
-function CellInput({ item, col, editable, onSave }) {
+function CellInput({ item, col, label, editable, onSave }) {
   const shown = cellText(item.data, col);
   const [draft, setDraft] = useState(null); // null = not editing
   const cancelled = useRef(false);
@@ -71,6 +71,7 @@ function CellInput({ item, col, editable, onSave }) {
         placeholder={editable ? "—" : ""}
         disabled={!editable}
         data-key={col.key}
+        aria-label={`Line ${item.lineNo} · ${label}`}
         onFocus={(e) => {
           setDraft(shown);
           e.currentTarget.select();
@@ -136,7 +137,7 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore }) {
             {item.product.name}
           </span>
           {editable && (
-            <button type="button" title={STR.change} onClick={() => setChanging(true)} className="text-gray-400 hover:text-blue-600">
+            <button type="button" title={STR.change} aria-label={STR.change} onClick={() => setChanging(true)} className="text-gray-400 hover:text-blue-600">
               <Pencil className="w-3.5 h-3.5" />
             </button>
           )}
@@ -145,7 +146,7 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore }) {
         select
       )}
       {editable && (
-        <button type="button" title={STR.ignore} onClick={() => onIgnore(true)} className="ml-auto text-gray-400 hover:text-gray-700">
+        <button type="button" title={STR.ignore} aria-label={STR.ignore} onClick={() => onIgnore(true)} className="ml-auto text-gray-400 hover:text-gray-700">
           <EyeOff className="w-4 h-4" />
         </button>
       )}
@@ -195,7 +196,7 @@ export default function InvoiceItemsTable({ scope, items, editable, onSaveCell, 
                   <td key={group.label} className={`px-1 py-1.5 align-middle ${group.w}`}>
                     <div className="flex gap-1">
                       {group.cols.map((col) => (
-                        <CellInput key={col.key} item={item} col={col} editable={editable} onSave={(key, value) => onSaveCell(item, key, value)} />
+                        <CellInput key={col.key} item={item} col={col} label={col.key === "unit" ? "Unit" : group.label} editable={editable} onSave={(key, value) => onSaveCell(item, key, value)} />
                       ))}
                     </div>
                   </td>
@@ -205,7 +206,7 @@ export default function InvoiceItemsTable({ scope, items, editable, onSaveCell, 
                 </td>
                 <td className="px-2 py-1.5 align-middle">
                   {editable && (
-                    <button type="button" title={STR.remove} onClick={() => window.confirm(STR.confirmRemove(item.lineNo)) && onDelete(item)} className="text-gray-300 hover:text-red-600">
+                    <button type="button" title={STR.remove} aria-label={`${STR.remove} (line ${item.lineNo})`} onClick={() => window.confirm(STR.confirmRemove(item.lineNo)) && onDelete(item)} className="text-gray-300 hover:text-red-600">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}

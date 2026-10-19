@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
+import RoleBanner from "../components/certificates/RoleBanner";
 import StatusBadge from "../components/certificates/StatusBadge";
 import DocumentFrame from "../components/certificates/DocumentFrame";
 import CertificateValuesForm from "../components/certificates/CertificateValuesForm";
@@ -234,6 +235,7 @@ export default function CertificateEditor() {
   if (!scope)
     return (
       <div className="space-y-4">
+        <RoleBanner scope={scopeState} />
         <CompanyPicker scope={scopeState} />
       </div>
     );
@@ -302,6 +304,8 @@ export default function CertificateEditor() {
           )}
         </div>
       </div>
+
+      <RoleBanner scope={scopeState} />
 
       {cert.status === "pending" && <p className="text-sm text-blue-700">{STR.pending}</p>}
       {cert.status === "failed" && (

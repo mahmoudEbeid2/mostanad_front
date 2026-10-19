@@ -6,6 +6,7 @@ import { AlertTriangle, Check } from "lucide-react";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
+import RoleBanner from "../components/certificates/RoleBanner";
 import StatusBadge from "../components/certificates/StatusBadge";
 import InvoiceItemsTable from "../components/certificates/InvoiceItemsTable";
 import InvoiceSourceViewer from "../components/certificates/InvoiceSourceViewer";
@@ -29,6 +30,9 @@ const STR = {
   readingHint: "About 20–40 seconds. Nothing is guessed — anything we can’t read stays empty for you to fill.",
   stages: ["Invoice uploaded", "AI is reading header and lines", "Matching products with your catalogue"],
   canLeave: "You can leave — this page picks up where it is when you come back.",
+  stageState: { done: "done", active: "in progress", pending: "not started" },
+  progress: "Reading progress",
+  skeleton: "Review screen loading…",
   failedTitle: "Couldn’t read this invoice:",
   failedTail: "No certificates were created.",
   tryAgain: "Try again",
@@ -136,20 +140,24 @@ function ReadingCard({ task, source }) {
           <p className="text-sm text-gray-500">{STR.readingHint}</p>
         </div>
       </div>
-      <ol className="space-y-2">
+      <ol className="space-y-2" aria-live="polite">
         {STR.stages.map((label, i) => {
           const done = i < stage;
           const active = i === stage;
           return (
-            <li key={label} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${active ? "bg-blue-50" : ""}`}>
+            <li key={label} aria-current={active ? "step" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${active ? "bg-blue-50" : ""}`}>
               <span
+                aria-hidden="true"
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
                   done ? "bg-emerald-600 text-white" : active ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"
                 }`}
               >
                 {done ? <Check className="w-4 h-4" /> : i + 1}
               </span>
-              <span className={`text-sm ${active ? "font-semibold text-gray-900" : "text-gray-700"}`}>{label}</span>
+              <span className={`text-sm ${active ? "font-semibold text-gray-900" : "text-gray-700"}`}>
+                {label}
+                <span className="sr-only"> — {done ? STR.stageState.done : active ? STR.stageState.active : STR.stageState.pending}</span>
+              </span>
               {i === 0 && source && (
                 <span className="ml-auto text-xs text-gray-500">
                   {kind} · {(source.sizeBytes / 1024 / 1024).toFixed(1)} MB
@@ -160,8 +168,20 @@ function ReadingCard({ task, source }) {
           );
         })}
       </ol>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div role="progressbar" aria-label={STR.progress} aria-valuenow={task.progress || 0} aria-valuemin={0} aria-valuemax={100} className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <div className="h-full bg-blue-600 transition-all" style={{ width: `${Math.max(task.progress || 0, 8)}%` }} />
+      </div>
+      {/* mockup B2: the shape of the review screen while it loads */}
+      <div className="border-t border-gray-100 pt-4 space-y-3" aria-hidden="true">
+        <p className="text-xs font-semibold text-gray-500">{STR.skeleton}</p>
+        <div className="grid grid-cols-4 gap-2.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-9 rounded-lg bg-gray-200 animate-pulse" />
+          ))}
+        </div>
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-7 rounded-lg bg-gray-200 animate-pulse" />
+        ))}
       </div>
       <p className="text-sm text-gray-500">{STR.canLeave}</p>
     </section>
@@ -274,6 +294,7 @@ export default function InvoiceReview() {
   if (!scope)
     return (
       <div className="space-y-4">
+        <RoleBanner scope={scopeState} />
         <CompanyPicker scope={scopeState} />
         <p className="text-sm text-gray-500">{STR.pickCompany}</p>
       </div>
@@ -336,6 +357,8 @@ export default function InvoiceReview() {
           )}
         </div>
       </div>
+
+      <RoleBanner scope={scopeState} />
 
       {(extracting || failed) && (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-start">

@@ -13,10 +13,11 @@ import { Plus } from "lucide-react";
 // Offsets are character offsets in each line's textContent — the same string
 // the backend validates against (§8.2). No geometry is computed or saved here (D11).
 
-const STR = { make: "Make field", makeN: (n) => `Make fields (${n})` };
-const HL_STYLE = `::highlight(cert-field){background-color:rgba(250,204,21,.45)}
-::highlight(cert-field-active){background-color:rgba(37,99,235,.35)}
-::highlight(cert-pending){background-color:rgba(16,185,129,.35)}`;
+const STR = { make: "Make field", makeN: (n) => `Make fields (${n})`, enter: "Enter" };
+// mockup A4: marked fields light blue + underline, the open one stronger, the pending selection solid light blue
+const HL_STYLE = `::highlight(cert-field){background-color:rgba(37,99,235,.14);text-decoration:underline 1.5px #2563eb}
+::highlight(cert-field-active){background-color:rgba(37,99,235,.32);text-decoration:underline 2px #1d4ed8}
+::highlight(cert-pending){background-color:rgba(147,197,253,.75)}`;
 
 function textNodes(el) {
   const out = [];
@@ -186,7 +187,7 @@ export default function FieldMarker({ frameInfo, fields, activeKey, onMake, onSe
         boxes.map((b, i) => (
           <div
             key={i}
-            className={b.tone === "active" ? "bg-blue-500/35" : b.tone === "pending" ? "bg-emerald-500/35" : "bg-yellow-300/45"}
+            className={b.tone === "active" ? "bg-blue-600/30 outline-2 outline-blue-700" : b.tone === "pending" ? "bg-blue-300/75" : "bg-blue-600/15 outline-[1.5px] outline-blue-600"}
             style={{ position: "absolute", left: b.x, top: b.y, width: b.w, height: b.h }}
           />
         ))}
@@ -196,11 +197,12 @@ export default function FieldMarker({ frameInfo, fields, activeKey, onMake, onSe
           onMouseDown={(e) => e.preventDefault()}
           onClick={make}
           data-testid="make-field"
-          className="pointer-events-auto absolute flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-lg hover:bg-blue-700"
+          className="pointer-events-auto absolute flex items-center gap-1.5 rounded-[10px] bg-blue-600 px-3 py-2 text-[13px] font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700"
           style={{ left: anchor.x + 4, top: anchor.y + 4, transform: `scale(${inv})`, transformOrigin: "0 0", whiteSpace: "nowrap" }}
         >
           <Plus className="w-3.5 h-3.5" />
           {pending.length > 1 ? STR.makeN(pending.length) : STR.make}
+          <span className="font-medium opacity-80">{STR.enter}</span>
         </button>
       )}
     </>

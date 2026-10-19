@@ -66,7 +66,7 @@ export default function CertificateValuesForm({ fields, values, drafts, catalogu
                   className={`flex-1 border rounded-lg px-3 py-2 text-sm bg-white disabled:bg-gray-50 disabled:text-gray-700 ${red ? "border-red-400" : flags.length ? "border-amber-400" : "border-gray-300"}`}
                 />
                 {editable && !NO_RESET.has(f.source?.kind) && (
-                  <button type="button" title={STR.reset} onClick={() => onReset(f.key)} className="text-gray-400 hover:text-blue-600" data-reset={f.key}>
+                  <button type="button" title={STR.reset} aria-label={`${STR.reset}: ${f.label}`} onClick={() => onReset(f.key)} className="text-gray-400 hover:text-blue-600" data-reset={f.key}>
                     <RotateCcw className="w-4 h-4" />
                   </button>
                 )}

@@ -5,6 +5,7 @@ import { FileCheck } from "lucide-react";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
+import RoleBanner from "../components/certificates/RoleBanner";
 import CertificateCard from "../components/certificates/CertificateCard";
 import useCompanyScope from "../hooks/useCompanyScope";
 import { listCertificateTypes } from "../services/apiCertificateTypes";
@@ -100,13 +101,15 @@ export default function CertificatesList() {
         <CompanyPicker scope={scopeState} />
       </div>
 
+      <RoleBanner scope={scopeState} />
+
       {!scope ? (
         <p className="text-sm text-gray-500">{STR.pickCompany}</p>
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={STR.search} className="border border-gray-300 rounded-lg px-3 py-2 w-72 max-w-full" />
-            <select value={f.certificateTypeId} onChange={(e) => setParam("certificateTypeId", e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 bg-white">
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={STR.search} aria-label={STR.search} className="border border-gray-300 rounded-lg px-3 py-2 w-72 max-w-full" />
+            <select aria-label={STR.allTypes} value={f.certificateTypeId} onChange={(e) => setParam("certificateTypeId", e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 bg-white">
               <option value="">{STR.allTypes}</option>
               {types.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -114,7 +117,7 @@ export default function CertificatesList() {
                 </option>
               ))}
             </select>
-            <select value={f.status} onChange={(e) => setParam("status", e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 bg-white">
+            <select aria-label={STR.anyStatus} value={f.status} onChange={(e) => setParam("status", e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 bg-white">
               <option value="">{STR.anyStatus}</option>
               {Object.entries(STR.statuses).map(([k, label]) => (
                 <option key={k} value={k}>

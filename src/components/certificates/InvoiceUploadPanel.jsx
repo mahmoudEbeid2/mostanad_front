@@ -8,6 +8,7 @@ import { getBrands } from "../../services/apiBrands";
 
 // Invoice upload (plan §13.5, mockup B1): drop zone + optional brand hint and
 // destination country, then straight to the review page while it is read.
+// `companyField` (the company picker, or a company's own name) leads the form.
 const STR = {
   drop: "Drop the invoice here, or",
   browse: "browse",
@@ -24,7 +25,7 @@ const STR = {
 
 const MAX_BYTES = 15 * 1024 * 1024;
 
-export default function InvoiceUploadPanel({ scope, companyId }) {
+export default function InvoiceUploadPanel({ scope, companyId, companyField = null }) {
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [over, setOver] = useState(false);
@@ -64,7 +65,7 @@ export default function InvoiceUploadPanel({ scope, companyId }) {
   };
 
   return (
-    <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-6 grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <label
         onDragOver={(e) => {
           e.preventDefault();
@@ -97,6 +98,7 @@ export default function InvoiceUploadPanel({ scope, companyId }) {
       </label>
 
       <div className="space-y-4 text-sm">
+        {companyField}
         <label className="block">
           <span className="font-semibold text-gray-800">{STR.brand}</span> <span className="text-gray-500">· {STR.brandHint}</span>
           <select value={brandId} onChange={(e) => setBrandId(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2.5 bg-white">

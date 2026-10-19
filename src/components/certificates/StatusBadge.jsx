@@ -34,7 +34,7 @@ const LABELS = { partially_failed: "partially failed" };
 export default function StatusBadge({ status, className = "" }) {
   if (!status) return null;
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${STYLES[status] || "bg-gray-100 text-gray-700"} ${className}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${STYLES[status] || "bg-gray-100 text-gray-700"} ${className}`}>
       {LABELS[status] || status}
     </span>
   );

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { AlertCircle, Check, CopyPlus, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowRight, CopyPlus } from "lucide-react";
 import Button from "../../../ui/Button";
 import DocumentFrame from "../DocumentFrame";
 import FieldMarker from "../FieldMarker";
@@ -15,10 +15,12 @@ import { describeCertificateError } from "../../../utils/certificateErrors";
 // validates offsets in the server's layout and returns measured suggestions.
 
 const STR = {
-  saving: "Saving…",
-  saved: "All changes saved",
+  hint: "Select the text that changes.",
+  hintCtrl: "Ctrl",
+  hintTail: "+ select to add several.",
   invalid: "Not saved — fix:",
   failed: "Not saved:",
+  back: "Back",
   next: "Next: settings",
   newVersion: "Create a new version to edit",
   aiNone: "No new suggestions.",
@@ -53,7 +55,7 @@ const uniqueKey = (base, taken) => {
   return k;
 };
 
-export default function FieldsStep({ scope, version, onSaved, onNext }) {
+export default function FieldsStep({ scope, version, onSaved, onNext, onBack, onSaveState }) {
   const navigate = useNavigate();
   const readOnly = version.status !== "draft";
   const [drafts, setDrafts] = useState(() => (version.fields || []).map(toDraft));
@@ -68,6 +70,11 @@ export default function FieldsStep({ scope, version, onSaved, onNext }) {
   const dirty = useRef(false);
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
+
+  // the autosave state is shown in the wizard header (mockup A4)
+  useEffect(() => {
+    onSaveState?.(readOnly ? null : save.state);
+  }, [save.state, readOnly, onSaveState]);
 
   useEffect(() => {
     getFieldSources(scope)
@@ -161,21 +168,6 @@ export default function FieldsStep({ scope, version, onSaved, onNext }) {
   const activeKey = drafts.find((f) => f.uid === activeUid)?.key;
   const selectByKey = useCallback((key) => setActiveUid((cur) => drafts.find((f) => f.key === key)?.uid ?? cur), [drafts]);
 
-  const status = (
-    <span className="text-xs flex items-center gap-1" data-testid="save-state">
-      {["saving", "pending"].includes(save.state) && (
-        <>
-          <Loader2 className="w-3.5 h-3.5 animate-spin" /> {STR.saving}
-        </>
-      )}
-      {save.state === "saved" && !readOnly && (
-        <span className="text-emerald-700 flex items-center gap-1">
-          <Check className="w-3.5 h-3.5" /> {STR.saved}
-        </span>
-      )}
-    </span>
-  );
-
   return (
     <div className="space-y-3">
       {["invalid", "error"].includes(save.state) && (
@@ -197,22 +189,20 @@ export default function FieldsStep({ scope, version, onSaved, onNext }) {
           </div>
         </div>
       )}
-      <div className="flex items-center justify-end gap-2">
-        {readOnly && (
-          <Button variant="secondary" onClick={forkVersion}>
-            <CopyPlus className="w-4 h-4" /> {STR.newVersion}
-          </Button>
-        )}
-        <Button onClick={onNext} disabled={!readOnly && (save.state !== "saved" || !drafts.length)}>
-          {STR.next}
-        </Button>
-      </div>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="flex flex-wrap gap-5 items-start">
         <DocumentFrame
+          className="flex-[3_1_520px] min-w-0"
           load={() => getVersionHtml(scope, version.id, "sanitized")}
           reloadKey={version.id}
           minHeight={720}
           onReady={setFrameInfo}
+          hint={
+            !readOnly && (
+              <span className="text-[13px] text-gray-600">
+                {STR.hint} <b className="text-gray-900">{STR.hintCtrl}</b> {STR.hintTail}
+              </span>
+            )
+          }
           overlay={(scale) => (
             <FieldMarker frameInfo={frameInfo} fields={drafts} activeKey={activeKey} onMake={make} onSelect={selectByKey} disabled={readOnly} scale={scale} />
           )}
@@ -234,7 +224,28 @@ export default function FieldsStep({ scope, version, onSaved, onNext }) {
           onSuggest={suggest}
           onAcceptChip={acceptChip}
           onRejectChip={(c) => setAiChips((cur) => cur.filter((x) => x !== c))}
-          header={status}
+          className="flex-[2_1_340px] min-w-0"
+          footer={
+            <>
+              {onBack ? (
+                <button type="button" onClick={onBack} className="text-sm font-semibold text-gray-600 hover:text-gray-900">
+                  {STR.back}
+                </button>
+              ) : (
+                <span />
+              )}
+              <span className="flex items-center gap-2">
+                {readOnly && (
+                  <Button variant="secondary" onClick={forkVersion}>
+                    <CopyPlus className="w-4 h-4" /> {STR.newVersion}
+                  </Button>
+                )}
+                <Button onClick={onNext} disabled={!readOnly && (save.state !== "saved" || !drafts.length)}>
+                  {STR.next} <ArrowRight className="w-4 h-4" />
+                </Button>
+              </span>
+            </>
+          }
         />
       </div>
     </div>

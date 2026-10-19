@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
+import RoleBanner from "../components/certificates/RoleBanner";
 import StatusBadge from "../components/certificates/StatusBadge";
 import InvoiceUploadPanel from "../components/certificates/InvoiceUploadPanel";
 import useCompanyScope from "../hooks/useCompanyScope";
@@ -16,10 +17,9 @@ import { listInvoices } from "../services/apiInvoices";
 const STR = {
   title: "Invoices",
   subtitle: "Upload a shipment invoice — we read the products and make every certificate it needs.",
-  systemBadge: "System admin",
-  systemNote: "Products are matched only inside the company you pick.",
-  companyBadge: "Company account",
-  companyNote: "Only your invoices, products and templates are used.",
+  systemNote: "You see every company’s invoices. Products are matched only inside the company you pick.",
+  companyNote: (name) => `${name} — only your invoices, products and templates are used.`,
+  anyCompany: "you can upload for any company",
   pickCompany: "Pick a company to upload and see its invoices.",
   recent: "Recent invoices",
   search: "Search invoice no. or customer",
@@ -42,7 +42,7 @@ const certificatesCell = (inv) => {
 
 export default function Invoices() {
   const scopeState = useCompanyScope();
-  const { scope, companyId, isCompany } = scopeState;
+  const { scope, companyId } = scopeState;
   const { user } = useAuth();
   const canUpload = hasPermission(user, "create_invoices");
   const [params, setParams] = useSearchParams();
@@ -87,6 +87,8 @@ export default function Invoices() {
   }, [load]);
 
   const pages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
+  // mockup B1: the company is the upload form's first field; the header holds it only without that form
+  const inForm = Boolean(scope && canUpload);
 
   return (
     <div className="space-y-6">
@@ -95,19 +97,22 @@ export default function Invoices() {
           <h1 className="text-2xl font-bold text-gray-900">{STR.title}</h1>
           <p className="text-sm text-gray-500 mt-1">{STR.subtitle}</p>
         </div>
-        <CompanyPicker scope={scopeState} />
+        {!inForm && <CompanyPicker scope={scopeState} />}
       </div>
 
-      <div className="flex items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-        <span className="rounded-full bg-indigo-600 text-white text-xs font-semibold px-2.5 py-0.5">{isCompany ? STR.companyBadge : STR.systemBadge}</span>
-        {isCompany ? STR.companyNote : STR.systemNote}
-      </div>
+      <RoleBanner scope={scopeState} systemNote={STR.systemNote} companyNote={STR.companyNote} />
 
       {!scope ? (
         <p className="text-sm text-gray-500">{STR.pickCompany}</p>
       ) : (
         <>
-          {canUpload && <InvoiceUploadPanel scope={scope} companyId={companyId} />}
+          {canUpload && (
+            <InvoiceUploadPanel
+              scope={scope}
+              companyId={companyId}
+              companyField={<CompanyPicker scope={scopeState} variant="field" hint={STR.anyCompany} yours={false} labelClassName="text-sm font-semibold text-gray-800" />}
+            />
+          )}
 
           <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-gray-100">
@@ -116,6 +121,7 @@ export default function Invoices() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={STR.search}
+                aria-label={STR.search}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-72 max-w-full"
               />
             </div>

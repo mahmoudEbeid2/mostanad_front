@@ -57,9 +57,17 @@ export const getVersionThumbnail = (scope = {}, versionId) =>
 export const getFieldSources = (scope = {}) =>
   unwrap(apiClient.get("/certificate-field-sources", { params: scope }), "Failed to load the field sources").then((d) => d.data);
 
-/** Replaces the full field list (draft only) → { fields, suggestions: { key: { align } }, fieldsHash, boxes } */
-export const saveFields = (scope = {}, versionId, fields) =>
-  unwrap(apiClient.put(`/template-versions/${versionId}/fields`, { fields }, { params: scope }), "Failed to save the fields").then((d) => d.data);
+/**
+ * Replaces the full field list (draft only); `groups` (repeating groups, plan
+ * §7.8) replaces the group list when given, omitted keeps the stored one.
+ * → { fields, groups, groupDetection: { key: { ok, shape, band, footerY, footerProposal, capacity… } | { ok: false, error, message } }, suggestions, fieldsHash, boxes }
+ */
+export const saveFields = (scope = {}, versionId, fields, groups) =>
+  unwrap(apiClient.put(`/template-versions/${versionId}/fields`, groups === undefined ? { fields } : { fields, groups }, { params: scope }), "Failed to save the fields").then((d) => d.data);
+
+/** Repeating groups need a vector background: a NEW draft version of the same design, fields copied → { templateId, versionId, versionNumber, taskId } */
+export const enableGroups = (scope = {}, versionId) =>
+  unwrap(apiClient.post(`/template-versions/${versionId}/enable-groups`, {}, { params: scope }), "Couldn't create the version for repeating groups").then((d) => d.data);
 
 export const confirmFields = (scope = {}, versionId, keys) =>
   unwrap(apiClient.post(`/template-versions/${versionId}/fields/confirm`, { keys }, { params: scope }), "Failed to confirm the fields").then((d) => d.data.fields);

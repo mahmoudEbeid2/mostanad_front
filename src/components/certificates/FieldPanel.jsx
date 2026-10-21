@@ -5,7 +5,9 @@ import { DATE_PATTERNS, slugKey, sourceLabel, sourceType } from "../../utils/cer
 // Field list + editor (plan §13.4 step 2): key (auto-slug from the label),
 // label, source, format (only options valid for the source type), required,
 // align. AI suggestions are chips the user accepts or rejects one by one; an
-// accepted one stays "unconfirmed" until confirmed (D10).
+// accepted one stays "unconfirmed" until confirmed (D10). A field can be a
+// cell of a repeating group's sample row (plan §7.8): its value then comes
+// from each row (or fixed text / typed), not from the catalogue.
 
 const STR = {
   title: "Fields",
@@ -42,6 +44,9 @@ const STR = {
   accept: "Accept",
   reject: "Reject",
   readOnly: "This version is not a draft, so its fields are read-only.",
+  group: "Row of group",
+  noGroup: "— not part of a group —",
+  groupHint: "A cell of the group's sample row: it is repeated once per row.",
 };
 
 const input = "w-full min-h-10 border border-gray-300 rounded-lg px-3 bg-white text-sm font-normal text-gray-900";
@@ -103,8 +108,9 @@ function FormatEditor({ field, type, onChange }) {
   );
 }
 
-function FieldEditor({ field, options, suggestion, onChange }) {
-  const type = sourceType(options, field.source);
+function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onChange }) {
+  const opts = field.groupKey ? cellOptionsFor(field.groupKey) : options;
+  const type = sourceType(opts, field.source);
   return (
     <div className="flex flex-col gap-3 pt-3">
       <div className="grid grid-cols-2 gap-2.5">
@@ -123,15 +129,33 @@ function FieldEditor({ field, options, suggestion, onChange }) {
           <input value={field.key} onChange={(e) => onChange({ key: e.target.value, keyEdited: true })} className={`${input} font-mono`} />
         </label>
       </div>
+      {groups.length > 0 && (
+        <label className={lbl} title={STR.groupHint}>
+          {STR.group}
+          <select
+            value={field.groupKey || ""}
+            onChange={(e) => onChange({ groupKey: e.target.value || null, source: { kind: "manual" }, format: null })}
+            className={input}
+            data-testid="field-group"
+          >
+            <option value="">{STR.noGroup}</option>
+            {groups.map((g) => (
+              <option key={g.key} value={g.key}>
+                {g.label} ({g.key})
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className={lbl}>
         {STR.source}
         <SourcePicker
           ariaLabel={STR.source}
-          options={options}
+          options={opts}
           value={field.source}
           onChange={(source) => {
             // drop formats the new source type can't use
-            const t = sourceType(options, source);
+            const t = sourceType(opts, source);
             const f = { ...(field.format || {}) };
             if (t !== "date") delete f.date;
             if (t !== "number") delete f.number;
@@ -175,6 +199,8 @@ function FieldEditor({ field, options, suggestion, onChange }) {
 export default function FieldPanel({
   fields,
   options,
+  groups = [],
+  cellOptionsFor = () => [],
   activeUid,
   onActivate,
   onChange,
@@ -246,7 +272,8 @@ export default function FieldPanel({
                     <span className="block text-xs text-gray-500 truncate">“{f.sampleValue}”</span>
                   </span>
                 </button>
-                <span className="hidden sm:inline-flex max-w-40 truncate rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">{sourceLabel(options, f.source)}</span>
+                {f.groupKey && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-800 font-mono">{f.groupKey}</span>}
+                <span className="hidden sm:inline-flex max-w-40 truncate rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">{sourceLabel(f.groupKey ? cellOptionsFor(f.groupKey) : options, f.source)}</span>
                 <span className="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-xs font-semibold text-gray-600" title={`${STR.align}: ${f.align || "left"}`}>
                   {ALIGN_SHORT[f.align] || "L"}
                 </span>
@@ -270,7 +297,7 @@ export default function FieldPanel({
                   </span>
                 )}
               </div>
-              {open && !readOnly && <FieldEditor field={f} options={options} suggestion={suggestions[f.key]} onChange={(patch) => onChange(f.uid, patch)} />}
+              {open && !readOnly && <FieldEditor field={f} options={options} groups={groups} cellOptionsFor={cellOptionsFor} suggestion={suggestions[f.key]} onChange={(patch) => onChange(f.uid, patch)} />}
             </div>
           );
         })}

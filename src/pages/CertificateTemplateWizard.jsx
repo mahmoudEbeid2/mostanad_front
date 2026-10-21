@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Check, Loader2 } from "lucide-react";
@@ -194,20 +194,27 @@ export default function CertificateTemplateWizard() {
     }
   }, [scope]);
 
+  // loads overlap (a new version id + its convert task finishing): only the
+  // newest may set state, or a slow older response puts back a stale
+  // "converting" (or the previous version) after the task is already done
+  const loadSeq = useRef(0);
   const loadVersion = useCallback(async () => {
     if (!scope || !templateId) return;
+    const seq = ++loadSeq.current;
     try {
       const t = await getTemplate(scope, templateId);
+      if (seq !== loadSeq.current) return;
       setTemplate(t);
       if (!versionId) {
         if (t.versions[0]) navigate(`/certificates/templates/${t.id}/versions/${t.versions[0].id}`, { replace: true });
         return;
       }
-      setVersion(await getVersion(scope, versionId));
+      const v = await getVersion(scope, versionId);
+      if (seq === loadSeq.current) setVersion(v);
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }, [scope, templateId, versionId, navigate]);
 
@@ -344,7 +351,7 @@ export default function CertificateTemplateWizard() {
       )}
 
       {step === "fields" && version && stepEnabled("fields") && (
-        <FieldsStep key={version.id} scope={scope} version={version} onSaved={loadVersion} onNext={() => goStep("settings")} onBack={() => goStep("upload")} onSaveState={setSaveState} />
+        <FieldsStep key={version.id} scope={scope} templateScope={template?.scope} version={version} onSaved={loadVersion} onNext={() => goStep("settings")} onBack={() => goStep("upload")} onSaveState={setSaveState} />
       )}
       {step === "settings" && version && template && stepEnabled("settings") && (
         <SettingsStep key={template.updatedAt} scope={scope} companyId={companyId} template={template} version={version} types={types} onSaved={loadVersion} onNext={() => goStep("prepare")} />

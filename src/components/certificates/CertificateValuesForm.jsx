@@ -1,10 +1,12 @@
 import { RotateCcw } from "lucide-react";
 import FlagBadges from "./FlagBadges";
+import GroupRowsEditor from "./GroupRowsEditor";
 import { sourceLabel } from "../../utils/certificateFieldSources";
 
 // The editor's right panel (plan §13.6; mockup B5): one row per field — label,
 // source chip, value, flags and "reset to source". Typing only updates drafts;
-// the page saves them and the server re-renders.
+// the page saves them and the server re-renders. A repeating group's cells are
+// not fields of their own here: the group is edited as a list of rows (§7.8).
 const STR = {
   title: "Values",
   keys: "Tab · Ctrl+S saves · Esc reverts",
@@ -18,7 +20,7 @@ const STR = {
 };
 const NO_RESET = new Set(["manual", "static"]);
 
-export default function CertificateValuesForm({ fields, values, drafts, catalogueOptions, editable, onChange, onRevert, onReset, versions = [] }) {
+export default function CertificateValuesForm({ fields, groups = [], values, drafts, catalogueOptions, editable, onChange, onRevert, onReset, versions = [] }) {
   return (
     <section className="bg-white border border-gray-200 rounded-xl overflow-hidden" data-testid="values-form">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -26,7 +28,7 @@ export default function CertificateValuesForm({ fields, values, drafts, catalogu
         {editable && <span className="text-xs text-gray-500">{STR.keys}</span>}
       </div>
       <div className="divide-y divide-gray-100">
-        {fields.map((f) => {
+        {fields.filter((f) => !f.groupKey).map((f) => {
           const v = values[f.key] || { value: "", flags: [] };
           const dirty = Object.prototype.hasOwnProperty.call(drafts, f.key);
           const shown = dirty ? drafts[f.key] : v.value;
@@ -75,6 +77,18 @@ export default function CertificateValuesForm({ fields, values, drafts, catalogu
             </div>
           );
         })}
+        {groups.map((g) => (
+          <GroupRowsEditor
+            key={g.key}
+            group={g}
+            value={values[g.key]}
+            draftRows={Object.prototype.hasOwnProperty.call(drafts, g.key) ? drafts[g.key] : undefined}
+            editable={editable}
+            onChange={onChange}
+            onRevert={onRevert}
+            onReset={onReset}
+          />
+        ))}
       </div>
       {versions.length > 0 && (
         <div className="px-4 py-3 border-t border-gray-100 space-y-1">

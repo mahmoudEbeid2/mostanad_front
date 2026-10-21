@@ -120,8 +120,10 @@ export default function CertificateEditor() {
   const editable = !!cert && canEdit && cert.status === "draft" && viewing === null && !conflict;
   const fields = useMemo(() => [...(cert?.fields || [])].sort((a, b) => (a.page || 1) - (b.page || 1) || (a.sortOrder || 0) - (b.sortOrder || 0)), [cert?.fields]);
 
-  // instant, ephemeral feedback in the frame (plan §13.6) — text only
+  // instant, ephemeral feedback in the frame (plan §13.6) — text only; a
+  // group's rows change the layout, so they wait for the server render
   const paint = useCallback((key, value) => {
+    if (typeof value !== "string") return;
     docRef.current?.querySelectorAll(`[data-field="${CSS.escape(key)}"]`).forEach((el) => {
       el.textContent = value;
     });
@@ -251,7 +253,7 @@ export default function CertificateEditor() {
   const dirty = Object.keys(drafts).length > 0;
   const blocking = Object.entries(cert.flags || {})
     .filter(([, f]) => f.some((x) => x === "missing" || x === "overflow" || x === "missing_span" || x.startsWith("glyph:")))
-    .map(([k]) => fields.find((f) => f.key === k)?.label || k);
+    .map(([k]) => fields.find((f) => f.key === k)?.label || cert.groups?.find((g) => g.key === k)?.label || k);
   const title = `${cert.certificateType?.code || ""} · ${cert.scope === "per_invoice" ? STR.whole : cert.product?.name || "—"}`;
   const saveText =
     saveState.state === "saving" ? STR.saving : saveState.state === "dirty" || dirty ? STR.dirty : saveState.state === "error" ? STR.failed : saveState.at ? STR.saved(saveState.at) : "";
@@ -367,6 +369,7 @@ export default function CertificateEditor() {
           </section>
           <CertificateValuesForm
             fields={fields}
+            groups={cert.groups || []}
             values={cert.values}
             drafts={viewing === null ? drafts : {}}
             catalogueOptions={options}

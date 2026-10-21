@@ -6,6 +6,8 @@ const MESSAGES = {
   UNSUPPORTED_FORMAT: "Upload an Illustrator .ai, a .pdf or an .html file.",
   FILE_TOO_LARGE: "The file is too large.",
   CONVERTER_UNREACHABLE: "The design converter is not running. Ask an administrator to start the pdf2htmlex service.",
+  CONVERTER_OUTDATED: "The design converter is too old for repeating groups. Ask an administrator to rebuild the pdf2htmlex service.",
+  GROUPS_NEED_PDF: "Repeating groups need an .ai or .pdf design — an .html upload has no separate drawing layer.",
 };
 
 /** err: { code?, message? } — or a stored "CODE: message" string. */

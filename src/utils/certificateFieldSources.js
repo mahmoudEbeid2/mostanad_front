@@ -59,4 +59,28 @@ export function sourceType(options, source) {
   return findOption(options, source)?.type || "string";
 }
 
+// ── repeating groups (plan §7.8, §10.3) ─────────────────────────────────────
+/** The paths a group's cells may read from each of its rows, or null (typed rows). */
+export function rowPathsFor(catalogue, groupSource) {
+  const kinds = catalogue?.groups?.kinds || [];
+  if (groupSource?.kind === "product_list") return kinds.find((k) => k.kind === "product_list")?.lists?.find((l) => l.path === groupSource.path)?.rowPaths || null;
+  if (groupSource?.kind === "invoice_lines") return kinds.find((k) => k.kind === "invoice_lines")?.rowPaths || null;
+  return null;
+}
+
+/** react-select options for a group cell: its row's paths, fixed text, typed. */
+export function cellOptions(catalogue, groupSource) {
+  const paths = rowPathsFor(catalogue, groupSource) || [];
+  return [
+    ...(paths.length ? [{ label: "From the row", options: paths.map((p) => ({ value: `row:${p.path}`, label: p.label, source: { kind: "row", path: p.path }, type: p.type, group: "Row" })) }] : []),
+    {
+      label: "Other",
+      options: [
+        { value: "static", label: "Fixed text", source: { kind: "static" }, type: "string", group: "Other", description: "The same text in every row" },
+        { value: "manual", label: "Typed in the editor", source: { kind: "manual" }, type: "string", group: "Other", description: "Filled per certificate" },
+      ],
+    },
+  ];
+}
+
 export const DATE_PATTERNS = ["MM/YYYY", "DD/MM/YYYY", "MM/DD/YYYY", "DD.MM.YYYY", "YYYY-MM-DD", "DD MMM YYYY", "MMM YYYY", "MM/YY"];

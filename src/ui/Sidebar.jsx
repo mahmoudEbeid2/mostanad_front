@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -62,6 +62,7 @@ const navLinks = [
       { name: "Types", path: "/certificates/types", permission: "read_certificate_types" },
       { name: "Invoices", path: "/invoices", permission: "read_invoices" },
       { name: "Generated certificates", path: "/certificates", permission: "read_certificates" },
+      { name: "AI", path: "/certificate-ai", permission: "read_certificate_templates" },
     ]
   },
 ];
@@ -73,7 +74,7 @@ export default function Sidebar() {
     Products: location.pathname.startsWith("/products"),
     "Regulatory & EDA": location.pathname.startsWith("/regulatory") || location.pathname.startsWith("/eda"),
     Labels: location.pathname.startsWith("/labels") || location.pathname.startsWith("/reference-labels"),
-    Certificates: location.pathname.startsWith("/certificates") || location.pathname.startsWith("/invoices")
+    Certificates: location.pathname.startsWith("/certificates") || location.pathname.startsWith("/invoices") || location.pathname.startsWith("/certificate-ai")
   });
 
   const toggleDropdown = (name) => {

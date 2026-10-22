@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import CertificateDataFields from "../components/certificates/CertificateDataFields";
 import { getProducts, createProduct, updateProduct, deleteProduct, getProductById, extractProductAi, getTaskStatus } from "../services/apiProducts";
 import { getCompanies } from "../services/apiCompanies";
 import { getBrands } from "../services/apiBrands";
@@ -26,6 +28,10 @@ export default function Products() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add" | "edit" | "view"
   const [currentProduct, setCurrentProduct] = useState(null);
+  // stable scope for the certificate data section (a new object each render would refetch it)
+  const certCompanyId = currentProduct?.companyId;
+  const certScope = useMemo(() => (certCompanyId ? { companyId: certCompanyId } : null), [certCompanyId]);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [extractionMode, setExtractionMode] = useState("manual"); // "manual" | "ai"
   const [isExtractingAi, setIsExtractingAi] = useState(false);
@@ -139,6 +145,17 @@ export default function Products() {
     setCurrentProduct(null);
     setIsModalOpen(true);
   };
+
+  // /products?edit=<id> (the certificate completeness view links here) opens that product's editor
+  const editId = searchParams.get("edit");
+  useEffect(() => {
+    if (!editId) return;
+    getProductById(editId)
+      .then((res) => res?.data?.product && openEditModal(res.data.product))
+      .catch(() => toast.error("Product not found"))
+      .finally(() => setSearchParams({}, { replace: true }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId]);
 
   const openEditModal = (product) => {
     setModalMode("edit");
@@ -755,6 +772,12 @@ export default function Products() {
                             )}
                           </div>
                         </div>
+                      </div>
+                    )}
+                    {/* Certificate data (AI layers A4, backend plan.md §9): fixed inputs for what the active templates need */}
+                    {modalMode === "edit" && currentProduct && certScope && (
+                      <div className="pt-4 border-t border-gray-200">
+                        <CertificateDataFields scope={certScope} productId={currentProduct.id} />
                       </div>
                     )}
                   </>

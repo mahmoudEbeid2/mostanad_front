@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -26,6 +26,7 @@ import CertificateTemplates from "./pages/CertificateTemplates";
 import CertificateTemplateWizard from "./pages/CertificateTemplateWizard";
 import Invoices from "./pages/Invoices";
 import InvoiceReview from "./pages/InvoiceReview";
+import CertificateAi from "./pages/CertificateAi";
 import CertificatesList from "./pages/CertificatesList";
 import CertificateEditor from "./pages/CertificateEditor";
 
@@ -66,6 +67,7 @@ function App() {
             <Route path="/invoices" element={<RequirePermission permission="read_invoices"><Invoices /></RequirePermission>} />
             <Route path="/invoices/new" element={<RequirePermission permission="read_invoices"><Invoices /></RequirePermission>} />
             <Route path="/invoices/:id" element={<RequirePermission permission="read_invoices"><InvoiceReview /></RequirePermission>} />
+            <Route path="/certificate-ai" element={<RequirePermission permission="read_certificate_templates"><CertificateAi /></RequirePermission>} />
             <Route path="/certificates" element={<RequirePermission permission="read_certificates"><CertificatesList /></RequirePermission>} />
             <Route path="/certificates/:id" element={<RequirePermission permission="read_certificates"><CertificateEditor /></RequirePermission>} />
             <Route path="/users" element={<RequirePermission permission="read_users"><Users /></RequirePermission>} />

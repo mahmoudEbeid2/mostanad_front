@@ -63,6 +63,11 @@ const STR = {
       before you can confirm. Pick one of the suggestions or search the catalogue.
     </>
   ),
+  matchSummary: (m) =>
+    `${m.by === "rematch" ? "Matching re-run" : "Matched automatically when the invoice was read"}: ${m.matched} line${m.matched === 1 ? "" : "s"} matched, ${m.needsMatch} need${m.needsMatch === 1 ? "s" : ""} a product` +
+    (m.ai?.autoAccepted ? ` · AI matched ${m.ai.autoAccepted}` : "") +
+    (m.ai?.suggested ? ` · AI suggests a product for ${m.ai.suggested} — confirm them in the lines below` : ""),
+  matchAiOff: (reason) => `AI matching was unavailable (${reason}) — pick the products from the suggestions or the catalogue.`,
   ambiguousDates: "Some dates are ambiguous (amber). Write them unambiguously so they can be formatted on the certificates.",
   ambiguousQuantities: "Some quantities are ambiguous (amber): \"1.250\" could be 1250 or 1.25. Type the number without the separator (1250) or with a decimal part (1.25).",
   readyNote: "Confirmed — editing anything sends it back to review.",
@@ -434,6 +439,13 @@ export default function InvoiceReview() {
           {invoice.status === "review" && needsMatch > 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" data-testid="needs-match-banner">
               <AlertTriangle className="w-5 h-5 shrink-0" /> <span>{STR.needsMatch(needsMatch)}</span>
+            </div>
+          )}
+          {/* post-A4: what matching did when the invoice was read (no "Re-run matching" needed) */}
+          {EDITABLE.has(invoice.status) && invoice.matchSummary && (
+            <div className="text-sm text-gray-700" data-testid="match-summary">
+              <p>{STR.matchSummary(invoice.matchSummary)}</p>
+              {invoice.matchSummary.ai?.unavailable && <p className="text-xs text-amber-800">{STR.matchAiOff(invoice.matchSummary.ai.reason)}</p>}
             </div>
           )}
           {ambiguous && <p className="text-sm text-amber-700">{STR.ambiguousDates}</p>}

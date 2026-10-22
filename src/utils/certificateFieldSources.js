@@ -17,16 +17,29 @@ export function slugKey(text) {
 
 export const optionValue = (source) => (source?.path ? `${source.kind}:${source.path}` : source?.kind || "");
 
-/** react-select grouped options from the catalogue. */
+/** "In 83 % of products · e.g. 3.0-5.0, 6.5-7.5" — from the company's data dictionary (AI plan §3.2). */
+export function coverageText(p) {
+  if (typeof p?.coverage !== "number") return undefined;
+  const pct = Math.round(p.coverage * 100);
+  const eg = (p.examples || []).slice(0, 3).join(", ");
+  return `${pct === 0 && p.coverage > 0 ? "<1" : pct} % of products${eg ? ` · e.g. ${eg}` : ""}`;
+}
+
+const PRODUCT_DETAILS = "Product details";
+
+/** react-select grouped options from the catalogue. Paths found inside the
+ *  company's product JSON get their own group, "Product details". */
 export function sourceOptions(catalogue) {
   if (!catalogue) return [];
   const pathKinds = catalogue.kinds.filter((k) => k.paths);
   const other = catalogue.kinds.filter((k) => !k.paths);
+  const option = (k, p, group) => ({ value: `${k.kind}:${p.path}`, label: p.label, source: { kind: k.kind, path: p.path }, type: p.type, group, description: coverageText(p) });
   return [
-    ...pathKinds.map((k) => ({
-      label: k.label,
-      options: k.paths.map((p) => ({ value: `${k.kind}:${p.path}`, label: p.label, source: { kind: k.kind, path: p.path }, type: p.type, group: k.label })),
-    })),
+    ...pathKinds.flatMap((k) => {
+      const own = { label: k.label, options: k.paths.filter((p) => !p.fromDictionary).map((p) => option(k, p, k.label)) };
+      const details = k.paths.filter((p) => p.fromDictionary);
+      return details.length ? [own, { label: PRODUCT_DETAILS, options: details.map((p) => option(k, p, PRODUCT_DETAILS)) }] : [own];
+    }),
     {
       label: "Other",
       options: other.map((k) => ({ value: k.kind, label: k.label, source: { kind: k.kind }, type: k.type || "string", group: "Other", description: k.description })),

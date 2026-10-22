@@ -8,7 +8,7 @@ import FieldMarker from "../FieldMarker";
 import FieldPanel from "../FieldPanel";
 import GroupPanel from "../GroupPanel";
 import GroupOverlay from "../GroupOverlay";
-import { enableGroups, getFieldSources, getVersionHtml, newVersionFrom, saveFields, suggestFields } from "../../../services/apiCertificateTemplates";
+import { enableGroups, getFieldSources, getVersionHtml, newVersionFrom, rebuildDataDictionary, saveFields, suggestFields } from "../../../services/apiCertificateTemplates";
 import { cellOptions, slugKey, sourceOptions } from "../../../utils/certificateFieldSources";
 import { describeCertificateError } from "../../../utils/certificateErrors";
 
@@ -105,6 +105,20 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
       .then(setCatalogue)
       .catch((err) => toast.error(err.message));
   }, [scope]);
+  // products changed since the list was read → re-read them (AI plan §3.2)
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshSources = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await rebuildDataDictionary(scope);
+      setCatalogue(await getFieldSources(scope));
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [scope]);
+  const sources = useMemo(() => ({ dictionary: catalogue?.dictionary || null, onRefresh: catalogue?.dictionary ? refreshSources : null, refreshing }), [catalogue, refreshSources, refreshing]);
   const options = useMemo(() => sourceOptions(catalogue), [catalogue]);
   const cellOptionsFor = useCallback((groupKey) => cellOptions(catalogue, groups.find((g) => g.key === groupKey)?.source), [catalogue, groups]);
 
@@ -272,6 +286,7 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
           <FieldPanel
           fields={drafts}
           options={options}
+          sources={sources}
           groups={groups}
           cellOptionsFor={cellOptionsFor}
           activeUid={activeUid}

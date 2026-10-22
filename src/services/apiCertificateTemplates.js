@@ -57,6 +57,10 @@ export const getVersionThumbnail = (scope = {}, versionId) =>
 export const getFieldSources = (scope = {}) =>
   unwrap(apiClient.get("/certificate-field-sources", { params: scope }), "Failed to load the field sources").then((d) => d.data);
 
+/** Re-reads the company's products into its data dictionary (AI plan §3.2) → { dictionary } */
+export const rebuildDataDictionary = (scope = {}) =>
+  unwrap(apiClient.post("/certificate-data-dictionary/rebuild", {}, { params: scope }), "Failed to refresh the product data").then((d) => d.data);
+
 /**
  * Replaces the full field list (draft only); `groups` (repeating groups, plan
  * §7.8) replaces the group list when given, omitted keeps the stored one.

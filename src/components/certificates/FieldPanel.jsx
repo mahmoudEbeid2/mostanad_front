@@ -108,7 +108,7 @@ function FormatEditor({ field, type, onChange }) {
   );
 }
 
-function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onChange }) {
+function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onChange, sources }) {
   const opts = field.groupKey ? cellOptionsFor(field.groupKey) : options;
   const type = sourceType(opts, field.source);
   return (
@@ -152,6 +152,7 @@ function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onCha
         <SourcePicker
           ariaLabel={STR.source}
           options={opts}
+          {...(field.groupKey ? {} : sources)}
           value={field.source}
           onChange={(source) => {
             // drop formats the new source type can't use
@@ -217,6 +218,7 @@ export default function FieldPanel({
   onRejectChip,
   footer,
   className = "",
+  sources = {}, // { dictionary, onRefresh, refreshing } — the company's product details (AI plan §3.2)
 }) {
   return (
     <aside aria-label={STR.title} className={`bg-white border border-gray-200 rounded-xl flex flex-col min-h-0 ${className}`}>
@@ -297,7 +299,7 @@ export default function FieldPanel({
                   </span>
                 )}
               </div>
-              {open && !readOnly && <FieldEditor field={f} options={options} groups={groups} cellOptionsFor={cellOptionsFor} suggestion={suggestions[f.key]} onChange={(patch) => onChange(f.uid, patch)} />}
+              {open && !readOnly && <FieldEditor field={f} options={options} groups={groups} cellOptionsFor={cellOptionsFor} suggestion={suggestions[f.key]} onChange={(patch) => onChange(f.uid, patch)} sources={sources} />}
             </div>
           );
         })}

@@ -13,6 +13,8 @@ const STR = {
   reset: "Reset to the value from its source",
   edited: "edited",
   restored: "restored",
+  fromCheck: "from the data check",
+  fromCheckTyped: "typed in the data check",
   unsaved: "unsaved",
   history: "History",
   generated: "generated",
@@ -45,6 +47,10 @@ export default function CertificateValuesForm({ fields, groups = [], values, dra
                     <span className="text-[11px] font-medium text-gray-500">{STR.edited}</span>
                   ) : v.origin === "restored" ? (
                     <span className="text-[11px] font-medium text-gray-500">{STR.restored}</span>
+                  ) : v.origin === "data_check" ? (
+                    <span className="text-[11px] font-medium text-violet-700" title={v.provenance?.quote ? `“${v.provenance.quote}”` : undefined}>
+                      {v.provenance?.kind === "manual" ? STR.fromCheckTyped : STR.fromCheck}
+                    </span>
                   ) : null}
                 </label>
                 <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 truncate max-w-[55%]" title={sourceLabel(catalogueOptions, f.source)}>

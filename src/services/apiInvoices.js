@@ -46,3 +46,19 @@ export const confirmInvoice = (scope = {}, id) =>
 /** Re-runs extraction of a failed invoice (same model, same prompt) → { invoiceId, taskId } */
 export const retryInvoice = (scope = {}, id) =>
   unwrap(apiClient.post(`/invoices/${id}/retry`, {}, { params: scope }), "Couldn't start reading the invoice again").then((d) => d.data);
+
+// ── certificate data check (backend plan.md §6, A2) ──────────────────────────
+/** The check as last computed → { summary, certificates[], batchData[], unassigned[], computedAt } */
+export const getDataCheck = (scope = {}, id) => unwrap(apiClient.get(`/invoices/${id}/data-needs`, { params: scope }), "Couldn't load the data check").then((d) => d.data.check);
+
+/** Recomputes the check; the AI looks for new gaps once (ai: false = code only) → check + { ai } */
+export const runDataCheck = (scope = {}, id, { ai = true } = {}) =>
+  unwrap(apiClient.post(`/invoices/${id}/data-needs`, ai ? {} : { ai: false }, { params: scope }), "The data check failed").then((d) => d.data.check);
+
+/** decisions: [{ needId, action: accept|edit|reject|reset, value?, applyTo?: "line" }] → check */
+export const decideDataNeeds = (scope = {}, id, decisions) =>
+  unwrap(apiClient.patch(`/invoices/${id}/data-needs`, { decisions }, { params: scope }), "Couldn't save").then((d) => d.data.check);
+
+/** "Add as synonym for all products": the alternative path holds the same value as the canonical one. */
+export const addDictionarySynonym = (scope = {}, { canonical, alternative }) =>
+  unwrap(apiClient.post("/certificate-data-dictionary/synonyms", { canonical, alternative }, { params: scope }), "Couldn't add the synonym").then((d) => d.data.dictionary);

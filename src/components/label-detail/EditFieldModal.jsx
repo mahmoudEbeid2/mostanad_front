@@ -1,11 +1,17 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { X, AlertTriangle, ShieldAlert, CheckCircle2, FileText, Wrench } from "lucide-react";
 import toast from "react-hot-toast";
 import { patchLabel } from "../../services/apiGeneratedLabels";
 import Button from "../../ui/Button";
 
-export default function EditFieldModal({
-  isOpen,
+// Hooks must run unconditionally (rules-of-hooks): the closed modal renders
+// nothing, the open one mounts the body — a fresh draft every time it opens.
+export default function EditFieldModal({ isOpen, field, ...rest }) {
+  if (!isOpen || !field) return null;
+  return <EditFieldModalBody field={field} {...rest} />;
+}
+
+function EditFieldModalBody({
   field,
   currentValue,
   labelId,
@@ -13,8 +19,6 @@ export default function EditFieldModal({
   onClose,
   onSuccess,
 }) {
-  if (!isOpen || !field) return null;
-
   // Initialize draft based on field type
   const [draft, setDraft] = useState(() => {
     if (field.type === "localized") {

@@ -8,9 +8,9 @@ import { unwrap } from "./apiCertificateTypes";
 export const getGenerationPlan = (scope = {}, invoiceId) =>
   unwrap(apiClient.get(`/invoices/${invoiceId}/generation-plan`, { params: scope }), "Failed to load the generation plan").then((d) => d.data.plan);
 
-/** → { batchId, taskId, planned, unassigned } */
-export const generateCertificates = (scope = {}, invoiceId) =>
-  unwrap(apiClient.post(`/invoices/${invoiceId}/generate`, {}, { params: scope }), "Couldn't start generating").then((d) => d.data);
+/** → { batchId, taskId, planned, unassigned }. `force` = "Generate anyway" while the data check has open values (update_certificates). */
+export const generateCertificates = (scope = {}, invoiceId, { force = false } = {}) =>
+  unwrap(apiClient.post(`/invoices/${invoiceId}/generate`, force ? { force: true } : {}, { params: scope }), "Couldn't start generating").then((d) => d.data);
 
 /** → batch with { status, counts, live, plan, certificates[] } */
 export const getBatch = (scope = {}, batchId) => unwrap(apiClient.get(`/certificate-batches/${batchId}`, { params: scope }), "Failed to load the batch").then((d) => d.data.batch);

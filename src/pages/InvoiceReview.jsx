@@ -12,6 +12,7 @@ import InvoiceItemsTable from "../components/certificates/InvoiceItemsTable";
 import InvoiceSourceViewer from "../components/certificates/InvoiceSourceViewer";
 import PlanPreview from "../components/certificates/PlanPreview";
 import BatchView from "../components/certificates/BatchView";
+import DataCheckPanel from "../components/certificates/DataCheckPanel";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import { useAuth } from "../context/AuthContext";
@@ -43,6 +44,9 @@ const STR = {
   confirmed: "Invoice confirmed — check the plan, then generate",
   generate: (n) => (n ? `Generate ${n} certificate${n === 1 ? "" : "s"}` : "Generate certificates"),
   generateAgain: "Generate again",
+  generateAnyway: "Generate anyway",
+  generateAnywayConfirm: (n) => `${n} required value${n === 1 ? " is" : "s are"} still missing or unconfirmed. Generate anyway? They stay empty and are flagged on the certificates.`,
+  blockedHint: (n) => `Complete the certificate data check first (${n} open value${n === 1 ? "" : "s"})`,
   confirmAgain: "Generate a new set of certificates? The existing ones stay as they are.",
   batchesTitle: (n) => `Certificates for ${n}`,
   batch: (b, i) => `Run ${i} · ${new Date(b.createdAt).toLocaleString()}`,
@@ -79,6 +83,7 @@ const HEADER_FIELDS = [
 const EDITABLE = new Set(["review", "ready"]);
 const BATCH_STATES = new Set(["generating", "generated", "partially_failed"]);
 const IN_PROGRESS = new Set(["uploaded", "extracting"]);
+const CHECKABLE = new Set(["review", "ready", "generated", "partially_failed"]);
 const headerText = (h, f) => (f.date ? h?.[f.key]?.raw ?? "" : h?.[f.key] ?? "");
 
 function HeaderField({ field, invoice, editable, onSave }) {
@@ -198,6 +203,9 @@ export default function InvoiceReview() {
   const { user } = useAuth();
   const canUpdate = hasPermission(user, "update_invoices");
   const canGenerate = hasPermission(user, "create_certificates");
+  const canForce = hasPermission(user, "update_certificates");
+  const canSynonym = hasPermission(user, "update_certificate_templates");
+  const [check, setCheck] = useState(null);
   const [plan, setPlan] = useState(null);
   const [showLines, setShowLines] = useState(false);
   const [invoice, setInvoice] = useState(null);
@@ -271,17 +279,21 @@ export default function InvoiceReview() {
   const add = () => run(() => addInvoiceItem(scope, id, { data: {} }));
   const rematch = withBusy("rematch", () => run(() => rematchInvoice(scope, id), STR.rematched));
   const confirm = withBusy("confirm", () => run(() => confirmInvoice(scope, id), STR.confirmed));
-  const generate = withBusy("generate", async () => {
-    if (BATCH_STATES.has(invoice.status) && !window.confirm(STR.confirmAgain)) return;
+  const blocking = check?.summary?.blocking || 0;
+  const startGenerate = (force) => async () => {
+    if (force && !window.confirm(STR.generateAnywayConfirm(blocking))) return;
+    if (!force && BATCH_STATES.has(invoice.status) && !window.confirm(STR.confirmAgain)) return;
     try {
-      const out = await generateCertificates(scope, id);
+      const out = await generateCertificates(scope, id, { force });
       navigate(`/invoices/${id}?batch=${out.batchId}&task=${out.taskId}`, { replace: true });
       setShowLines(false);
     } catch (err) {
       toast.error(err.message);
     }
     await load();
-  });
+  };
+  const generate = withBusy("generate", startGenerate(false));
+  const generateAnyway = withBusy("generate", startGenerate(true));
   const retry = withBusy("retry", async () => {
     try {
       const { taskId: next } = await retryInvoice(scope, id);
@@ -321,6 +333,8 @@ export default function InvoiceReview() {
   const inBatches = BATCH_STATES.has(invoice.status) && batches.length > 0;
   const batchId = params.get("batch") && batches.some((b) => b.id === params.get("batch")) ? params.get("batch") : batches[0]?.id;
   const planned = plan?.entries?.length || 0;
+  // the data check re-runs after any review edit (code only, plus the AI for gaps it hasn't asked about)
+  const checkKey = `${invoice.status}:${planKey}:${items.map((i) => JSON.stringify(i.data)).join("|")}:${JSON.stringify(invoice.header)}`;
   const viewer = <InvoiceSourceViewer scope={scope} invoiceId={invoice.id} mimeType={invoice.source?.mimeType} />;
 
   return (
@@ -348,13 +362,18 @@ export default function InvoiceReview() {
             </Button>
           )}
           {canGenerate && invoice.status === "ready" && (
-            <Button isLoading={busy === "generate"} disabled={!planned} onClick={generate}>
+            <Button isLoading={busy === "generate"} disabled={!planned || blocking > 0} title={blocking ? STR.blockedHint(blocking) : undefined} onClick={generate}>
               {STR.generate(planned)}
             </Button>
           )}
           {canGenerate && ["generated", "partially_failed"].includes(invoice.status) && (
-            <Button variant="secondary" isLoading={busy === "generate"} onClick={generate}>
+            <Button variant="secondary" isLoading={busy === "generate"} disabled={blocking > 0} title={blocking ? STR.blockedHint(blocking) : undefined} onClick={generate}>
               {STR.generateAgain}
+            </Button>
+          )}
+          {canGenerate && canForce && blocking > 0 && (invoice.status === "ready" || ["generated", "partially_failed"].includes(invoice.status)) && (
+            <Button variant="ghost" isLoading={busy === "generate"} disabled={!planned} onClick={generateAnyway} data-testid="generate-anyway">
+              {STR.generateAnyway}
             </Button>
           )}
         </div>
@@ -478,6 +497,10 @@ export default function InvoiceReview() {
               )}
             </section>
           </div>
+
+          {CHECKABLE.has(invoice.status) && (
+            <DataCheckPanel scope={scope} invoiceId={invoice.id} refreshKey={checkKey} editable={canUpdate} canSynonym={canSynonym} textContent={invoice.textContent} onChange={setCheck} />
+          )}
 
           <InvoiceItemsTable scope={scope} items={items} editable={editable} onSaveCell={saveCell} onMatch={match} onIgnore={ignore} onDelete={remove} onAdd={add} />
         </>

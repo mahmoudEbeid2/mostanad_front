@@ -39,7 +39,7 @@ export default function ProductMatchSelect({ scope, item, onChange, disabled, in
   }, [input, scope]);
 
   const groups = useMemo(() => {
-    const candidates = (item.matchCandidates || []).map((c) => optionOf(c, { score: c.score, reasons: c.reasons }));
+    const candidates = (item.matchCandidates || []).map((c) => optionOf(c, { score: c.score, reasons: c.ai ? c.ai.reasons : c.reasons, ai: c.ai || null }));
     const seen = new Set(candidates.map((c) => c.value));
     const catalogue = results.filter((p) => !seen.has(p.id)).map((p) => optionOf(p));
     return [
@@ -52,12 +52,13 @@ export default function ProductMatchSelect({ scope, item, onChange, disabled, in
 
   return (
     <Select
+      // picking the AI's own suggestion here confirms it (plan.md §7)
+      onChange={(opt) => onChange(opt ? opt.value : null, opt, opt?.ai ? { aiSuggestionId: opt.ai.suggestionId } : undefined)}
       className="cert-select"
       inputId={inputId}
       aria-label={ariaLabel}
       value={value}
       options={groups}
-      onChange={(opt) => onChange(opt ? opt.value : null, opt)}
       onInputChange={(v, { action }) => action === "input-change" && setInput(v)}
       inputValue={input}
       filterOption={null}
@@ -78,7 +79,7 @@ export default function ProductMatchSelect({ scope, item, onChange, disabled, in
           <div className="text-sm">
             <div>
               {o.label} {o.code && <span className="text-gray-400 font-mono text-xs">{o.code}</span>}
-              {typeof o.score === "number" && <span className="ml-2 text-xs text-blue-600">{Math.round(o.score * 100)}%</span>}
+              {o.ai ? <span className="ml-2 text-xs text-violet-700">AI {Math.round(o.ai.confidence * 100)}%</span> : typeof o.score === "number" && <span className="ml-2 text-xs text-blue-600">{Math.round(o.score * 100)}%</span>}
             </div>
             {o.reasons?.length > 0 && <div className="text-xs text-gray-400">{o.reasons.join(" · ")}</div>}
           </div>

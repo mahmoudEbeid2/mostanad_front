@@ -39,7 +39,10 @@ const STR = {
   tryAgain: "Try again",
   // B3 — review
   rematch: "Re-run matching",
-  rematched: (r) => `Matching done: ${r.matched} matched, ${r.needsMatch} need a product`,
+  rematched: (r) =>
+    `Matching done: ${r.matched} matched, ${r.needsMatch} need a product` +
+    (r.ai?.suggested ? ` · AI suggests a product for ${r.ai.suggested} — confirm them` : "") +
+    (r.ai?.unavailable ? ` · AI matching unavailable (${r.ai.reason})` : ""),
   confirm: "Confirm & continue",
   confirmed: "Invoice confirmed — check the plan, then generate",
   generate: (n) => (n ? `Generate ${n} certificate${n === 1 ? "" : "s"}` : "Generate certificates"),
@@ -273,7 +276,7 @@ export default function InvoiceReview() {
   const saveHeader = (key, value) => run(() => updateInvoice(scope, id, { header: { [key]: value } }));
   const saveMeta = (body) => run(() => updateInvoice(scope, id, body));
   const saveCell = (item, key, value) => run(() => updateInvoiceItem(scope, id, item.id, { data: { [key]: value } }));
-  const match = (item, productId) => run(() => updateInvoiceItem(scope, id, item.id, { productId }));
+  const match = (item, productId, extra = {}) => run(() => updateInvoiceItem(scope, id, item.id, { productId, ...extra }));
   const ignore = (item, ignored) => run(() => updateInvoiceItem(scope, id, item.id, { ignored }));
   const remove = (item) => run(() => deleteInvoiceItem(scope, id, item.id));
   const add = () => run(() => addInvoiceItem(scope, id, { data: {} }));

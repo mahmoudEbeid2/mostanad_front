@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { EyeOff, Pencil, Trash2, Undo2 } from "lucide-react";
+import { AlertTriangle, EyeOff, Pencil, Sparkles, Trash2, Undo2 } from "lucide-react";
 import ProductMatchSelect from "./ProductMatchSelect";
 
 // The invoice lines (plan §13.5; mockup B3). Every cell is editable in place
@@ -14,7 +14,10 @@ const STR = {
   noIso: "Ambiguous date — write it unambiguously (e.g. 2025-04-03 or 04/2025)",
   ambiguousQty: "Ambiguous quantity — thousands or decimal? Write it without the separator (1250) or with a decimal part (1.25)",
   match: "Product match",
-  matchedBy: { exact_code: "code", exact_name: "name", user: "you" },
+  matchedBy: { exact_code: "code", exact_name: "name", user: "you", alias: "remembered", ai_confirmed: "AI" },
+  matchedByHint: { alias: "Matched the way this name was confirmed before", ai_confirmed: "Matched by AI and confirmed" },
+  aiSuggests: (name, c) => `AI suggests ${name} (${Math.round((c ?? 0) * 100)}%)`,
+  confirmAi: "Confirm",
   needsMatch: "needs match",
   change: "Change product",
   ignored: "ignored",
@@ -111,15 +114,17 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore }) {
     );
   }
   const matched = item.matchStatus === "matched" && item.product;
+  const aiPick = !matched ? (item.matchCandidates || []).find((c) => c.ai) : null;
+  const warned = aiPick?.ai?.reasons?.some((r) => r.startsWith("⚠"));
   const select = (
     <div className="flex-1 min-w-52">
       <ProductMatchSelect
         scope={scope}
         item={item}
         disabled={!editable}
-        onChange={(id) => {
+        onChange={(id, _opt, extra) => {
           setChanging(false);
-          onMatch(id);
+          onMatch(id, extra);
         }}
       />
     </div>
@@ -127,9 +132,20 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore }) {
   return (
     <div className="flex items-center gap-2">
       {matched ? (
-        <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs font-semibold whitespace-nowrap">✓ {STR.matchedBy[item.matchMethod] || item.matchMethod}</span>
+        <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs font-semibold whitespace-nowrap" title={STR.matchedByHint[item.matchMethod]}>
+          ✓ {STR.matchedBy[item.matchMethod] || item.matchMethod}
+        </span>
       ) : (
         <span className="rounded-full bg-amber-50 text-amber-800 px-2 py-0.5 text-xs font-semibold whitespace-nowrap">{STR.needsMatch}</span>
+      )}
+      {aiPick && editable && !changing && (
+        <span className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs ${warned ? "bg-amber-50 text-amber-900" : "bg-violet-50 text-violet-900"}`} title={(aiPick.ai.reasons || []).join(" · ")} data-testid="ai-match">
+          {warned ? <AlertTriangle className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+          {STR.aiSuggests(aiPick.name, aiPick.ai.confidence)}
+          <button type="button" onClick={() => onMatch(aiPick.productId, { aiSuggestionId: aiPick.ai.suggestionId })} className="ml-1 rounded bg-violet-600 text-white px-2 py-0.5 font-semibold hover:bg-violet-700">
+            {STR.confirmAi}
+          </button>
+        </span>
       )}
       {matched && !changing ? (
         <>
@@ -202,7 +218,7 @@ export default function InvoiceItemsTable({ scope, items, editable, onSaveCell, 
                   </td>
                 ))}
                 <td className="px-2 py-1.5 align-middle">
-                  <MatchCell scope={scope} item={item} editable={editable} onMatch={(productId) => onMatch(item, productId)} onIgnore={(v) => onIgnore(item, v)} />
+                  <MatchCell scope={scope} item={item} editable={editable} onMatch={(productId, extra) => onMatch(item, productId, extra)} onIgnore={(v) => onIgnore(item, v)} />
                 </td>
                 <td className="px-2 py-1.5 align-middle">
                   {editable && (

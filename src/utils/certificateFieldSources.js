@@ -97,3 +97,20 @@ export function cellOptions(catalogue, groupSource) {
 }
 
 export const DATE_PATTERNS = ["MM/YYYY", "DD/MM/YYYY", "MM/DD/YYYY", "DD.MM.YYYY", "YYYY-MM-DD", "DD MMM YYYY", "MMM YYYY", "MM/YY"];
+
+// ── AI plan §5 (A1): where a field's source came from ───────────────────────
+export const BATCH_DATA_NOTE = "This value changes per batch and isn't in your data. It will be asked during invoice review.";
+
+/** Badge for a field's mapping origin: Memory ✓ · Dictionary ✓ · AI 0.94 ✓ · AI 0.71 — confirm. null for a hand-picked source. */
+export function mappingBadge(f) {
+  const m = f.mapping || {};
+  const origin = m.origin && m.origin !== "none" ? m.origin : f.mappingOrigin || "manual";
+  const conf = typeof m.confidence === "number" ? ` ${m.confidence.toFixed(2)}` : "";
+  if (origin === "memory") return { text: "Memory ✓", tone: "green", title: "You mapped this label the same way before" };
+  if (origin === "dictionary") return { text: "Dictionary ✓", tone: "green", title: "Matched in your product data" };
+  if (origin === "ai") {
+    const pending = m.status ? m.status === "pending" : f.mappingConfirmed === false;
+    return pending ? { text: `AI${conf} — confirm`, tone: "amber", pending: true, title: "Suggested by AI — check and confirm" } : { text: `AI${conf} ✓`, tone: "green", title: "Suggested by AI" };
+  }
+  return null;
+}

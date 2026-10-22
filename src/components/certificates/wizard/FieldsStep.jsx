@@ -8,7 +8,8 @@ import FieldMarker from "../FieldMarker";
 import FieldPanel from "../FieldPanel";
 import GroupPanel from "../GroupPanel";
 import GroupOverlay from "../GroupOverlay";
-import { enableGroups, getFieldSources, getVersionHtml, newVersionFrom, rebuildDataDictionary, saveFields, suggestFields } from "../../../services/apiCertificateTemplates";
+import ProductMatchSelect from "../ProductMatchSelect";
+import { confirmFields, enableGroups, getFieldSources, getVersionHtml, mapFields, newVersionFrom, proposeLabels, rebuildDataDictionary, saveFields, suggestFields } from "../../../services/apiCertificateTemplates";
 import { cellOptions, slugKey, sourceOptions } from "../../../utils/certificateFieldSources";
 import { describeCertificateError } from "../../../utils/certificateErrors";
 
@@ -29,6 +30,13 @@ const STR = {
   newVersion: "Create a new version to edit",
   aiNone: "No new suggestions.",
   aiDisabled: "AI suggestions are turned off.",
+  mapAll: "Map all",
+  mapping: "Mapping…",
+  mapAllHint: "Fill “Value comes from” for every field still typed by hand: your earlier choices first, then your product data, then AI.",
+  sample: "Sample product (optional)",
+  sampleHint: "The product this design was made for — mappings are checked against its values.",
+  aiUnavailable: (reason) => `AI unavailable — continue manually (${reason})`,
+  mapped: (n) => `${n} field${n === 1 ? "" : "s"} mapped`,
 };
 
 let uidSeq = 0;
@@ -52,7 +60,29 @@ const toPayload = (drafts) =>
     confirmed: f.confirmed !== false,
     sortOrder: i,
     groupKey: f.groupKey || null,
+    // AI plan §5: the server reconciles these with the stored suggestion
+    mappingOrigin: f.mappingOrigin || "manual",
+    mappingSuggestionId: f.mappingSuggestionId || null,
+    dataCategory: f.dataCategory || null,
   }));
+// what map-fields needs per field (labelContext is what label-proposals saw around the value)
+const toMapInput = (drafts) => drafts.map((f) => ({ key: f.key, label: f.label, lineId: f.lineId, sampleValue: f.sampleValue, groupKey: f.groupKey || null, labelContext: f.labelContext || null }));
+// a mapping result → the field patch (an unmapped/refused one only explains itself)
+const mappingPatch = (f, mp) => {
+  if (!mp) return {};
+  if (["unmapped", "invalid"].includes(mp.status)) return { mapping: mp, mappedLabel: f.label };
+  return {
+    source: mp.source,
+    format: mp.format || null,
+    required: mp.required !== false,
+    mappingOrigin: mp.origin,
+    mappingSuggestionId: mp.suggestionId || null,
+    mappingConfirmed: mp.status !== "pending",
+    dataCategory: mp.category || null,
+    mapping: mp,
+    mappedLabel: f.label,
+  };
+};
 const toGroupPayload = (groups) =>
   groups.map((g, i) => ({
     key: g.key,
@@ -181,20 +211,114 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
   // drafts are built outside the state updater: StrictMode runs updaters twice
   const draftsRef = useRef(drafts);
   draftsRef.current = drafts;
-  const make = useCallback((segments) => {
-    const cur = draftsRef.current;
-    const taken = new Set(cur.map((f) => f.key));
-    const added = segments.map((s, i) => {
-      const label = `Field ${cur.length + i + 1}`;
-      const key = uniqueKey(slugKey(label), taken);
-      taken.add(key);
-      return { ...s, uid: nextUid(), key, label, source: { kind: "manual" }, format: null, required: true, align: "left", origin: "manual", confirmed: true, keyEdited: false };
-    });
-    update((list) => [...list, ...added]);
-    setActiveUid(added[added.length - 1]?.uid ?? null);
-  }, []);
+  // ── mapping (AI plan §5.2): memory → dictionary → one AI call ──────────────
+  const [mapBusy, setMapBusy] = useState(false);
+  const [sample, setSample] = useState(null); // { id, name, productCode }
+  const groupsRef = useRef(groups);
+  groupsRef.current = groups;
+  const runMap = useCallback(
+    async (keys, list = draftsRef.current) => {
+      if (!keys.length) return null;
+      setMapBusy(true);
+      try {
+        const res = await mapFields(scope, version.id, { fields: toMapInput(list), groups: groupsRef.current.map((g) => ({ key: g.key, label: g.label })), keys, sampleProductId: sample?.id || null });
+        // a source the user picked by hand while the request ran is never overwritten
+        const handPicked = (f) => (f.mappingOrigin || "manual") === "manual" && f.source?.kind !== "manual";
+        update((cur) => cur.map((f) => (keys.includes(f.key) && res.mappings[f.key] && !handPicked(f) ? { ...f, ...mappingPatch(f, res.mappings[f.key]) } : f)));
+        if (Object.values(res.groups || {}).some((b) => b.source)) {
+          dirty.current = true;
+          setGroups((cur) => cur.map((g) => (res.groups[g.key]?.source ? { ...g, source: res.groups[g.key].source, binding: res.groups[g.key] } : g)));
+          update((cur) => cur.map((f) => (f.groupKey && res.groups[f.groupKey]?.cells?.[f.key] ? { ...f, source: res.groups[f.groupKey].cells[f.key], format: null } : f)));
+        }
+        if (res.ai?.unavailable) toast(STR.aiUnavailable(res.ai.reason));
+        return res;
+      } catch (err) {
+        toast.error(describeCertificateError(err));
+        return null;
+      } finally {
+        setMapBusy(false);
+      }
+    },
+    [scope, version.id, sample]
+  );
+  const mapAll = async () => {
+    const keys = draftsRef.current.filter((f) => !f.groupKey && (f.mappingOrigin || "manual") === "manual" && f.source?.kind === "manual" && f.dataCategory !== "batch_data").map((f) => f.key);
+    const groupKeys = [...new Set(draftsRef.current.filter((f) => f.groupKey && f.source?.kind === "manual").map((f) => f.groupKey))];
+    const res = await runMap([...keys, ...groupKeys]);
+    if (res) toast.success(STR.mapped(Object.values(res.mappings).filter((m) => !["unmapped", "invalid"].includes(m.status)).length));
+  };
+  // a new field: label from the layout (code), key from the label, then map it
+  const proposeAndMap = useCallback(
+    async (added) => {
+      let proposals = [];
+      try {
+        proposals = await proposeLabels(scope, version.id, added.map((f) => ({ lineId: f.lineId, charStart: f.charStart, charEnd: f.charEnd, sampleValue: f.sampleValue })));
+      } catch (err) {
+        toast.error(describeCertificateError(err));
+        return;
+      }
+      const taken = new Set(draftsRef.current.filter((f) => !added.some((a) => a.uid === f.uid)).map((f) => f.key));
+      const patched = new Map();
+      added.forEach((a, i) => {
+        const cur = draftsRef.current.find((f) => f.uid === a.uid);
+        if (!cur) return;
+        const p = proposals[i] || {};
+        const untouched = cur.label === a.label && !cur.keyEdited; // the user hasn't typed meanwhile
+        const label = untouched && p.label ? p.label : cur.label;
+        const key = untouched && p.label ? uniqueKey(slugKey(p.label), taken) : cur.key;
+        taken.add(key);
+        patched.set(a.uid, { label, key, labelContext: p.context || null, ...(p.category === "batch_data" ? { dataCategory: "batch_data" } : {}) });
+      });
+      const next = draftsRef.current.map((f) => (patched.has(f.uid) ? { ...f, ...patched.get(f.uid) } : f));
+      update(() => next);
+      draftsRef.current = next;
+      await runMap(added.map((a) => next.find((f) => f.uid === a.uid)?.key).filter(Boolean), next);
+    },
+    [scope, version.id, runMap]
+  );
+  // plan §5.1 step 4: mapping runs again when a label changes (on blur)
+  const remap = (uid) => {
+    const f = draftsRef.current.find((x) => x.uid === uid);
+    if (f && f.label && f.label !== f.mappedLabel && ((f.mappingOrigin || "manual") !== "manual" || f.source?.kind === "manual")) runMap([f.key]);
+  };
+  // an AI mapping is confirmed on the server (saved first, so the server holds the suggestion link)
+  const confirmMapping = async (key) => {
+    try {
+      await saveFields(scope, version.id, toPayload(draftsRef.current), toGroupPayload(groupsRef.current));
+      await confirmFields(scope, version.id, [key]);
+      update((cur) => cur.map((f) => (f.key === key ? { ...f, mappingConfirmed: true, mapping: f.mapping ? { ...f.mapping, status: "accepted" } : f.mapping } : f)));
+    } catch (err) {
+      toast.error(describeCertificateError(err));
+    }
+  };
 
-  const change = (uid, patch) => update((cur) => cur.map((f) => (f.uid === uid ? { ...f, ...patch } : f)));
+  const make = useCallback(
+    (segments) => {
+      const cur = draftsRef.current;
+      const taken = new Set(cur.map((f) => f.key));
+      const added = segments.map((s, i) => {
+        const label = `Field ${cur.length + i + 1}`;
+        const key = uniqueKey(slugKey(label), taken);
+        taken.add(key);
+        return { ...s, uid: nextUid(), key, label, source: { kind: "manual" }, format: null, required: true, align: "left", origin: "manual", confirmed: true, keyEdited: false, mappingOrigin: "manual" };
+      });
+      update((list) => [...list, ...added]);
+      setActiveUid(added[added.length - 1]?.uid ?? null);
+      draftsRef.current = [...cur, ...added];
+      proposeAndMap(added);
+    },
+    [proposeAndMap]
+  );
+
+  const change = (uid, patch) =>
+    update((cur) =>
+      cur.map((f) => {
+        if (f.uid !== uid) return f;
+        // a source picked by hand is the person's choice (the server records an AI suggestion as edited)
+        const byHand = patch.source && JSON.stringify(patch.source) !== JSON.stringify(f.source);
+        return { ...f, ...patch, ...(byHand ? { mappingOrigin: "manual", mappingConfirmed: true, mapping: { origin: "manual" } } : {}) };
+      })
+    );
   const remove = (uid) => update((cur) => cur.filter((f) => f.uid !== uid));
   const move = (i, d) =>
     update((cur) => {
@@ -303,6 +427,30 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
           onSuggest={suggest}
           onAcceptChip={acceptChip}
           onRejectChip={(c) => setAiChips((cur) => cur.filter((x) => x !== c))}
+          onConfirmMapping={readOnly ? null : confirmMapping}
+          onRemap={readOnly ? null : remap}
+          scope={scope}
+          toolbar={
+            readOnly ? null : (
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="flex-1 min-w-48" title={STR.sampleHint}>
+                  <label htmlFor="mapping-sample-product" className="block text-xs font-semibold text-gray-600 mb-1">
+                    {STR.sample}
+                  </label>
+                  <ProductMatchSelect
+                    scope={scope}
+                    inputId="mapping-sample-product"
+                    ariaLabel={STR.sample}
+                    item={{ matchCandidates: [], product: sample }}
+                    onChange={(id, opt) => setSample(id ? { id, name: opt?.label, productCode: opt?.code ?? null } : null)}
+                  />
+                </div>
+                <Button variant="secondary" onClick={mapAll} isLoading={mapBusy} disabled={!drafts.length} title={STR.mapAllHint} data-testid="map-all">
+                  {mapBusy ? STR.mapping : STR.mapAll}
+                </Button>
+              </div>
+            )
+          }
           footer={
             <>
               {onBack ? (

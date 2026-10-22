@@ -15,7 +15,7 @@ const STR = {
 
 const optionOf = (p, extra = {}) => ({ value: p.id ?? p.productId, label: p.name, code: p.productCode ?? p.code ?? null, ...extra });
 
-export default function ProductMatchSelect({ scope, item, onChange, disabled }) {
+export default function ProductMatchSelect({ scope, item, onChange, disabled, inputId, ariaLabel }) {
   const [input, setInput] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -52,9 +52,12 @@ export default function ProductMatchSelect({ scope, item, onChange, disabled }) 
 
   return (
     <Select
+      className="cert-select"
+      inputId={inputId}
+      aria-label={ariaLabel}
       value={value}
       options={groups}
-      onChange={(opt) => onChange(opt ? opt.value : null)}
+      onChange={(opt) => onChange(opt ? opt.value : null, opt)}
       onInputChange={(v, { action }) => action === "input-change" && setInput(v)}
       inputValue={input}
       filterOption={null}

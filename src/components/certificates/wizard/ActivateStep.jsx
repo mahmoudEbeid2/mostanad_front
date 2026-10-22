@@ -13,7 +13,8 @@ const STR = {
   title: "Activate this version",
   becomes: (n, t) => `Version ${n} becomes the design used for every new “${t}” certificate.`,
   supersedes: (n) => `Version ${n} (active now) will be superseded. Certificates already generated keep the exact design they used.`,
-  unconfirmedTitle: "These fields were suggested, not marked by hand. Confirm each one before activating:",
+  unconfirmedTitle: "These fields were suggested, or their “Value comes from” was suggested by AI. Confirm each one before activating:",
+  aiMapping: "AI mapping",
   confirmAll: "Confirm all",
   replaces: "Activating replaces",
   inSlot: "in this slot.",
@@ -31,7 +32,8 @@ const STR = {
 export default function ActivateStep({ scope, template, version, onChanged, goStep }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
-  const unconfirmed = (version.fields || []).filter((f) => !f.confirmed);
+  // D10 + AI plan §5.1: a suggested field, or an AI mapping nobody confirmed yet
+  const unconfirmed = (version.fields || []).filter((f) => !f.confirmed || f.mappingConfirmed === false);
   const current = template.versions?.find((v) => v.id === template.activeVersionId);
 
   const confirmAll = async () => {
@@ -114,6 +116,7 @@ export default function ActivateStep({ scope, template, version, onChanged, goSt
             {unconfirmed.map((f) => (
               <li key={f.key}>
                 {f.label} — <span className="font-mono">{f.sampleValue}</span>
+                {f.mappingConfirmed === false && <span className="ml-1 text-xs text-amber-800">({STR.aiMapping})</span>}
               </li>
             ))}
           </ul>

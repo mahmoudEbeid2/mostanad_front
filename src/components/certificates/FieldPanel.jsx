@@ -1,6 +1,54 @@
+import { useState } from "react";
 import { ArrowDown, ArrowUp, Check, Sparkles, Trash2, X } from "lucide-react";
 import SourcePicker from "./SourcePicker";
-import { DATE_PATTERNS, slugKey, sourceLabel, sourceType } from "../../utils/certificateFieldSources";
+import { BATCH_DATA_NOTE, DATE_PATTERNS, mappingBadge, slugKey, sourceLabel, sourceType } from "../../utils/certificateFieldSources";
+import { getAiSuggestion } from "../../services/apiCertificateTemplates";
+
+// AI plan §5.1 step 5: the origin badge, and the "Why?" behind it — the
+// dictionary entry with its examples, the sample-product check, the rationale.
+const BADGE_TONE = { green: "bg-emerald-50 text-emerald-700 border-emerald-200", amber: "bg-amber-50 text-amber-800 border-amber-300" };
+
+function WhyPanel({ field, scope }) {
+  const [stored, setStored] = useState(null);
+  const [open, setOpen] = useState(false);
+  const m = field.mapping;
+  const show = async () => {
+    setOpen((o) => !o);
+    if (!m?.rationale && field.mappingSuggestionId && !stored) {
+      try {
+        const s = await getAiSuggestion(scope, field.mappingSuggestionId);
+        setStored({ rationale: s.proposal?.raw?.rationale, confidence: s.confidence, evidence: s.evidence?.[0], note: s.proposal?.note, status: s.status });
+      } catch (err) {
+        setStored({ rationale: err.message });
+      }
+    }
+  };
+  const info = m?.rationale ? m : stored;
+  if (!m?.rationale && !field.mappingSuggestionId) return null;
+  const entry = info?.evidence?.entry;
+  return (
+    <div className="text-xs">
+      <button type="button" onClick={show} className="text-blue-700 underline" aria-expanded={open}>
+        {open ? "Hide why" : "Why?"}
+      </button>
+      {open && info && (
+        <div className="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 p-2 space-y-1 text-gray-700" data-testid="mapping-why">
+          {info.rationale && <p>{info.rationale}</p>}
+          {entry && (
+            <p>
+              {entry.label}
+              {typeof entry.coverage === "number" ? ` · in ${Math.round(entry.coverage * 100)} % of products` : ""}
+              {entry.examples?.length ? ` · e.g. ${entry.examples.slice(0, 3).join(", ")}` : ""}
+            </p>
+          )}
+          {info.evidence?.type === "sample_product" && <p>Sample product: {info.evidence.text}</p>}
+          {info.note && <p className="text-amber-800">{info.note}</p>}
+          {info.candidates?.length > 0 && <p>Several matches: {info.candidates.join(", ")} — pick one.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Field list + editor (plan §13.4 step 2): key (auto-slug from the label),
 // label, source, format (only options valid for the source type), required,
@@ -108,7 +156,7 @@ function FormatEditor({ field, type, onChange }) {
   );
 }
 
-function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onChange, sources }) {
+function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onChange, sources, onRemap, scope }) {
   const opts = field.groupKey ? cellOptionsFor(field.groupKey) : options;
   const type = sourceType(opts, field.source);
   return (
@@ -121,6 +169,7 @@ function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onCha
             onChange={(e) => onChange({ label: e.target.value, ...(field.keyEdited ? {} : { key: slugKey(e.target.value) }) })}
             className={input}
             onFocus={(e) => e.target.select()}
+            onBlur={() => onRemap?.(field.uid)}
             data-testid="field-label"
           />
         </label>
@@ -163,10 +212,17 @@ function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onCha
             onChange({ source, format: Object.keys(f).length ? f : null });
           }}
         />
+        {!field.groupKey && <WhyPanel field={field} scope={scope} />}
+        {field.dataCategory === "batch_data" && field.source?.kind === "manual" && <p className="text-xs font-normal text-amber-800 bg-amber-50 rounded-md p-2">{BATCH_DATA_NOTE}</p>}
       </div>
       <div className={lbl}>
         {STR.format}
         <FormatEditor field={field} type={type} onChange={(format) => onChange({ format })} />
+        {field.mapping?.ambiguousDate && !field.format?.date && (
+          <p className="text-xs font-normal text-amber-800">
+            Is “{field.sampleValue}” day/month or month/day? Choose: {field.mapping.ambiguousDate.join(" or ")}.
+          </p>
+        )}
       </div>
       <div className={lbl} title={STR.alignHint}>
         {STR.align}
@@ -219,6 +275,10 @@ export default function FieldPanel({
   footer,
   className = "",
   sources = {}, // { dictionary, onRefresh, refreshing } — the company's product details (AI plan §3.2)
+  onConfirmMapping = null, // AI plan §5: confirm a pending AI mapping
+  onRemap = null, // the label changed → map again
+  scope = {},
+  toolbar = null, // Map all + sample product
 }) {
   return (
     <aside aria-label={STR.title} className={`bg-white border border-gray-200 rounded-xl flex flex-col min-h-0 ${className}`}>
@@ -237,6 +297,7 @@ export default function FieldPanel({
           </button>
         )}
       </div>
+      {toolbar && <div className="px-3 pt-3">{toolbar}</div>}
       <div className="p-3 flex flex-col gap-2 overflow-auto">
         {readOnly && <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-2">{STR.readOnly}</p>}
         {aiChips.length > 0 && (
@@ -260,18 +321,26 @@ export default function FieldPanel({
         {!fields.length && <p className="text-sm text-gray-500 p-2">{STR.empty}</p>}
         {fields.map((f, i) => {
           const open = f.uid === activeUid;
+          const badge = f.groupKey ? null : mappingBadge(f);
           return (
             <div
               key={f.uid}
               data-testid={`field-${f.key}`}
-              className={`rounded-[10px] ${open && !readOnly ? "border-2 border-blue-600 bg-blue-50/40 p-3.5" : "border border-gray-200 px-3 py-2.5"}`}
+              className={`rounded-[10px] ${open && !readOnly ? "border-2 border-blue-600 bg-blue-50/40 p-3.5" : badge?.pending ? "border border-amber-300 bg-amber-50/40 px-3 py-2.5" : "border border-gray-200 px-3 py-2.5"}`}
             >
               <div className="flex items-center gap-2.5">
                 <button type="button" onClick={() => onActivate(open ? null : f.uid)} className="flex-1 min-w-0 text-left flex items-center gap-2.5">
                   <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
                   <span className="min-w-0">
                     <span className="block font-mono text-[13px] font-semibold text-gray-900 truncate">{f.key}</span>
-                    <span className="block text-xs text-gray-500 truncate">“{f.sampleValue}”</span>
+                    <span className="flex items-center gap-1.5 min-w-0 text-xs text-gray-500">
+                      <span className="truncate">“{f.sampleValue}”</span>
+                      {badge && (
+                        <span className={`shrink-0 text-[11px] px-1.5 rounded border whitespace-nowrap ${BADGE_TONE[badge.tone]}`} title={badge.title} data-testid="mapping-badge">
+                          {badge.text}
+                        </span>
+                      )}
+                    </span>
                   </span>
                 </button>
                 {f.groupKey && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-800 font-mono">{f.groupKey}</span>}
@@ -279,6 +348,11 @@ export default function FieldPanel({
                 <span className="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-xs font-semibold text-gray-600" title={`${STR.align}: ${f.align || "left"}`}>
                   {ALIGN_SHORT[f.align] || "L"}
                 </span>
+                {badge?.pending && onConfirmMapping && (
+                  <button type="button" onClick={() => onConfirmMapping(f.key)} className="text-xs px-2 py-1 rounded-md bg-emerald-600 text-white" data-testid="confirm-mapping">
+                    {STR.confirm}
+                  </button>
+                )}
                 {!f.confirmed && <span className="text-[11px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">{STR.unconfirmed}</span>}
                 {!f.confirmed && onConfirm && (
                   <button type="button" onClick={() => onConfirm(f.key)} className="text-xs px-2 py-1 rounded-md bg-emerald-600 text-white">
@@ -299,7 +373,7 @@ export default function FieldPanel({
                   </span>
                 )}
               </div>
-              {open && !readOnly && <FieldEditor field={f} options={options} groups={groups} cellOptionsFor={cellOptionsFor} suggestion={suggestions[f.key]} onChange={(patch) => onChange(f.uid, patch)} sources={sources} />}
+              {open && !readOnly && <FieldEditor field={f} options={options} groups={groups} cellOptionsFor={cellOptionsFor} suggestion={suggestions[f.key]} onChange={(patch) => onChange(f.uid, patch)} sources={sources} onRemap={onRemap} scope={scope} />}
             </div>
           );
         })}

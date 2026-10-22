@@ -73,6 +73,19 @@ export const saveFields = (scope = {}, versionId, fields, groups) =>
 export const enableGroups = (scope = {}, versionId) =>
   unwrap(apiClient.post(`/template-versions/${versionId}/enable-groups`, {}, { params: scope }), "Couldn't create the version for repeating groups").then((d) => d.data);
 
+// ── AI plan §5 (A1): template field mapping ─────────────────────────────────
+/** Label proposals, code only: fields [{ lineId, charStart, charEnd, sampleValue }] → [{ label, from, key, category, context }] */
+export const proposeLabels = (scope = {}, versionId, fields) =>
+  unwrap(apiClient.post(`/template-versions/${versionId}/label-proposals`, { fields }, { params: scope }), "Couldn't propose labels").then((d) => d.data.proposals);
+
+/** Memory → dictionary → one AI call. body: { fields, groups?, keys?, sampleProductId? } → { mappings, groups, ai: { used, calls, unavailable?, reason? } } */
+export const mapFields = (scope = {}, versionId, body) =>
+  unwrap(apiClient.post(`/template-versions/${versionId}/map-fields`, body, { params: scope }), "Couldn't map the fields").then((d) => d.data);
+
+/** The stored AI suggestion behind a mapping (the "Why?") */
+export const getAiSuggestion = (scope = {}, id) =>
+  unwrap(apiClient.get(`/ai-suggestions/${id}`, { params: scope }), "Couldn't load the suggestion").then((d) => d.data.suggestion);
+
 export const confirmFields = (scope = {}, versionId, keys) =>
   unwrap(apiClient.post(`/template-versions/${versionId}/fields/confirm`, { keys }, { params: scope }), "Failed to confirm the fields").then((d) => d.data.fields);
 

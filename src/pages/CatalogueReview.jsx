@@ -5,7 +5,9 @@ import { AlertTriangle, ArrowLeft, Check, CheckCheck, Pencil, Scissors, Merge, X
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import StatusBadge from "../components/certificates/StatusBadge";
-import PdfPage, { openPdf } from "../components/catalogues/PdfPage";
+import PdfPage from "../components/catalogues/PdfPage";
+import { openPdf } from "../components/catalogues/openPdf";
+import DiffPanel from "../components/catalogues/DiffPanel";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import { useAuth } from "../context/AuthContext";
@@ -22,6 +24,9 @@ import {
   splitCatalogueBlock,
   extractCatalogueVersion,
   setCatalogueNumberConvention,
+  getCatalogueDiff,
+  applyCatalogueBlockDiff,
+  applyCatalogueVersionDiff,
 } from "../services/apiCatalogues";
 
 // /catalogues/versions/:id/review (backend plan.md §15.3 steps 6–7, A6.4): the PDF
@@ -68,6 +73,11 @@ const STR = {
   ingredients: "Composition",
   specifications: "Specifications",
   flags: "To check",
+  diffBulk: "Apply all changes without conflicts",
+  diffSummary: (s) => `Against existing products: ${s.changed} changed (${s.changedFields} fields, ${s.conflicts} conflicts) · ${s.unchanged} unchanged · ${s.new} new · ${s.ambiguous} ambiguous`,
+  diffDone: (r) => `${r.applied} products updated/linked · ${r.changedFields} fields written · waiting: ${r.skipped.conflicts} with conflicts, ${r.skipped.flagged} flagged, ${r.skipped.ambiguous} ambiguous`,
+  removed: (n) => `${n} product(s) linked to this catalogue are not in this edition — they are kept, never deleted:`,
+  applied: "Applied",
   created: "Product created",
   viewProduct: "Open products",
 };
@@ -177,6 +187,7 @@ export default function CatalogueReview() {
   const { user } = useAuth();
   const canManage = hasPermission(user, "manage_catalogues");
   const [data, setData] = useState(null);
+  const [diff, setDiff] = useState(null);
   const [pdf, setPdf] = useState(null);
   const [selected, setSelected] = useState(null);
   const [activeField, setActiveField] = useState(null);
@@ -188,8 +199,11 @@ export default function CatalogueReview() {
 
   const load = useCallback(() => {
     if (!scope) return Promise.resolve();
-    return getCatalogueReview(scope, id)
-      .then(setData)
+    return Promise.all([getCatalogueReview(scope, id), getCatalogueDiff(scope, id)])
+      .then(([review, d]) => {
+        setData(review);
+        setDiff(d);
+      })
       .catch((err) => toast.error(err.message));
   }, [scope, id]);
   useEffect(() => {
@@ -274,6 +288,8 @@ export default function CatalogueReview() {
 
   const saveField = (field, value) => run(() => editCatalogueBlock(scope, block.id, { values: { [field]: value } }));
   const catValue = block?.categoryId || "";
+  const diffItem = block ? diff?.items?.find((i) => i.blockId === block.id) : null;
+  const ds = diff?.summary;
 
   return (
     <div className="space-y-4">
@@ -314,6 +330,30 @@ export default function CatalogueReview() {
         </div>
       )}
       {version.numberConvention?.dotGroup3 && <p className="text-xs text-gray-500">{STR.conventionSet(version.numberConvention)}</p>}
+
+      {ds && ds.changed + ds.unchanged + ds.ambiguous > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-wrap items-center gap-3">
+          <p className="text-sm text-blue-900 flex-1 min-w-[16rem]">{STR.diffSummary(ds)}</p>
+          {canManage && ds.changed + ds.unchanged > 0 && (
+            <Button variant="secondary" disabled={busy} onClick={() => run(() => applyCatalogueVersionDiff(scope, id), STR.diffDone)}>
+              {STR.diffBulk}
+            </Button>
+          )}
+        </div>
+      )}
+      {diff?.removed?.length > 0 && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-700">
+          <p>{STR.removed(diff.removed.length)}</p>
+          <ul className="list-disc pl-5 mt-1">
+            {diff.removed.map((p) => (
+              <li key={p.productId}>
+                {p.name}
+                {p.productCode ? ` (${p.productCode})` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)_minmax(0,26rem)]">
         {/* block list */}
@@ -373,7 +413,7 @@ export default function CatalogueReview() {
                 <span className="text-xs text-gray-500">{STR.page(block.page)}</span>
                 <StatusBadge status={block.status} />
               </div>
-              {block.match && <p className="text-xs bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-700">{STR.existing(block.match)}</p>}
+              {block.match && pending && (diffItem ? <DiffPanel item={diffItem} canManage={canManage} busy={busy} onApply={(body) => run(() => applyCatalogueBlockDiff(scope, block.id, body), STR.applied)} /> : <p className="text-xs bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-700">{STR.existing(block.match)}</p>)}
               {block.status === "applied" && block.productId && (
                 <p className="text-xs bg-blue-50 border border-blue-200 rounded-md p-2 text-blue-800">
                   {STR.created} · <Link to="/products" className="underline">{STR.viewProduct}</Link>

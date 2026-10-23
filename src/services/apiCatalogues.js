@@ -62,3 +62,13 @@ export const extractCatalogueVersion = (scope = {}, versionId, body = {}) => unw
 
 /** { dotGroup3: "thousands" | "decimal" } — once per catalogue */
 export const setCatalogueNumberConvention = (scope = {}, versionId, dotGroup3) => unwrap(apiClient.put(`/catalogue-versions/${versionId}/number-convention`, { dotGroup3 }, { params: scope }), "Failed to save the convention").then((d) => d.data);
+
+// ── A6.5 re-upload diff (plan §15.4) ──
+/** → { version, summary, items: [{ blockId, kind: new|changed|unchanged|ambiguous, product?, changes?, unchanged?, declined?, match? }], removed } */
+export const getCatalogueDiff = (scope = {}, versionId) => unwrap(apiClient.get(`/catalogue-versions/${versionId}/diff`, { params: scope }), "Failed to load the diff").then((d) => d.data);
+
+/** { fields?: [...] (none = every non-conflict change), productId? (one of several matches) } */
+export const applyCatalogueBlockDiff = (scope = {}, blockId, body = {}) => unwrap(apiClient.post(`/catalogue-blocks/${blockId}/apply-diff`, body, { params: scope }), "Failed to apply").then((d) => d.data);
+
+/** every unflagged block without conflicts → { applied, changedFields, products, skipped } */
+export const applyCatalogueVersionDiff = (scope = {}, versionId) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/apply-diff`, {}, { params: scope }), "Failed to apply").then((d) => d.data);

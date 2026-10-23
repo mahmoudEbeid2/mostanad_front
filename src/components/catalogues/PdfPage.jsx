@@ -1,12 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
-import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import Spinner from "../../ui/Spinner";
-
-GlobalWorkerOptions.workerSrc = workerUrl;
-
-/** ArrayBuffer of the kept catalogue → a pdf.js document (load once per version). */
-export const openPdf = (data) => getDocument({ data: new Uint8Array(data) }).promise;
 
 // One page of the catalogue, fitted to the container width, with boxes drawn over
 // it. Boxes are in PDF points at scale 1 with a top-left origin (the backend's

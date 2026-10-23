@@ -19,7 +19,7 @@ import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { getBrands } from "../services/apiBrands";
 import { generateCertificates, getGenerationPlan } from "../services/apiCertificatesV2";
-import { addInvoiceItem, confirmInvoice, deleteInvoiceItem, getInvoice, rematchInvoice, retryInvoice, updateInvoice, updateInvoiceItem } from "../services/apiInvoices";
+import { addInvoiceItem, confirmInvoice, deleteInvoiceItem, enterInvoiceByHand, getInvoice, rematchInvoice, retryInvoice, updateInvoice, updateInvoiceItem } from "../services/apiInvoices";
 
 // /invoices/:id (plan §13.5; mockups B2 = reading, B3 = review & match).
 const STR = {
@@ -37,6 +37,8 @@ const STR = {
   failedTitle: "Couldn’t read this invoice:",
   failedTail: "No certificates were created.",
   tryAgain: "Try again",
+  byHand: "Enter it by hand",
+  byHandHint: "Type the invoice number and each line from the original on the left — nothing is filled in for you.",
   // B3 — review
   rematch: "Re-run matching",
   rematched: (r) =>
@@ -311,6 +313,15 @@ export default function InvoiceReview() {
     }
     await load();
   });
+  const byHand = withBusy("byHand", async () => {
+    try {
+      await enterInvoiceByHand(scope, id);
+      navigate(`/invoices/${id}`, { replace: true });
+    } catch (err) {
+      toast.error(err.message);
+    }
+    await load();
+  });
 
   if (!scope)
     return (
@@ -403,9 +414,17 @@ export default function InvoiceReview() {
                 </span>
               </p>
               {canUpdate && (
-                <Button variant="secondary" isLoading={busy === "retry"} onClick={retry}>
-                  {STR.tryAgain}
-                </Button>
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" isLoading={busy === "retry"} onClick={retry}>
+                      {STR.tryAgain}
+                    </Button>
+                    <Button variant="secondary" isLoading={busy === "byHand"} onClick={byHand} data-testid="enter-by-hand">
+                      {STR.byHand}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-red-800">{STR.byHandHint}</p>
+                </>
               )}
             </section>
           )}

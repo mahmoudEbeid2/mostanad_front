@@ -40,6 +40,7 @@ const STR = {
   failedTitle: "Couldn’t read this invoice:",
   failedTail: "No certificates were created.",
   tryAgain: "Try again",
+  confirmNeedsLine: "Match at least one line to a product first",
   byHand: "Enter it by hand",
   byHandHint: "Type the invoice number and each line from the original on the left — nothing is filled in for you.",
   // B3 — review
@@ -382,7 +383,7 @@ export default function InvoiceReview() {
             </Button>
           )}
           {editable && invoice.status === "review" && (
-            <Button isLoading={busy === "confirm"} disabled={needsMatch > 0} onClick={confirm}>
+            <Button isLoading={busy === "confirm"} disabled={needsMatch > 0 || !invoice.counts?.matched} title={!invoice.counts?.matched ? STR.confirmNeedsLine : undefined} onClick={confirm}>
               {STR.confirm}
             </Button>
           )}

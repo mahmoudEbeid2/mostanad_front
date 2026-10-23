@@ -20,6 +20,7 @@ const STR = {
   retry: "Try again",
   summary: (s) => `${s.certificates} certificate${s.certificates === 1 ? "" : "s"} · ${s.values} values · ${s.ready} ready · ${s.needsConfirmation} need confirmation · ${s.missing} missing`,
   allSet: "Every required value is ready.",
+  nothingYet: "Nothing to check yet — no line is matched to a product with an active template.",
   aiFound: (a) => `AI looked for ${a.asked} missing value${a.asked === 1 ? "" : "s"} in the invoice and your product data and found ${a.filled}, each with evidence the server checked word for word.`,
   aiRefused: (n) => `${n} AI answer${n === 1 ? " was" : "s were"} refused because the evidence didn't check out.`,
   aiOff: (reason) => withNextStep(reason, "Fill the missing values by hand."),
@@ -454,10 +455,17 @@ export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable,
       )}
       {s && (
         <>
-          <div className={`rounded-lg px-3 py-2 text-sm ${s.blocking ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-800"}`} data-testid="data-check-summary">
-            {STR.summary(s)}
-            {!s.blocking && <span className="ml-2 font-semibold">{STR.allSet}</span>}
-          </div>
+          {/* no certificate planned = nothing was checked: neutral, never the green "all ready" */}
+          {!s.certificates ? (
+            <div className="rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700 border border-gray-200" data-testid="data-check-summary">
+              {STR.nothingYet}
+            </div>
+          ) : (
+            <div className={`rounded-lg px-3 py-2 text-sm ${s.blocking ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-800"}`} data-testid="data-check-summary">
+              {STR.summary(s)}
+              {!s.blocking && <span className="ml-2 font-semibold">{STR.allSet}</span>}
+            </div>
+          )}
           {ai?.unavailable && <p className="text-xs text-amber-800 bg-amber-50 rounded-lg px-3 py-2">{STR.aiOff(ai.reason)}</p>}
           {ai?.used && (
             <p className="text-xs text-gray-600 flex items-start gap-1.5">

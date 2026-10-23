@@ -47,6 +47,10 @@ export const confirmInvoice = (scope = {}, id) =>
 export const retryInvoice = (scope = {}, id) =>
   unwrap(apiClient.post(`/invoices/${id}/retry`, {}, { params: scope }), "Couldn't start reading the invoice again").then((d) => d.data);
 
+/** P8 — a failed invoice is entered by hand instead: → the invoice, under review with no lines */
+export const enterInvoiceByHand = (scope = {}, id) =>
+  unwrap(apiClient.post(`/invoices/${id}/manual`, {}, { params: scope }), "Couldn't switch the invoice to manual entry").then((d) => d.data.invoice);
+
 // ── certificate data check (backend plan.md §6, A2) ──────────────────────────
 /** The check as last computed → { summary, certificates[], batchData[], unassigned[], computedAt } */
 export const getDataCheck = (scope = {}, id) => unwrap(apiClient.get(`/invoices/${id}/data-needs`, { params: scope }), "Couldn't load the data check").then((d) => d.data.check);

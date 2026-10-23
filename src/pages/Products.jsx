@@ -216,6 +216,11 @@ export default function Products() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    // the manual form has 4 steps: a submit before the last one (Enter in a field) moves on instead of saving
+    if (!(modalMode === "add" && extractionMode === "ai") && currentStep < 4) {
+      setCurrentStep(currentStep + 1);
+      return;
+    }
 
     if (modalMode === "add" && extractionMode === "ai") {
       if (!formData.rawText.trim() || !formData.companyId) {
@@ -892,11 +897,12 @@ export default function Products() {
                         </Button>
                       )}
                       {currentStep < 4 ? (
-                        <Button type="button" onClick={() => setCurrentStep(currentStep + 1)} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                        // distinct keys: reusing one <button> node turned the click on "Next" (step 3) into a submit of the new type="submit" button
+                        <Button key="next" type="button" onClick={() => setCurrentStep(currentStep + 1)} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
                           Next
                         </Button>
                       ) : (
-                        <Button type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                        <Button key="save" type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
                           {modalMode === "add" ? "Create Product" : "Save Changes"}
                         </Button>
                       )}

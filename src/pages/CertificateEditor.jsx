@@ -374,7 +374,7 @@ export default function CertificateEditor() {
           <CertificateValuesForm
             fields={fields}
             groups={cert.groups || []}
-            values={cert.values}
+            values={viewing === null ? cert.values : versions.find((v) => v.versionNumber === viewing)?.values || cert.values}
             drafts={viewing === null ? drafts : {}}
             catalogueOptions={options}
             editable={editable}

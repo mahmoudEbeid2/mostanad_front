@@ -28,6 +28,7 @@ const STR = {
   remove: "Delete this line",
   confirmRemove: (n) => ({ title: `Delete line ${n}?`, message: "The line and what was typed into it are removed.", confirmLabel: "Delete", tone: "danger" }),
   empty: "No lines were read from this invoice. Add them by hand.",
+  emptyManual: "No lines yet — add each line from the original.",
 };
 
 // One <td> per group; qty/unit share a column (plan §13.5).
@@ -171,7 +172,7 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore }) {
   );
 }
 
-export default function InvoiceItemsTable({ scope, items, editable, onSaveCell, onMatch, onIgnore, onDelete, onAdd }) {
+export default function InvoiceItemsTable({ scope, items, manual = false, editable, onSaveCell, onMatch, onIgnore, onDelete, onAdd }) {
   const [ask, askDialog] = useConfirm();
   return (
     <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -204,7 +205,7 @@ export default function InvoiceItemsTable({ scope, items, editable, onSaveCell, 
             {items.length === 0 && (
               <tr>
                 <td colSpan={COLUMNS.length + 3} className="px-4 py-6 text-center text-gray-500">
-                  {STR.empty}
+                  {manual ? STR.emptyManual : STR.empty}
                 </td>
               </tr>
             )}

@@ -28,6 +28,7 @@ const STR = {
   back: "← Invoices",
   title: (n) => `Invoice ${n}`,
   subtitle: "Check what was read from the invoice, match every line to a product, then generate.",
+  subtitleManual: "Type the invoice details and each line from the original on the left, match every line to a product, then generate.",
   // B2 — reading
   reading: "Reading the invoice",
   readingHint: "About 20–40 seconds. Nothing is guessed — anything we can’t read stays empty for you to fill.",
@@ -78,6 +79,7 @@ const STR = {
   notEditable: (s) => `This invoice is ${s.replace("_", " ")} and can no longer be edited.`,
   details: "Invoice details",
   detailsHint: "Read by AI · edited fields are marked",
+  detailsHintManual: "Typed by you — nothing was read automatically",
   edited: "edited",
   destination: "Destination country",
   readFromInvoice: "Read from invoice",
@@ -103,7 +105,7 @@ function HeaderField({ field, invoice, editable, onSave }) {
   const extracted = headerText(invoice.headerExtracted, field);
   const [draft, setDraft] = useState(null);
   const cancelled = useRef(false);
-  const edited = shown !== extracted;
+  const edited = !!invoice.headerExtracted && shown !== extracted; // a manual invoice has nothing to compare with
   const ambiguous = field.date && shown && !invoice.header?.[field.key]?.iso;
   const commit = () => {
     const next = (draft ?? shown).trim();
@@ -370,7 +372,7 @@ export default function InvoiceReview() {
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3 mt-1">
             {inBatches ? STR.batchesTitle(invoice.header?.invoiceNumber || "") : title} <StatusBadge status={invoice.status} />
           </h1>
-          {EDITABLE.has(invoice.status) && <p className="text-sm text-gray-500 mt-1">{STR.subtitle}</p>}
+          {EDITABLE.has(invoice.status) && <p className="text-sm text-gray-500 mt-1">{invoice.extraction?.manual ? STR.subtitleManual : STR.subtitle}</p>}
         </div>
         <div className="flex items-center gap-3">
           <CompanyPicker scope={scopeState} />
@@ -481,7 +483,7 @@ export default function InvoiceReview() {
             <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-semibold text-gray-900">{STR.details}</h2>
-                <span className="text-xs text-gray-500">{STR.detailsHint}</span>
+                <span className="text-xs text-gray-500">{invoice.extraction?.manual ? STR.detailsHintManual : STR.detailsHint}</span>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 {HEADER_FIELDS.map((f) => (
@@ -540,7 +542,7 @@ export default function InvoiceReview() {
             <DataCheckPanel scope={scope} invoiceId={invoice.id} refreshKey={checkKey} editable={canUpdate} canSynonym={canSynonym} textContent={invoice.textContent} onChange={setCheck} />
           )}
 
-          <InvoiceItemsTable scope={scope} items={items} editable={editable} onSaveCell={saveCell} onMatch={match} onIgnore={ignore} onDelete={remove} onAdd={add} />
+          <InvoiceItemsTable scope={scope} items={items} manual={!!invoice.extraction?.manual} editable={editable} onSaveCell={saveCell} onMatch={match} onIgnore={ignore} onDelete={remove} onAdd={add} />
         </>
       )}
     </div>

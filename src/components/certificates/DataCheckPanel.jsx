@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { AlertTriangle, Check, ChevronDown, ChevronRight, FlaskConical, Globe, Lightbulb, RotateCcw, Sparkles, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, BookOpen, Check, ChevronDown, ChevronRight, FlaskConical, Globe, Lightbulb, RotateCcw, Sparkles, X } from "lucide-react";
 import Spinner from "../../ui/Spinner";
 import { addDictionarySynonym, decideDataNeeds, getDataCheck, runDataCheck, webLookup } from "../../services/apiInvoices";
 
@@ -39,7 +40,14 @@ const STR = {
   synonym: "Add as synonym for all products",
   synonymDone: "Synonym added — this key is read for every product from now on.",
   unassigned: (u) => `Line ${u.lineNo}${u.name ? ` (${u.name})` : ""} gets no certificate, so nothing is checked for it.`,
-  status: { resolved: "ready", resolved_ai: "AI ✓", provided: "typed", needs_confirmation: "confirm", missing: "missing", not_applicable: "optional, empty", inferred: "inferred — confirm", web_found: "from web — confirm" },
+  status: { resolved: "ready", resolved_ai: "AI ✓", provided: "typed", needs_confirmation: "confirm", missing: "missing", not_applicable: "optional, empty", inferred: "inferred — confirm", web_found: "from web — confirm", catalogue_found: "from catalogue — confirm" },
+  // A6 (backend plan.md §15.5): the product's own catalogue page, and estimated product values
+  catalogueBadge: (p) => `Catalogue p.${p.page}${p.section ? ` · ${p.section.toLowerCase()}` : ""}`,
+  catalogueOpen: "Open the page",
+  estimatedBadge: "Estimated",
+  estimatedHint: "This product value was estimated, not printed in a source — confirm it before it goes on a certificate.",
+  confirmOnProduct: "Confirm on the product",
+  confirmHint: "Sign for this estimate on the product, so the next invoice uses it without asking",
   // A5 (backend plan.md §14)
   inferredBadge: "Inferred from product data",
   webBadge: "From web",
@@ -59,8 +67,8 @@ const STR = {
   aiValue: (c) => `AI ${Math.round((c ?? 0) * 100)}%`,
   placeholder: "Type the value",
 };
-const OPEN = new Set(["missing", "needs_confirmation", "inferred", "web_found"]);
-const AWAITING = new Set(["needs_confirmation", "inferred", "web_found"]);
+const OPEN = new Set(["missing", "needs_confirmation", "inferred", "web_found", "catalogue_found"]);
+const AWAITING = new Set(["needs_confirmation", "inferred", "web_found", "catalogue_found"]);
 const STATUS_STYLE = {
   resolved: "bg-emerald-50 text-emerald-700",
   resolved_ai: "bg-emerald-50 text-emerald-700",
@@ -68,6 +76,7 @@ const STATUS_STYLE = {
   needs_confirmation: "bg-amber-50 text-amber-800",
   inferred: "bg-sky-50 text-sky-800",
   web_found: "bg-indigo-50 text-indigo-800",
+  catalogue_found: "bg-teal-50 text-teal-800",
   missing: "bg-red-50 text-red-700",
   not_applicable: "bg-gray-100 text-gray-500",
 };
@@ -91,6 +100,35 @@ function SourceChip({ need, textContent }) {
   const [open, setOpen] = useState(false);
   const p = need.provenance;
   if (!p) return null;
+  if (p.tier === "C") {
+    return (
+      <span className="block space-y-0.5" data-testid="tier-c">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-teal-50 text-teal-800 px-2 py-0.5 text-xs font-medium hover:bg-teal-100 text-left">
+          <BookOpen className="w-3 h-3" /> {STR.catalogueBadge(p)}: “{String(p.quote || "").replace(/\s+/g, " ").slice(0, 80)}{String(p.quote || "").length > 80 ? "…" : ""}”
+        </button>
+        {open && (
+          <span className="mt-1 block rounded-lg border border-gray-200 bg-gray-50 p-2 text-[11px] text-gray-700" data-testid="catalogue-quote">
+            <mark className="bg-yellow-200 text-gray-900 whitespace-pre-wrap font-mono">{String(p.quote || "").replace(/\t/g, "   ")}</mark>
+            {p.catalogueVersionId && (
+              <Link to={`/catalogues/versions/${p.catalogueVersionId}?block=${p.blockId}`} className="mt-1 block text-blue-600 hover:underline">
+                {STR.catalogueOpen}
+              </Link>
+            )}
+          </span>
+        )}
+      </span>
+    );
+  }
+  if (p.tier === "I" && p.kind === "product_estimate") {
+    return (
+      <span className="block space-y-0.5" data-testid="estimated">
+        <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 px-2 py-0.5 text-xs font-semibold" title={STR.estimatedHint}>
+          <AlertTriangle className="w-3 h-3" /> {STR.estimatedBadge} · {pathLabel(`product.${p.path}`)}
+        </span>
+        {p.basis && <span className="block text-[11px] text-gray-500">{p.basis}</span>}
+      </span>
+    );
+  }
   if (p.tier === "I") {
     return (
       <span className="block space-y-0.5" data-testid="tier-i">
@@ -158,12 +196,14 @@ function NeedRow({ need, editable, canSynonym, textContent, onDecide, onSynonym 
   const [draft, setDraft] = useState(need.value ?? "");
   const [forLine, setForLine] = useState(true);
   const [saveToProduct, setSaveToProduct] = useState(false);
-  const tiered = ["inferred", "web_found"].includes(need.status);
+  const tiered = ["inferred", "web_found", "catalogue_found"].includes(need.status);
+  const estimate = need.provenance?.kind === "product_estimate";
+  const byCode = estimate || (need.provenance?.tier === "C" && need.provenance.via === "code"); // no model, no confidence
   useEffect(() => {
     setEditing(need.status === "missing");
     setDraft(need.value ?? "");
   }, [need.status, need.value]);
-  const ai = (["needs_confirmation", "resolved_ai", "inferred", "web_found"].includes(need.status) && need.provenance?.suggestionId) || (tiered && need.provenance?.tier);
+  const ai = !byCode && ((["needs_confirmation", "resolved_ai", "inferred", "web_found", "catalogue_found"].includes(need.status) && need.provenance?.suggestionId) || (tiered && need.provenance?.tier));
   const save = () => onDecide([{ needId: need.id, action: "edit", value: draft, ...(forLine && need.category === "batch_data" ? { applyTo: "line" } : {}) }]);
   return (
     <div className={`px-3 py-2.5 space-y-1.5 ${OPEN.has(need.status) && need.required ? "bg-amber-50/40" : ""}`} data-need={need.fieldKey} data-status={need.status}>
@@ -216,11 +256,11 @@ function NeedRow({ need, editable, canSynonym, textContent, onDecide, onSynonym 
                 </button>
               )}
               {tiered && need.category !== "batch_data" && (
-                <label className="flex items-center gap-1 text-xs text-gray-600" title={STR.saveHint}>
-                  <input type="checkbox" checked={saveToProduct} onChange={(e) => setSaveToProduct(e.target.checked)} /> {STR.saveToProduct}
+                <label className="flex items-center gap-1 text-xs text-gray-600" title={estimate ? STR.confirmHint : STR.saveHint}>
+                  <input type="checkbox" checked={saveToProduct} onChange={(e) => setSaveToProduct(e.target.checked)} /> {estimate ? STR.confirmOnProduct : STR.saveToProduct}
                 </label>
               )}
-              {ai && (
+              {(ai || (byCode && AWAITING.has(need.status))) && (
                 <button type="button" onClick={() => onDecide([{ needId: need.id, action: "reject" }])} className="flex items-center gap-1 text-xs text-red-600 hover:underline">
                   <X className="w-3.5 h-3.5" /> {STR.reject}
                 </button>

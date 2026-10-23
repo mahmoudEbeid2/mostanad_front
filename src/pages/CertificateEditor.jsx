@@ -10,6 +10,7 @@ import DocumentFrame from "../components/certificates/DocumentFrame";
 import CertificateValuesForm from "../components/certificates/CertificateValuesForm";
 import VersionsDrawer from "../components/certificates/VersionsDrawer";
 import useCompanyScope from "../hooks/useCompanyScope";
+import useConfirm from "../hooks/useConfirm";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { sourceOptions } from "../utils/certificateFieldSources";
@@ -39,7 +40,7 @@ const STR = {
   exporting: "Rendering the PDF…",
   downloadPdf: "Download PDF",
   finalize: "Finalize",
-  confirmFinalize: "Finalize this certificate? Its PDF is frozen and it can no longer be edited (you can still duplicate it).",
+  confirmFinalize: { title: "Finalize this certificate?", message: "Its PDF is frozen and it can no longer be edited. You can still duplicate it as a new draft.", confirmLabel: "Finalize" },
   finalized: "Certificate finalized",
   issuesLeft: (n) => `${n} issue${n === 1 ? "" : "s"} left`,
   unsavedLeft: "Save your changes first",
@@ -66,6 +67,7 @@ const STR = {
 
 export default function CertificateEditor() {
   const { id } = useParams();
+  const [confirm, confirmDialog] = useConfirm();
   const navigate = useNavigate();
   const scopeState = useCompanyScope();
   const { scope } = scopeState;
@@ -220,13 +222,14 @@ export default function CertificateEditor() {
       await downloadCertificatePdf(scope, id);
       await load();
     });
-  const finalize = () =>
-    act("finalize", async () => {
-      if (!window.confirm(STR.confirmFinalize)) return;
+  const finalize = async () => {
+    if (!(await confirm(STR.confirmFinalize))) return;
+    await act("finalize", async () => {
       await finalizeCertificate(scope, id, cert.currentVersion);
       toast.success(STR.finalized);
       await load();
     });
+  };
   const duplicate = () =>
     act("duplicate", async () => {
       const { certificateId } = await duplicateCertificate(scope, id);
@@ -260,6 +263,7 @@ export default function CertificateEditor() {
 
   return (
     <div className="space-y-5">
+      {confirmDialog}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm text-gray-500">

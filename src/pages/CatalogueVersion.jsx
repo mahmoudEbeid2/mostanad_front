@@ -15,6 +15,7 @@ const STR = {
   context: "Cover / context",
   page: (n) => `Page ${n}`,
   untitled: "Title drawn as artwork",
+  review: "Review extracted products",
 };
 
 export default function CatalogueVersion() {
@@ -47,6 +48,11 @@ export default function CatalogueVersion() {
           {version.catalogue?.manufacturer} · {version.label} <StatusBadge status={version.status} />
         </h1>
         <p className="text-sm text-gray-500 mt-1">{STR.blocks(products.length)}</p>
+        {["review", "applied", "segmented"].includes(version.status) && (
+          <Link to={`/catalogues/versions/${id}/review`} className="inline-block mt-2 text-sm font-semibold text-blue-600 hover:underline">
+            {STR.review} →
+          </Link>
+        )}
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         {version.blocks.map((b) => (

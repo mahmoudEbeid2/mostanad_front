@@ -14,6 +14,7 @@ import LabelGenerator from "./pages/LabelGenerator";
 import Catalogs from "./pages/Catalogs";
 import Catalogues from "./pages/Catalogues";
 import CatalogueVersion from "./pages/CatalogueVersion";
+import CatalogueReview from "./pages/CatalogueReview";
 import Users from "./pages/Users";
 import Companies from "./pages/Companies";
 import Account from "./pages/Account";
@@ -59,6 +60,7 @@ function App() {
             {/* Product catalogues as source documents (backend plan.md §15, A6) */}
             <Route path="/catalogues" element={<RequirePermission permission="read_products"><Catalogues /></RequirePermission>} />
             <Route path="/catalogues/versions/:id" element={<RequirePermission permission="read_products"><CatalogueVersion /></RequirePermission>} />
+            <Route path="/catalogues/versions/:id/review" element={<RequirePermission permission="read_products"><CatalogueReview /></RequirePermission>} />
             <Route path="/labels" element={<Labels />} />
             <Route path="/labels/browse" element={<RequirePermission permission="read_labels"><LabelsList /></RequirePermission>} />
             <Route path="/labels/detail/:id" element={<RequirePermission permission="read_labels"><LabelDetail /></RequirePermission>} />

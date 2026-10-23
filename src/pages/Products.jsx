@@ -9,6 +9,7 @@ import { Package, Search, Filter, Plus, Edit2, Trash2, X, Sparkles } from "lucid
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import toast from "react-hot-toast";
+import ProductFieldSource from "../components/ProductFieldSource";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -482,7 +483,7 @@ export default function Products() {
                     
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">GTIN (Barcode) / Code</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">GTIN (Barcode) / Code<ProductFieldSource product={currentProduct} field="productCode" /></label>
                         <div className="text-gray-900 font-mono text-sm bg-white border border-gray-200 px-3 py-2 rounded-md inline-block">
                           {currentProduct.gtin || currentProduct.productCode || "—"}
                         </div>
@@ -512,18 +513,25 @@ export default function Products() {
 
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Physical Form</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Physical Form<ProductFieldSource product={currentProduct} field="physicalForm" /></label>
                         <div className="text-gray-900 text-sm">{currentProduct.physicalForm || "—"}</div>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Packaging</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Packaging<ProductFieldSource product={currentProduct} field="packaging" /></label>
                         <div className="text-gray-900 text-sm">{currentProduct.packaging || "—"}</div>
                       </div>
                     </div>
 
+                    {currentProduct.appearance && (
+                      <div className="pt-4 border-t border-gray-200">
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Appearance<ProductFieldSource product={currentProduct} field="appearance" /></label>
+                        <div className="text-gray-900 text-sm">{currentProduct.appearance}</div>
+                      </div>
+                    )}
+
                     {currentProduct.targetSpecies && currentProduct.targetSpecies.length > 0 && (
                       <div className="pt-4 border-t border-gray-200">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Target Species</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Target Species<ProductFieldSource product={currentProduct} field="targetSpecies" /></label>
                         <div className="flex flex-wrap gap-2">
                           {currentProduct.targetSpecies.map((species, i) => (
                             <span key={i} className="bg-white border border-gray-200 px-2.5 py-1 rounded-md text-sm text-gray-700">
@@ -538,13 +546,13 @@ export default function Products() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                         {currentProduct.indications && (
                           <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Indications</label>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Indications<ProductFieldSource product={currentProduct} field="indications" /></label>
                             <p className="text-gray-800 text-sm">{currentProduct.indications}</p>
                           </div>
                         )}
                         {currentProduct.dosage && (
                           <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dosage</label>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dosage<ProductFieldSource product={currentProduct} field="dosage" /></label>
                             <p className="text-gray-800 text-sm">{currentProduct.dosage}</p>
                           </div>
                         )}
@@ -555,13 +563,13 @@ export default function Products() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                         {currentProduct.withdrawalPeriod && (
                           <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Withdrawal Period</label>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Withdrawal Period<ProductFieldSource product={currentProduct} field="withdrawalPeriod" /></label>
                             <p className="text-gray-800 text-sm">{currentProduct.withdrawalPeriod}</p>
                           </div>
                         )}
                         {currentProduct.storage && (
                           <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Storage</label>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Storage<ProductFieldSource product={currentProduct} field="storage" /></label>
                             <p className="text-gray-800 text-sm">{currentProduct.storage}</p>
                           </div>
                         )}
@@ -570,7 +578,7 @@ export default function Products() {
 
                     {currentProduct.activeIngredients && (
                       <div className="pt-4 border-t border-gray-200">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Active Ingredients</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Active Ingredients<ProductFieldSource product={currentProduct} field="activeIngredients" /></label>
                         <pre className="bg-white p-3 rounded-md border border-gray-200 text-sm overflow-x-auto text-gray-800 font-mono">
                           {JSON.stringify(currentProduct.activeIngredients, null, 2)}
                         </pre>

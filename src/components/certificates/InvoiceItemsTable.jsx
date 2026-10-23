@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { AlertTriangle, EyeOff, Pencil, Sparkles, Trash2, Undo2 } from "lucide-react";
 import ProductMatchSelect from "./ProductMatchSelect";
+import useConfirm from "../../hooks/useConfirm";
 
 // The invoice lines (plan §13.5; mockup B3). Every cell is editable in place
 // (it reads as text until hovered/focused); a dot marks a value that differs
@@ -25,7 +26,7 @@ const STR = {
   ignore: "Ignore this line",
   unignore: "Use this line again",
   remove: "Delete this line",
-  confirmRemove: (n) => `Delete line ${n}?`,
+  confirmRemove: (n) => ({ title: `Delete line ${n}?`, message: "The line and what was typed into it are removed.", confirmLabel: "Delete", tone: "danger" }),
   empty: "No lines were read from this invoice. Add them by hand.",
 };
 
@@ -171,8 +172,10 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore }) {
 }
 
 export default function InvoiceItemsTable({ scope, items, editable, onSaveCell, onMatch, onIgnore, onDelete, onAdd }) {
+  const [ask, askDialog] = useConfirm();
   return (
     <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {askDialog}
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-100">
         <h2 className="font-semibold text-gray-900">
           {STR.title} <span className="text-gray-400 font-normal">· {items.length}</span>
@@ -222,7 +225,7 @@ export default function InvoiceItemsTable({ scope, items, editable, onSaveCell, 
                 </td>
                 <td className="px-2 py-1.5 align-middle">
                   {editable && (
-                    <button type="button" title={STR.remove} aria-label={`${STR.remove} (line ${item.lineNo})`} onClick={() => window.confirm(STR.confirmRemove(item.lineNo)) && onDelete(item)} className="text-gray-300 hover:text-red-600">
+                    <button type="button" title={STR.remove} aria-label={`${STR.remove} (line ${item.lineNo})`} onClick={async () => (await ask(STR.confirmRemove(item.lineNo))) && onDelete(item)} className="text-gray-300 hover:text-red-600">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}

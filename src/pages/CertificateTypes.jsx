@@ -7,6 +7,7 @@ import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
 import RoleBanner from "../components/certificates/RoleBanner";
 import useCompanyScope from "../hooks/useCompanyScope";
+import useConfirm from "../hooks/useConfirm";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { createCertificateType, deleteCertificateType, listCertificateTypes, updateCertificateType } from "../services/apiCertificateTypes";
@@ -25,7 +26,7 @@ const STR = {
   created: "Certificate type created",
   saved: "Certificate type saved",
   deleted: "Certificate type deleted",
-  confirmDelete: (n) => `Delete “${n}”? This cannot be undone.`,
+  confirmDelete: (n) => ({ title: `Delete “${n}”?`, message: "This cannot be undone.", confirmLabel: "Delete", tone: "danger" }),
   save: "Save",
   cancel: "Cancel",
   inUse: "Used by templates — deactivate it instead",
@@ -37,6 +38,7 @@ const EMPTY = { name: "", code: "", description: "" };
 
 export default function CertificateTypes() {
   const scopeState = useCompanyScope();
+  const [ask, askDialog] = useConfirm();
   const { scope } = scopeState;
   const { user } = useAuth();
   const canCreate = hasPermission(user, "create_certificate_types");
@@ -104,7 +106,7 @@ export default function CertificateTypes() {
   };
 
   const remove = async (t) => {
-    if (!window.confirm(STR.confirmDelete(t.name))) return;
+    if (!(await ask(STR.confirmDelete(t.name)))) return;
     try {
       await deleteCertificateType(scope, t.id);
       toast.success(STR.deleted);
@@ -116,6 +118,7 @@ export default function CertificateTypes() {
 
   return (
     <div className="space-y-6">
+      {askDialog}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{STR.title}</h1>

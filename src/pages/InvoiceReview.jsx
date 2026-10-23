@@ -15,6 +15,7 @@ import BatchView from "../components/certificates/BatchView";
 import DataCheckPanel from "../components/certificates/DataCheckPanel";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
+import useConfirm from "../hooks/useConfirm";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { getBrands } from "../services/apiBrands";
@@ -207,6 +208,7 @@ function ReadingCard({ task, source }) {
 
 export default function InvoiceReview() {
   const { id } = useParams();
+  const [ask, askDialog] = useConfirm();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const scopeState = useCompanyScope();
@@ -292,8 +294,8 @@ export default function InvoiceReview() {
   const confirm = withBusy("confirm", () => run(() => confirmInvoice(scope, id), STR.confirmed));
   const blocking = check?.summary?.blocking || 0;
   const startGenerate = (force) => async () => {
-    if (force && !window.confirm(STR.generateAnywayConfirm(blocking))) return;
-    if (!force && BATCH_STATES.has(invoice.status) && !window.confirm(STR.confirmAgain)) return;
+    if (force && !(await ask({ title: "Generate anyway?", message: STR.generateAnywayConfirm(blocking), confirmLabel: "Generate anyway", tone: "danger" }))) return;
+    if (!force && BATCH_STATES.has(invoice.status) && !(await ask({ title: "Generate again?", message: STR.confirmAgain, confirmLabel: "Generate" }))) return;
     try {
       const out = await generateCertificates(scope, id, { force });
       navigate(`/invoices/${id}?batch=${out.batchId}&task=${out.taskId}`, { replace: true });
@@ -359,6 +361,7 @@ export default function InvoiceReview() {
 
   return (
     <div className="space-y-6">
+      {askDialog}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link to="/invoices" className="text-sm text-blue-600 hover:underline">

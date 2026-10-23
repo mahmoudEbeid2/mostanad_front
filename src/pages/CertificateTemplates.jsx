@@ -9,6 +9,7 @@ import RoleBanner from "../components/certificates/RoleBanner";
 import StatusBadge from "../components/certificates/StatusBadge";
 import AuthImage from "../components/certificates/AuthImage";
 import useCompanyScope from "../hooks/useCompanyScope";
+import useConfirm from "../hooks/useConfirm";
 import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { archiveTemplate, getVersionThumbnail, listTemplates } from "../services/apiCertificateTemplates";
 import { getBrands } from "../services/apiBrands";
@@ -36,7 +37,7 @@ const STR = {
   tileHint: ".ai (PDF compatible), .pdf or .html — up to 60 MB",
   archive: "Archive",
   archived: "Template archived",
-  confirmArchive: (n) => `Archive “${n}”? It will no longer be used for new certificates.`,
+  confirmArchive: (n) => ({ title: `Archive “${n}”?`, message: "It will no longer be used for new certificates. Certificates already made keep their design.", confirmLabel: "Archive", tone: "danger" }),
   perProduct: "Per product",
   perInvoice: "Per invoice",
   anyBrand: "Any brand",
@@ -121,6 +122,7 @@ function TemplateCard({ t, scope, onArchive }) {
 
 export default function CertificateTemplates() {
   const scopeState = useCompanyScope();
+  const [ask, askDialog] = useConfirm();
   const { scope, companyId } = scopeState;
   const [params, setParams] = useSearchParams();
   const certificateTypeId = params.get("certificateTypeId") || "";
@@ -178,7 +180,7 @@ export default function CertificateTemplates() {
   }, [companyId]);
 
   const archive = async (t) => {
-    if (!window.confirm(STR.confirmArchive(t.name))) return;
+    if (!(await ask(STR.confirmArchive(t.name)))) return;
     try {
       await archiveTemplate(scope, t.id);
       toast.success(STR.archived);
@@ -194,6 +196,7 @@ export default function CertificateTemplates() {
 
   return (
     <div className="space-y-6">
+      {askDialog}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{STR.title}</h1>

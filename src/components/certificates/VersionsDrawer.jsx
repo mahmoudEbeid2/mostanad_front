@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import useConfirm from "../../hooks/useConfirm";
 
 // Every version of a certificate (plan §11, §13.6): view any of them in the
 // frame, restore one (forward-only — it becomes a new version).
@@ -8,13 +9,16 @@ const STR = {
   view: "View",
   viewing: "Viewing",
   restore: "Restore",
-  confirmRestore: (n) => `Restore version ${n}? Its values become a new version; nothing is deleted.`,
+  confirmRestore: (n) => ({ title: `Restore version ${n}?`, message: "Its values become a new version; nothing is deleted.", confirmLabel: "Restore" }),
   sources: { generation: "Generated", user_edit: "Edited", restore: "Restored", regenerate_field: "Reset from source", duplicate: "Duplicated" },
   issues: (n) => `${n} issue${n === 1 ? "" : "s"}`,
 };
 
 export default function VersionsDrawer({ versions, currentVersion, viewing, canRestore, onView, onRestore, onClose }) {
+  const [ask, askDialog] = useConfirm();
   return (
+  <>
+    {askDialog}
     <aside className="fixed inset-y-0 right-0 z-40 w-full max-w-md bg-white border-l border-gray-200 shadow-xl flex flex-col" data-testid="versions-drawer">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <h2 className="font-semibold text-gray-900">
@@ -53,7 +57,7 @@ export default function VersionsDrawer({ versions, currentVersion, viewing, canR
                   </button>
                 )}
                 {canRestore && !isCurrent && (
-                  <button type="button" onClick={() => window.confirm(STR.confirmRestore(v.versionNumber)) && onRestore(v.versionNumber)} className="text-blue-600 hover:underline">
+                  <button type="button" onClick={async () => (await ask(STR.confirmRestore(v.versionNumber))) && onRestore(v.versionNumber)} className="text-blue-600 hover:underline">
                     {STR.restore}
                   </button>
                 )}
@@ -63,5 +67,6 @@ export default function VersionsDrawer({ versions, currentVersion, viewing, canR
         })}
       </ol>
     </aside>
+  </>
   );
 }

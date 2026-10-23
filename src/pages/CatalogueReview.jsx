@@ -57,6 +57,8 @@ const STR = {
   extractionFailed: (e) => `Products weren't read automatically. ${e}`,
   extractionFailedHint: "Enter the products by hand — open a block, type its name and the printed values, then accept — or extract again once AI is available.",
   needName: "Type the product name first",
+  compositionManual: "Amounts are only taken from the catalogue as printed, read with their quotes — they can't be typed here. Accept the product, then add its ingredients under Products → Edit → Composition.",
+  compositionNone: "No composition was found on this page.",
   accept: "Accept → create product",
   reject: "Reject",
   existing: (m) => (m.productId ? `“${m.name}” already exists (same ${m.by}) — its changes go through the re-upload diff, not here.` : `Several existing products match by ${m.by} — resolve it in the re-upload diff.`),
@@ -558,6 +560,11 @@ export default function CatalogueReview() {
                         ))}
                       </tbody>
                     </table>
+                    {!(ex.record?.activeIngredients || []).length && (
+                      <p className="text-xs text-gray-500 mt-1" data-testid="composition-empty">
+                        {manualOnly || ex.manualOnly ? STR.compositionManual : STR.compositionNone}
+                      </p>
+                    )}
                     {(ex.flags || [])
                       .filter((f) => f.field === "activeIngredients")
                       .map((f, i) => (

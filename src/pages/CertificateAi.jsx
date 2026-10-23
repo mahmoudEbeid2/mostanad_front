@@ -78,7 +78,8 @@ function Quality({ scope }) {
   }, [scope, days]);
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (!stats) return <Spinner />;
-  const calls = stats.runs.reduce((a, r) => a + r.calls, 0);
+  const calls = stats.runs.reduce((a, r) => a + r.calls, 0); // requests that reached the provider
+  const notSent = stats.runs.reduce((a, r) => a + (r.notSent || 0), 0);
   const decided = stats.kinds.reduce((a, k) => a + k.accepted + k.autoAccepted + k.edited + k.rejected, 0);
   const kept = stats.kinds.reduce((a, k) => a + k.accepted + k.autoAccepted, 0);
   const pending = stats.kinds.reduce((a, k) => a + k.pending, 0);
@@ -100,7 +101,7 @@ function Quality({ scope }) {
         </select>
       </div>
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4" data-testid="ai-tiles">
-        <Tile label="AI calls" value={calls} />
+        <Tile label="AI calls" value={calls} note={notSent ? `${notSent} not sent (AI off or unavailable)` : "requests sent to the AI"} />
         <Tile label="Answers kept by people" value={pct(decided ? kept / decided : null)} note={`${decided} decided`} />
         <Tile label="Waiting for a person" value={pending} />
         <Tile label="Estimated cost" value={usd(stats.cost.totalUsd)} note={`$${stats.cost.prices.inputPerM}/M in · $${stats.cost.prices.outputPerM}/M out`} />

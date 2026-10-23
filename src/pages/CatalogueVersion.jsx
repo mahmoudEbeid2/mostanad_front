@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import { ArrowLeft } from "lucide-react";
 import Spinner from "../ui/Spinner";
 import StatusBadge from "../components/certificates/StatusBadge";
+import { catalogueVersionStatus } from "../utils/catalogueStatus";
+import { withNextStep } from "../utils/aiReason";
 import useCompanyScope from "../hooks/useCompanyScope";
 import { getCatalogueVersion } from "../services/apiCatalogues";
 
@@ -12,6 +14,7 @@ import { getCatalogueVersion } from "../services/apiCatalogues";
 const STR = {
   back: "Catalogues",
   blocks: (n) => `${n} product blocks`,
+  extractionFailed: (e) => `Products weren't read automatically. ${withNextStep(e, "Open the review to enter them by hand.")}`,
   context: "Cover / context",
   page: (n) => `Page ${n}`,
   untitled: "Title drawn as artwork",
@@ -45,9 +48,14 @@ export default function CatalogueVersion() {
           <ArrowLeft className="w-4 h-4" /> {STR.back}
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 mt-2 flex items-center gap-3">
-          {version.catalogue?.manufacturer} · {version.label} <StatusBadge status={version.status} />
+          {version.catalogue?.manufacturer} · {version.label} <StatusBadge status={catalogueVersionStatus(version)} />
         </h1>
         <p className="text-sm text-gray-500 mt-1">{STR.blocks(products.length)}</p>
+        {catalogueVersionStatus(version) === "extraction_failed" && (
+          <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" data-testid="extraction-failed">
+            {STR.extractionFailed(version.error)}
+          </p>
+        )}
         {["review", "applied", "segmented"].includes(version.status) && (
           <Link to={`/catalogues/versions/${id}/review`} className="inline-block mt-2 text-sm font-semibold text-blue-600 hover:underline">
             {STR.review} →

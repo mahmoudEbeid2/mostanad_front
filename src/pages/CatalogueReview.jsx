@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowLeft, Check, CheckCheck, Pencil, Scissors, Merge, X
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import StatusBadge from "../components/certificates/StatusBadge";
+import { catalogueVersionStatus } from "../utils/catalogueStatus";
 import PdfPage from "../components/catalogues/PdfPage";
 import { openPdf } from "../components/catalogues/openPdf";
 import DiffPanel from "../components/catalogues/DiffPanel";
@@ -309,7 +310,7 @@ export default function CatalogueReview() {
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            {STR.title} · {version.catalogue?.manufacturer} · {version.label} <StatusBadge status={version.status} />
+            {STR.title} · {version.catalogue?.manufacturer} · {version.label} <StatusBadge status={catalogueVersionStatus(version)} />
           </h1>
           {canManage && counts.unflagged > 0 && (
             <Button isLoading={busy} onClick={() => run(() => acceptUnflaggedBlocks(scope, id), STR.bulkDone)}>

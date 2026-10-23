@@ -31,9 +31,10 @@ const STYLES = {
   segmenting: "bg-blue-50 text-blue-700",
   segmented: "bg-amber-50 text-amber-800",
   applied: "bg-emerald-50 text-emerald-700",
+  extraction_failed: "bg-red-50 text-red-700",
 };
 
-const LABELS = { partially_failed: "partially failed" };
+const LABELS = { partially_failed: "partially failed", extraction_failed: "extraction failed" };
 
 export default function StatusBadge({ status, className = "" }) {
   if (!status) return null;

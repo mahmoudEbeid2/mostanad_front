@@ -6,6 +6,8 @@ import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
 import StatusBadge from "../components/certificates/StatusBadge";
+import { catalogueVersionStatus } from "../utils/catalogueStatus";
+import { withNextStep } from "../utils/aiReason";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import { useAuth } from "../context/AuthContext";
@@ -37,6 +39,9 @@ const STR = {
   open: "Open",
   segmenting: "Finding product blocks…",
   done: (r) => `${r?.productBlocks ?? 0} product blocks found on ${r?.pages ?? 0} pages`,
+  extracting: "Reading the products…",
+  extracted: "Products read — open the catalogue to review them.",
+  extractFailed: (e) => `Products weren't read automatically. ${withNextStep(e, "Open the catalogue to enter them by hand.")}`,
   noAiHint: "AI is unavailable: the catalogue is split into product blocks only — you type each product's values from its page in the review.",
 };
 
@@ -50,6 +55,9 @@ function UploadPanel({ scopeState, onUploaded }) {
   const [sending, setSending] = useState(false);
   const [jobId, setJobId] = useState(null);
   const task = useTaskProgress(jobId, { onDone: () => onUploaded() });
+  // segmentation queues the AI extraction as its own job: follow it too, so a failure is said here
+  const extractJobId = task.status === "completed" ? task.result?.extractJobId || null : null;
+  const extract = useTaskProgress(extractJobId, { onDone: () => onUploaded() });
   const { available: aiAvailable } = useAiStatus();
 
   useEffect(() => {
@@ -124,6 +132,13 @@ function UploadPanel({ scopeState, onUploaded }) {
           </span>
         )}
         {jobId && task.status === "completed" && <span className="text-sm text-emerald-700">{STR.done(task.result)}</span>}
+        {extractJobId && !extract.done && (
+          <span className="text-sm text-gray-600 flex items-center gap-2">
+            <Spinner /> {extract.message || STR.extracting}
+          </span>
+        )}
+        {extractJobId && extract.status === "completed" && <span className="text-sm text-emerald-700">{STR.extracted}</span>}
+        {extractJobId && extract.status === "failed" && <span className="text-sm text-red-700" data-testid="extract-failed">{STR.extractFailed(extract.error)}</span>}
         {jobId && task.status === "failed" && <span className="text-sm text-red-700">{task.error}</span>}
       </div>
       {!aiAvailable && <p className="text-xs text-amber-800" data-testid="catalogue-no-ai">{STR.noAiHint}</p>}
@@ -202,7 +217,7 @@ export default function Catalogues() {
                         <td className="px-4 py-3 text-gray-700">{v.pages || "—"}</td>
                         <td className="px-4 py-3 text-gray-700">{v._count?.blocks || "—"}</td>
                         <td className="px-4 py-3">
-                          <StatusBadge status={v.status} />
+                          <StatusBadge status={catalogueVersionStatus(v)} />
                           {v.error && <p className="text-xs text-red-700 mt-1">{v.error}</p>}
                           {(v.warnings || []).map((w, i) => (
                             <p key={i} className="text-xs text-amber-800 mt-1">

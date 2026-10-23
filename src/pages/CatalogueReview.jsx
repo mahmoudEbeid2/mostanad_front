@@ -51,6 +51,10 @@ const STR = {
   page: (n) => `Page ${n}`,
   pickBlock: "Pick a block on the left.",
   notExtracted: "Not extracted yet — extract it (top of the list) to see its record.",
+  manualEntry: "Not read by AI — type what the page prints (left). Nothing is filled in for you; every value is saved as typed by you.",
+  extractionFailed: (e) => `The AI extraction did not run: ${e}`,
+  extractionFailedHint: "Enter the products by hand — open a block, type its name and the printed values, then accept — or extract again once AI is available.",
+  needName: "Type the product name first",
   accept: "Accept → create product",
   reject: "Reject",
   existing: (m) => (m.productId ? `“${m.name}” already exists (same ${m.by}) — its changes go through the re-upload diff, not here.` : `Several existing products match by ${m.by} — resolve it in the re-upload diff.`),
@@ -278,9 +282,12 @@ export default function CatalogueReview() {
   const notExtracted = blocks.filter((b) => b.status === "pending" && !b.extracted);
   const needsConvention = counts.ambiguous > 0 && !version.numberConvention;
   const ambiguousMsg = blocks.flatMap((b) => b.extracted?.flags || []).find((f) => f.code === "ambiguous_number")?.message;
-  const ex = block?.extracted;
   const pending = block?.status === "pending";
+  // P8: a block the AI didn't read is entered by hand — the same fields, empty, nothing filled in
+  const manualOnly = !!block && !block.extracted && pending && canManage;
+  const ex = block?.extracted || (manualOnly ? { record: {}, quotes: {}, estimated: {}, flags: [], manual: {} } : null);
   const editable = canManage && pending && !!ex;
+  const typedName = ex?.manual?.name?.value || ex?.record?.name;
   const next = block ? data.blocks.find((b) => b.seq === block.seq + 1) : null;
 
   const boxes = [];
@@ -311,6 +318,13 @@ export default function CatalogueReview() {
         </div>
         <p className="text-sm text-gray-500 mt-1">{STR.counts(counts)}</p>
       </div>
+
+      {version.error && notExtracted.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-900">
+          <p className="font-medium">{STR.extractionFailed(version.error)}</p>
+          <p className="text-xs mt-1">{STR.extractionFailedHint}</p>
+        </div>
+      )}
 
       {needsConvention && (
         <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex flex-wrap items-center gap-3">
@@ -424,7 +438,7 @@ export default function CatalogueReview() {
 
               {canManage && pending && (
                 <div className="flex flex-wrap gap-2">
-                  <Button isLoading={busy} disabled={!ex || !!block.match} onClick={() => run(() => acceptCatalogueBlock(scope, block.id), STR.created)}>
+                  <Button isLoading={busy} disabled={!ex || !typedName || !!block.match} title={ex && !typedName ? STR.needName : undefined} onClick={() => run(() => acceptCatalogueBlock(scope, block.id), STR.created)}>
                     <Check className="w-4 h-4" /> {STR.accept}
                   </Button>
                   <Button variant="secondary" disabled={busy} onClick={() => run(() => rejectCatalogueBlock(scope, block.id))}>
@@ -460,6 +474,7 @@ export default function CatalogueReview() {
                 <p className="text-sm text-gray-500">{STR.notExtracted}</p>
               ) : (
                 <>
+                  {(manualOnly || ex.manualOnly) && <p className="text-xs bg-amber-50 border border-amber-200 rounded-md p-2 text-amber-900">{STR.manualEntry}</p>}
                   {(ex.flags || []).filter((f) => !f.field || !FIELDS.some(([k]) => k === f.field)).length > 0 && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
                       <p className="text-xs font-semibold text-orange-800 mb-1">{STR.flags}</p>

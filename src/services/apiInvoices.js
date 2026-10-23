@@ -59,6 +59,10 @@ export const runDataCheck = (scope = {}, id, { ai = true } = {}) =>
 export const decideDataNeeds = (scope = {}, id, decisions) =>
   unwrap(apiClient.patch(`/invoices/${id}/data-needs`, { decisions }, { params: scope }), "Couldn't save").then((d) => d.data.check);
 
+/** A5: one web lookup per product for the missing product facts (only on request) → check + { ai: { web } } */
+export const webLookup = (scope = {}, id) =>
+  unwrap(apiClient.post(`/invoices/${id}/data-needs/web-lookup`, {}, { params: scope }), "The web lookup failed").then((d) => d.data.check);
+
 /** "Add as synonym for all products": the alternative path holds the same value as the canonical one. */
 export const addDictionarySynonym = (scope = {}, { canonical, alternative }) =>
   unwrap(apiClient.post("/certificate-data-dictionary/synonyms", { canonical, alternative }, { params: scope }), "Couldn't add the synonym").then((d) => d.data.dictionary);

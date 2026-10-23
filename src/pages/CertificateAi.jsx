@@ -415,6 +415,8 @@ const SWITCHES = [
   { key: "allowAiMatching", label: "Suggest product matches", hint: "Only among the candidates code found." },
   { key: "allowSynonyms", label: "Suggest names for unclear product keys", hint: "Applied only after you accept each one." },
   { key: "autoAccept", label: "Accept confident AI answers automatically", hint: "Off: a person confirms every AI answer." },
+  { key: "allowProductInference", label: "Infer missing product facts from the product's own data", hint: "Quoted or converted from what the product record says — always confirmed by a person. Never lab results, batches, dates or quantities." },
+  { key: "allowWebLookup", label: "Look up missing product facts on the web (on request)", hint: "Each value needs a link and a quote the server checks on the page, about the same product. Always confirmed by a person." },
 ];
 
 function Settings({ scope, canEdit }) {
@@ -444,6 +446,11 @@ function Settings({ scope, canEdit }) {
           </span>
         </label>
       ))}
+      <label className="block rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
+        <span className="block font-medium text-gray-900">Also trust these web domains</span>
+        <span className="block text-xs text-gray-500">Manufacturer sites and official registries are trusted already; distributors get a warning; everything else is refused unless listed here. One domain per line.</span>
+        <textarea rows={3} defaultValue={(s.webDomainAllowList || []).join("\n")} key={(s.webDomainAllowList || []).join()} disabled={!canEdit || !s.allowWebLookup} onBlur={(e) => { const list = e.target.value.split(/[\s,]+/).map((x) => x.trim()).filter(Boolean); if (list.join() !== (s.webDomainAllowList || []).join()) save({ webDomainAllowList: list }); }} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-1 font-mono text-xs" aria-label="Trusted web domains" />
+      </label>
       <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
         <span className="font-medium text-gray-900">Auto-accept threshold</span>
         <input type="number" min={0.5} max={1} step={0.01} defaultValue={s.autoAcceptThreshold} key={s.autoAcceptThreshold} disabled={!canEdit || !s.autoAccept} onBlur={(e) => Number(e.target.value) !== s.autoAcceptThreshold && save({ autoAcceptThreshold: Number(e.target.value) })} className="w-24 border border-gray-300 rounded-lg px-2 py-1" />

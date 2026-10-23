@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { AlertTriangle, Check, ChevronDown, ChevronRight, FlaskConical, RotateCcw, Sparkles, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, ChevronRight, FlaskConical, Globe, Lightbulb, RotateCcw, Sparkles, X } from "lucide-react";
 import Spinner from "../../ui/Spinner";
-import { addDictionarySynonym, decideDataNeeds, getDataCheck, runDataCheck } from "../../services/apiInvoices";
+import { addDictionarySynonym, decideDataNeeds, getDataCheck, runDataCheck, webLookup } from "../../services/apiInvoices";
 
 // "Certificate data check" (backend plan.md §6.2, A2): every value the
 // certificates about to be generated need, what code read, what the AI found
@@ -39,7 +39,17 @@ const STR = {
   synonym: "Add as synonym for all products",
   synonymDone: "Synonym added — this key is read for every product from now on.",
   unassigned: (u) => `Line ${u.lineNo}${u.name ? ` (${u.name})` : ""} gets no certificate, so nothing is checked for it.`,
-  status: { resolved: "ready", resolved_ai: "AI ✓", provided: "typed", needs_confirmation: "confirm", missing: "missing", not_applicable: "optional, empty" },
+  status: { resolved: "ready", resolved_ai: "AI ✓", provided: "typed", needs_confirmation: "confirm", missing: "missing", not_applicable: "optional, empty", inferred: "inferred — confirm", web_found: "from web — confirm" },
+  // A5 (backend plan.md §14)
+  inferredBadge: "Inferred from product data",
+  webBadge: "From web",
+  derivation: { quoted: "written in the product", unit_conversion: "unit conversion", select_from_list: "picked from a list", join_list: "joined from a list", normalize_case: "letter case" },
+  saveToProduct: "Save to product",
+  saveHint: "Write the confirmed value into the product, so the next invoice doesn't need to look it up",
+  webLookup: (n) => `Look up ${n} missing product fact${n === 1 ? "" : "s"} on the web`,
+  webHint: "Only product facts (never lab results, batches, dates or quantities). Every value comes with a link and a quote the server checked on the page.",
+  webDone: (w) => (w.unavailable ? `Web lookup unavailable: ${w.reason}` : `Web lookup: ${w.found} found${w.fromCache ? ` (${w.fromCache} from earlier lookups)` : ""}${w.rejected ? `, ${w.rejected} refused (the cited page didn't check out)` : ""}`),
+  inferNote: (i) => `${i.inferred} value${i.inferred === 1 ? "" : "s"} inferred from your product data${i.rejected ? ` (${i.rejected} refused — not provable from the product)` : ""}.`,
   source: {
     manual: "Typed by you",
     static: "Fixed text",
@@ -49,12 +59,15 @@ const STR = {
   aiValue: (c) => `AI ${Math.round((c ?? 0) * 100)}%`,
   placeholder: "Type the value",
 };
-const OPEN = new Set(["missing", "needs_confirmation"]);
+const OPEN = new Set(["missing", "needs_confirmation", "inferred", "web_found"]);
+const AWAITING = new Set(["needs_confirmation", "inferred", "web_found"]);
 const STATUS_STYLE = {
   resolved: "bg-emerald-50 text-emerald-700",
   resolved_ai: "bg-emerald-50 text-emerald-700",
   provided: "bg-blue-50 text-blue-700",
   needs_confirmation: "bg-amber-50 text-amber-800",
+  inferred: "bg-sky-50 text-sky-800",
+  web_found: "bg-indigo-50 text-indigo-800",
   missing: "bg-red-50 text-red-700",
   not_applicable: "bg-gray-100 text-gray-500",
 };
@@ -78,6 +91,44 @@ function SourceChip({ need, textContent }) {
   const [open, setOpen] = useState(false);
   const p = need.provenance;
   if (!p) return null;
+  if (p.tier === "I") {
+    return (
+      <span className="block space-y-0.5" data-testid="tier-i">
+        <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 text-sky-800 px-2 py-0.5 text-xs font-medium">
+          <Lightbulb className="w-3 h-3" /> {STR.inferredBadge} · {STR.derivation[p.derivationKind || p.derivation] || p.derivation}
+        </span>
+        {(p.evidence || []).map((e, i) => (
+          <span key={i} className="block text-[11px] text-gray-600">
+            {pathLabel(e.path)}
+            {e.quote ? `: “${e.quote}”` : ""}
+          </span>
+        ))}
+        {p.reasoning && <span className="block text-[11px] text-gray-400">{p.reasoning}</span>}
+      </span>
+    );
+  }
+  if (p.tier === "W") {
+    return (
+      <span className="block space-y-0.5" data-testid="tier-w">
+        <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-800 px-2 py-0.5 text-xs font-medium">
+          <Globe className="w-3 h-3" /> {STR.webBadge} · {p.sourceType?.replace("_", " ")}
+        </span>
+        {(p.citations || []).map((c, i) => (
+          <span key={i} className="block text-[11px] text-gray-600">
+            <a href={c.finalUrl || c.url} target="_blank" rel="noreferrer noopener" className="text-blue-600 hover:underline break-all">
+              {c.host || c.finalUrl || c.url}
+            </a>
+            : “{c.quote}”
+          </span>
+        ))}
+        {p.warning && (
+          <span className="flex items-center gap-1 text-[11px] text-amber-800">
+            <AlertTriangle className="w-3 h-3" /> {p.warning}
+          </span>
+        )}
+      </span>
+    );
+  }
   if (p.kind === "invoice_text") {
     const ctx = textContent && Number.isInteger(p.start) ? { before: textContent.slice(Math.max(0, p.start - 160), p.start), hit: textContent.slice(p.start, p.end), after: textContent.slice(p.end, p.end + 160) } : null;
     return (
@@ -106,11 +157,13 @@ function NeedRow({ need, editable, canSynonym, textContent, onDecide, onSynonym 
   const [editing, setEditing] = useState(need.status === "missing");
   const [draft, setDraft] = useState(need.value ?? "");
   const [forLine, setForLine] = useState(true);
+  const [saveToProduct, setSaveToProduct] = useState(false);
+  const tiered = ["inferred", "web_found"].includes(need.status);
   useEffect(() => {
     setEditing(need.status === "missing");
     setDraft(need.value ?? "");
   }, [need.status, need.value]);
-  const ai = ["needs_confirmation", "resolved_ai"].includes(need.status) && need.provenance?.suggestionId;
+  const ai = (["needs_confirmation", "resolved_ai", "inferred", "web_found"].includes(need.status) && need.provenance?.suggestionId) || (tiered && need.provenance?.tier);
   const save = () => onDecide([{ needId: need.id, action: "edit", value: draft, ...(forLine && need.category === "batch_data" ? { applyTo: "line" } : {}) }]);
   return (
     <div className={`px-3 py-2.5 space-y-1.5 ${OPEN.has(need.status) && need.required ? "bg-amber-50/40" : ""}`} data-need={need.fieldKey} data-status={need.status}>
@@ -157,10 +210,15 @@ function NeedRow({ need, editable, canSynonym, textContent, onDecide, onSynonym 
             </>
           ) : (
             <>
-              {need.status === "needs_confirmation" && (
-                <button type="button" onClick={() => onDecide([{ needId: need.id, action: "accept" }])} className="flex items-center gap-1 rounded-lg bg-emerald-600 text-white px-2.5 py-1 text-xs font-semibold hover:bg-emerald-700">
+              {AWAITING.has(need.status) && (
+                <button type="button" onClick={() => onDecide([{ needId: need.id, action: "accept", ...(tiered && saveToProduct ? { saveToProduct: true } : {}) }])} className="flex items-center gap-1 rounded-lg bg-emerald-600 text-white px-2.5 py-1 text-xs font-semibold hover:bg-emerald-700">
                   <Check className="w-3.5 h-3.5" /> {STR.accept}
                 </button>
+              )}
+              {tiered && need.category !== "batch_data" && (
+                <label className="flex items-center gap-1 text-xs text-gray-600" title={STR.saveHint}>
+                  <input type="checkbox" checked={saveToProduct} onChange={(e) => setSaveToProduct(e.target.checked)} /> {STR.saveToProduct}
+                </label>
               )}
               {ai && (
                 <button type="button" onClick={() => onDecide([{ needId: need.id, action: "reject" }])} className="flex items-center gap-1 text-xs text-red-600 hover:underline">
@@ -307,6 +365,19 @@ export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable,
       toast.error(err.message);
     }
   };
+  const [webBusy, setWebBusy] = useState(false);
+  const [webResult, setWebResult] = useState(null);
+  const lookup = async () => {
+    setWebBusy(true);
+    try {
+      const c = await webLookup(scope, invoiceId);
+      apply(c);
+      setWebResult(c.ai?.web || null);
+    } catch (err) {
+      toast.error(err.message);
+    }
+    setWebBusy(false);
+  };
   const synonym = async (nm) => {
     try {
       await addDictionarySynonym(scope, nm);
@@ -354,6 +425,16 @@ export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable,
               </span>
             </p>
           )}
+          {ai?.inference?.used && <p className="text-xs text-gray-600">{STR.inferNote(ai.inference)}</p>}
+          {editable && check.tiers?.web && check.tiers.webEligible > 0 && (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-indigo-100 bg-indigo-50/40 px-3 py-2">
+              <button type="button" disabled={webBusy} onClick={lookup} className="flex items-center gap-1.5 rounded-lg bg-indigo-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-indigo-700 disabled:opacity-60" data-testid="web-lookup">
+                {webBusy ? <Spinner size="sm" /> : <Globe className="w-3.5 h-3.5" />} {STR.webLookup(check.tiers.webEligible)}
+              </button>
+              <span className="text-[11px] text-gray-600">{STR.webHint}</span>
+            </div>
+          )}
+          {webResult && <p className={`text-xs ${webResult.unavailable ? "text-amber-800" : "text-gray-600"}`}>{STR.webDone(webResult)}</p>}
           <BatchDataForm batchData={check.batchData || []} editable={editable} onDecide={decide} />
           <div className="flex justify-end">
             <button type="button" onClick={() => setShowAll((v) => !v)} className="text-xs text-blue-600 hover:underline">

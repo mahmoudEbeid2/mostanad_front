@@ -214,6 +214,17 @@ function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onCha
         />
         {!field.groupKey && <WhyPanel field={field} scope={scope} />}
         {field.dataCategory === "batch_data" && field.source?.kind === "manual" && <p className="text-xs font-normal text-amber-800 bg-amber-50 rounded-md p-2">{BATCH_DATA_NOTE}</p>}
+        {/* A5 (backend plan.md §14.1): only product facts may be inferred or looked up; a person may only tighten */}
+        {!field.groupKey && (field.dataCategory === "product_data" || (!field.dataCategory && ["product", "brand"].includes(field.source?.kind))) && (
+          <label className="flex items-center gap-2 text-xs font-normal text-gray-600" title="When this value is missing for a product, may the AI fill it from the product's own data or the web? A person always confirms.">
+            When missing
+            <select value={field.inferencePolicy || "product_facts_and_web"} onChange={(e) => onChange({ inferencePolicy: e.target.value })} className="border border-gray-300 rounded-md px-1.5 py-0.5 text-xs bg-white">
+              <option value="product_facts_and_web">infer from product data, then the web</option>
+              <option value="product_facts">infer from product data only</option>
+              <option value="never">ask a person</option>
+            </select>
+          </label>
+        )}
       </div>
       <div className={lbl}>
         {STR.format}

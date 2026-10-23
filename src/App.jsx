@@ -12,6 +12,8 @@ import LabelsList from "./pages/LabelsList";
 import LabelDetail from "./pages/LabelDetail";
 import LabelGenerator from "./pages/LabelGenerator";
 import Catalogs from "./pages/Catalogs";
+import Catalogues from "./pages/Catalogues";
+import CatalogueVersion from "./pages/CatalogueVersion";
 import Users from "./pages/Users";
 import Companies from "./pages/Companies";
 import Account from "./pages/Account";
@@ -54,6 +56,9 @@ function App() {
             <Route path="/categories" element={<RequirePermission permission="read_categories"><Categories /></RequirePermission>} />
             <Route path="/products" element={<RequirePermission permission="read_products"><Products /></RequirePermission>} />
             <Route path="/products/catalog-upload" element={<RequirePermission permission="create_products"><Catalogs /></RequirePermission>} />
+            {/* Product catalogues as source documents (backend plan.md §15, A6) */}
+            <Route path="/catalogues" element={<RequirePermission permission="read_products"><Catalogues /></RequirePermission>} />
+            <Route path="/catalogues/versions/:id" element={<RequirePermission permission="read_products"><CatalogueVersion /></RequirePermission>} />
             <Route path="/labels" element={<Labels />} />
             <Route path="/labels/browse" element={<RequirePermission permission="read_labels"><LabelsList /></RequirePermission>} />
             <Route path="/labels/detail/:id" element={<RequirePermission permission="read_labels"><LabelDetail /></RequirePermission>} />

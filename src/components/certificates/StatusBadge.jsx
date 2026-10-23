@@ -27,6 +27,10 @@ const STYLES = {
   processing: "bg-blue-50 text-blue-700",
   completed: "bg-emerald-50 text-emerald-700",
   archived: "bg-gray-100 text-gray-500",
+  // catalogue version (plan.md §15)
+  segmenting: "bg-blue-50 text-blue-700",
+  segmented: "bg-amber-50 text-amber-800",
+  applied: "bg-emerald-50 text-emerald-700",
 };
 
 const LABELS = { partially_failed: "partially failed" };

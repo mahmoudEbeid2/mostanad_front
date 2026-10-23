@@ -32,6 +32,7 @@ const navLinks = [
     permission: "read_products",
     subLinks: [
       { name: "Product List", path: "/products" },
+      { name: "Catalogues", path: "/catalogues" },
       { name: "Catalog Upload", path: "/products/catalog-upload" }
     ]
   },
@@ -71,7 +72,7 @@ export default function Sidebar() {
   const { logout, user } = useAuth();
   const location = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState({
-    Products: location.pathname.startsWith("/products"),
+    Products: location.pathname.startsWith("/products") || location.pathname.startsWith("/catalogues"),
     "Regulatory & EDA": location.pathname.startsWith("/regulatory") || location.pathname.startsWith("/eda"),
     Labels: location.pathname.startsWith("/labels") || location.pathname.startsWith("/reference-labels"),
     Certificates: location.pathname.startsWith("/certificates") || location.pathname.startsWith("/invoices") || location.pathname.startsWith("/certificate-ai")

@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, BookOpen, Check, ChevronDown, ChevronRight, FlaskConical, Globe, Lightbulb, RotateCcw, Sparkles, X } from "lucide-react";
 import Spinner from "../../ui/Spinner";
 import { addDictionarySynonym, decideDataNeeds, getDataCheck, runDataCheck, webLookup } from "../../services/apiInvoices";
+import { withNextStep } from "../../utils/aiReason";
 
 // "Certificate data check" (backend plan.md §6.2, A2): every value the
 // certificates about to be generated need, what code read, what the AI found
@@ -21,7 +22,7 @@ const STR = {
   allSet: "Every required value is ready.",
   aiFound: (a) => `AI looked for ${a.asked} missing value${a.asked === 1 ? "" : "s"} in the invoice and your product data and found ${a.filled}, each with evidence the server checked word for word.`,
   aiRefused: (n) => `${n} AI answer${n === 1 ? " was" : "s were"} refused because the evidence didn't check out.`,
-  aiOff: (reason) => `AI unavailable (${reason}) — fill the missing values by hand.`,
+  aiOff: (reason) => withNextStep(reason, "Fill the missing values by hand."),
   batchTitle: "Lab results for this shipment",
   batchHint: "These change per batch and aren't stored anywhere. Type each once — every certificate of that line uses it.",
   line: (b) => `Line ${b.lineNo ?? "?"} · ${b.productName || "—"}${b.batchNo ? ` · batch ${b.batchNo}` : ""}`,
@@ -57,7 +58,7 @@ const STR = {
   saveHint: "Write the confirmed value into the product, so the next invoice doesn't need to look it up",
   webLookup: (n) => `Look up ${n} missing product fact${n === 1 ? "" : "s"} on the web`,
   webHint: "Only product facts (never lab results, batches, dates or quantities). Every value comes with a link and a quote the server checked on the page.",
-  webDone: (w) => (w.unavailable ? `Web lookup unavailable: ${w.reason}` : `Web lookup: ${w.found} found${w.fromCache ? ` (${w.fromCache} from earlier lookups)` : ""}${w.rejected ? `, ${w.rejected} refused (the cited page didn't check out)` : ""}`),
+  webDone: (w) => (w.unavailable ? withNextStep(w.reason, "Type the missing values by hand.") : `Web lookup: ${w.found} found${w.fromCache ? ` (${w.fromCache} from earlier lookups)` : ""}${w.rejected ? `, ${w.rejected} refused (the cited page didn't check out)` : ""}`),
   inferNote: (i) => `${i.inferred} value${i.inferred === 1 ? "" : "s"} inferred from your product data${i.rejected ? ` (${i.rejected} refused — not provable from the product)` : ""}.`,
   source: {
     manual: "Typed by you",

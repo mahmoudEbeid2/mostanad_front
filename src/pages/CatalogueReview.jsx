@@ -53,7 +53,7 @@ const STR = {
   pickBlock: "Pick a block on the left.",
   notExtracted: "Not extracted yet — extract it (top of the list) to see its record.",
   manualEntry: "Not read by AI — type what the page prints (left). Nothing is filled in for you; every value is saved as typed by you.",
-  extractionFailed: (e) => `The AI extraction did not run: ${e}`,
+  extractionFailed: (e) => `Products weren't read automatically. ${e}`,
   extractionFailedHint: "Enter the products by hand — open a block, type its name and the printed values, then accept — or extract again once AI is available.",
   needName: "Type the product name first",
   accept: "Accept → create product",

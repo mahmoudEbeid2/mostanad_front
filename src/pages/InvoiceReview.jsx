@@ -20,6 +20,7 @@ import { hasPermission } from "../utils/permissions";
 import { getBrands } from "../services/apiBrands";
 import { generateCertificates, getGenerationPlan } from "../services/apiCertificatesV2";
 import { addInvoiceItem, confirmInvoice, deleteInvoiceItem, enterInvoiceByHand, getInvoice, rematchInvoice, retryInvoice, updateInvoice, updateInvoiceItem } from "../services/apiInvoices";
+import { withNextStep } from "../utils/aiReason";
 
 // /invoices/:id (plan §13.5; mockups B2 = reading, B3 = review & match).
 const STR = {
@@ -44,7 +45,7 @@ const STR = {
   rematched: (r) =>
     `Matching done: ${r.matched} matched, ${r.needsMatch} need a product` +
     (r.ai?.suggested ? ` · AI suggests a product for ${r.ai.suggested} — confirm them` : "") +
-    (r.ai?.unavailable ? ` · AI matching unavailable (${r.ai.reason})` : ""),
+    (r.ai?.unavailable ? ` · AI matching didn't run` : ""),
   confirm: "Confirm & continue",
   confirmed: "Invoice confirmed — check the plan, then generate",
   generate: (n) => (n ? `Generate ${n} certificate${n === 1 ? "" : "s"}` : "Generate certificates"),
@@ -69,7 +70,7 @@ const STR = {
     `${m.by === "rematch" ? "Matching re-run" : "Matched automatically when the invoice was read"}: ${m.matched} line${m.matched === 1 ? "" : "s"} matched, ${m.needsMatch} need${m.needsMatch === 1 ? "s" : ""} a product` +
     (m.ai?.autoAccepted ? ` · AI matched ${m.ai.autoAccepted}` : "") +
     (m.ai?.suggested ? ` · AI suggests a product for ${m.ai.suggested} — confirm them in the lines below` : ""),
-  matchAiOff: (reason) => `AI matching was unavailable (${reason}) — pick the products from the suggestions or the catalogue.`,
+  matchAiOff: (reason) => withNextStep(reason, "Pick the products from the suggestions or the catalogue."),
   ambiguousDates: "Some dates are ambiguous (amber). Write them unambiguously so they can be formatted on the certificates.",
   ambiguousQuantities: "Some quantities are ambiguous (amber): \"1.250\" could be 1250 or 1.25. Type the number without the separator (1250) or with a decimal part (1.25).",
   readyNote: "Confirmed — editing anything sends it back to review.",
@@ -410,7 +411,7 @@ export default function InvoiceReview() {
               <p className="text-sm text-red-800 flex gap-2">
                 <AlertTriangle className="w-5 h-5 shrink-0" />
                 <span>
-                  <b>{STR.failedTitle}</b> “{invoice.error}” {STR.failedTail}
+                  <b>{STR.failedTitle}</b> {invoice.error} {STR.failedTail}
                 </span>
               </p>
               {canUpdate && (

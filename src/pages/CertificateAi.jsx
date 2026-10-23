@@ -12,6 +12,7 @@ import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { addDictionarySynonym } from "../services/apiInvoices";
 import { decideSynonym, getAiSettings, getAiStats, getCompleteness, getDictionaryHealth, rebuildDictionary, suggestSynonyms, updateAiSettings } from "../services/apiCertificateAi";
+import { withNextStep } from "../utils/aiReason";
 
 // /certificate-ai — the certificate AI layers in one place (backend plan.md §8, §9; A4):
 //   Quality   — evaluation dashboard: acceptance/edit rates, calibration, calls per template/invoice, cost
@@ -298,7 +299,7 @@ function Dictionary({ scope, canEdit }) {
             <button type="button" disabled={!!busy} onClick={act("rebuild", () => rebuildDictionary(scope), "Dictionary rebuilt")} className="text-blue-600 hover:underline">
               Rebuild now
             </button>
-            <AiAction><button type="button" disabled={!!busy} onClick={act("ai", () => suggestSynonyms(scope), (o) => (o.ai.unavailable ? `AI unavailable: ${o.ai.reason}` : `${o.suggested} suggestion(s) for ${o.asked} key(s)`))} className="flex items-center gap-1 text-violet-700 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed">
+            <AiAction><button type="button" disabled={!!busy} onClick={act("ai", () => suggestSynonyms(scope), (o) => (o.ai.unavailable ? withNextStep(o.ai.reason, "Add synonyms by hand.") : `${o.suggested} suggestion(s) for ${o.asked} key(s)`))} className="flex items-center gap-1 text-violet-700 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed">
               <Sparkles className="w-3.5 h-3.5" /> {busy === "ai" ? "Asking…" : "Suggest names for unclear keys (AI)"}
             </button></AiAction>
           </>

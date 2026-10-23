@@ -12,6 +12,7 @@ import ProductMatchSelect from "../ProductMatchSelect";
 import { confirmFields, enableGroups, getFieldSources, getVersionHtml, mapFields, newVersionFrom, proposeLabels, rebuildDataDictionary, saveFields, suggestFields } from "../../../services/apiCertificateTemplates";
 import { cellOptions, slugKey, sourceOptions } from "../../../utils/certificateFieldSources";
 import { describeCertificateError } from "../../../utils/certificateErrors";
+import { withNextStep } from "../../../utils/aiReason";
 
 // Wizard step 2 — mark fields (plan §13.4). The document is the sanitized
 // design; the field list autosaves (800 ms debounce) with PUT …/fields, which
@@ -35,7 +36,7 @@ const STR = {
   mapAllHint: "Fill “Value comes from” for every field still typed by hand: your earlier choices first, then your product data, then AI.",
   sample: "Sample product (optional)",
   sampleHint: "The product this design was made for — mappings are checked against its values.",
-  aiUnavailable: (reason) => `AI unavailable — continue manually (${reason})`,
+  aiUnavailable: (reason) => withNextStep(reason, "Mark and map the fields by hand."),
   mapped: (n) => `${n} field${n === 1 ? "" : "s"} mapped`,
 };
 

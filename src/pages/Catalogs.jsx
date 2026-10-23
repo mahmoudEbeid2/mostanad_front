@@ -1,3 +1,4 @@
+import AiAction from "../ui/AiAction";
 import { useState, useEffect, useMemo } from "react";
 import { getCompanies } from "../services/apiCompanies";
 import { getBrands } from "../services/apiBrands";
@@ -372,9 +373,9 @@ export default function Catalogs() {
             </div>
 
             <div className="pt-4 border-t border-gray-100 flex justify-end">
-              <Button type="submit" isLoading={isUploading || isParsingPdf} className="w-full md:w-auto px-8">
+              <AiAction><Button type="submit" isLoading={isUploading || isParsingPdf} className="w-full md:w-auto px-8">
                 <PlayCircle className="w-5 h-5 mr-1" /> Start AI Extraction
-              </Button>
+              </Button></AiAction>
             </div>
           </form>
         </div>

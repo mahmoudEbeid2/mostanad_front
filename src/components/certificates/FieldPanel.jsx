@@ -1,3 +1,4 @@
+import AiAction from "../../ui/AiAction";
 import { useState } from "react";
 import { ArrowDown, ArrowUp, Check, Sparkles, Trash2, X } from "lucide-react";
 import SourcePicker from "./SourcePicker";
@@ -298,14 +299,16 @@ export default function FieldPanel({
           {STR.title} <span className="text-gray-500 font-medium">· {fields.length}</span>
         </h2>
         {!readOnly && aiEnabled && (
-          <button
-            type="button"
-            onClick={onSuggest}
-            disabled={aiBusy}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-300 bg-white text-[13px] font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-          >
-            <Sparkles className="w-4 h-4" /> {aiBusy ? STR.suggesting : STR.suggest}
-          </button>
+          <AiAction>
+            <button
+              type="button"
+              onClick={onSuggest}
+              disabled={aiBusy}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-300 bg-white text-[13px] font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Sparkles className="w-4 h-4" /> {aiBusy ? STR.suggesting : STR.suggest}
+            </button>
+          </AiAction>
         )}
       </div>
       {toolbar && <div className="px-3 pt-3">{toolbar}</div>}

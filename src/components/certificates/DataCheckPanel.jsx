@@ -1,3 +1,4 @@
+import AiAction from "../../ui/AiAction";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
@@ -468,9 +469,9 @@ export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable,
           {ai?.inference?.used && <p className="text-xs text-gray-600">{STR.inferNote(ai.inference)}</p>}
           {editable && check.tiers?.web && check.tiers.webEligible > 0 && (
             <div className="flex flex-wrap items-center gap-3 rounded-lg border border-indigo-100 bg-indigo-50/40 px-3 py-2">
-              <button type="button" disabled={webBusy} onClick={lookup} className="flex items-center gap-1.5 rounded-lg bg-indigo-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-indigo-700 disabled:opacity-60" data-testid="web-lookup">
+              <AiAction><button type="button" disabled={webBusy} onClick={lookup} className="flex items-center gap-1.5 rounded-lg bg-indigo-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" data-testid="web-lookup">
                 {webBusy ? <Spinner size="sm" /> : <Globe className="w-3.5 h-3.5" />} {STR.webLookup(check.tiers.webEligible)}
-              </button>
+              </button></AiAction>
               <span className="text-[11px] text-gray-600">{STR.webHint}</span>
             </div>
           )}

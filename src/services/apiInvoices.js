@@ -6,9 +6,11 @@ import { unwrap } from "./apiCertificateTypes";
 // = { companyId } for system users ({} for a company session).
 
 /** multipart: invoice + brandId?, country? → { invoiceId, taskId } */
-export const uploadInvoice = (scope = {}, { file, brandId, country }) => {
+/** → { invoiceId, taskId } — extract=false (AI unavailable): taskId null, opened for manual entry */
+export const uploadInvoice = (scope = {}, { file, brandId, country, extract }) => {
   const fd = new FormData();
   fd.append("invoice", file);
+  if (extract === false) fd.append("extract", "false");
   if (brandId) fd.append("brandId", brandId);
   if (country) fd.append("country", country);
   return unwrap(apiClient.post("/invoices", fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Upload failed").then((d) => d.data);

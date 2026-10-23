@@ -1,3 +1,4 @@
+import AiAction from "../ui/AiAction";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -385,9 +386,9 @@ export default function CatalogueReview() {
             <div className="p-2 border-b border-gray-100 text-xs text-gray-600 flex items-center justify-between gap-2">
               <span>{jobId ? `${STR.extracting} ${task.progress || 0}%` : STR.noExtraction(notExtracted.length)}</span>
               {!jobId && (
-                <button type="button" className="font-semibold text-blue-600" onClick={() => run(() => extractCatalogueVersion(scope, id, { blockIds: notExtracted.map((b) => b.id) })).then((r) => r && setJobId(r.jobId))}>
+                <AiAction><button type="button" className="font-semibold text-blue-600 disabled:text-gray-400 disabled:cursor-not-allowed" onClick={() => run(() => extractCatalogueVersion(scope, id, { blockIds: notExtracted.map((b) => b.id) })).then((r) => r && setJobId(r.jobId))}>
                   {STR.extract}
-                </button>
+                </button></AiAction>
               )}
             </div>
           )}

@@ -6,10 +6,11 @@ import { unwrap } from "./apiCertificateTypes";
 // Upload, new versions and linking need manage_catalogues (system users only).
 
 /** multipart: file + companyId, manufacturer?, brandId?, label? → { catalogueId, versionId, jobId } */
-export const uploadCatalogue = ({ companyId, file, manufacturer, brandId, label }) => {
+export const uploadCatalogue = ({ companyId, file, manufacturer, brandId, label, extract }) => {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("companyId", companyId);
+  if (extract === false) fd.append("extract", "false"); // P8: AI unavailable → split only, products typed by hand
   if (manufacturer) fd.append("manufacturer", manufacturer);
   if (brandId) fd.append("brandId", brandId);
   if (label) fd.append("label", label);
@@ -17,9 +18,10 @@ export const uploadCatalogue = ({ companyId, file, manufacturer, brandId, label 
 };
 
 /** a newer file of an existing catalogue → { catalogueId, versionId, jobId } */
-export const uploadCatalogueVersion = (scope = {}, catalogueId, { file, label }) => {
+export const uploadCatalogueVersion = (scope = {}, catalogueId, { file, label, extract }) => {
   const fd = new FormData();
   fd.append("file", file);
+  if (extract === false) fd.append("extract", "false");
   if (label) fd.append("label", label);
   return unwrap(apiClient.post(`/catalogues/${catalogueId}/versions`, fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Upload failed").then((d) => d.data);
 };

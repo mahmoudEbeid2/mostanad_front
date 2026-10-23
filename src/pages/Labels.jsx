@@ -1,3 +1,4 @@
+import AiAction from "../ui/AiAction";
 import { useState, useEffect, useMemo } from "react";
 import Select from "react-select";
 import countryList from "react-select-country-list";
@@ -281,9 +282,9 @@ export default function Labels() {
             </div>
 
             <div className="pt-6 border-t border-gray-100 flex justify-end">
-              <Button type="submit" isLoading={isUploading} className="w-full md:w-auto px-10 py-3 text-lg" disabled={!file}>
+              <AiAction><Button type="submit" isLoading={isUploading} className="w-full md:w-auto px-10 py-3 text-lg" disabled={!file}>
                 <ShieldCheck className="w-6 h-6 mr-2" /> Verify Compliance
-              </Button>
+              </Button></AiAction>
             </div>
           </form>
         </div>

@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useCallback } from "react";
+import AiAction from "../ui/AiAction";
 import {
   FileText, Upload, Plus, CheckCircle2, XCircle, AlertTriangle, ShieldCheck, ShieldAlert,
   Search, RefreshCw, X, ChevronRight, Check, Ban, Pencil, Eye, Link as LinkIcon, Sparkles
@@ -364,12 +365,12 @@ export default function RegulatoryDocuments() {
                 {/* Actions Toolbar */}
                 <div className="mt-5 flex items-center justify-between gap-3 flex-wrap pt-2">
                   <div className="flex items-center gap-2">
-                    <Button onClick={handleCompileRules} isLoading={isCompiling} variant="secondary" className="text-xs">
+                    <AiAction><Button onClick={handleCompileRules} isLoading={isCompiling} variant="secondary" className="text-xs">
                       <Sparkles className="w-3.5 h-3.5" /> Compile Rules (AI)
-                    </Button>
-                    <Button onClick={handleAuditCoverage} isLoading={isAuditing} variant="secondary" className="text-xs">
+                    </Button></AiAction>
+                    <AiAction><Button onClick={handleAuditCoverage} isLoading={isAuditing} variant="secondary" className="text-xs">
                       <RefreshCw className="w-3.5 h-3.5" /> Audit Coverage
-                    </Button>
+                    </Button></AiAction>
                   </div>
 
                   {!isApproved && (

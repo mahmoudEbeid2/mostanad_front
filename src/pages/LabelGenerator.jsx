@@ -1,3 +1,4 @@
+import AiAction from "../ui/AiAction";
 import { useState, useMemo, useEffect } from "react";
 import Select from "react-select";
 import countryList from "react-select-country-list";
@@ -318,9 +319,9 @@ export default function LabelGenerator() {
               </div>
             </div>
 
-            <Button type="submit" isLoading={isGenerating} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 flex items-center justify-center gap-2">
+            <AiAction><Button type="submit" isLoading={isGenerating} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 flex items-center justify-center gap-2">
               <Sparkles className="w-5 h-5" /> {isGenerating ? "Generating Label..." : "Write Label Text"}
-            </Button>
+            </Button></AiAction>
           </form>
 
           {isGenerating && (

@@ -1,3 +1,4 @@
+import AiAction from "../ui/AiAction";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -297,9 +298,9 @@ function Dictionary({ scope, canEdit }) {
             <button type="button" disabled={!!busy} onClick={act("rebuild", () => rebuildDictionary(scope), "Dictionary rebuilt")} className="text-blue-600 hover:underline">
               Rebuild now
             </button>
-            <button type="button" disabled={!!busy} onClick={act("ai", () => suggestSynonyms(scope), (o) => (o.ai.unavailable ? `AI unavailable: ${o.ai.reason}` : `${o.suggested} suggestion(s) for ${o.asked} key(s)`))} className="flex items-center gap-1 text-violet-700 hover:underline">
+            <AiAction><button type="button" disabled={!!busy} onClick={act("ai", () => suggestSynonyms(scope), (o) => (o.ai.unavailable ? `AI unavailable: ${o.ai.reason}` : `${o.suggested} suggestion(s) for ${o.asked} key(s)`))} className="flex items-center gap-1 text-violet-700 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed">
               <Sparkles className="w-3.5 h-3.5" /> {busy === "ai" ? "Asking…" : "Suggest names for unclear keys (AI)"}
-            </button>
+            </button></AiAction>
           </>
         )}
       </div>

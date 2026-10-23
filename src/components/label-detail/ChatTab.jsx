@@ -3,6 +3,8 @@ import { Send, Bot, User, ShieldAlert, FileText, CheckCircle2, AlertTriangle, Re
 import toast from "react-hot-toast";
 import { getChat, postChat } from "../../services/apiGeneratedLabels";
 import Button from "../../ui/Button";
+import AiAction from "../../ui/AiAction";
+import { useAiStatus } from "../../context/AiStatusContext";
 import { provenanceForField } from "../../utils/labelFieldCatalog";
 
 export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initialMessage = "", estimatedFields = [], provenance = null }) {
@@ -10,6 +12,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const { available: aiAvailable } = useAiStatus(); // P8: chat is an AI call
   const [activeConflict, setActiveConflict] = useState(null);
   const [staleError, setStaleError] = useState(null);
   const messagesEndRef = useRef(null);
@@ -47,6 +50,7 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
   }, [inputMessage]);
 
   const handleSendMessage = async (overrideAcknowledged = false, textToSend = null) => {
+    if (!aiAvailable) return;
     const text = textToSend || (overrideAcknowledged ? activeConflict?.originalMessage : inputMessage.trim());
     if (!text && !overrideAcknowledged) return;
 
@@ -194,13 +198,13 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
             <Bot className="w-12 h-12 mx-auto mb-4 text-blue-200" />
             <p className="text-sm font-medium text-gray-900 mb-6">What would you like to do?</p>
             <div className="flex flex-col gap-2 max-w-sm mx-auto">
-              <button onClick={() => handlePromptClick("Why is this failing?")} className="px-4 py-2 text-sm text-left bg-gray-50 hover:bg-blue-50 hover:text-blue-700 text-gray-700 rounded-xl border border-gray-200 transition-colors">
+              <button onClick={() => handlePromptClick("Why is this failing?")} disabled={!aiAvailable} className="px-4 py-2 text-sm text-left bg-gray-50 hover:bg-blue-50 hover:text-blue-700 text-gray-700 rounded-xl border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-50 disabled:hover:text-gray-700">
                 "Why is this failing?"
               </button>
-              <button onClick={() => handlePromptClick("Add cattle and sheep")} className="px-4 py-2 text-sm text-left bg-gray-50 hover:bg-blue-50 hover:text-blue-700 text-gray-700 rounded-xl border border-gray-200 transition-colors">
+              <button onClick={() => handlePromptClick("Add cattle and sheep")} disabled={!aiAvailable} className="px-4 py-2 text-sm text-left bg-gray-50 hover:bg-blue-50 hover:text-blue-700 text-gray-700 rounded-xl border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-50 disabled:hover:text-gray-700">
                 "Add cattle and sheep"
               </button>
-              <button onClick={() => handlePromptClick("What is still missing?")} className="px-4 py-2 text-sm text-left bg-gray-50 hover:bg-blue-50 hover:text-blue-700 text-gray-700 rounded-xl border border-gray-200 transition-colors">
+              <button onClick={() => handlePromptClick("What is still missing?")} disabled={!aiAvailable} className="px-4 py-2 text-sm text-left bg-gray-50 hover:bg-blue-50 hover:text-blue-700 text-gray-700 rounded-xl border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-50 disabled:hover:text-gray-700">
                 "What is still missing?"
               </button>
             </div>
@@ -353,14 +357,16 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
                 handleSendMessage(false);
               }
             }}
-            disabled={isSending}
-            placeholder="Type an edit instruction or question... (Shift+Enter for a new line)"
+            disabled={isSending || !aiAvailable}
+            placeholder={aiAvailable ? "Type an edit instruction or question... (Shift+Enter for a new line)" : "AI unavailable — edit the label fields directly instead."}
             rows={1}
             className="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm leading-normal resize-none overflow-y-auto max-h-40 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
           />
-          <Button type="submit" disabled={!inputMessage.trim() || isSending} isLoading={isSending}>
-            <Send className="w-4 h-4" /> Send
-          </Button>
+          <AiAction>
+            <Button type="submit" disabled={!inputMessage.trim() || isSending} isLoading={isSending}>
+              <Send className="w-4 h-4" /> Send
+            </Button>
+          </AiAction>
         </form>
       </div>
     </div>

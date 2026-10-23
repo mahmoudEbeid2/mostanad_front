@@ -9,6 +9,7 @@ import StatusBadge from "../components/certificates/StatusBadge";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import { useAuth } from "../context/AuthContext";
+import { useAiStatus } from "../context/AiStatusContext";
 import { hasPermission } from "../utils/permissions";
 import { getBrands } from "../services/apiBrands";
 import { listCatalogues, uploadCatalogue } from "../services/apiCatalogues";
@@ -36,6 +37,7 @@ const STR = {
   open: "Open",
   segmenting: "Finding product blocks…",
   done: (r) => `${r?.productBlocks ?? 0} product blocks found on ${r?.pages ?? 0} pages`,
+  noAiHint: "AI is unavailable: the catalogue is split into product blocks only — you type each product's values from its page in the review.",
 };
 
 const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
@@ -48,6 +50,7 @@ function UploadPanel({ scopeState, onUploaded }) {
   const [sending, setSending] = useState(false);
   const [jobId, setJobId] = useState(null);
   const task = useTaskProgress(jobId, { onDone: () => onUploaded() });
+  const { available: aiAvailable } = useAiStatus();
 
   useEffect(() => {
     if (!companyId) return;
@@ -61,7 +64,7 @@ function UploadPanel({ scopeState, onUploaded }) {
     if (!file || !companyId) return;
     setSending(true);
     try {
-      const res = await uploadCatalogue({ companyId, file, ...form });
+      const res = await uploadCatalogue({ companyId, file, ...form, extract: aiAvailable });
       setJobId(res.jobId);
       setFile(null);
       onUploaded();
@@ -123,6 +126,7 @@ function UploadPanel({ scopeState, onUploaded }) {
         {jobId && task.status === "completed" && <span className="text-sm text-emerald-700">{STR.done(task.result)}</span>}
         {jobId && task.status === "failed" && <span className="text-sm text-red-700">{task.error}</span>}
       </div>
+      {!aiAvailable && <p className="text-xs text-amber-800" data-testid="catalogue-no-ai">{STR.noAiHint}</p>}
     </form>
   );
 }

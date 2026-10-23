@@ -5,6 +5,7 @@ import { FileText } from "lucide-react";
 import Button from "../../ui/Button";
 import { uploadInvoice } from "../../services/apiInvoices";
 import { getBrands } from "../../services/apiBrands";
+import { useAiStatus } from "../../context/AiStatusContext";
 
 // Invoice upload (plan §13.5, mockup B1): drop zone + optional brand hint and
 // destination country, then straight to the review page while it is read.
@@ -20,6 +21,8 @@ const STR = {
   countryHint: "optional",
   readCountry: "Read from invoice",
   upload: "Upload & read invoice →",
+  uploadByHand: "Upload & enter it by hand →",
+  noAiHint: "AI is unavailable, so the invoice won't be read for you: it opens next to empty fields for you to type its lines.",
   tooLarge: "Invoices are limited to 15 MB.",
 };
 
@@ -27,6 +30,7 @@ const MAX_BYTES = 15 * 1024 * 1024;
 
 export default function InvoiceUploadPanel({ scope, companyId, companyField = null }) {
   const navigate = useNavigate();
+  const { available: aiAvailable } = useAiStatus();
   const [file, setFile] = useState(null);
   const [over, setOver] = useState(false);
   const [brandId, setBrandId] = useState("");
@@ -56,8 +60,8 @@ export default function InvoiceUploadPanel({ scope, companyId, companyField = nu
     setBusy(true);
     setError(null);
     try {
-      const { invoiceId, taskId } = await uploadInvoice(scope, { file, brandId, country });
-      navigate(`/invoices/${invoiceId}?task=${taskId}`);
+      const { invoiceId, taskId } = await uploadInvoice(scope, { file, brandId, country, extract: aiAvailable });
+      navigate(taskId ? `/invoices/${invoiceId}?task=${taskId}` : `/invoices/${invoiceId}`);
     } catch (err) {
       setError(err.message);
       setBusy(false);
@@ -123,8 +127,9 @@ export default function InvoiceUploadPanel({ scope, companyId, companyField = nu
         </label>
         {error && <p className="text-red-600">{error}</p>}
         <Button type="submit" className="w-full" isLoading={busy} disabled={!file || file.size > MAX_BYTES}>
-          {STR.upload}
+          {aiAvailable ? STR.upload : STR.uploadByHand}
         </Button>
+        {!aiAvailable && <p className="text-xs text-amber-800" data-testid="invoice-no-ai">{STR.noAiHint}</p>}
       </div>
     </form>
   );

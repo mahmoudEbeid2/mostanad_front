@@ -21,3 +21,6 @@ export const getCompleteness = (scope = {}) => unwrap(apiClient.get("/certificat
 /** → { definition: { fields, lists }, values, lists, missing } */
 export const getProductData = (scope = {}, productId) => unwrap(apiClient.get(`/certificate-products/${productId}/data`, { params: scope }), "Couldn't load the certificate data").then((d) => d.data);
 export const saveProductData = (scope = {}, productId, body) => unwrap(apiClient.patch(`/certificate-products/${productId}/data`, body, { params: scope }), "Couldn't save the certificate data").then((d) => d.data);
+
+/** P8 — can AI answer right now? → { available, reason: null|"disabled"|"no_key"|"quota", message, since } */
+export const getAiStatus = () => unwrap(apiClient.get("/ai-status"), "Couldn't check whether AI is available").then((d) => d.data);

@@ -72,3 +72,8 @@ export const applyCatalogueBlockDiff = (scope = {}, blockId, body = {}) => unwra
 
 /** every unflagged block without conflicts → { applied, changedFields, products, skipped } */
 export const applyCatalogueVersionDiff = (scope = {}, versionId) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/apply-diff`, {}, { params: scope }), "Failed to apply").then((d) => d.data);
+
+// ── A6.6 search (plan §15.6) ──
+/** → { q, words, results: [{ blockId, versionId, catalogueId, manufacturer, versionLabel, page, kind, name, productCode, productId, snippet ("[[word]]" marks), match: phrase|words|name }] } */
+export const searchCatalogues = (scope = {}, q, { allVersions = false } = {}) =>
+  unwrap(apiClient.get("/catalogue-search", { params: { ...scope, q, ...(allVersions ? { allVersions: "true" } : {}) } }), "Search failed").then((d) => d.data);

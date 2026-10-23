@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { AlertTriangle, ArrowLeft, Check, CheckCheck, Pencil, Scissors, Merge, X } from "lucide-react";
 import Button from "../ui/Button";
@@ -183,15 +183,17 @@ function FieldRow({ field, label, list, ex, block, active, onPick, onSave, edita
 
 export default function CatalogueReview() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const linkedBlock = searchParams.get("block");
   const { scope } = useCompanyScope();
   const { user } = useAuth();
   const canManage = hasPermission(user, "manage_catalogues");
   const [data, setData] = useState(null);
   const [diff, setDiff] = useState(null);
   const [pdf, setPdf] = useState(null);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(linkedBlock);
   const [activeField, setActiveField] = useState(null);
-  const [filter, setFilter] = useState("todo");
+  const [filter, setFilter] = useState(linkedBlock ? "all" : "todo");
   const [busy, setBusy] = useState(false);
   const [splitting, setSplitting] = useState(false);
   const [newCat, setNewCat] = useState(null);
@@ -400,7 +402,7 @@ export default function CatalogueReview() {
 
         {/* the printed page */}
         <section className="bg-gray-100 border border-gray-200 rounded-xl p-3 overflow-y-auto max-h-[80vh]" data-pdf-scroll>
-          {block && pdf ? <PdfPage pdf={pdf} page={block.page} boxes={boxes} scrollTo={activeBox} /> : <div className="p-10 flex justify-center">{block ? <Spinner /> : <p className="text-sm text-gray-500">{STR.pickBlock}</p>}</div>}
+          {block && pdf ? <PdfPage pdf={pdf} page={block.page} boxes={boxes} scrollTo={activeBox || block.bbox} /> : <div className="p-10 flex justify-center">{block ? <Spinner /> : <p className="text-sm text-gray-500">{STR.pickBlock}</p>}</div>}
         </section>
 
         {/* the record */}

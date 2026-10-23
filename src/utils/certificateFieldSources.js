@@ -107,6 +107,11 @@ export function mappingBadge(f) {
   const origin = m.origin && m.origin !== "none" ? m.origin : f.mappingOrigin || "manual";
   const conf = typeof m.confidence === "number" ? ` ${m.confidence.toFixed(2)}` : "";
   if (origin === "memory") return { text: "Memory ✓", tone: "green", title: "You mapped this label the same way before" };
+  // the dictionary decided this value is NOT in your data (typed per batch, or by hand):
+  // "Dictionary ✓ — matched in your product data" would say the opposite
+  if (origin === "dictionary" && f.source?.kind === "manual") {
+    return f.dataCategory === "batch_data" ? { text: "Per batch", tone: "gray", title: BATCH_DATA_NOTE } : null;
+  }
   if (origin === "dictionary") return { text: "Dictionary ✓", tone: "green", title: "Matched in your product data" };
   if (origin === "ai") {
     const pending = m.status ? m.status === "pending" : f.mappingConfirmed === false;

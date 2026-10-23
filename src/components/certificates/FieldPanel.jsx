@@ -7,7 +7,7 @@ import { getAiSuggestion } from "../../services/apiCertificateTemplates";
 
 // AI plan §5.1 step 5: the origin badge, and the "Why?" behind it — the
 // dictionary entry with its examples, the sample-product check, the rationale.
-const BADGE_TONE = { green: "bg-emerald-50 text-emerald-700 border-emerald-200", amber: "bg-amber-50 text-amber-800 border-amber-300" };
+const BADGE_TONE = { green: "bg-emerald-50 text-emerald-700 border-emerald-200", amber: "bg-amber-50 text-amber-800 border-amber-300", gray: "bg-gray-50 text-gray-600 border-gray-200" };
 
 function WhyPanel({ field, scope }) {
   const [stored, setStored] = useState(null);

@@ -32,8 +32,7 @@ const navLinks = [
     permission: "read_products",
     subLinks: [
       { name: "Product List", path: "/products" },
-      { name: "Catalogues", path: "/catalogues" },
-      { name: "Catalog Upload", path: "/products/catalog-upload" }
+      { name: "Catalogues", path: "/catalogues" }
     ]
   },
   { 

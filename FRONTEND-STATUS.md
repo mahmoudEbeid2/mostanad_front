@@ -56,7 +56,7 @@ The following backend endpoints exist in `mostanad` backend routes but do not ye
 
 ## Certificates V2 — manual QA script (CERTIFICATES_V2_PLAN.md §16.3)
 
-Automated equivalent: `node tests/certificates-v2/ui-smoke.mjs --user <qa> --password-file <file>` in the backend repo (phases 1–5 and 7 with `--phase 7`, 146 checks incl. 17 accessibility audits and a company-account pass). Run against a fresh `npm run dev:test` (writes `.test-bypass-secret`) + `npx vite`. The login is a throwaway local Admin — create it for the run, delete it after. Every step: no console errors; every failure shows the backend's message.
+Automated equivalent: `node tests/certificates-v2/ui-smoke.mjs --user <qa> --password-file <file>` in the backend repo (phases 1–5, 7 and 8 — Map all — 163 checks incl. accessibility audits and a company-account check; `--as company` runs every phase logged in as the company account, 158 checks). Run against a fresh `npm run dev:test` (writes `.test-bypass-secret`) + `npx vite`. The login is a throwaway local Admin — create it for the run, delete it after. Every step: no console errors; every failure shows the backend's message.
 
 Run every screen twice: as a **system admin** (indigo "System admin" banner, company picker) and as a **company account** (green "Company account · <name>" banner, the company's name read-only where the picker would be, Certificates in the sidebar, no 403/redirect on any certificates page).
 

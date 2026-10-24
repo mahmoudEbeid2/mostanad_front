@@ -22,6 +22,7 @@ import { getBrands } from "../services/apiBrands";
 import { generateCertificates, getGenerationPlan } from "../services/apiCertificatesV2";
 import { addInvoiceItem, confirmInvoice, deleteInvoiceItem, enterInvoiceByHand, getInvoice, rematchInvoice, retryInvoice, updateInvoice, updateInvoiceItem } from "../services/apiInvoices";
 import { withNextStep } from "../utils/aiReason";
+import AiAction from "../ui/AiAction";
 
 // /invoices/:id (plan §13.5; mockups B2 = reading, B3 = review & match).
 const STR = {
@@ -423,9 +424,11 @@ export default function InvoiceReview() {
               {canUpdate && (
                 <>
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="secondary" isLoading={busy === "retry"} onClick={retry}>
-                      {STR.tryAgain}
-                    </Button>
+                    <AiAction>
+                      <Button variant="secondary" isLoading={busy === "retry"} onClick={retry} data-testid="retry-extraction">
+                        {STR.tryAgain}
+                      </Button>
+                    </AiAction>
                     <Button variant="secondary" isLoading={busy === "byHand"} onClick={byHand} data-testid="enter-by-hand">
                       {STR.byHand}
                     </Button>

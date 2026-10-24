@@ -418,8 +418,14 @@ const SWITCHES = [
   { key: "allowAiMatching", label: "Suggest product matches", hint: "Only among the candidates code found." },
   { key: "allowSynonyms", label: "Suggest names for unclear product keys", hint: "Applied only after you accept each one." },
   { key: "autoAccept", label: "Accept confident AI answers automatically", hint: "Off: a person confirms every AI answer." },
-  { key: "allowProductInference", label: "Infer missing product facts from the product's own data", hint: "Quoted or converted from what the product record says — always confirmed by a person. Never lab results, batches, dates or quantities." },
-  { key: "allowWebLookup", label: "Look up missing product facts on the web (on request)", hint: "Each value needs a link and a quote the server checks on the page, about the same product. Always confirmed by a person." },
+  { key: "allowProductInference", label: "Infer missing product facts from the product's own data", hint: "Quoted or converted values are facts; values estimated from the product's facts are marked “estimated” for you to confirm. Never lab results, batches, dates or quantities." },
+  { key: "allowWebLookup", label: "Look up missing product facts on the web", hint: "Each value needs a link and a quote the server checks on the page, about the same product (name + maker, brand or code). Cached per product; limited below." },
+  { key: "fillVerifiedDirectly", label: "Fill values proven by a quote directly", hint: "The product's data, the invoice, its catalogue, the manufacturer's site or a registry, quoted word for word. Off: you confirm each one too." },
+  { key: "rememberProductValues", label: "Keep a certificate profile per product", hint: "Proven and confirmed values are kept on the product, so the next invoice needs no AI and no web lookup for them. Never lab results." },
+];
+const LIMITS = [
+  { key: "webLookupMaxProductsPerCheck", label: "Web lookups per check (products)", min: 0, max: 100 },
+  { key: "webLookupDailyLimit", label: "Web lookups per day (company)", min: 0, max: 1000 },
 ];
 
 function Settings({ scope, canEdit }) {
@@ -454,6 +460,15 @@ function Settings({ scope, canEdit }) {
         <span className="block text-xs text-gray-500">Manufacturer sites and official registries are trusted already; distributors get a warning; everything else is refused unless listed here. One domain per line.</span>
         <textarea rows={3} defaultValue={(s.webDomainAllowList || []).join("\n")} key={(s.webDomainAllowList || []).join()} disabled={!canEdit || !s.allowWebLookup} onBlur={(e) => { const list = e.target.value.split(/[\s,]+/).map((x) => x.trim()).filter(Boolean); if (list.join() !== (s.webDomainAllowList || []).join()) save({ webDomainAllowList: list }); }} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-1 font-mono text-xs" aria-label="Trusted web domains" />
       </label>
+      {LIMITS.map((l) => (
+        <label key={l.key} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
+          <span className="font-medium text-gray-900">{l.label}</span>
+          <input type="number" min={l.min} max={l.max} step={1} defaultValue={s[l.key]} key={s[l.key]} disabled={!canEdit || !s.allowWebLookup} onBlur={(e) => Number(e.target.value) !== s[l.key] && save({ [l.key]: Number(e.target.value) })} className="w-24 border border-gray-300 rounded-lg px-2 py-1" />
+          <span className="text-xs text-gray-500">
+            {l.min} – {l.max}
+          </span>
+        </label>
+      ))}
       <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
         <span className="font-medium text-gray-900">Auto-accept threshold</span>
         <input type="number" min={0.5} max={1} step={0.01} defaultValue={s.autoAcceptThreshold} key={s.autoAcceptThreshold} disabled={!canEdit || !s.autoAccept} onBlur={(e) => Number(e.target.value) !== s.autoAcceptThreshold && save({ autoAcceptThreshold: Number(e.target.value) })} className="w-24 border border-gray-300 rounded-lg px-2 py-1" />

@@ -43,7 +43,7 @@ const STR = {
   synonym: "Add as synonym for all products",
   synonymDone: "Synonym added — this key is read for every product from now on.",
   unassigned: (u) => `Line ${u.lineNo}${u.name ? ` (${u.name})` : ""} gets no certificate, so nothing is checked for it.`,
-  status: { resolved: "ready", resolved_ai: "AI ✓", provided: "typed", needs_confirmation: "confirm", missing: "missing", not_applicable: "optional, empty", inferred: "inferred — confirm", web_found: "from web — confirm", catalogue_found: "from catalogue — confirm" },
+  status: { resolved: "ready", resolved_ai: "AI ✓", provided: "typed", needs_confirmation: "confirm", missing: "missing", not_applicable: "optional, empty", inferred: "inferred — confirm", web_found: "from web — confirm", catalogue_found: "from catalogue — confirm", reused: "from the product's profile" },
   // A6 (backend plan.md §15.5): the product's own catalogue page, and estimated product values
   catalogueBadge: (p) => `Catalogue p.${p.page}${p.section ? ` · ${p.section.toLowerCase()}` : ""}`,
   catalogueOpen: "Open the page",
@@ -73,6 +73,7 @@ const STR = {
 const OPEN = new Set(["missing", "needs_confirmation", "inferred", "web_found", "catalogue_found"]);
 const AWAITING = new Set(["needs_confirmation", "inferred", "web_found", "catalogue_found"]);
 const STATUS_STYLE = {
+  reused: "bg-emerald-50 text-emerald-800",
   resolved: "bg-emerald-50 text-emerald-700",
   resolved_ai: "bg-emerald-50 text-emerald-700",
   provided: "bg-blue-50 text-blue-700",
@@ -100,9 +101,35 @@ function pathLabel(path) {
 
 /** A chip saying where a value came from; invoice quotes open the passage, highlighted. */
 function SourceChip({ need, textContent }) {
-  const [open, setOpen] = useState(false);
   const p = need.provenance;
   if (!p) return null;
+  // fill automatically (backend item 3): a value from the product's certificate profile shows where it first came from
+  if (p.kind === "profile") {
+    return (
+      <span className="block space-y-0.5" data-testid="from-profile">
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 px-2 py-0.5 text-xs font-medium" title="Proven or confirmed on an earlier invoice — no AI was asked">
+          <Check className="w-3 h-3" /> Product profile{p.confirmedByUserId ? " · confirmed" : ""}{p.estimated ? " · was an estimate" : ""}
+        </span>
+        {p.from && <SourceChip need={{ provenance: p.from }} textContent={null} />}
+      </span>
+    );
+  }
+  return (
+    <span className="block space-y-0.5">
+      {p.estimated && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 px-2 py-0.5 text-xs font-semibold" data-testid="estimate" title={p.estimateBasis || ""}>
+          <AlertTriangle className="w-3 h-3" /> Estimated{p.estimateBasis ? `: ${p.estimateBasis}` : ""}
+        </span>
+      )}
+      {p.filled === "direct" && <span className="text-[11px] text-emerald-700">filled directly — quoted verbatim</span>}
+      <EvidenceChip need={need} textContent={textContent} />
+    </span>
+  );
+}
+
+function EvidenceChip({ need, textContent }) {
+  const [open, setOpen] = useState(false);
+  const p = need.provenance;
   if (p.tier === "C") {
     return (
       <span className="block space-y-0.5" data-testid="tier-c">
@@ -466,6 +493,17 @@ export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable,
               {!s.blocking && <span className="ml-2 font-semibold">{STR.allSet}</span>}
             </div>
           )}
+          {editable && s.needsConfirmation > 0 && (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-orange-100 bg-orange-50/50 px-3 py-2" data-testid="confirm-all-bar">
+              <span className="text-xs text-orange-900">
+                {s.needsConfirmation} value{s.needsConfirmation === 1 ? "" : "s"} wait{s.needsConfirmation === 1 ? "s" : ""} for you{s.estimated ? ` (${s.estimated} estimated)` : ""}. Confirmed values are kept on the product — the next invoice won't ask again.
+              </span>
+              <button type="button" onClick={() => decide([{ action: "confirm_all" }])} className="ml-auto rounded-lg bg-orange-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-orange-700" data-testid="confirm-all">
+                Confirm all {s.needsConfirmation}
+              </button>
+            </div>
+          )}
+          {s.reused > 0 && <p className="text-xs text-emerald-700">{s.reused} value{s.reused === 1 ? "" : "s"} from the products' profiles (no AI asked).</p>}
           {ai?.unavailable && <p className="text-xs text-amber-800 bg-amber-50 rounded-lg px-3 py-2">{STR.aiOff(ai.reason)}</p>}
           {ai?.used && (
             <p className="text-xs text-gray-600 flex items-start gap-1.5">

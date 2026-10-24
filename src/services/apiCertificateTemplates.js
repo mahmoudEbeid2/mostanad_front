@@ -113,3 +113,12 @@ export const newVersionFrom = (scope = {}, versionId) =>
 /** Tenant-forced product search for certificate screens → [{ id, name, productCode, packaging, brand }] */
 export const searchCertificateProducts = (scope = {}, q = "", limit = 20) =>
   unwrap(apiClient.get("/certificate-products", { params: { ...scope, q, limit } }), "Failed to search products").then((d) => d.data.products);
+
+// ── "Fix this template" (backend item 2) ──────────────────────────────────
+/** → { versionId, versionNumber, status, templateName, needsSvg, summary, table, items } */
+export const getRepairPlan = (scope = {}, versionId) =>
+  unwrap(apiClient.get(`/template-versions/${versionId}/repair`, { params: scope }), "Failed to scan the template").then((d) => d.data.plan);
+
+/** decisions: [{ id, apply?, choice? }] → { templateId, versionId, versionNumber, taskId, applied, reconverted } */
+export const startRepair = (scope = {}, versionId, decisions) =>
+  unwrap(apiClient.post(`/template-versions/${versionId}/repair`, { decisions }, { params: scope }), "Failed to apply the changes").then((d) => d.data);

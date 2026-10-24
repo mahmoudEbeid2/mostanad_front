@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Wrench } from "lucide-react";
 import Spinner from "../ui/Spinner";
 import Button from "../ui/Button";
 import CompanyPicker from "../components/certificates/CompanyPicker";
@@ -13,6 +13,7 @@ import FieldsStep from "../components/certificates/wizard/FieldsStep";
 import SettingsStep from "../components/certificates/wizard/SettingsStep";
 import PrepareStep from "../components/certificates/wizard/PrepareStep";
 import ActivateStep from "../components/certificates/wizard/ActivateStep";
+import RepairWizard from "../components/certificates/RepairWizard";
 import { describeCertificateError } from "../utils/certificateErrors";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
@@ -182,6 +183,7 @@ export default function CertificateTemplateWizard() {
   const [version, setVersion] = useState(null);
   const [loading, setLoading] = useState(!!templateId);
   const [saveState, setSaveState] = useState(null); // step 2 autosave state, shown in the header
+  const [repairing, setRepairing] = useState(false); // "Fix this template" checklist (backend item 2)
   const taskId = params.get("task");
   const task = useTaskProgress(taskId);
 
@@ -249,6 +251,17 @@ export default function CertificateTemplateWizard() {
     return (
       <div className="space-y-4">
         <RoleBanner scope={scopeState} />
+      {repairing && version && (
+        <RepairWizard
+          scope={scope}
+          version={version}
+          onClose={() => setRepairing(false)}
+          onDone={(r) => {
+            setRepairing(false);
+            navigate(`/certificates/templates/${r.templateId}/versions/${r.versionId}?step=prepare`);
+          }}
+        />
+      )}
         <CompanyPicker scope={scopeState} />
         <p className="text-sm text-gray-500">{STR.pickCompany}</p>
       </div>
@@ -286,6 +299,11 @@ export default function CertificateTemplateWizard() {
           <div className="flex items-center gap-3">
             <StatusBadge status={version.status} />
             {fieldsEditable && saveState && <SaveState state={saveState} />}
+            {["draft", "ready", "active", "superseded"].includes(version.status) && !template?.archivedAt && (
+              <Button variant="secondary" className="!py-2 text-sm" onClick={() => setRepairing(true)} data-testid="fix-template">
+                <Wrench className="w-4 h-4" aria-hidden="true" /> Fix this template
+              </Button>
+            )}
           </div>
         )}
       </div>

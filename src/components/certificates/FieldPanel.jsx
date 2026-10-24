@@ -96,7 +96,13 @@ const STR = {
   group: "Row of group",
   noGroup: "— not part of a group —",
   groupHint: "A cell of the group's sample row: it is repeated once per row.",
+  labResult: "Lab result (measured per batch)",
+  labResultHint: "Never inferred or looked up: only a supplier COA, an earlier result of the same batch, or a person fills it.",
 };
+
+// the server's pre-set for a field the owner hasn't ticked yet (backend policy.defaultIsLabResult)
+const LAB_RESULT_LABEL = /\b(results?|assay|complies|conforms?)\b/i;
+const labResultOf = (f) => (typeof f.isLabResult === "boolean" ? f.isLabResult : f.dataCategory === "batch_data" || LAB_RESULT_LABEL.test(f.label || ""));
 
 const input = "w-full min-h-10 border border-gray-300 rounded-lg px-3 bg-white text-sm font-normal text-gray-900";
 const lbl = "flex flex-col gap-1.5 text-xs font-semibold text-gray-600";
@@ -260,6 +266,13 @@ function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onCha
       <label className="flex items-center gap-2 text-[13px] text-gray-800">
         <input type="checkbox" className="w-4 h-4" checked={field.required !== false} onChange={(e) => onChange({ required: e.target.checked })} />
         {STR.required}
+      </label>
+      <label className="flex items-start gap-2 text-[13px] text-gray-800" title={STR.labResultHint}>
+        <input type="checkbox" className="w-4 h-4 mt-0.5" checked={labResultOf(field)} onChange={(e) => onChange({ isLabResult: e.target.checked })} data-testid="field-lab-result" />
+        <span>
+          {STR.labResult}
+          <span className="block text-xs text-gray-500">{STR.labResultHint}</span>
+        </span>
       </label>
     </div>
   );

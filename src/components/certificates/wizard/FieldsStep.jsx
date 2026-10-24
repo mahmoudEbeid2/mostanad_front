@@ -67,6 +67,8 @@ const toPayload = (drafts) =>
     dataCategory: f.dataCategory || null,
     // A5 (backend plan.md §14.1): the server clamps it; omitted = the category's default
     ...(f.inferencePolicy ? { inferencePolicy: f.inferencePolicy } : {}),
+    // the owner's lab-result tick; omitted = the server keeps what is stored (or pre-sets a new field)
+    ...(typeof f.isLabResult === "boolean" ? { isLabResult: f.isLabResult } : {}),
   }));
 // what map-fields needs per field (labelContext is what label-proposals saw around the value)
 const toMapInput = (drafts) => drafts.map((f) => ({ key: f.key, label: f.label, lineId: f.lineId, sampleValue: f.sampleValue, groupKey: f.groupKey || null, labelContext: f.labelContext || null }));

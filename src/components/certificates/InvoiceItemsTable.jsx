@@ -8,6 +8,8 @@ import useConfirm from "../../hooks/useConfirm";
 // from what was read from the invoice. The match column shows how the line was
 // matched (✓ code / ✓ name / ✓ you), or "needs match" with the suggestions.
 const STR = {
+  remember: "Remember for next invoices",
+  rememberHint: (name, product) => `Every later invoice line named “${name}” is matched to ${product} without asking. Only you can teach this.`,
   title: "Lines",
   add: "+ Add line",
   line: "#",
@@ -100,7 +102,7 @@ function CellInput({ item, col, label, editable, onSave }) {
   );
 }
 
-function MatchCell({ scope, item, editable, onMatch, onIgnore }) {
+function MatchCell({ scope, item, editable, onMatch, onIgnore, onRemember }) {
   const [changing, setChanging] = useState(false);
   if (item.matchStatus === "ignored") {
     return (
@@ -159,6 +161,12 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore }) {
               <Pencil className="w-3.5 h-3.5" />
             </button>
           )}
+          {/* backend 2026-10-27: a name is learned only when a person asks for it */}
+          {editable && onRemember && item.matchMethod !== "alias" && item.data?.name && (
+            <button type="button" onClick={onRemember} title={STR.rememberHint(item.data.name, item.product.name)} className="text-[11px] text-blue-600 hover:underline whitespace-nowrap" data-testid="remember-alias">
+              {STR.remember}
+            </button>
+          )}
         </>
       ) : (
         select
@@ -172,7 +180,7 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore }) {
   );
 }
 
-export default function InvoiceItemsTable({ scope, items, manual = false, editable, onSaveCell, onMatch, onIgnore, onDelete, onAdd }) {
+export default function InvoiceItemsTable({ scope, items, manual = false, editable, onSaveCell, onMatch, onIgnore, onDelete, onAdd, onRemember }) {
   const [ask, askDialog] = useConfirm();
   return (
     <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -222,7 +230,7 @@ export default function InvoiceItemsTable({ scope, items, manual = false, editab
                   </td>
                 ))}
                 <td className="px-2 py-1.5 align-middle">
-                  <MatchCell scope={scope} item={item} editable={editable} onMatch={(productId, extra) => onMatch(item, productId, extra)} onIgnore={(v) => onIgnore(item, v)} />
+                  <MatchCell scope={scope} item={item} editable={editable} onMatch={(productId, extra) => onMatch(item, productId, extra)} onIgnore={(v) => onIgnore(item, v)} onRemember={onRemember ? () => onRemember(item) : undefined} />
                 </td>
                 <td className="px-2 py-1.5 align-middle">
                   {editable && (

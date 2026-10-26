@@ -307,6 +307,8 @@ export default function InvoiceReview() {
   const saveCell = (item, key, value) => run(() => updateInvoiceItem(scope, id, item.id, { data: { [key]: value } }));
   const match = (item, productId, extra = {}) => run(() => updateInvoiceItem(scope, id, item.id, { productId, ...extra }));
   const ignore = (item, ignored) => run(() => updateInvoiceItem(scope, id, item.id, { ignored }));
+  // an explicit "remember this name" — the only way a line name is learned (backend 2026-10-27)
+  const remember = (item) => run(() => updateInvoiceItem(scope, id, item.id, { rememberAlias: true }), `“${item.data?.name}” will be matched to ${item.product?.name} on later invoices`);
   const remove = (item) => run(() => deleteInvoiceItem(scope, id, item.id));
   const add = () => run(() => addInvoiceItem(scope, id, { data: {} }));
   const rematch = withBusy("rematch", () => run(() => rematchInvoice(scope, id), STR.rematched));
@@ -591,7 +593,7 @@ export default function InvoiceReview() {
             <DataCheckPanel scope={scope} invoiceId={invoice.id} refreshKey={checkKey} editable={canUpdate} canSynonym={canSynonym} textContent={invoice.textContent} onChange={setCheck} focus={focus} onUnfocus={() => setFocus(false)} />
           )}
 
-          <InvoiceItemsTable scope={scope} items={items} manual={!!invoice.extraction?.manual} editable={editable} onSaveCell={saveCell} onMatch={match} onIgnore={ignore} onDelete={remove} onAdd={add} />
+          <InvoiceItemsTable scope={scope} items={items} manual={!!invoice.extraction?.manual} editable={editable} onSaveCell={saveCell} onMatch={match} onIgnore={ignore} onDelete={remove} onAdd={add} onRemember={remember} />
         </>
       )}
     </div>

@@ -72,3 +72,20 @@ export const webLookup = (scope = {}, id) =>
 /** "Add as synonym for all products": the alternative path holds the same value as the canonical one. */
 export const addDictionarySynonym = (scope = {}, { canonical, alternative }) =>
   unwrap(apiClient.post("/certificate-data-dictionary/synonyms", { canonical, alternative }, { params: scope }), "Couldn't add the synonym").then((d) => d.data.dictionary);
+
+// ── lab results (backend item 4): the results grid and supplier COAs ─────────
+/** → { columns[], rows[{ rowKey, lines, batchNo, noBatch, warning?, cells }], summary, supplierCoas[] } */
+export const getLabResults = (scope = {}, id) => unwrap(apiClient.get(`/invoices/${id}/lab-results`, { params: scope }), "Couldn't load the results grid").then((d) => d.data.grid);
+
+/** rows: [{ rowKey, batchNo?, values?: { [labelKey]: string | null } }] → the grid (every line of those batches filled) */
+export const saveLabResults = (scope = {}, id, rows) =>
+  unwrap(apiClient.put(`/invoices/${id}/lab-results`, { rows }, { params: scope }), "Couldn't save the results").then((d) => d.data.grid);
+
+/** Several supplier COA / lab report files (PDF or images), read in the background → { taskId, coas } */
+export const uploadSupplierCoas = (scope = {}, id, files) => {
+  const fd = new FormData();
+  for (const f of files) fd.append("files", f);
+  return unwrap(apiClient.post(`/invoices/${id}/supplier-coas`, fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Couldn't upload the files").then((d) => d.data);
+};
+
+export const deleteSupplierCoa = (scope = {}, id, coaId) => unwrap(apiClient.delete(`/invoices/${id}/supplier-coas/${coaId}`, { params: scope }), "Couldn't delete the file");

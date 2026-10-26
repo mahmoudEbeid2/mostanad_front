@@ -2,10 +2,11 @@ import AiAction from "../../ui/AiAction";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
-import { AlertTriangle, BookOpen, Check, ChevronDown, ChevronRight, FlaskConical, Globe, Lightbulb, RotateCcw, Sparkles, X } from "lucide-react";
+import { AlertTriangle, BookOpen, Check, ChevronDown, ChevronRight, Globe, Lightbulb, RotateCcw, Sparkles, X } from "lucide-react";
 import Spinner from "../../ui/Spinner";
 import { addDictionarySynonym, decideDataNeeds, getDataCheck, runDataCheck, webLookup } from "../../services/apiInvoices";
 import { withNextStep } from "../../utils/aiReason";
+import ResultsGrid from "./ResultsGrid";
 
 // "Certificate data check" (backend plan.md §6.2, A2): every value the
 // certificates about to be generated need, what code read, what the AI found
@@ -24,10 +25,6 @@ const STR = {
   aiFound: (a) => `AI looked for ${a.asked} missing value${a.asked === 1 ? "" : "s"} in the invoice and your product data and found ${a.filled}, each with evidence the server checked word for word.`,
   aiRefused: (n) => `${n} AI answer${n === 1 ? " was" : "s were"} refused because the evidence didn't check out.`,
   aiOff: (reason) => withNextStep(reason, "Fill the missing values by hand."),
-  batchTitle: "Lab results for this shipment",
-  batchHint: "These change per batch and aren't stored anywhere. Type each once — every certificate of that line uses it.",
-  line: (b) => `Line ${b.lineNo ?? "?"} · ${b.productName || "—"}${b.batchNo ? ` · batch ${b.batchNo}` : ""}`,
-  saveLine: "Save",
   showAll: "Show all values",
   showOpen: "Only what needs attention",
   certHeader: (c) => `${c.typeCode || c.typeName || "Certificate"} · ${c.scope === "per_invoice" ? `whole invoice (lines ${c.lineNos.join(", ")})` : `line ${c.lineNos[0]} · ${c.productName || ""}${c.batchNo ? ` · ${c.batchNo}` : ""}`}`,
@@ -72,6 +69,15 @@ const STR = {
 };
 const OPEN = new Set(["missing", "needs_confirmation", "inferred", "web_found", "catalogue_found"]);
 const AWAITING = new Set(["needs_confirmation", "inferred", "web_found", "catalogue_found"]);
+// "reused" names where code took it from (item 3 profile, item 4 batch result, the specification)
+const statusLabel = (need) => {
+  if (need.status !== "reused") return STR.status[need.status] || need.status;
+  const p = need.provenance || {};
+  if (p.kind === "batch_result") return p.source === "supplier_coa" ? `supplier COA p.${p.page ?? "?"} · batch ${p.batchNo}` : `from batch ${p.batchNo}${p.fromInvoiceNumber ? ` (invoice ${p.fromInvoiceNumber})` : ""}`;
+  if (p.kind === "spec_instead") return "prints the specification";
+  return STR.status.reused;
+};
+
 const STATUS_STYLE = {
   reused: "bg-emerald-50 text-emerald-800",
   resolved: "bg-emerald-50 text-emerald-700",
@@ -242,7 +248,7 @@ function NeedRow({ need, editable, canSynonym, textContent, onDecide, onSynonym 
           {need.label}
           {!need.required && <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>}
         </span>
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[need.status] || ""}`}>{STR.status[need.status] || need.status}</span>
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[need.status] || ""}`}>{statusLabel(need)}</span>
         {ai && <span className="text-[11px] text-violet-700 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {STR.aiValue(need.provenance.confidence)}</span>}
         {!editing && need.display && <span className="font-mono text-sm text-gray-900">{need.display}</span>}
       </div>
@@ -316,62 +322,6 @@ function NeedRow({ need, editable, canSynonym, textContent, onDecide, onSynonym 
   );
 }
 
-/** Lab results: one input per line and label (plan.md §6.2 batch-data form). */
-function BatchDataForm({ batchData, editable, onDecide }) {
-  const [drafts, setDrafts] = useState({});
-  if (!batchData.length) return null;
-  const key = (b, f) => `${b.invoiceItemId}|${f.labelKey}`;
-  return (
-    <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4 space-y-3" data-testid="batch-data-form">
-      <div>
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <FlaskConical className="w-4 h-4 text-blue-600" /> {STR.batchTitle}
-        </h3>
-        <p className="text-xs text-gray-600">{STR.batchHint}</p>
-      </div>
-      {batchData.map((b) => {
-        const changed = b.fields.filter((f) => (drafts[key(b, f)] ?? "").trim() && drafts[key(b, f)].trim() !== (f.value ?? ""));
-        return (
-          <div key={b.invoiceItemId} className="rounded-lg bg-white border border-gray-200 p-3 space-y-2" data-batch-line={b.lineNo}>
-            <p className="text-sm font-medium text-gray-800">{STR.line(b)}</p>
-            <div className="flex flex-wrap items-end gap-3">
-              {b.fields.map((f) => (
-                <label key={f.labelKey} className="text-xs text-gray-600">
-                  <span className="flex items-center gap-1">
-                    {f.label}
-                    <span className={`rounded-full px-1.5 text-[10px] font-semibold ${STATUS_STYLE[f.status] || ""}`}>{STR.status[f.status] || f.status}</span>
-                  </span>
-                  <input
-                    value={drafts[key(b, f)] ?? f.value ?? ""}
-                    disabled={!editable}
-                    onChange={(e) => setDrafts((d) => ({ ...d, [key(b, f)]: e.target.value }))}
-                    aria-label={`Line ${b.lineNo} · ${f.label}`}
-                    className={`mt-0.5 block w-32 border rounded-lg px-2 py-1 text-sm text-gray-900 ${f.status === "missing" && f.required ? "border-red-300" : "border-gray-300"}`}
-                  />
-                </label>
-              ))}
-              {editable && (
-                <button
-                  type="button"
-                  disabled={!changed.length}
-                  onClick={async () => {
-                    await onDecide(changed.flatMap((f) => f.needIds.map((needId) => ({ needId, action: "edit", value: drafts[key(b, f)].trim() }))));
-                    setDrafts((d) => Object.fromEntries(Object.entries(d).filter(([k]) => !k.startsWith(`${b.invoiceItemId}|`))));
-                  }}
-                  className="rounded-lg bg-blue-600 text-white px-3 py-1.5 text-sm font-semibold disabled:bg-gray-200 disabled:text-gray-400"
-                >
-                  {STR.saveLine}
-                </button>
-              )}
-            </div>
-            {b.fields.some((f) => f.status === "needs_confirmation") && <p className="text-xs text-amber-700">An AI value below waits for confirmation — accept it there, or type the value here.</p>}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function CertificateGroup({ cert, showAll, ...rowProps }) {
   const open = cert.needs.filter((n) => OPEN.has(n.status) && n.required).length;
   const [expanded, setExpanded] = useState(open > 0);
@@ -427,6 +377,15 @@ export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable,
   useEffect(() => {
     load();
   }, [load, refreshKey]);
+
+  // after the results grid / a supplier COA wrote values: the stored check, recomputed by code (no AI)
+  const reloadCode = useCallback(async () => {
+    try {
+      apply(await getDataCheck(scope, invoiceId));
+    } catch (err) {
+      toast.error(err.message);
+    }
+  }, [scope, invoiceId, apply]);
 
   const decide = async (decisions) => {
     try {
@@ -523,7 +482,17 @@ export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable,
             </div>
           )}
           {webResult && <p className={`text-xs ${webResult.unavailable ? "text-amber-800" : "text-gray-600"}`}>{STR.webDone(webResult)}</p>}
-          <BatchDataForm batchData={check.batchData || []} editable={editable} onDecide={decide} />
+          {(check.warnings || []).length > 0 && (
+            <ul className="text-xs text-amber-800 bg-amber-50 rounded-lg px-3 py-2 space-y-0.5" data-testid="data-check-warnings">
+              {check.warnings.map((w) => (
+                <li key={`${w.code}-${w.invoiceItemId}`} className="flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {w.message}
+                </li>
+              ))}
+            </ul>
+          )}
+          {/* item 4: lab results are entered per batch in one grid (it rechecks the invoice by code on save) */}
+          <ResultsGrid scope={scope} invoiceId={invoiceId} editable={editable} refreshKey={check.computedAt} onSaved={reloadCode} />
           <div className="flex justify-end">
             <button type="button" onClick={() => setShowAll((v) => !v)} className="text-xs text-blue-600 hover:underline">
               {showAll ? STR.showOpen : STR.showAll}

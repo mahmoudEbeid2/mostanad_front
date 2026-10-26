@@ -98,6 +98,11 @@ const STR = {
   groupHint: "A cell of the group's sample row: it is repeated once per row.",
   labResult: "Lab result (measured per batch)",
   labResultHint: "Never inferred or looked up: only a supplier COA, an earlier result of the same batch, or a person fills it.",
+  specField: "Its specification",
+  noSpec: "— none —",
+  specFieldHint: "Shown next to the result in the results grid; a value outside it is highlighted.",
+  showSpec: "Print the specification instead of a result",
+  showSpecHint: "The certificate prints the specification here and never asks for a measured value.",
 };
 
 // the server's pre-set for a field the owner hasn't ticked yet (backend policy.defaultIsLabResult)
@@ -163,7 +168,35 @@ function FormatEditor({ field, type, onChange }) {
   );
 }
 
-function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onChange, sources, onRemap, scope }) {
+/** A lab result's specification (results grid) and "print the specification instead" (backend item 4). */
+function SpecSettings({ field, siblings, onChange }) {
+  const choices = siblings.filter((f) => f.key !== field.key && !f.groupKey && !f.showSpecInstead && !labResultOf(f));
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-blue-100 bg-blue-50/40 p-2.5" data-testid="field-spec-settings">
+      <label className={lbl} title={STR.specFieldHint}>
+        {STR.specField}
+        <select value={field.specFieldKey || ""} onChange={(e) => onChange({ specFieldKey: e.target.value || null, ...(e.target.value ? {} : { showSpecInstead: false }) })} className={input} data-testid="field-spec-key">
+          <option value="">{STR.noSpec}</option>
+          {choices.map((f) => (
+            <option key={f.key} value={f.key}>
+              {f.label} ({f.key})
+            </option>
+          ))}
+        </select>
+        <span className="text-[11px] font-normal text-gray-500">{STR.specFieldHint}</span>
+      </label>
+      <label className="flex items-start gap-2 text-[13px] text-gray-800">
+        <input type="checkbox" className="w-4 h-4 mt-0.5" disabled={!field.specFieldKey} checked={field.showSpecInstead === true} onChange={(e) => onChange({ showSpecInstead: e.target.checked })} data-testid="field-show-spec" />
+        <span>
+          {STR.showSpec}
+          <span className="block text-xs text-gray-500">{STR.showSpecHint}</span>
+        </span>
+      </label>
+    </div>
+  );
+}
+
+function FieldEditor({ field, siblings = [], options, groups, cellOptionsFor, suggestion, onChange, sources, onRemap, scope }) {
   const opts = field.groupKey ? cellOptionsFor(field.groupKey) : options;
   const type = sourceType(opts, field.source);
   return (
@@ -268,12 +301,13 @@ function FieldEditor({ field, options, groups, cellOptionsFor, suggestion, onCha
         {STR.required}
       </label>
       <label className="flex items-start gap-2 text-[13px] text-gray-800" title={STR.labResultHint}>
-        <input type="checkbox" className="w-4 h-4 mt-0.5" checked={labResultOf(field)} onChange={(e) => onChange({ isLabResult: e.target.checked })} data-testid="field-lab-result" />
+        <input type="checkbox" className="w-4 h-4 mt-0.5" checked={labResultOf(field)} onChange={(e) => onChange({ isLabResult: e.target.checked, ...(e.target.checked ? {} : { showSpecInstead: false }) })} data-testid="field-lab-result" />
         <span>
           {STR.labResult}
           <span className="block text-xs text-gray-500">{STR.labResultHint}</span>
         </span>
       </label>
+      {labResultOf(field) && !field.groupKey && <SpecSettings field={field} siblings={siblings} onChange={onChange} />}
     </div>
   );
 }
@@ -400,7 +434,7 @@ export default function FieldPanel({
                   </span>
                 )}
               </div>
-              {open && !readOnly && <FieldEditor field={f} options={options} groups={groups} cellOptionsFor={cellOptionsFor} suggestion={suggestions[f.key]} onChange={(patch) => onChange(f.uid, patch)} sources={sources} onRemap={onRemap} scope={scope} />}
+              {open && !readOnly && <FieldEditor field={f} siblings={fields} options={options} groups={groups} cellOptionsFor={cellOptionsFor} suggestion={suggestions[f.key]} onChange={(patch) => onChange(f.uid, patch)} sources={sources} onRemap={onRemap} scope={scope} />}
             </div>
           );
         })}

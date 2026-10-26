@@ -69,6 +69,9 @@ const toPayload = (drafts) =>
     ...(f.inferencePolicy ? { inferencePolicy: f.inferencePolicy } : {}),
     // the owner's lab-result tick; omitted = the server keeps what is stored (or pre-sets a new field)
     ...(typeof f.isLabResult === "boolean" ? { isLabResult: f.isLabResult } : {}),
+    // backend item 4: its specification, and "print the specification instead"; omitted = the server keeps what is stored
+    ...(typeof f.showSpecInstead === "boolean" ? { showSpecInstead: f.showSpecInstead } : {}),
+    ...(f.specFieldKey !== undefined ? { specFieldKey: f.specFieldKey || null } : {}),
   }));
 // what map-fields needs per field (labelContext is what label-proposals saw around the value)
 const toMapInput = (drafts) => drafts.map((f) => ({ key: f.key, label: f.label, lineId: f.lineId, sampleValue: f.sampleValue, groupKey: f.groupKey || null, labelContext: f.labelContext || null }));

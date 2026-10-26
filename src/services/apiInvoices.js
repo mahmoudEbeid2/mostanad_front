@@ -88,4 +88,7 @@ export const uploadSupplierCoas = (scope = {}, id, files) => {
   return unwrap(apiClient.post(`/invoices/${id}/supplier-coas`, fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Couldn't upload the files").then((d) => d.data);
 };
 
+/** backend item 5: matching → product data → batch results → supplier COAs, one job → { taskId, stages } */
+export const prepareCertificates = (scope = {}, id) => unwrap(apiClient.post(`/invoices/${id}/prepare`, {}, { params: scope }), "Couldn't start preparing the certificates").then((d) => d.data);
+
 export const deleteSupplierCoa = (scope = {}, id, coaId) => unwrap(apiClient.delete(`/invoices/${id}/supplier-coas/${coaId}`, { params: scope }), "Couldn't delete the file");

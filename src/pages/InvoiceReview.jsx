@@ -13,6 +13,7 @@ import InvoiceSourceViewer from "../components/certificates/InvoiceSourceViewer"
 import PlanPreview from "../components/certificates/PlanPreview";
 import BatchView from "../components/certificates/BatchView";
 import DataCheckPanel from "../components/certificates/DataCheckPanel";
+import PreparePanel from "../components/certificates/PreparePanel";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import useConfirm from "../hooks/useConfirm";
@@ -20,7 +21,7 @@ import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { getBrands } from "../services/apiBrands";
 import { generateCertificates, getGenerationPlan } from "../services/apiCertificatesV2";
-import { addInvoiceItem, confirmInvoice, deleteInvoiceItem, enterInvoiceByHand, getInvoice, rematchInvoice, retryInvoice, updateInvoice, updateInvoiceItem } from "../services/apiInvoices";
+import { addInvoiceItem, confirmInvoice, deleteInvoiceItem, enterInvoiceByHand, getInvoice, prepareCertificates, rematchInvoice, retryInvoice, updateInvoice, updateInvoiceItem } from "../services/apiInvoices";
 import { withNextStep } from "../utils/aiReason";
 import AiAction from "../ui/AiAction";
 
@@ -54,6 +55,8 @@ const STR = {
   confirmed: "Invoice confirmed — check the plan, then generate",
   generate: (n) => (n ? `Generate ${n} certificate${n === 1 ? "" : "s"}` : "Generate certificates"),
   generateAgain: "Generate again",
+  prepare: "Prepare certificates",
+  confirmAndGenerate: (n) => `Confirm invoice and generate ${n} certificate${n === 1 ? "" : "s"}`,
   generateAnyway: "Generate anyway",
   generateAnywayConfirm: (n) => `${n} required value${n === 1 ? " is" : "s are"} still missing or unconfirmed. Generate anyway? They stay empty and are flagged on the certificates.`,
   blockedHint: (n) => `Complete the certificate data check first (${n} open value${n === 1 ? "" : "s"})`,
@@ -272,6 +275,18 @@ export default function InvoiceReview() {
   }, [extracting, taskId, load]);
 
   const editable = !!invoice && canUpdate && EDITABLE.has(invoice.status);
+  // "Prepare certificates" (backend item 5): one job, its stages shown live; afterwards the data
+  // check shows only what still needs the person
+  const [prepare, setPrepare] = useState(null); // { taskId, stages }
+  const [focus, setFocus] = useState(false);
+  const [prepareRuns, setPrepareRuns] = useState(0); // a finished Prepare reloads the data check
+  const prepareTask = useTaskProgress(prepare?.taskId || null, {
+    onDone: async (t) => {
+      await load();
+      setPrepareRuns((n) => n + 1);
+      if (t.status === "completed") setFocus(true);
+    },
+  });
   const run = async (fn, okMessage) => {
     try {
       const out = await fn();
@@ -310,6 +325,24 @@ export default function InvoiceReview() {
     await load();
   };
   const generate = withBusy("generate", startGenerate(false));
+  // an invoice under review with every line matched and nothing required open: one click confirms it and generates
+  const confirmAndGenerate = withBusy("generate", async () => {
+    try {
+      await confirmInvoice(scope, id);
+    } catch (err) {
+      toast.error(err.message);
+      return;
+    }
+    await startGenerate(false)();
+  });
+  const startPrepare = withBusy("prepare", async () => {
+    try {
+      setFocus(false);
+      setPrepare(await prepareCertificates(scope, id));
+    } catch (err) {
+      toast.error(err.message);
+    }
+  });
   const generateAnyway = withBusy("generate", startGenerate(true));
   const retry = withBusy("retry", async () => {
     try {
@@ -360,7 +393,7 @@ export default function InvoiceReview() {
   const batchId = params.get("batch") && batches.some((b) => b.id === params.get("batch")) ? params.get("batch") : batches[0]?.id;
   const planned = plan?.entries?.length || 0;
   // the data check re-runs after any review edit (code only, plus the AI for gaps it hasn't asked about)
-  const checkKey = `${invoice.status}:${planKey}:${items.map((i) => JSON.stringify(i.data)).join("|")}:${JSON.stringify(invoice.header)}`;
+  const checkKey = `${prepareRuns}:${invoice.status}:${planKey}:${items.map((i) => JSON.stringify(i.data)).join("|")}:${JSON.stringify(invoice.header)}`;
   const viewer = <InvoiceSourceViewer scope={scope} invoiceId={invoice.id} mimeType={invoice.source?.mimeType} />;
 
   return (
@@ -381,6 +414,16 @@ export default function InvoiceReview() {
           {editable && (
             <Button variant="secondary" isLoading={busy === "rematch"} onClick={rematch}>
               {STR.rematch}
+            </Button>
+          )}
+          {canUpdate && CHECKABLE.has(invoice.status) && (
+            <Button variant="secondary" isLoading={busy === "prepare"} disabled={!!prepare && !prepareTask.done} onClick={startPrepare} data-testid="prepare-certificates">
+              {STR.prepare}
+            </Button>
+          )}
+          {canGenerate && editable && invoice.status === "review" && check && planned > 0 && needsMatch === 0 && !!invoice.counts?.matched && blocking === 0 && (
+            <Button isLoading={busy === "generate"} onClick={confirmAndGenerate} data-testid="confirm-and-generate">
+              {STR.confirmAndGenerate(planned)}
             </Button>
           )}
           {editable && invoice.status === "review" && (
@@ -542,8 +585,10 @@ export default function InvoiceReview() {
             </section>
           </div>
 
+          {prepare && <PreparePanel stages={prepare.stages} task={prepareTask} onClose={() => setPrepare(null)} />}
+
           {CHECKABLE.has(invoice.status) && (
-            <DataCheckPanel scope={scope} invoiceId={invoice.id} refreshKey={checkKey} editable={canUpdate} canSynonym={canSynonym} textContent={invoice.textContent} onChange={setCheck} />
+            <DataCheckPanel scope={scope} invoiceId={invoice.id} refreshKey={checkKey} editable={canUpdate} canSynonym={canSynonym} textContent={invoice.textContent} onChange={setCheck} focus={focus} onUnfocus={() => setFocus(false)} />
           )}
 
           <InvoiceItemsTable scope={scope} items={items} manual={!!invoice.extraction?.manual} editable={editable} onSaveCell={saveCell} onMatch={match} onIgnore={ignore} onDelete={remove} onAdd={add} />

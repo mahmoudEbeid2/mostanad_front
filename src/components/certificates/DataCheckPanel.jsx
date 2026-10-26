@@ -349,7 +349,7 @@ function CertificateGroup({ cert, showAll, ...rowProps }) {
  * props: scope, invoiceId, refreshKey (re-run after review edits), editable,
  * canSynonym (update_certificate_templates), textContent (for evidence context), onChange(check)
  */
-export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable, canSynonym, textContent, onChange }) {
+export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable, canSynonym, textContent, onChange, focus = false, onUnfocus }) {
   const [check, setCheck] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -493,16 +493,27 @@ export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable,
           )}
           {/* item 4: lab results are entered per batch in one grid (it rechecks the invoice by code on save) */}
           <ResultsGrid scope={scope} invoiceId={invoiceId} editable={editable} refreshKey={check.computedAt} onSaved={reloadCode} />
-          <div className="flex justify-end">
-            <button type="button" onClick={() => setShowAll((v) => !v)} className="text-xs text-blue-600 hover:underline">
-              {showAll ? STR.showOpen : STR.showAll}
-            </button>
-          </div>
-          <div className="space-y-2">
-            {check.certificates.map((c) => (
-              <CertificateGroup key={c.planKey} cert={c} showAll={showAll} {...rowProps} onDecide={decide} onSynonym={synonym} />
-            ))}
-          </div>
+          {/* after "Prepare certificates": only what still needs the person (Confirm all above, the grid) */}
+          {focus ? (
+            <div className="flex justify-end">
+              <button type="button" onClick={onUnfocus} className="text-xs text-blue-600 hover:underline" data-testid="show-every-value">
+                {STR.showAll}
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-end">
+                <button type="button" onClick={() => setShowAll((v) => !v)} className="text-xs text-blue-600 hover:underline">
+                  {showAll ? STR.showOpen : STR.showAll}
+                </button>
+              </div>
+              <div className="space-y-2">
+                {check.certificates.map((c) => (
+                  <CertificateGroup key={c.planKey} cert={c} showAll={showAll} {...rowProps} onDecide={decide} onSynonym={synonym} />
+                ))}
+              </div>
+            </>
+          )}
           {(check.unassigned || []).map((u) => (
             <p key={u.invoiceItemId} className="text-xs text-gray-500">
               {STR.unassigned(u)}

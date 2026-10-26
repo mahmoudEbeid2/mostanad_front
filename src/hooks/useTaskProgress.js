@@ -43,7 +43,8 @@ export default function useTaskProgress(taskId, { intervalMs = 2000, onDone } = 
     socket.on("connect", () => socket.emit("join_job", taskId));
     socket.on("job_status", (data) => {
       if (data?.jobId !== taskId || stopped) return;
-      if (typeof data.progress === "number") setState((s) => ({ ...s, progress: data.progress, message: data.message || s.message }));
+      // a job with named stages (e.g. "Prepare certificates") also says which one runs
+      if (typeof data.progress === "number") setState((s) => ({ ...s, progress: data.progress, message: data.message || s.message, ...(data.stage ? { stage: data.stage } : {}), ...(data.stages ? { stages: data.stages } : {}) }));
       if (TERMINAL.has(data.status)) {
         clearTimeout(timer);
         poll();

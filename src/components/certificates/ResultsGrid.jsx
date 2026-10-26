@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { AlertTriangle, FileUp, FlaskConical, Trash2 } from "lucide-react";
 import Spinner from "../../ui/Spinner";
 import AiAction from "../../ui/AiAction";
+import { useAiStatus } from "../../context/AiStatusContext";
 import useTaskProgress from "../../hooks/useTaskProgress";
 import { deleteSupplierCoa, getLabResults, saveLabResults, uploadSupplierCoas } from "../../services/apiInvoices";
 import { inSpec } from "../../utils/specCheck";
@@ -84,6 +85,9 @@ export default function ResultsGrid({ scope, invoiceId, editable, refreshKey, on
   const [saving, setSaving] = useState(false);
   const [taskId, setTaskId] = useState(null);
   const fileRef = useRef(null);
+  // AiAction greys the control and gives the reason; the file input inside a <label> must be switched off here
+  const { available: aiAvailable } = useAiStatus();
+  const uploadOff = !!taskId || !aiAvailable;
 
   const load = useCallback(async () => {
     try {
@@ -222,9 +226,9 @@ export default function ResultsGrid({ scope, invoiceId, editable, refreshKey, on
         {editable && (
           <div className="flex flex-col items-end gap-1">
             <AiAction>
-              <label className={`flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 ${taskId ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-blue-50"}`} data-testid="coa-upload">
+              <label className={`flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 ${uploadOff ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-blue-50"}`} data-testid="coa-upload">
                 <FileUp className="w-3.5 h-3.5" /> {STR.upload}
-                <input ref={fileRef} type="file" multiple accept="application/pdf,image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => upload(e.target.files)} />
+                <input ref={fileRef} type="file" multiple disabled={uploadOff} accept="application/pdf,image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => upload(e.target.files)} data-testid="coa-file" />
               </label>
             </AiAction>
             <span className="text-[11px] text-gray-500 max-w-xs text-right">{STR.uploadHint}</span>

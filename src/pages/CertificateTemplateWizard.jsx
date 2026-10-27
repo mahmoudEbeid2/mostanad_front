@@ -251,17 +251,6 @@ export default function CertificateTemplateWizard() {
     return (
       <div className="space-y-4">
         <RoleBanner scope={scopeState} />
-      {repairing && version && (
-        <RepairWizard
-          scope={scope}
-          version={version}
-          onClose={() => setRepairing(false)}
-          onDone={(r) => {
-            setRepairing(false);
-            navigate(`/certificates/templates/${r.templateId}/versions/${r.versionId}?step=prepare`);
-          }}
-        />
-      )}
         <CompanyPicker scope={scopeState} />
         <p className="text-sm text-gray-500">{STR.pickCompany}</p>
       </div>
@@ -285,6 +274,17 @@ export default function CertificateTemplateWizard() {
 
   return (
     <div className="space-y-5">
+      {repairing && version && (
+        <RepairWizard
+          scope={scope}
+          version={version}
+          onClose={() => setRepairing(false)}
+          onDone={(r) => {
+            setRepairing(false);
+            navigate(`/certificates/templates/${r.templateId}/versions/${r.versionId}?step=prepare`);
+          }}
+        />
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link to="/certificates/templates" className="text-[13px] font-medium text-blue-600 hover:underline">

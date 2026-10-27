@@ -135,9 +135,9 @@ export default function RepairWizard({ scope, version, onClose, onDone }) {
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
           {error && <p className="text-sm text-red-700 bg-red-50 rounded-lg p-3">{error}</p>}
           {!plan && !error && (
-            <p className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
               <Spinner size="sm" /> {STR.scanning}
-            </p>
+            </div>
           )}
           {started && (
             <div className="space-y-2" aria-live="polite">

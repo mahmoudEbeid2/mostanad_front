@@ -236,9 +236,9 @@ export default function ResultsGrid({ scope, invoiceId, editable, refreshKey, on
         )}
       </div>
       {taskId && (
-        <p className="text-xs text-gray-600 flex items-center gap-2">
+        <div className="text-xs text-gray-600 flex items-center gap-2">
           <Spinner size="sm" /> {task.message || STR.reading}
-        </p>
+        </div>
       )}
       <CoaList coas={grid.supplierCoas} editable={editable} onDelete={removeCoa} />
       {rows.length > 0 && (

@@ -98,6 +98,8 @@ const STR = {
   groupHint: "A cell of the group's sample row: it is repeated once per row.",
   labResult: "Lab result (measured per batch)",
   labResultHint: "Never inferred or looked up: only a supplier COA, an earlier result of the same batch, or a person fills it.",
+  batchFact: "Batch fact (batch / lot number, production or expiry date)",
+  batchFactHint: "Never generated: only the invoice, a supplier COA, a packing list or a person fills it.",
   specField: "Its specification",
   noSpec: "— none —",
   specFieldHint: "Shown next to the result in the results grid; a value outside it is highlighted.",
@@ -108,6 +110,11 @@ const STR = {
 // the server's pre-set for a field the owner hasn't ticked yet (backend policy.defaultIsLabResult)
 const LAB_RESULT_LABEL = /\b(results?|assay|complies|conforms?)\b/i;
 const labResultOf = (f) => (typeof f.isLabResult === "boolean" ? f.isLabResult : f.dataCategory === "batch_data" || LAB_RESULT_LABEL.test(f.label || ""));
+// …and for a batch fact (backend policy.defaultIsBatchFact)
+const BATCH_FACT_LABEL = /(batch|lot|expirw*|exp.?s*date|bests*before|uses*by|(production|manufacturw*|mfg|mfd|prod.?)s*(date|dt))/i;
+const BATCH_FACT_PATHS = ["batchNo", "lotNo", "expiryDate", "productionDate", "manufacturingDate"];
+const batchFactOf = (f) =>
+  typeof f.isBatchFact === "boolean" ? f.isBatchFact : !labResultOf(f) && (BATCH_FACT_LABEL.test(f.label || "") || (f.source?.kind === "item" && BATCH_FACT_PATHS.includes(f.source?.path)));
 
 const input = "w-full min-h-10 border border-gray-300 rounded-lg px-3 bg-white text-sm font-normal text-gray-900";
 const lbl = "flex flex-col gap-1.5 text-xs font-semibold text-gray-600";
@@ -308,6 +315,15 @@ function FieldEditor({ field, siblings = [], options, groups, cellOptionsFor, su
         </span>
       </label>
       {labResultOf(field) && !field.groupKey && <SpecSettings field={field} siblings={siblings} onChange={onChange} />}
+      {!labResultOf(field) && (
+        <label className="flex items-start gap-2 text-[13px] text-gray-800" title={STR.batchFactHint}>
+          <input type="checkbox" className="w-4 h-4 mt-0.5" checked={batchFactOf(field)} onChange={(e) => onChange({ isBatchFact: e.target.checked })} data-testid="field-batch-fact" />
+          <span>
+            {STR.batchFact}
+            <span className="block text-xs text-gray-500">{STR.batchFactHint}</span>
+          </span>
+        </label>
+      )}
     </div>
   );
 }

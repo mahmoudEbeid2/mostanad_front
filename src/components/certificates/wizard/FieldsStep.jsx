@@ -69,6 +69,8 @@ const toPayload = (drafts) =>
     ...(f.inferencePolicy ? { inferencePolicy: f.inferencePolicy } : {}),
     // the owner's lab-result tick; omitted = the server keeps what is stored (or pre-sets a new field)
     ...(typeof f.isLabResult === "boolean" ? { isLabResult: f.isLabResult } : {}),
+    // the owner's batch-fact tick (backend, owner 2026-10-27); omitted = the server keeps what is stored
+    ...(typeof f.isBatchFact === "boolean" ? { isBatchFact: f.isBatchFact } : {}),
     // backend item 4: its specification, and "print the specification instead"; omitted = the server keeps what is stored
     ...(typeof f.showSpecInstead === "boolean" ? { showSpecInstead: f.showSpecInstead } : {}),
     ...(f.specFieldKey !== undefined ? { specFieldKey: f.specFieldKey || null } : {}),

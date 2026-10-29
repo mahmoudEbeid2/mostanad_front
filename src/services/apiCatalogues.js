@@ -6,11 +6,11 @@ import { unwrap } from "./apiCertificateTypes";
 // Upload, new versions and linking need manage_catalogues (system users only).
 
 /** multipart: file + companyId, manufacturer?, brandId?, label? → { catalogueId, versionId, jobId } */
-export const uploadCatalogue = ({ companyId, file, manufacturer, brandId, label, extract }) => {
+// C1: an upload never starts the AI — the pages are read, then a person chooses them and extracts
+export const uploadCatalogue = ({ companyId, file, manufacturer, brandId, label }) => {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("companyId", companyId);
-  if (extract === false) fd.append("extract", "false"); // P8: AI unavailable → split only, products typed by hand
   if (manufacturer) fd.append("manufacturer", manufacturer);
   if (brandId) fd.append("brandId", brandId);
   if (label) fd.append("label", label);
@@ -18,10 +18,9 @@ export const uploadCatalogue = ({ companyId, file, manufacturer, brandId, label,
 };
 
 /** a newer file of an existing catalogue → { catalogueId, versionId, jobId } */
-export const uploadCatalogueVersion = (scope = {}, catalogueId, { file, label, extract }) => {
+export const uploadCatalogueVersion = (scope = {}, catalogueId, { file, label }) => {
   const fd = new FormData();
   fd.append("file", file);
-  if (extract === false) fd.append("extract", "false");
   if (label) fd.append("label", label);
   return unwrap(apiClient.post(`/catalogues/${catalogueId}/versions`, fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Upload failed").then((d) => d.data);
 };
@@ -79,3 +78,14 @@ export const applyCatalogueVersionDiff = (scope = {}, versionId) => unwrap(apiCl
 /** → { q, words, results: [{ blockId, versionId, catalogueId, manufacturer, versionLabel, page, kind, name, productCode, productId, snippet ("[[word]]" marks), match: phrase|words|name }] } */
 export const searchCatalogues = (scope = {}, q, { allVersions = false } = {}) =>
   unwrap(apiClient.get("/catalogue-search", { params: { ...scope, q, ...(allVersions ? { allVersions: "true" } : {}) } }), "Search failed").then((d) => d.data);
+
+// ── C1 choose pages (only the kept pages are sent to the AI) ──
+/** → { version, pageCount, pages: [{ number, kind, textLength, reason, thumbnailUrl, previewUrl }], selection, estimate } */
+export const getCataloguePages = (scope = {}, versionId) => unwrap(apiClient.get(`/catalogue-versions/${versionId}/pages`, { params: scope }), "Failed to load the pages").then((d) => d.data);
+
+/** { pages: [n…] } (original page numbers) → { selection, estimate } */
+export const saveCataloguePageSelection = (scope = {}, versionId, pages) =>
+  unwrap(apiClient.put(`/catalogue-versions/${versionId}/page-selection`, { pages }, { params: scope }), "Failed to save the pages").then((d) => d.data);
+
+/** A page image (thumbnailUrl / previewUrl from getCataloguePages) as a Blob — it needs the bearer token. */
+export const getCataloguePageImage = (scope = {}, url) => apiClient.get(url, { params: scope, responseType: "blob" }).then((r) => r.data);

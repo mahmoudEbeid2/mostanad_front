@@ -19,6 +19,7 @@ const STR = {
   page: (n) => `Page ${n}`,
   untitled: "Title drawn as artwork",
   review: "Review extracted products",
+  pages: "Choose the pages to read",
 };
 
 export default function CatalogueVersion() {
@@ -56,11 +57,18 @@ export default function CatalogueVersion() {
             {STR.extractionFailed(version.error)}
           </p>
         )}
-        {["review", "applied", "segmented"].includes(version.status) && (
-          <Link to={`/catalogues/versions/${id}/review`} className="inline-block mt-2 text-sm font-semibold text-blue-600 hover:underline">
-            {STR.review} →
-          </Link>
-        )}
+        <div className="flex flex-wrap gap-4 mt-2">
+          {["uploaded", "segmenting", "segmented", "review"].includes(version.status) && (
+            <Link to={`/catalogues/versions/${id}/pages`} className="text-sm font-semibold text-blue-600 hover:underline" data-testid="version-choose-pages">
+              {STR.pages} →
+            </Link>
+          )}
+          {["review", "applied"].includes(version.status) && (
+            <Link to={`/catalogues/versions/${id}/review`} className="text-sm font-semibold text-blue-600 hover:underline">
+              {STR.review} →
+            </Link>
+          )}
+        </div>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         {version.blocks.map((b) => (

@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FileText, UploadCloud } from "lucide-react";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
 import StatusBadge from "../components/certificates/StatusBadge";
+import CatalogueSteps from "../components/catalogues/CatalogueSteps";
 import { catalogueVersionStatus } from "../utils/catalogueStatus";
-import { withNextStep } from "../utils/aiReason";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import { useAuth } from "../context/AuthContext";
-import { useAiStatus } from "../context/AiStatusContext";
 import { hasPermission } from "../utils/permissions";
 import { getBrands } from "../services/apiBrands";
 import { listCatalogues, uploadCatalogue } from "../services/apiCatalogues";
@@ -19,12 +18,13 @@ import { listCatalogues, uploadCatalogue } from "../services/apiCatalogues";
 // /catalogues (backend plan.md §15.2): a company's manufacturer catalogues, kept
 // as source documents. A system user with manage_catalogues uploads one FOR a
 // company; code splits it into product blocks. The legacy "Catalog Upload" page
-// keeps working until this flow replaces it (§15.8).
+// keeps working until this flow replaces it (§15.8). Upload is step 1 of 4 (design
+// C1): once the pages are read the person chooses which ones the AI reads.
 const STR = {
   title: "Catalogues",
   subtitle: "Manufacturer catalogues kept as source documents — every product value can be traced to its page.",
   upload: "Upload a catalogue",
-  uploadHint: "PDF with live text, up to 60 MB. The file is kept; nothing changes in your products until you review and apply it.",
+  uploadHint: "PDF with live text, up to 60 MB. The file is kept; next you choose which pages the AI reads — nothing changes in your products until you review and apply it.",
   manufacturer: "Manufacturer",
   manufacturerHint: "defaults to the brand, else the file name",
   brand: "Brand",
@@ -37,28 +37,32 @@ const STR = {
   empty: "No catalogue yet for this company.",
   cols: ["Edition", "Uploaded", "Pages", "Blocks", "Status", ""],
   open: "Open",
-  segmenting: "Finding product blocks…",
-  done: (r) => `${r?.productBlocks ?? 0} product blocks found on ${r?.pages ?? 0} pages`,
-  extracting: "Reading the products…",
-  extracted: "Products read — open the catalogue to review them.",
-  extractFailed: (e) => `Products weren't read automatically. ${withNextStep(e, "Open the catalogue to enter them by hand.")}`,
-  noAiHint: "AI is unavailable: the catalogue is split into product blocks only — you type each product's values from its page in the review.",
+  choosePages: "Choose pages",
+  segmenting: "Reading the pages (no AI)…",
+  done: (r) => `${r?.pages ?? 0} pages read, ${r?.productPages ?? 0} product pages — choose the pages to send to the AI`,
 };
+
+// not extracted yet → the next step is choosing its pages
+const needsPages = (v) => ["uploaded", "segmenting", "segmented"].includes(v.status) && !v.pageSelection?.extractedAt;
 
 const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 
 function UploadPanel({ scopeState, onUploaded }) {
   const { companyId } = scopeState;
+  const navigate = useNavigate();
   const [brands, setBrands] = useState([]);
   const [form, setForm] = useState({ manufacturer: "", brandId: "", label: "" });
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
   const [jobId, setJobId] = useState(null);
-  const task = useTaskProgress(jobId, { onDone: () => onUploaded() });
-  // segmentation queues the AI extraction as its own job: follow it too, so a failure is said here
-  const extractJobId = task.status === "completed" ? task.result?.extractJobId || null : null;
-  const extract = useTaskProgress(extractJobId, { onDone: () => onUploaded() });
-  const { available: aiAvailable } = useAiStatus();
+  const [versionId, setVersionId] = useState(null);
+  // the upload reads the pages (no AI); the next step is choosing them
+  const task = useTaskProgress(jobId, {
+    onDone: (t) => {
+      onUploaded();
+      if (t.status === "completed" && versionId) navigate(`/catalogues/versions/${versionId}/pages`);
+    },
+  });
 
   useEffect(() => {
     if (!companyId) return;
@@ -72,7 +76,8 @@ function UploadPanel({ scopeState, onUploaded }) {
     if (!file || !companyId) return;
     setSending(true);
     try {
-      const res = await uploadCatalogue({ companyId, file, ...form, extract: aiAvailable });
+      const res = await uploadCatalogue({ companyId, file, ...form });
+      setVersionId(res.versionId);
       setJobId(res.jobId);
       setFile(null);
       onUploaded();
@@ -86,11 +91,14 @@ function UploadPanel({ scopeState, onUploaded }) {
   const field = "border border-gray-300 rounded-lg px-3 min-h-11 bg-white text-sm w-full";
   return (
     <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4" data-testid="catalogue-upload">
-      <div>
-        <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-          <UploadCloud className="w-4 h-4 text-gray-500" /> {STR.upload}
-        </h2>
-        <p className="text-sm text-gray-500 mt-1">{STR.uploadHint}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+            <UploadCloud className="w-4 h-4 text-gray-500" /> {STR.upload}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">{STR.uploadHint}</p>
+        </div>
+        <CatalogueSteps current={1} />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <CompanyPicker scope={scopeState} variant="field" yours={false} labelClassName="text-sm font-semibold text-gray-800" />
@@ -132,16 +140,8 @@ function UploadPanel({ scopeState, onUploaded }) {
           </span>
         )}
         {jobId && task.status === "completed" && <span className="text-sm text-emerald-700">{STR.done(task.result)}</span>}
-        {extractJobId && !extract.done && (
-          <span className="text-sm text-gray-600 flex items-center gap-2">
-            <Spinner /> {extract.message || STR.extracting}
-          </span>
-        )}
-        {extractJobId && extract.status === "completed" && <span className="text-sm text-emerald-700">{STR.extracted}</span>}
-        {extractJobId && extract.status === "failed" && <span className="text-sm text-red-700" data-testid="extract-failed">{STR.extractFailed(extract.error)}</span>}
         {jobId && task.status === "failed" && <span className="text-sm text-red-700">{task.error}</span>}
       </div>
-      {!aiAvailable && <p className="text-xs text-amber-800" data-testid="catalogue-no-ai">{STR.noAiHint}</p>}
     </form>
   );
 }
@@ -225,8 +225,13 @@ export default function Catalogues() {
                             </p>
                           ))}
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <Link to={`/catalogues/versions/${v.id}`} className="font-medium text-blue-600 hover:underline whitespace-nowrap">
+                        <td className="px-4 py-3 text-right whitespace-nowrap space-x-3">
+                          {needsPages(v) && (
+                            <Link to={`/catalogues/versions/${v.id}/pages`} className="font-medium text-blue-600 hover:underline" data-testid="choose-pages">
+                              {STR.choosePages}
+                            </Link>
+                          )}
+                          <Link to={`/catalogues/versions/${v.id}`} className="font-medium text-blue-600 hover:underline">
                             {STR.open}
                           </Link>
                         </td>

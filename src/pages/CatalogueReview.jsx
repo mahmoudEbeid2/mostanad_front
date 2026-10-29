@@ -10,6 +10,7 @@ import { catalogueVersionStatus } from "../utils/catalogueStatus";
 import PdfPage from "../components/catalogues/PdfPage";
 import { openPdf } from "../components/catalogues/openPdf";
 import DiffPanel from "../components/catalogues/DiffPanel";
+import CatalogueSteps from "../components/catalogues/CatalogueSteps";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import { useAuth } from "../context/AuthContext";
@@ -307,9 +308,12 @@ export default function CatalogueReview() {
   return (
     <div className="space-y-4">
       <div>
-        <Link to={`/catalogues/versions/${id}`} className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
-          <ArrowLeft className="w-4 h-4" /> {STR.back}
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link to={`/catalogues/versions/${id}`} className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
+            <ArrowLeft className="w-4 h-4" /> {STR.back}
+          </Link>
+          <CatalogueSteps current={4} />
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             {STR.title} · {version.catalogue?.manufacturer} · {version.label} <StatusBadge status={catalogueVersionStatus(version)} />

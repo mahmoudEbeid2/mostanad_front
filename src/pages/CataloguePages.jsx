@@ -58,7 +58,7 @@ const STR = {
     'Every product keeps its page number, so each value shows "Catalogue p.7" as evidence.',
     "Your choice is saved — the next version of this catalogue can start from the same pages.",
   ],
-  removed: (pages) => `Pages ${pages} were read before and are out now: their products that nobody reviewed will be dropped. Products already reviewed or linked stay.`,
+  removed: (pages, n) => `${n === 1 ? `Page ${pages} was` : `Pages ${pages} were`} read before and ${n === 1 ? "is" : "are"} out now: products on ${n === 1 ? "it" : "them"} that nobody reviewed will be dropped. Products already reviewed or linked stay.`,
   extract: (n) => `Extract ${n} page${n === 1 ? "" : "s"} →`,
   chooseToExtract: "Choose pages to extract",
   later: "Save and extract later",
@@ -493,7 +493,7 @@ export default function CataloguePages() {
               </div>
               {removed.length > 0 && (
                 <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800" data-testid="removed-note">
-                  {STR.removed(formatRange(removed))}
+                  {STR.removed(formatRange(removed), removed.length)}
                 </p>
               )}
               {est && (

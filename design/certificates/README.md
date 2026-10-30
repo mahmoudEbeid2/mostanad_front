@@ -24,8 +24,13 @@ status pills like `components/certificates/StatusBadge.jsx`. Build with the proj
 | `B3-review-and-match.html` | Review header + lines, product match, plan preview | `/invoices/:id` (`review`) |
 | `B4-generating.html` | Batch progress + certificate cards + unassigned lines | `/invoices/:id` batches section |
 | `B5-certificate-editor.html` | Certificate editor — values, sources, flags, history, finalize | `/certificates/:id` |
+| `C0-catalogue-upload.html` (+ `.file-picked`, `.uploading`, `.checking`, `.ready`, `.failed`) | Catalogue upload step 1 — drop zone, details, upload %, quick PDF check (page count only) | `/catalogues` upload (or `/catalogues/new`) |
+| `C1-catalogue-choose-pages.html` | Catalogue upload step 2 — the person chooses the product pages (click, range, preview, token estimate); no auto-detect | catalogue upload, after the file is uploaded |
 
 ## Rules the mockups encode
+
+- **Catalogue pages**: a person chooses the product pages — there is no automatic page detection. Only the chosen
+  pages are read and sent to the AI. The selection is saved per catalogue; the next version offers "Same pages as last version". Token/cost numbers in C1 are estimates from the cost ledger.
 
 - **System admin / system users**: a Company picker on every certificates page; everything is created for the
   picked company (`?companyId=`). **Company account**: no picker — the company comes from the token and is shown

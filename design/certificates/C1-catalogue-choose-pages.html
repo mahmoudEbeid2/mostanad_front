@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalogue — choose pages</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f9fafb}
+a{color:#2563eb;text-decoration:none}a:hover{color:#1d4ed8;text-decoration:underline}
+.nav-a{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:8px;font-size:14px;font-weight:500;color:#4b5563}
+.nav-a:hover{background:#f3f4f6;color:#111827;text-decoration:none}
+.nav-on{background:#eff6ff;color:#1d4ed8}
+.nav-sub{display:block;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#4b5563}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border-radius:10px;font:600 13px Inter,system-ui,sans-serif;cursor:pointer}
+.btn-p{background:#2563eb;color:#fff;border:1px solid #2563eb;box-shadow:0 4px 10px rgba(37,99,235,.2)}
+.btn-s{background:#fff;color:#374151;border:1px solid #d1d5db}
+.btn-s:hover{background:#f9fafb}
+.pill{display:inline-flex;align-items:center;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px}
+.inp{min-height:40px;border:1px solid #d1d5db;border-radius:8px;padding:0 12px;background:#fff;font:14px ui-monospace,monospace;color:#111827;box-sizing:border-box;width:100%}
+.pg{width:120px;height:170px;background:#fff;box-sizing:border-box;padding:9px;display:flex;flex-direction:column;gap:5px;overflow:hidden;box-shadow:0 1px 4px rgba(17,24,39,.14)}
+.pg i{display:block;height:3px;background:#e5e7eb;border-radius:1px}
+.thumb{all:unset;cursor:pointer;display:block;border-radius:8px;padding:6px;background:#f3f4f6}
+.thumb:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.btn-d{opacity:.45;cursor:not-allowed;box-shadow:none}
+.eye{all:unset;cursor:pointer;width:28px;height:28px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;color:#4b5563}
+.eye:hover{background:#e5e7eb}
+.eye:focus-visible{outline:2px solid #2563eb}
+</style>
+</head>
+<body>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; font-family: Inter, system-ui, sans-serif; color: #111827; background: #f9fafb">
+
+<nav aria-label="Main" style="flex: 1 1 240px; background: #ffffff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column">
+  <div style="padding: 24px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 12px">
+    <div style="width: 32px; height: 32px; border-radius: 8px; background: #2563eb; display: flex; align-items: center; justify-content: center">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="m9 15 2 2 4-4"></path></svg>
+    </div>
+    <span style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">Dossira</span>
+  </div>
+  <div style="padding: 16px 12px; display: flex; flex-direction: column; gap: 4px">
+    <a class="nav-a" href="#">Dashboard</a>
+    <a class="nav-a nav-on" href="#">Products</a>
+    <div style="margin: 4px 0 4px 16px; padding-left: 12px; border-left: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 2px">
+      <a class="nav-sub" href="#">All products</a>
+      <a class="nav-sub" href="#" style="background: #eff6ff; color: #1d4ed8">Catalogues</a>
+    </div>
+    <a class="nav-a" href="#">Labels</a>
+    <a class="nav-a" href="A1-templates-list.html">Certificates</a>
+  </div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px">
+  <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px">
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px">
+      <div>
+        <a href="#" style="font-size: 13px; font-weight: 500">← Catalogues</a>
+        <h1 style="margin: 6px 0 0; font-size: 22px; font-weight: 700">Choose the pages to read</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #4b5563">Click the pages that have products — only those are sent to the AI. Covers, contents and blank pages cost tokens and add nothing.</p>
+      </div>
+      <ol aria-label="Steps" style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px">
+        <li style="padding: 6px 12px; border-radius: 999px; background: #ecfdf5; color: #047857; font-size: 12px; font-weight: 600">✓ 1 Upload</li>
+        <li aria-current="step" style="padding: 6px 12px; border-radius: 999px; background: #2563eb; color: #fff; font-size: 12px; font-weight: 600">2 Choose pages</li>
+        <li style="padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid #e5e7eb; color: #4b5563; font-size: 12px; font-weight: 600">3 Extract products</li>
+        <li style="padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid #e5e7eb; color: #4b5563; font-size: 12px; font-weight: 600">4 Review &amp; apply</li>
+      </ol>
+    </div>
+
+    <div class="card" style="padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <span style="width: 36px; height: 36px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font: 700 11px ui-monospace, monospace; display: flex; align-items: center; justify-content: center">PDF</span>
+      <div style="flex: 1; min-width: 200px">
+        <div style="font-size: 14px; font-weight: 600">Agrikima_Catalogue_2026.pdf</div>
+        <div style="font-size: 12px; color: #6b7280">24 pages · 8.4 MB · nothing goes to the AI until you click Extract</div>
+      </div>
+      <button type="button" class="btn btn-s">Replace file</button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start">
+
+      <section class="card" aria-label="Pages" style="flex: 3 1 560px; min-width: 0; display: flex; flex-direction: column">
+        <div style="padding: 12px 14px; border-bottom: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+            <span style="font-size: 12px; font-weight: 600; color: #4b5563; margin-right: 2px">Quick select</span>
+            <button type="button" class="btn btn-s">Same pages as last version</button>
+            <button type="button" class="btn btn-s">All</button>
+            <button type="button" class="btn btn-s">None</button>
+            <button type="button" class="btn btn-s">Invert</button>
+            <div role="group" aria-label="Show" style="margin-left: auto; display: flex; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden">
+              
+                <button type="button" aria-pressed="true" style="border: 0; min-height: 34px; padding: 0 12px; font: 600 12px Inter, sans-serif; cursor: pointer; background: #111827; color: #fff">All · 24</button>
+              
+                <button type="button" aria-pressed="false" style="border: 0; min-height: 34px; padding: 0 12px; font: 600 12px Inter, sans-serif; cursor: pointer; background: #fff; color: #374151">Kept · 0</button>
+              
+                <button type="button" aria-pressed="false" style="border: 0; min-height: 34px; padding: 0 12px; font: 600 12px Inter, sans-serif; cursor: pointer; background: #fff; color: #374151">Not chosen · 24</button>
+              
+            </div>
+          </div>
+          <label style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; color: #4b5563">
+            Pages
+            <input class="inp" value="" aria-describedby="rangehint" style="flex: 1; min-width: 220px">
+            <span id="rangehint" style="font-weight: 400; color: #6b7280">e.g. 4–15, 17–20 · click a page to keep or skip it</span>
+          </label>
+        </div>
+
+        
+          <div role="note" style="margin: 14px 14px 0; padding: 12px 14px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 10px; font-size: 13px; color: #1e3a8a"><b>No pages chosen yet.</b> Click each page that has products, or type them in “Pages” — e.g. 4–15, 17–20.</div>
+        
+        <div style="padding: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px">
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 1, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                    <div style="flex: 1; background: linear-gradient(160deg, #0f766e, #115e59); border-radius: 3px; display: flex; flex-direction: column; justify-content: flex-end; padding: 8px; gap: 4px"><div style="font: 800 10px/1.1 Inter; color: #fff">AGRIKIMA</div><div style="font: 600 7px Inter; color: #ccfbf1">Product catalogue 2026</div></div>
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.1</span>
+                <button type="button" class="eye" aria-label="Preview page 1" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 2, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                    <div style="font: 700 8px Inter; color: #111827">Contents</div><i></i><i style="width: 85%"></i><i></i><i style="width: 70%"></i><i></i><i style="width: 90%"></i><i></i><i style="width: 60%"></i><i></i><i style="width: 80%"></i>
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.2</span>
+                <button type="button" class="eye" aria-label="Preview page 2" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 3, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                    <div style="font: 700 8px Inter; color: #111827">About us</div><div style="height: 40px; background: #e0f2fe; border-radius: 3px"></div><i></i><i></i><i style="width: 85%"></i><i></i><i style="width: 70%"></i>
+                  
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.3</span>
+                <button type="button" class="eye" aria-label="Preview page 3" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 4, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">TOXINIL</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.4</span>
+                <button type="button" class="eye" aria-label="Preview page 4" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 5, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">VITAMINOL</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.5</span>
+                <button type="button" class="eye" aria-label="Preview page 5" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 6, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">AD3E +CK</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.6</span>
+                <button type="button" class="eye" aria-label="Preview page 6" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 7, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">VITA B+</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.7</span>
+                <button type="button" class="eye" aria-label="Preview page 7" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 8, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">VITAC 35</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.8</span>
+                <button type="button" class="eye" aria-label="Preview page 8" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 9, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">FAST CAL</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.9</span>
+                <button type="button" class="eye" aria-label="Preview page 9" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 10, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">ISOZY</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.10</span>
+                <button type="button" class="eye" aria-label="Preview page 10" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 11, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">MEGA-L</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.11</span>
+                <button type="button" class="eye" aria-label="Preview page 11" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 12, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">LIVOTON</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.12</span>
+                <button type="button" class="eye" aria-label="Preview page 12" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 13, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">ELECTRO-VIT</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.13</span>
+                <button type="button" class="eye" aria-label="Preview page 13" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 14, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">CALCI-PHOS</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.14</span>
+                <button type="button" class="eye" aria-label="Preview page 14" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 15, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">SELEN-E</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.15</span>
+                <button type="button" class="eye" aria-label="Preview page 15" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 16, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                  
+                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; font: 500 8px Inter; color: #9ca3af">blank</div>
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.16</span>
+                <button type="button" class="eye" aria-label="Preview page 16" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 17, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">AMINO-MAX</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.17</span>
+                <button type="button" class="eye" aria-label="Preview page 17" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 18, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">B-COMPLEX</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.18</span>
+                <button type="button" class="eye" aria-label="Preview page 18" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 19, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">OREGA-PRO</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.19</span>
+                <button type="button" class="eye" aria-label="Preview page 19" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 20, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                    <div style="display: flex; gap: 6px"><div style="width: 38px; height: 46px; border-radius: 3px; background: #ccfbf1; flex: none"></div><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="font: 800 8px/1.1 Inter; color: #0f766e">COCCI-STOP</div><i></i><i style="width: 80%"></i><i style="width: 60%"></i></div></div>
+                    <div style="margin-top: 4px; border: 1px solid #d1d5db; border-radius: 2px"><div style="height: 6px; background: #0f766e"></div><i style="margin: 3px"></i><i style="margin: 3px"></i><i style="margin: 3px; width: 70%"></i></div>
+                    <i></i><i style="width: 85%"></i><i style="width: 65%"></i>
+                  
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.20</span>
+                <button type="button" class="eye" aria-label="Preview page 20" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 21, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                  
+                  
+                    <div style="font: 700 8px Inter; color: #111827">Registrations</div><div style="display: flex; gap: 6px; margin: 6px 0"><div style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #93c5fd"></div><div style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #93c5fd"></div></div><i></i><i style="width: 75%"></i><i></i>
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.21</span>
+                <button type="button" class="eye" aria-label="Preview page 21" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 22, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                    <div style="font: 700 8px Inter; color: #111827">Contact</div><i></i><i style="width: 70%"></i><i style="width: 80%"></i><div style="height: 46px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 3px; margin-top: 4px"></div>
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.22</span>
+                <button type="button" class="eye" aria-label="Preview page 22" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 23, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                  
+                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; font: 500 8px Inter; color: #9ca3af">blank</div>
+                  
+                  
+                  
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.23</span>
+                <button type="button" class="eye" aria-label="Preview page 23" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+            <div style="display: flex; flex-direction: column; gap: 6px; opacity: 0.55">
+              <button type="button" class="thumb" aria-pressed="false" aria-label="Page 24, not chosen — click to keep" style="outline: 1px solid #e5e7eb; outline-offset: -1px; position: relative; display: flex; justify-content: center">
+                <div class="pg" aria-hidden="true">
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                    <div style="flex: 1; background: #115e59; border-radius: 3px; display: flex; align-items: center; justify-content: center; font: 700 8px Inter; color: #ccfbf1">agrikima.com</div>
+                  
+                </div>
+                <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px Inter; background: #fff; border: 1.5px solid #9ca3af"></span>
+              </button>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 2px">
+                <span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">p.24</span>
+                <button type="button" class="eye" aria-label="Preview page 24" style="margin-left: auto">
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </section>
+
+      <aside style="flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+
+        <section class="card" aria-label="Page preview" style="overflow: hidden">
+          <div style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 8px">
+            <button type="button" class="eye" aria-label="Previous page">‹</button>
+            <span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums">Page 1 of 24</span>
+            <button type="button" class="eye" aria-label="Next page">›</button>
+            <button type="button" class="btn" aria-pressed="false" style="margin-left: auto; min-height: 32px; padding: 0 10px; background: #fff; color: #4b5563; border: 1px solid #d1d5db">Keep this page</button>
+          </div>
+          <div style="background: #e5e7eb; padding: 18px; display: flex; justify-content: center">
+            <div style="width: 264px; height: 374px; overflow: hidden">
+              <div style="transform: scale(2.2); transform-origin: top left; width: 120px">
+                <div class="pg" aria-hidden="true">
+                  
+                    <div style="flex: 1; background: linear-gradient(160deg, #0f766e, #115e59); border-radius: 3px; display: flex; flex-direction: column; justify-content: flex-end; padding: 8px; gap: 4px"><div style="font: 800 10px/1.1 Inter; color: #fff">AGRIKIMA</div><div style="font: 600 7px Inter; color: #ccfbf1">Product catalogue 2026</div></div>
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                </div>
+              </div>
+            </div>
+          </div>
+          <p style="margin: 0; padding: 10px 14px; font-size: 12px; color: #4b5563; border-top: 1px solid #e5e7eb">Not chosen — click the page or Keep if it has products.</p>
+        </section>
+
+        <section class="card" aria-labelledby="sum" style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <h2 id="sum" style="margin: 0; font-size: 15px; font-weight: 600">0 of 24 pages will be read</h2>
+          <div role="progressbar" aria-label="Pages kept" aria-valuenow="0" aria-valuemin="0" aria-valuemax="24" style="height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden"><div style="height: 100%; width: 0%; background: #2563eb"></div></div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+            <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px">
+              <div style="font-size: 12px; color: #4b5563">AI tokens (estimate)</div>
+              <div style="font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums">0</div>
+              <div style="font-size: 12px; color: #6b7280">all pages: 27.8k</div>
+            </div>
+            <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px">
+              <div style="font-size: 12px; color: #4b5563">Cost (estimate)</div>
+              <div style="font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums">$0.000</div>
+              <div style="font-size: 12px; color: #047857; font-weight: 600">choose pages to see the estimate</div>
+            </div>
+          </div>
+          <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #4b5563; display: flex; flex-direction: column; gap: 4px">
+            <li>The PDF is split on the server; only the kept pages go to the AI, one product block at a time.</li>
+            <li>Every product keeps its page number, so each value shows "Catalogue p.7" as evidence.</li>
+            <li>Your choice is saved — the next version of this catalogue can start from the same pages.</li>
+          </ul>
+          <a href="#" class="btn btn-p btn-d" aria-disabled="true" style="text-decoration: none">Choose pages to extract</a>
+          <button type="button" class="btn btn-s">Save and extract later</button>
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
+</div>
+</body>
+</html>

@@ -1,3 +1,4 @@
+import axios from "axios";
 import apiClient from "./apiClient";
 import { unwrap } from "./apiCertificateTypes";
 
@@ -5,24 +6,34 @@ import { unwrap } from "./apiCertificateTypes";
 // takes `scope` = { companyId } for system users ({} for a company session).
 // Upload, new versions and linking need manage_catalogues (system users only).
 
-/** multipart: file + companyId, manufacturer?, brandId?, label? → { catalogueId, versionId, jobId } */
-// C1: an upload never starts the AI — the pages are read, then a person chooses them and extracts
-export const uploadCatalogue = ({ companyId, file, manufacturer, brandId, label }) => {
+// the upload's own errors: Cancel is not a failure, and a lost connection has no backend message
+const sendFile = (url, fd, { params, signal, onProgress } = {}) =>
+  apiClient
+    .post(url, fd, { params, signal, headers: { "Content-Type": "multipart/form-data" }, onUploadProgress: onProgress })
+    .then((r) => r.data.data)
+    .catch((err) => {
+      const out = new Error(err.response?.data?.message || (err.response ? "Upload failed" : "The connection was lost during the upload. Check your network and try again."));
+      out.cancelled = axios.isCancel(err);
+      throw out;
+    });
+
+/** multipart: file + companyId, manufacturer?, brandId?, label? → { catalogueId, versionId, status, pageCount }. The answer means the PDF opened: nothing else happens until pages are chosen. */
+export const uploadCatalogue = ({ companyId, file, manufacturer, brandId, label }, options) => {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("companyId", companyId);
   if (manufacturer) fd.append("manufacturer", manufacturer);
   if (brandId) fd.append("brandId", brandId);
   if (label) fd.append("label", label);
-  return unwrap(apiClient.post("/catalogues", fd, { headers: { "Content-Type": "multipart/form-data" } }), "Upload failed").then((d) => d.data);
+  return sendFile("/catalogues", fd, options);
 };
 
-/** a newer file of an existing catalogue → { catalogueId, versionId, jobId } */
+/** a newer file of an existing catalogue → { catalogueId, versionId, status, pageCount } */
 export const uploadCatalogueVersion = (scope = {}, catalogueId, { file, label }) => {
   const fd = new FormData();
   fd.append("file", file);
   if (label) fd.append("label", label);
-  return unwrap(apiClient.post(`/catalogues/${catalogueId}/versions`, fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Upload failed").then((d) => d.data);
+  return sendFile(`/catalogues/${catalogueId}/versions`, fd, { params: scope });
 };
 
 export const listCatalogues = (scope = {}) => unwrap(apiClient.get("/catalogues", { params: scope }), "Failed to load catalogues").then((d) => d.data.catalogues);

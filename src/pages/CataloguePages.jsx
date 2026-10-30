@@ -1,69 +1,73 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { AlertTriangle, ArrowLeft, Check, ChevronLeft, ChevronRight, Eye, FileText, RefreshCw, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, ChevronLeft, ChevronRight, Eye, FileText, RefreshCw } from "lucide-react";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import AiAction from "../ui/AiAction";
-import AuthImage from "../components/certificates/AuthImage";
 import CatalogueSteps from "../components/catalogues/CatalogueSteps";
+import PageImage from "../components/catalogues/PageImage";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import { useAuth } from "../context/AuthContext";
+import { useAiStatus } from "../context/AiStatusContext";
 import { hasPermission } from "../utils/permissions";
 import { parseRange, formatRange } from "../utils/pageRange";
+import { createImageLoader } from "../utils/imageLoader";
 import { getCataloguePages, saveCataloguePageSelection, getCataloguePageImage, extractCatalogueVersion, uploadCatalogueVersion } from "../services/apiCatalogues";
 
-// /catalogues/versions/:id/pages (design C1): step 2 of a catalogue upload. Code
-// already read every page (kind from its text, a thumbnail — no AI); the person
-// keeps or skips pages, and only the kept pages are split out of the PDF and
-// sent to the AI. The choice is saved per catalogue and reused by its next version.
+// /catalogues/versions/:id/pages (design C1): step 2 of a catalogue upload. The
+// upload only counted the pages. A person chooses the ones with products — nothing is
+// pre-selected — and only those are read and sent to the AI. The choice is saved per
+// catalogue, and the next version can start from it with one click.
 const STR = {
   back: "Catalogues",
   title: "Choose the pages to read",
-  subtitle: "Only the pages you keep are sent to the AI. Covers, contents and blank pages cost tokens and add nothing.",
-  fileMeta: (n, size) => `${n} pages${size ? ` · ${size}` : ""} · pages sorted automatically by reading their text — no AI, no cost`,
+  subtitle: "Click the pages that have products — only those are sent to the AI. Covers, contents and blank pages cost tokens and add nothing.",
+  fileMeta: (n, size) => `${n} pages${size ? ` · ${size}` : ""} · nothing goes to the AI until you click Extract`,
   replace: "Replace file",
-  replacing: "Reading the new file…",
+  replacing: "Uploading the new file…",
   quick: "Quick select",
-  productsOnly: "Product pages only",
+  samePages: "Same pages as last version",
   all: "All",
   none: "None",
   invert: "Invert",
-  show: { all: "All", kept: "Kept", skipped: "Skipped" },
+  show: { all: "All", kept: "Kept", skipped: "Not chosen" },
   pagesLabel: "Pages",
   rangeHint: "e.g. 4–15, 17–20 · click a page to keep or skip it",
   rangeInvalid: (parts) => `Not a page of this file: ${parts.join(", ")}`,
+  nothingYet: "No pages chosen yet. Click each page that has products, or type them in “Pages” — e.g. 4–15, 17–20.",
   pageOf: (n, m) => `Page ${n} of ${m}`,
+  keep: "Keep this page",
   kept: "Kept",
-  skipped: "Skipped",
-  thumbLabel: (n, kind, kept) => `Page ${n}, ${kind}, ${kept ? "kept — click to skip" : "skipped — click to keep"}`,
+  thumbLabel: (n, kept) => `Page ${n}, ${kept ? "kept — click to skip" : "not chosen — click to keep"}`,
   preview: (n) => `Preview page ${n}`,
-  keptWhy: "Kept.",
-  skippedWhy: "Skipped.",
-  coverHint: "Keep it if the producer or origin is printed only here.",
+  keptWhy: "Kept — it will be read.",
+  skippedWhy: "Not chosen — click the page or Keep if it has products.",
   willRead: (n, m) => `${n} of ${m} pages will be read`,
-  noText: (n) => `${n === 1 ? "1 kept page has" : `${n} kept pages have`} no text layer: the AI reads text, so no products will come from ${n === 1 ? "it" : "them"}.`,
   tokens: "AI tokens (estimate)",
   cost: "Cost (estimate)",
   allPages: (t) => `all pages: ${t}`,
   less: (p) => (p > 0 ? `${p}% less than reading every page` : "the same as reading every page"),
+  chooseFirst: "choose pages to see the estimate",
   noPrice: "no model price set yet",
   basisLedger: (calls) => `from ${calls} earlier catalogue AI call${calls === 1 ? "" : "s"}`,
   basisConstant: "no catalogue extraction yet — a fixed per-page guess",
   notes: [
     "The PDF is split on the server; only the kept pages go to the AI, a few pages at a time.",
     'Every product keeps its page number, so each value shows "Catalogue p.7" as evidence.',
-    "Your choice is remembered — the next version of this catalogue starts with the same pages.",
+    "Your choice is saved — the next version of this catalogue can start from the same pages.",
   ],
+  removed: (pages) => `Pages ${pages} were read before and are out now: their products that nobody reviewed will be dropped. Products already reviewed or linked stay.`,
   extract: (n) => `Extract ${n} page${n === 1 ? "" : "s"} →`,
+  chooseToExtract: "Choose pages to extract",
   later: "Save and extract later",
+  byHand: "Read the pages, type the products by hand",
   saved: "Pages saved — extract them from the catalogue when you are ready.",
   extracting: "Reading the products…",
   extracted: "Products read — opening the review.",
   extractFailed: "The products weren't read",
   loading: "Loading the pages…",
-  reading: "Still reading the pages of this catalogue…",
   failed: "The pages couldn't be loaded",
   retry: "Try again",
   empty: "This file has no pages to choose from.",
@@ -71,31 +75,16 @@ const STR = {
   extractedBefore: (pages) => `Last extraction read pages ${pages}.`,
 };
 
-const KIND = {
-  cover: { label: "Cover", tone: "bg-gray-100 text-gray-600" },
-  contents: { label: "Contents", tone: "bg-gray-100 text-gray-600" },
-  about: { label: "About", tone: "bg-gray-100 text-gray-600" },
-  product: { label: "Product", tone: "bg-blue-50 text-blue-700" },
-  blank: { label: "Blank", tone: "bg-gray-100 text-gray-500" },
-  registrations: { label: "Registrations", tone: "bg-violet-50 text-violet-700" },
-  contact: { label: "Contact", tone: "bg-gray-100 text-gray-600" },
-  back: { label: "Back cover", tone: "bg-gray-100 text-gray-600" },
-  other: { label: "Other", tone: "bg-gray-100 text-gray-600" },
-  unknown: { label: "No text — can't auto-detect", tone: "bg-amber-50 text-amber-800" },
-};
-const kindOf = (k) => KIND[k] || KIND.other;
-
 const fmtTokens = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : String(Math.round(n)));
 const fmtUsd = (v) => (v === null || v === undefined ? "—" : v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(3)}`);
 const fmtSize = (b) => (b ? (b >= 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.round(b / 1e3)} KB`) : "");
 
-/** Re-estimates from the backend's per-page rates (a page counts by its share of the text: `weight`). */
+/** Re-estimates from the backend's per-page rates while pages are clicked. */
 function estimateFor(pages, kept, est) {
   if (!est?.perPage) return null;
   const tokensPer = est.perPage.input + est.perPage.output;
-  const count = (list) => list.reduce((s, p) => s + (p.weight || 0), 0);
-  const sel = count(pages.filter((p) => kept.has(p.number)));
-  const all = count(pages);
+  const sel = kept.size;
+  const all = pages.length;
   const cost = (n) => (est.perPage.costUsd === null ? null : n * est.perPage.costUsd);
   return {
     selTokens: sel * tokensPer,
@@ -106,28 +95,26 @@ function estimateFor(pages, kept, est) {
   };
 }
 
-function Thumb({ page, kept, active, onToggle, onPreview, load }) {
-  const k = kindOf(page.kind);
+function Thumb({ page, kept, active, onToggle, onPreview, loader }) {
   return (
     <div className="flex flex-col gap-1.5" data-testid="page-thumb" data-page={page.number} data-kept={kept ? "true" : "false"}>
       <button
         type="button"
         aria-pressed={kept}
-        aria-label={STR.thumbLabel(page.number, k.label, kept)}
+        aria-label={STR.thumbLabel(page.number, kept)}
         onClick={onToggle}
         className={`relative block w-full overflow-hidden rounded-lg border-2 bg-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-          kept ? "border-blue-600 shadow-sm" : "border-gray-200 opacity-45 hover:opacity-75"
+          kept ? "border-blue-600 shadow-sm" : "border-gray-200 hover:border-gray-400"
         } ${active ? "ring-2 ring-amber-400 ring-offset-1" : ""}`}
         style={{ aspectRatio: page.width && page.height ? `${page.width} / ${page.height}` : "3 / 4" }}
       >
-        <AuthImage load={load} reloadKey={page.thumbnailUrl} alt="" className="h-full w-full" />
+        <PageImage url={page.thumbnailUrl} loader={loader} lazy className="h-full w-full" />
         <span aria-hidden="true" className={`absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-white ${kept ? "bg-blue-600" : "bg-transparent"}`}>
           {kept && <Check className="h-3.5 w-3.5" />}
         </span>
       </button>
       <div className="flex items-center gap-1.5 text-xs">
         <span className="font-semibold text-gray-700">p.{page.number}</span>
-        <span className={`min-w-0 rounded-lg px-2 py-0.5 font-medium ${k.tone}`}>{k.label}</span>
         <button type="button" onClick={onPreview} aria-label={STR.preview(page.number)} className="ml-auto rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
           <Eye className="h-3.5 w-3.5" />
         </button>
@@ -142,6 +129,7 @@ export default function CataloguePages() {
   const { scope } = useCompanyScope();
   const { user } = useAuth();
   const canManage = hasPermission(user, "manage_catalogues");
+  const { available: aiAvailable } = useAiStatus();
   const [data, setData] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [kept, setKept] = useState(new Set());
@@ -152,8 +140,21 @@ export default function CataloguePages() {
   const [busy, setBusy] = useState(null); // "save" | "extract" | "replace"
   const [actionError, setActionError] = useState(null);
   const [jobId, setJobId] = useState(null);
-  const [replaceJob, setReplaceJob] = useState(null);
+  const byHand = useRef(false);
   const fileInput = useRef(null);
+
+  // one loader for this screen: at most 6 images at a time, each fetched once. Kept across
+  // a re-mount (StrictMode): the images it holds are only let go when the screen really closes.
+  const scopeRef = useRef(scope);
+  scopeRef.current = scope;
+  const [loader] = useState(() => createImageLoader((url) => getCataloguePageImage(scopeRef.current, url), 6));
+  const closing = useRef(null);
+  useEffect(() => {
+    clearTimeout(closing.current);
+    return () => {
+      closing.current = setTimeout(() => loader.destroy(), 0);
+    };
+  }, [loader]);
 
   const load = useCallback(async () => {
     if (!scope) return;
@@ -176,27 +177,13 @@ export default function CataloguePages() {
     load();
   }, [load]);
 
-  // still being read (just uploaded): ask again until the pages are there
-  const reading = data && ["uploaded", "segmenting"].includes(data.version.status) && !data.pageCount;
-  useEffect(() => {
-    if (!reading) return undefined;
-    const t = setTimeout(load, 2000);
-    return () => clearTimeout(t);
-  }, [reading, load]);
-
   const extractTask = useTaskProgress(jobId, {
     onDone: (task) => {
       if (task.status === "completed") {
         toast.success(STR.extracted);
         navigate(`/catalogues/versions/${id}/review`);
-      } else setActionError(task.error || STR.extractFailed);
-    },
-  });
-  const replaceTask = useTaskProgress(replaceJob?.jobId, {
-    onDone: (task) => {
-      if (task.status === "completed") navigate(`/catalogues/versions/${replaceJob.versionId}/pages`);
-      else setActionError(task.error || STR.failed);
-      setBusy(null);
+      } else if (byHand.current) navigate(`/catalogues/versions/${id}/review`); // AI off: the pages are read, the products get typed
+      else setActionError(task.error || STR.extractFailed);
     },
   });
 
@@ -275,9 +262,10 @@ export default function CataloguePages() {
     }
   };
 
-  const onExtract = async () => {
+  const onExtract = async ({ handTyped = false } = {}) => {
     setBusy("extract");
     setActionError(null);
+    byHand.current = handTyped;
     try {
       await save();
       const res = await extractCatalogueVersion(scope, id, {});
@@ -295,14 +283,13 @@ export default function CataloguePages() {
     setActionError(null);
     try {
       const res = await uploadCatalogueVersion(scope, data.version.catalogue.id, { file });
-      setReplaceJob({ jobId: res.jobId, versionId: res.versionId });
+      navigate(`/catalogues/versions/${res.versionId}/pages`);
     } catch (err) {
       setActionError(err.message);
+    } finally {
       setBusy(null);
     }
   };
-
-  const loadImage = useCallback((url) => () => getCataloguePageImage(scope, url), [scope]);
 
   // ── states ──
   if (loadError) {
@@ -323,17 +310,19 @@ export default function CataloguePages() {
       </div>
     );
   }
-  if (!data || reading) {
+  if (!data) {
     return (
       <div className="flex flex-col items-center gap-3 p-10 text-sm text-gray-600" data-testid="pages-loading">
         <Spinner />
-        {reading ? STR.reading : STR.loading}
+        {STR.loading}
       </div>
     );
   }
 
   const keptCount = kept.size;
-  const keptNoText = pages.filter((p) => kept.has(p.number) && p.kind === "unknown").length;
+  const readBefore = data.version.extraction?.pages || [];
+  const removed = readBefore.filter((n) => !kept.has(n));
+  const previous = data.previousSelection?.pages || null;
   const est = estimateFor(pages, kept, data.estimate);
   const page = pages.find((p) => p.number === current) || pages[0];
   const isKept = page && kept.has(page.number);
@@ -368,9 +357,9 @@ export default function CataloguePages() {
             </Button>
           </>
         )}
-        {replaceJob && !replaceTask.done && (
+        {busy === "replace" && (
           <span className="flex w-full items-center gap-2 text-xs text-gray-600">
-            <Spinner size="sm" /> {replaceTask.message || STR.replacing}
+            <Spinner size="sm" /> {STR.replacing}
           </span>
         )}
       </div>
@@ -388,13 +377,7 @@ export default function CataloguePages() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">{STR.quick}</span>
                 {[
-                  [
-                    <>
-                      <Sparkles className="h-3.5 w-3.5" /> {STR.productsOnly}
-                    </>,
-                    () => apply(new Set(pages.filter((p) => p.kind === "product" || p.kind === "unknown").map((p) => p.number))),
-                    "quick-products",
-                  ],
+                  ...(previous ? [[STR.samePages, () => apply(new Set(previous)), "quick-same"]] : []),
                   [STR.all, () => apply(new Set(pages.map((p) => p.number))), "quick-all"],
                   [STR.none, () => apply(new Set()), "quick-none"],
                   [STR.invert, () => apply(new Set(pages.filter((p) => !kept.has(p.number)).map((p) => p.number))), "quick-invert"],
@@ -444,6 +427,11 @@ export default function CataloguePages() {
                   {rangeInvalid.length ? STR.rangeInvalid(rangeInvalid) : STR.rangeHint}
                 </span>
               </label>
+              {keptCount === 0 && (
+                <p className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-800" data-testid="nothing-chosen">
+                  {STR.nothingYet}
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3 p-4" data-testid="page-grid">
               {visiblePages.map((p) => (
@@ -457,7 +445,7 @@ export default function CataloguePages() {
                     if (!locked) toggle(p.number);
                   }}
                   onPreview={() => setCurrent(p.number)}
-                  load={loadImage(p.thumbnailUrl)}
+                  loader={loader}
                 />
               ))}
             </div>
@@ -476,7 +464,6 @@ export default function CataloguePages() {
                   <button type="button" onClick={() => move(1)} disabled={current >= pageCount} aria-label="Next page" className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-30">
                     <ChevronRight className="h-4 w-4" />
                   </button>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${kindOf(page.kind).tone}`}>{kindOf(page.kind).label}</span>
                   <button
                     type="button"
                     aria-pressed={isKept}
@@ -485,14 +472,14 @@ export default function CataloguePages() {
                     data-testid="preview-toggle"
                     className={`ml-auto inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold disabled:opacity-40 ${isKept ? "bg-blue-600 text-white" : "border border-gray-300 bg-white text-gray-700"}`}
                   >
-                    {isKept && <Check className="h-3.5 w-3.5" />} {isKept ? STR.kept : STR.skipped}
+                    {isKept && <Check className="h-3.5 w-3.5" />} {isKept ? STR.kept : STR.keep}
                   </button>
                 </div>
                 <div className={`mt-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 ${isKept ? "" : "opacity-60"}`} style={{ aspectRatio: page.width && page.height ? `${page.width} / ${page.height}` : "3 / 4" }}>
-                  <AuthImage load={loadImage(page.previewUrl)} reloadKey={page.previewUrl} alt={STR.pageOf(page.number, pageCount)} className="h-full w-full" />
+                  <PageImage url={page.previewUrl} loader={loader} alt={STR.pageOf(page.number, pageCount)} className="h-full w-full" />
                 </div>
                 <p className="mt-3 text-sm text-gray-600" data-testid="preview-reason">
-                  {page.reason}. {isKept ? STR.keptWhy : STR.skippedWhy} {!isKept && ["cover", "back"].includes(page.kind) ? STR.coverHint : ""}
+                  {isKept ? STR.keptWhy : STR.skippedWhy}
                 </p>
               </section>
             )}
@@ -504,9 +491,9 @@ export default function CataloguePages() {
               <div role="progressbar" aria-label="Pages kept" aria-valuenow={keptCount} aria-valuemin={0} aria-valuemax={pageCount} className="h-2 overflow-hidden rounded-full bg-gray-100">
                 <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${pageCount ? (100 * keptCount) / pageCount : 0}%` }} />
               </div>
-              {keptNoText > 0 && (
-                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800" data-testid="kept-no-text">
-                  {STR.noText(keptNoText)}
+              {removed.length > 0 && (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800" data-testid="removed-note">
+                  {STR.removed(formatRange(removed))}
                 </p>
               )}
               {est && (
@@ -524,7 +511,7 @@ export default function CataloguePages() {
                       {fmtUsd(est.selCost)}
                     </div>
                     <div className="text-xs text-gray-500" data-testid="est-saved">
-                      {est.selCost === null ? `${STR.less(est.saved)} · ${STR.noPrice}` : STR.less(est.saved)}
+                      {keptCount === 0 ? STR.chooseFirst : est.selCost === null ? `${STR.less(est.saved)} · ${STR.noPrice}` : STR.less(est.saved)}
                     </div>
                   </div>
                   <p className="col-span-2 text-xs text-gray-500">{data.estimate.basis === "ledger" ? STR.basisLedger(data.estimate.sample?.calls || 0) : STR.basisConstant}</p>
@@ -548,10 +535,15 @@ export default function CataloguePages() {
               {canManage && (
                 <div className="flex flex-col gap-2">
                   <AiAction className="flex">
-                    <Button onClick={onExtract} disabled={keptCount === 0 || rangeInvalid.length > 0 || locked} isLoading={busy === "extract" || extracting} className="w-full" data-testid="extract-pages">
-                      {STR.extract(keptCount)}
+                    <Button onClick={() => onExtract()} disabled={keptCount === 0 || rangeInvalid.length > 0 || locked} isLoading={busy === "extract" || extracting} className="w-full" data-testid="extract-pages">
+                      {keptCount === 0 ? STR.chooseToExtract : STR.extract(keptCount)}
                     </Button>
                   </AiAction>
+                  {!aiAvailable && (
+                    <Button variant="secondary" onClick={() => onExtract({ handTyped: true })} disabled={keptCount === 0 || rangeInvalid.length > 0 || locked} className="w-full" data-testid="read-by-hand">
+                      {STR.byHand}
+                    </Button>
+                  )}
                   <Button variant="secondary" onClick={onLater} disabled={keptCount === 0 || rangeInvalid.length > 0 || locked} isLoading={busy === "save"} className="w-full" data-testid="save-later">
                     {STR.later}
                   </Button>

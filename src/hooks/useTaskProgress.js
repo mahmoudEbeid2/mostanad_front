@@ -3,7 +3,8 @@ import io from "socket.io-client";
 import apiClient from "../services/apiClient";
 
 // Background task progress (plan §13.2): polls GET /background-tasks/:id every
-// 2 s, and uses the socket `job_status` event only as a hint for progress and
+// 2 s — the row carries progress, message, stage and stages, so this works without
+// the socket — and uses the socket `job_status` event only for fresher numbers and
 // an early re-poll. Stops on a terminal state. The task row is the truth.
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 const TERMINAL = new Set(["completed", "failed"]);
@@ -32,7 +33,17 @@ export default function useTaskProgress(taskId, { intervalMs = 2000, onDone } = 
         const { data } = await apiClient.get(`/background-tasks/${taskId}`);
         const task = data?.data;
         if (task && TERMINAL.has(task.status)) return finish(task);
-        if (task) setState((s) => ({ ...s, status: task.status }));
+        if (task) {
+          setState((s) => ({
+            ...s,
+            status: task.status,
+            // the socket may be ahead of the row (saved at most twice a second): progress never goes back
+            progress: Math.max(s.progress, task.progress ?? 0),
+            message: task.message || s.message,
+            ...(task.stage ? { stage: task.stage } : {}),
+            ...(task.stages ? { stages: task.stages } : {}),
+          }));
+        }
       } catch (err) {
         if (err.response?.status === 404) return finish({ status: "failed", error: "Task not found" });
       }

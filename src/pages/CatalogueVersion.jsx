@@ -58,7 +58,7 @@ export default function CatalogueVersion() {
           </p>
         )}
         <div className="flex flex-wrap gap-4 mt-2">
-          {["uploaded", "segmenting", "segmented", "review"].includes(version.status) && (
+          {["pages_ready", "segmented", "review", "applied"].includes(version.status) && (
             <Link to={`/catalogues/versions/${id}/pages`} className="text-sm font-semibold text-blue-600 hover:underline" data-testid="version-choose-pages">
               {STR.pages} →
             </Link>

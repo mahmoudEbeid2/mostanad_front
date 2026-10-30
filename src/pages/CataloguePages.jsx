@@ -85,15 +85,15 @@ const KIND = {
 };
 const kindOf = (k) => KIND[k] || KIND.other;
 
-const fmtTokens = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : String(n));
+const fmtTokens = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : String(Math.round(n)));
 const fmtUsd = (v) => (v === null || v === undefined ? "—" : v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(3)}`);
 const fmtSize = (b) => (b ? (b >= 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.round(b / 1e3)} KB`) : "");
 
-/** Re-estimates from the backend's per-page rates (a page counts only when it has text). */
+/** Re-estimates from the backend's per-page rates (a page counts by its share of the text: `weight`). */
 function estimateFor(pages, kept, est) {
   if (!est?.perPage) return null;
   const tokensPer = est.perPage.input + est.perPage.output;
-  const count = (list) => list.filter((p) => p.readable).length;
+  const count = (list) => list.reduce((s, p) => s + (p.weight || 0), 0);
   const sel = count(pages.filter((p) => kept.has(p.number)));
   const all = count(pages);
   const cost = (n) => (est.perPage.costUsd === null ? null : n * est.perPage.costUsd);

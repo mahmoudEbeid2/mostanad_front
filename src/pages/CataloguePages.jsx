@@ -43,6 +43,7 @@ const STR = {
   skippedWhy: "Skipped.",
   coverHint: "Keep it if the producer or origin is printed only here.",
   willRead: (n, m) => `${n} of ${m} pages will be read`,
+  noText: (n) => `${n === 1 ? "1 kept page has" : `${n} kept pages have`} no text layer: the AI reads text, so no products will come from ${n === 1 ? "it" : "them"}.`,
   tokens: "AI tokens (estimate)",
   cost: "Cost (estimate)",
   allPages: (t) => `all pages: ${t}`,
@@ -126,9 +127,7 @@ function Thumb({ page, kept, active, onToggle, onPreview, load }) {
       </button>
       <div className="flex items-center gap-1.5 text-xs">
         <span className="font-semibold text-gray-700">p.{page.number}</span>
-        <span className={`truncate rounded-full px-2 py-0.5 font-medium ${k.tone}`} title={k.label}>
-          {k.label}
-        </span>
+        <span className={`min-w-0 rounded-lg px-2 py-0.5 font-medium ${k.tone}`}>{k.label}</span>
         <button type="button" onClick={onPreview} aria-label={STR.preview(page.number)} className="ml-auto rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
           <Eye className="h-3.5 w-3.5" />
         </button>
@@ -334,6 +333,7 @@ export default function CataloguePages() {
   }
 
   const keptCount = kept.size;
+  const keptNoText = pages.filter((p) => kept.has(p.number) && p.kind === "unknown").length;
   const est = estimateFor(pages, kept, data.estimate);
   const page = pages.find((p) => p.number === current) || pages[0];
   const isKept = page && kept.has(page.number);
@@ -445,7 +445,7 @@ export default function CataloguePages() {
                 </span>
               </label>
             </div>
-            <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6" data-testid="page-grid">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3 p-4" data-testid="page-grid">
               {visiblePages.map((p) => (
                 <Thumb
                   key={p.number}
@@ -504,6 +504,11 @@ export default function CataloguePages() {
               <div role="progressbar" aria-label="Pages kept" aria-valuenow={keptCount} aria-valuemin={0} aria-valuemax={pageCount} className="h-2 overflow-hidden rounded-full bg-gray-100">
                 <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${pageCount ? (100 * keptCount) / pageCount : 0}%` }} />
               </div>
+              {keptNoText > 0 && (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800" data-testid="kept-no-text">
+                  {STR.noText(keptNoText)}
+                </p>
+              )}
               {est && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-lg bg-gray-50 p-3">

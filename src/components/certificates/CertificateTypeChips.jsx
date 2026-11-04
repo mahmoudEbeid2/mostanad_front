@@ -12,13 +12,16 @@ const STR = {
 
 const countText = (t) => (t.scopes.length === 1 && t.scopes[0] === "per_invoice" ? STR.forInvoice(t.count) : STR.certificates(t.count));
 
-/** planTypes: plan.types. onChange(ids | null); disabled while it saves or for a person who can't edit. */
-export default function CertificateTypeChips({ planTypes, disabled, onChange, raised = false }) {
+/**
+ * planTypes: plan.types. onChange(ids | null); disabled while it saves or for a person who can't edit.
+ * floating: over the new product modal, whose fields follow these chips.
+ */
+export default function CertificateTypeChips({ planTypes, disabled, onChange, floating = false }) {
   if (!planTypes?.length) return null;
   const on = planTypes.filter((t) => t.selected);
   const toggle = (t) => onChange(planTypes.filter((x) => (x.certificateTypeId === t.certificateTypeId ? !x.selected : x.selected)).map((x) => x.certificateTypeId));
   return (
-    <section aria-labelledby="types-bar" className={`bg-white border border-gray-200 rounded-xl px-4 py-3.5 flex flex-wrap items-center gap-2.5 ${raised ? "relative z-50" : ""}`} data-testid="type-chips">
+    <section aria-labelledby="types-bar" className={`bg-white border border-gray-200 rounded-xl px-4 py-3.5 flex flex-wrap items-center gap-2.5 ${floating ? "fixed top-4 left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-2rem)] shadow-xl" : ""}`} data-testid="type-chips">
       <h2 id="types-bar" className="text-sm font-semibold text-gray-900 mr-1.5">
         {STR.title}
       </h2>

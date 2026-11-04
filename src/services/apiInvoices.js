@@ -48,6 +48,18 @@ export const rematchInvoice = (scope = {}, id) => unwrap(apiClient.post(`/invoic
 export const confirmInvoice = (scope = {}, id) =>
   unwrap(apiClient.post(`/invoices/${id}/confirm`, {}, { params: scope }), "Couldn't confirm the invoice").then((d) => d.data.invoice);
 
+/** What the "+ New product" modal needs for this line → { prefill, neededFields, notAsked, noCertificate, similar, fullFields, … } */
+export const getNewProductDraft = (scope = {}, id, itemId) =>
+  unwrap(apiClient.get(`/invoices/${id}/items/${itemId}/new-product-draft`, { params: scope }), "Couldn't prepare the new product").then((d) => d.data.draft);
+
+/** AI suggestions for the empty fields shown; nothing is saved → { suggestions, unavailable?, reason? } */
+export const suggestNewProduct = (scope = {}, id, itemId, { mode, values }) =>
+  unwrap(apiClient.post(`/invoices/${id}/items/${itemId}/new-product-suggest`, { mode, values }, { params: scope }), "AI couldn't suggest values").then((d) => d.data);
+
+/** → { item, product, matching } */
+export const createProductFromLine = (scope = {}, id, itemId, body) =>
+  unwrap(apiClient.post(`/invoices/${id}/items/${itemId}/create-product`, body, { params: scope }), "Couldn't create the product").then((d) => d.data);
+
 /** Re-runs extraction of a failed invoice (same model, same prompt) → { invoiceId, taskId } */
 export const retryInvoice = (scope = {}, id) =>
   unwrap(apiClient.post(`/invoices/${id}/retry`, {}, { params: scope }), "Couldn't start reading the invoice again").then((d) => d.data);

@@ -14,6 +14,7 @@ import PlanPreview from "../components/certificates/PlanPreview";
 import BatchView from "../components/certificates/BatchView";
 import DataCheckPanel from "../components/certificates/DataCheckPanel";
 import CertificateTypeChips, { CertificateTypesLocked } from "../components/certificates/CertificateTypeChips";
+import NewProductModal from "../components/certificates/NewProductModal";
 import PreparePanel from "../components/certificates/PreparePanel";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
@@ -94,6 +95,7 @@ const STR = {
   noBrand: "Detect from products",
   warnings: "Notes from the extraction",
   pickCompany: "Pick a company first.",
+  productCreated: "Product created and matched",
 };
 
 const HEADER_FIELDS = [
@@ -227,6 +229,7 @@ export default function InvoiceReview() {
   const canGenerate = hasPermission(user, "create_certificates");
   const canForce = hasPermission(user, "update_certificates");
   const canSynonym = hasPermission(user, "update_certificate_templates");
+  const canCreateProduct = hasPermission(user, "create_products");
   const [check, setCheck] = useState(null);
   const [plan, setPlan] = useState(null);
   const [showLines, setShowLines] = useState(false);
@@ -234,6 +237,8 @@ export default function InvoiceReview() {
   const [loadError, setLoadError] = useState(null);
   const [brands, setBrands] = useState([]);
   const [lockedCodes, setLockedCodes] = useState(null); // the chosen types' codes, once they can't change
+  const [newProductFor, setNewProductFor] = useState(null); // the line the "+ New product" modal is open for
+  const [newProductIds, setNewProductIds] = useState(() => new Set()); // lines matched to a product made here
   const [busy, setBusy] = useState(null); // "rematch" | "confirm" | "retry" | "types"
   const countries = useMemo(() => countryList().getData(), []);
 
@@ -330,6 +335,13 @@ export default function InvoiceReview() {
   const add = () => run(() => addInvoiceItem(scope, id, { data: {} }));
   const rematch = withBusy("rematch", () => run(() => rematchInvoice(scope, id), STR.rematched));
   const confirm = withBusy("confirm", () => run(() => confirmInvoice(scope, id), STR.confirmed));
+  const closeNewProduct = useCallback(() => setNewProductFor(null), []);
+  const productCreated = async ({ item }) => {
+    setNewProductIds((now) => new Set(now).add(item.id));
+    setNewProductFor(null);
+    toast.success(STR.productCreated);
+    await load();
+  };
   const blocking = check?.summary?.blocking || 0;
   const startGenerate = (force) => async () => {
     if (force && !(await ask({ title: "Generate anyway?", message: STR.generateAnywayConfirm(blocking), confirmLabel: "Generate anyway", tone: "danger" }))) return;
@@ -610,9 +622,10 @@ export default function InvoiceReview() {
             <DataCheckPanel scope={scope} invoiceId={invoice.id} refreshKey={checkKey} editable={canUpdate} canSynonym={canSynonym} textContent={invoice.textContent} onChange={setCheck} focus={focus} onUnfocus={() => setFocus(false)} />
           )}
 
-          {EDITABLE.has(invoice.status) ? <CertificateTypeChips planTypes={plan?.types} disabled={!editable || busy === "types"} onChange={saveTypes} /> : BATCH_STATES.has(invoice.status) && <CertificateTypesLocked codes={typesLocked ? lockedCodes : null} />}
+          {EDITABLE.has(invoice.status) ? <CertificateTypeChips planTypes={plan?.types} disabled={!editable || busy === "types"} onChange={saveTypes} floating={!!newProductFor} /> : BATCH_STATES.has(invoice.status) && <CertificateTypesLocked codes={typesLocked ? lockedCodes : null} />}
 
-          <InvoiceItemsTable scope={scope} items={items} manual={!!invoice.extraction?.manual} editable={editable} onSaveCell={saveCell} onMatch={match} onIgnore={ignore} onDelete={remove} onAdd={add} onRemember={remember} />
+          <InvoiceItemsTable scope={scope} items={items} manual={!!invoice.extraction?.manual} editable={editable} onSaveCell={saveCell} onMatch={match} onIgnore={ignore} onDelete={remove} onAdd={add} onRemember={remember} onNewProduct={canCreateProduct ? setNewProductFor : undefined} newProductIds={newProductIds} />
+          {newProductFor && <NewProductModal scope={scope} invoiceId={invoice.id} item={newProductFor} typesKey={JSON.stringify(invoice.certificateTypeIds ?? null)} brands={brands} offsetForChips={!!plan?.types?.length} onClose={closeNewProduct} onCreated={productCreated} />}
         </>
       )}
     </div>

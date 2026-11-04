@@ -22,6 +22,10 @@ const STR = {
   aiSuggests: (name, c) => `AI suggests ${name} (${Math.round((c ?? 0) * 100)}%)`,
   confirmAi: "Confirm",
   needsMatch: "needs match",
+  newProduct: "+ New product",
+  newProductPill: "✓ new product",
+  similar: (name) => `Similar: ${name}`,
+  useIt: "use it",
   change: "Change product",
   ignored: "ignored",
   ignoredHint: "no certificate for this line",
@@ -32,6 +36,9 @@ const STR = {
   empty: "No lines were read from this invoice. Add them by hand.",
   emptyManual: "No lines yet — add each line from the original.",
 };
+
+// a candidate this close is worth a word on the line itself (mockup D2)
+const SIMILAR_MIN = 0.4;
 
 // One <td> per group; qty/unit share a column (plan §13.5).
 const COLUMNS = [
@@ -102,7 +109,7 @@ function CellInput({ item, col, label, editable, onSave }) {
   );
 }
 
-function MatchCell({ scope, item, editable, onMatch, onIgnore, onRemember }) {
+function MatchCell({ scope, item, editable, onMatch, onIgnore, onRemember, onNewProduct, isNew }) {
   const [changing, setChanging] = useState(false);
   if (item.matchStatus === "ignored") {
     return (
@@ -120,6 +127,7 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore, onRemember }) {
   const matched = item.matchStatus === "matched" && item.product;
   const aiPick = !matched ? (item.matchCandidates || []).find((c) => c.ai) : null;
   const warned = aiPick?.ai?.reasons?.some((r) => r.startsWith("⚠"));
+  const similar = !matched && editable ? (item.matchCandidates || []).find((c) => !c.ai && (c.score ?? 0) >= SIMILAR_MIN) : null;
   const select = (
     <div className="flex-1 min-w-52">
       <ProductMatchSelect
@@ -134,10 +142,10 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore, onRemember }) {
     </div>
   );
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {matched ? (
         <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs font-semibold whitespace-nowrap" title={STR.matchedByHint[item.matchMethod]}>
-          ✓ {STR.matchedBy[item.matchMethod] || item.matchMethod}
+          {isNew ? STR.newProductPill : `✓ ${STR.matchedBy[item.matchMethod] || item.matchMethod}`}
         </span>
       ) : (
         <span className="rounded-full bg-amber-50 text-amber-800 px-2 py-0.5 text-xs font-semibold whitespace-nowrap">{STR.needsMatch}</span>
@@ -171,16 +179,29 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore, onRemember }) {
       ) : (
         select
       )}
+      {!matched && editable && onNewProduct && (
+        <button type="button" onClick={onNewProduct} className="text-xs font-semibold border border-gray-300 bg-white rounded-lg px-2 py-1.5 hover:bg-gray-50 whitespace-nowrap" data-testid="new-product">
+          {STR.newProduct}
+        </button>
+      )}
       {editable && (
         <button type="button" title={STR.ignore} aria-label={STR.ignore} onClick={() => onIgnore(true)} className="ml-auto text-gray-400 hover:text-gray-700">
           <EyeOff className="w-4 h-4" />
         </button>
       )}
+      {similar && (
+        <span className="basis-full text-xs text-gray-600" data-testid="similar-product">
+          {STR.similar(similar.name)} —{" "}
+          <button type="button" onClick={() => onMatch(similar.productId)} className="font-semibold text-blue-600 hover:underline" data-testid="use-similar">
+            {STR.useIt}
+          </button>
+        </span>
+      )}
     </div>
   );
 }
 
-export default function InvoiceItemsTable({ scope, items, manual = false, editable, onSaveCell, onMatch, onIgnore, onDelete, onAdd, onRemember }) {
+export default function InvoiceItemsTable({ scope, items, manual = false, editable, onSaveCell, onMatch, onIgnore, onDelete, onAdd, onRemember, onNewProduct, newProductIds }) {
   const [ask, askDialog] = useConfirm();
   return (
     <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -230,7 +251,7 @@ export default function InvoiceItemsTable({ scope, items, manual = false, editab
                   </td>
                 ))}
                 <td className="px-2 py-1.5 align-middle">
-                  <MatchCell scope={scope} item={item} editable={editable} onMatch={(productId, extra) => onMatch(item, productId, extra)} onIgnore={(v) => onIgnore(item, v)} onRemember={onRemember ? () => onRemember(item) : undefined} />
+                  <MatchCell scope={scope} item={item} editable={editable} onMatch={(productId, extra) => onMatch(item, productId, extra)} onIgnore={(v) => onIgnore(item, v)} onRemember={onRemember ? () => onRemember(item) : undefined} onNewProduct={onNewProduct ? () => onNewProduct(item) : undefined} isNew={!!newProductIds?.has(item.id)} />
                 </td>
                 <td className="px-2 py-1.5 align-middle">
                   {editable && (

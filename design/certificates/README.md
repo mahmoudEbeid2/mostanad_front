@@ -26,8 +26,16 @@ status pills like `components/certificates/StatusBadge.jsx`. Build with the proj
 | `B5-certificate-editor.html` | Certificate editor — values, sources, flags, history, finalize | `/certificates/:id` |
 | `C0-catalogue-upload.html` (+ `.file-picked`, `.uploading`, `.checking`, `.ready`, `.failed`) | Catalogue upload step 1 — drop zone, details, upload %, quick PDF check (page count only) | `/catalogues` upload (or `/catalogues/new`) |
 | `C1-catalogue-choose-pages.html` | Catalogue upload step 2 — the person chooses the product pages (click, range, preview, token estimate); no auto-detect | catalogue upload, after the file is uploaded |
+| `D1-upload-invoice-certificate-types.html` | Invoice upload + "Certificates to make": one selectable card per type (all selected by default, "Select all", types without an active template shown dashed with "Create a template"), include-new-types and remember-for-company options | `/invoices` upload |
+| `D2-review-new-product-modal.html` (+ `.closed`) | Review: certificate-type chips with counts; unmatched line → "+ New product" modal: by default only the REQUIRED product fields of the chosen types' templates (tagged per type), or "Full product"; similar-product warning, AI suggest = estimated, remember invoice name | `/invoices/:id` (`review`) |
 
 ## Rules the mockups encode
+
+- **Certificate types per invoice**: all selected + "Include new types automatically" = every type with an active template,
+  now and later; otherwise only the selected types. Editable on review until Generate. The plan, the data check and Generate use only the chosen types.
+- **New product from a line**: asks only for the REQUIRED product fields the chosen certificate types' templates read ("Full product"
+  shows every field); created in the invoice's company and matched to that line; batch, quantity and dates stay
+  on the line. AI suggestions are marked estimated and never include lab results, batch numbers or dates.
 
 - **Catalogue pages**: a person chooses the product pages — there is no automatic page detection. Only the chosen
   pages are read and sent to the AI. The selection is saved per catalogue; the next version offers "Same pages as last version". Token/cost numbers in C1 are estimates from the cost ledger.

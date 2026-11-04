@@ -17,6 +17,10 @@ export const listCertificateTypes = (scope = {}, { includeInactive = false } = {
     (d) => d.data.types
   );
 
+/** The upload picker: active types with `activeTemplates` and `scopes`, and the company's saved choice. → { types, defaultCertificateTypeIds } */
+export const listCertificateTypesForPicker = (scope = {}) =>
+  unwrap(apiClient.get("/certificate-types", { params: scope }), "Failed to load certificate types").then((d) => d.data);
+
 export const createCertificateType = (scope = {}, body) =>
   unwrap(apiClient.post("/certificate-types", body, { params: scope }), "Failed to create the certificate type").then((d) => d.data.type);
 

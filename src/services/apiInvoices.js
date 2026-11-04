@@ -7,12 +7,15 @@ import { unwrap } from "./apiCertificateTypes";
 
 /** multipart: invoice + brandId?, country? → { invoiceId, taskId } */
 /** → { invoiceId, taskId } — extract=false (AI unavailable): taskId null, opened for manual entry */
-export const uploadInvoice = (scope = {}, { file, brandId, country, extract }) => {
+// certificateTypeIds: undefined = no choice (the company's default), null = every type, an array = only those
+export const uploadInvoice = (scope = {}, { file, brandId, country, extract, certificateTypeIds, saveAsDefault }) => {
   const fd = new FormData();
   fd.append("invoice", file);
   if (extract === false) fd.append("extract", "false");
   if (brandId) fd.append("brandId", brandId);
   if (country) fd.append("country", country);
+  if (certificateTypeIds !== undefined) fd.append("certificateTypeIds", JSON.stringify(certificateTypeIds));
+  if (saveAsDefault) fd.append("saveAsDefault", "true");
   return unwrap(apiClient.post("/invoices", fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Upload failed").then((d) => d.data);
 };
 

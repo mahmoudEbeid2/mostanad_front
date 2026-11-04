@@ -16,7 +16,7 @@ import { listInvoices } from "../services/apiInvoices";
 // top, the company's recent invoices below.
 const STR = {
   title: "Invoices",
-  subtitle: "Upload a shipment invoice — we read the products and make every certificate it needs.",
+  subtitle: "Upload a shipment invoice — we read the products and make the certificates you choose.",
   systemNote: "You see every company’s invoices. Products are matched only inside the company you pick.",
   companyNote: (name) => `${name} — only your invoices, products and templates are used.`,
   anyCompany: "you can upload for any company",
@@ -110,6 +110,7 @@ export default function Invoices() {
             <InvoiceUploadPanel
               scope={scope}
               companyId={companyId}
+              companyName={scopeState.companyName}
               companyField={<CompanyPicker scope={scopeState} variant="field" hint={STR.anyCompany} yours={false} labelClassName="text-sm font-semibold text-gray-800" />}
             />
           )}

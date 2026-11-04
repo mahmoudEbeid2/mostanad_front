@@ -13,6 +13,7 @@ import InvoiceSourceViewer from "../components/certificates/InvoiceSourceViewer"
 import PlanPreview from "../components/certificates/PlanPreview";
 import BatchView from "../components/certificates/BatchView";
 import DataCheckPanel from "../components/certificates/DataCheckPanel";
+import CertificateTypeChips, { CertificateTypesLocked } from "../components/certificates/CertificateTypeChips";
 import PreparePanel from "../components/certificates/PreparePanel";
 import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
@@ -20,6 +21,7 @@ import useConfirm from "../hooks/useConfirm";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { getBrands } from "../services/apiBrands";
+import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { generateCertificates, getGenerationPlan } from "../services/apiCertificatesV2";
 import { addInvoiceItem, confirmInvoice, deleteInvoiceItem, enterInvoiceByHand, getInvoice, prepareCertificates, rematchInvoice, retryInvoice, updateInvoice, updateInvoiceItem } from "../services/apiInvoices";
 import { withNextStep } from "../utils/aiReason";
@@ -231,7 +233,8 @@ export default function InvoiceReview() {
   const [invoice, setInvoice] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [brands, setBrands] = useState([]);
-  const [busy, setBusy] = useState(null); // "rematch" | "confirm" | "retry"
+  const [lockedCodes, setLockedCodes] = useState(null); // the chosen types' codes, once they can't change
+  const [busy, setBusy] = useState(null); // "rematch" | "confirm" | "retry" | "types"
   const countries = useMemo(() => countryList().getData(), []);
 
   const load = useCallback(async () => {
@@ -251,11 +254,24 @@ export default function InvoiceReview() {
   // the plan preview follows every review edit (it is computed on the server)
   const planKey = invoice && EDITABLE.has(invoice.status) ? `${invoice.updatedAt}:${(invoice.items || []).map((i) => `${i.id}${i.productId}${i.matchStatus}`).join()}` : null;
   useEffect(() => {
-    if (!planKey) return;
+    if (!planKey) return undefined;
+    let live = true; // the last edit's plan wins, whatever order the answers arrive in
     getGenerationPlan(scope, id)
-      .then(setPlan)
-      .catch(() => setPlan(null));
+      .then((p) => live && setPlan(p))
+      .catch(() => live && setPlan(null));
+    return () => {
+      live = false;
+    };
   }, [planKey, scope, id]);
+
+  const chosenIds = invoice?.certificateTypeIds;
+  const typesLocked = !!invoice && BATCH_STATES.has(invoice.status) && Array.isArray(chosenIds);
+  useEffect(() => {
+    if (!typesLocked) return;
+    listCertificateTypes(scope, { includeInactive: true })
+      .then((types) => setLockedCodes(types.filter((t) => chosenIds.includes(t.id)).map((t) => t.code)))
+      .catch(() => setLockedCodes(null));
+  }, [typesLocked, chosenIds, scope]);
 
   useEffect(() => {
     if (!companyId) return;
@@ -304,6 +320,7 @@ export default function InvoiceReview() {
 
   const saveHeader = (key, value) => run(() => updateInvoice(scope, id, { header: { [key]: value } }));
   const saveMeta = (body) => run(() => updateInvoice(scope, id, body));
+  const saveTypes = (certificateTypeIds) => withBusy("types", () => run(() => updateInvoice(scope, id, { certificateTypeIds })))();
   const saveCell = (item, key, value) => run(() => updateInvoiceItem(scope, id, item.id, { data: { [key]: value } }));
   const match = (item, productId, extra = {}) => run(() => updateInvoiceItem(scope, id, item.id, { productId, ...extra }));
   const ignore = (item, ignored) => run(() => updateInvoiceItem(scope, id, item.id, { ignored }));
@@ -592,6 +609,8 @@ export default function InvoiceReview() {
           {CHECKABLE.has(invoice.status) && (
             <DataCheckPanel scope={scope} invoiceId={invoice.id} refreshKey={checkKey} editable={canUpdate} canSynonym={canSynonym} textContent={invoice.textContent} onChange={setCheck} focus={focus} onUnfocus={() => setFocus(false)} />
           )}
+
+          {EDITABLE.has(invoice.status) ? <CertificateTypeChips planTypes={plan?.types} disabled={!editable || busy === "types"} onChange={saveTypes} /> : BATCH_STATES.has(invoice.status) && <CertificateTypesLocked codes={typesLocked ? lockedCodes : null} />}
 
           <InvoiceItemsTable scope={scope} items={items} manual={!!invoice.extraction?.manual} editable={editable} onSaveCell={saveCell} onMatch={match} onIgnore={ignore} onDelete={remove} onAdd={add} onRemember={remember} />
         </>

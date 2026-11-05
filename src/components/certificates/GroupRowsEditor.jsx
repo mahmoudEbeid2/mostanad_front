@@ -22,7 +22,7 @@ const STR = {
   cell: (row, label) => `Row ${row} · ${label}`,
 };
 
-export default function GroupRowsEditor({ group, value, draftRows, editable, onChange, onRevert, onReset }) {
+export default function GroupRowsEditor({ group, value, fonts, draftRows, editable, onChange, onRevert, onReset }) {
   const dirty = draftRows !== undefined;
   const rows = dirty ? draftRows : value?.rows || [];
   const flags = dirty ? [] : value?.flags || [];
@@ -110,7 +110,7 @@ export default function GroupRowsEditor({ group, value, draftRows, editable, onC
           <Plus className="w-3.5 h-3.5" /> {STR.add}
         </button>
       )}
-      <FlagBadges flags={flags} />
+      <FlagBadges flags={flags} fonts={fonts} />
       {!dirty && flags.includes("overflow") && value?.rowsFit != null && <p className="text-xs text-red-700">{STR.fit(value.rowsFit)}</p>}
       {group.capacity?.min != null && !flags.includes("overflow") && <p className="text-[11px] text-gray-500">{STR.capacity(group.capacity.min)}</p>}
     </div>

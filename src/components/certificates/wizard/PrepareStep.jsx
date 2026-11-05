@@ -5,6 +5,7 @@ import { ArrowRight, Play } from "lucide-react";
 import Button from "../../../ui/Button";
 import Spinner from "../../../ui/Spinner";
 import DocumentFrame from "../DocumentFrame";
+import FontMatches from "../FontMatches";
 import PrepareReport from "../PrepareReport";
 import FlagBadges from "../FlagBadges";
 import useTaskProgress from "../../../hooks/useTaskProgress";
@@ -119,6 +120,7 @@ export default function PrepareStep({ scope, template, version, onChanged, goSte
           </div>
         )}
         {version.error && draft && !preparing && <div className="mx-5 mb-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{version.error}</div>}
+        {!preparing && <FontMatches scope={scope} version={version} onChanged={onChanged} />}
       </section>
 
       {prepared && <TestFill scope={scope} template={template} version={version} goStep={goStep} />}
@@ -221,7 +223,7 @@ function TestFill({ scope, template, version, goStep }) {
                 <span>
                   {f.label} <span className="font-mono font-normal text-gray-400">{f.key}</span>
                 </span>
-                <FlagBadges flags={result?.flags?.[f.key]} />
+                <FlagBadges flags={result?.flags?.[f.key]} fonts={result?.fallbackFonts?.[f.key]} />
               </span>
               <input
                 value={values[f.key] ?? ""}

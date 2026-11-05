@@ -16,20 +16,30 @@ const TONES = {
   gray: "bg-gray-100 text-gray-700",
 };
 
-function describeFlag(flag) {
-  if (flag.startsWith("glyph:")) return { tone: "amber", text: `Character not in the design font: ${Array.from(flag.slice(6)).join(", ")}` };
+const GLYPH_FALLBACK = "glyph_fallback:";
+
+// informational, never blocks finalize. fonts: { "+": "Noto Sans" }, from the API
+function describeFallback(flag, fonts) {
+  const chars = Array.from(flag.slice(GLYPH_FALLBACK.length));
+  const names = [...new Set(chars.map((ch) => fonts?.[ch]).filter(Boolean))].join(", ");
+  return { tone: "gray", code: "close match", text: `${chars.join(", ")}: drawn in ${names || "a close font"} — close match` };
+}
+
+function describeFlag(flag, fonts) {
+  if (flag.startsWith(GLYPH_FALLBACK)) return describeFallback(flag, fonts);
+  if (flag.startsWith("glyph:")) return { tone: "red", code: "glyph", text: `Character not in any available font: ${Array.from(flag.slice(6)).join(", ")}` };
   return FLAGS[flag] || { tone: "amber", text: flag };
 }
 
-export default function FlagBadges({ flags, className = "" }) {
+export default function FlagBadges({ flags, fonts, className = "" }) {
   if (!flags?.length) return null;
   return (
     <span className={`inline-flex flex-wrap gap-x-3 gap-y-1 ${className}`}>
       {flags.map((f) => {
-        const { tone, text } = describeFlag(f);
+        const { tone, text, code } = describeFlag(f, fonts);
         return (
           <span key={f} className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-            <span className={`rounded-full px-2 py-0.5 font-semibold ${TONES[tone]}`}>{f.startsWith("glyph:") ? "glyph" : f.replace("_", " ")}</span>
+            <span className={`rounded-full px-2 py-0.5 font-semibold ${TONES[tone]}`}>{code || f.replace("_", " ")}</span>
             {text}
           </span>
         );

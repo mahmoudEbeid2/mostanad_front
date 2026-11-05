@@ -22,7 +22,7 @@ const STR = {
 };
 const NO_RESET = new Set(["manual", "static"]);
 
-export default function CertificateValuesForm({ fields, groups = [], values, drafts, catalogueOptions, editable, onChange, onRevert, onReset, versions = [] }) {
+export default function CertificateValuesForm({ fields, groups = [], values, drafts, catalogueOptions, fallbackFonts, editable, onChange, onRevert, onReset, versions = [] }) {
   return (
     <section className="bg-white border border-gray-200 rounded-xl overflow-hidden" data-testid="values-form">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -79,7 +79,7 @@ export default function CertificateValuesForm({ fields, groups = [], values, dra
                   </button>
                 )}
               </div>
-              <FlagBadges flags={flags} />
+              <FlagBadges flags={flags} fonts={fallbackFonts?.[f.key]} />
             </div>
           );
         })}
@@ -88,6 +88,7 @@ export default function CertificateValuesForm({ fields, groups = [], values, dra
             key={g.key}
             group={g}
             value={values[g.key]}
+            fonts={fallbackFonts?.[g.key]}
             draftRows={Object.prototype.hasOwnProperty.call(drafts, g.key) ? drafts[g.key] : undefined}
             editable={editable}
             onChange={onChange}

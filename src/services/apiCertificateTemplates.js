@@ -92,6 +92,10 @@ export const confirmFields = (scope = {}, versionId, keys) =>
 export const suggestFields = (scope = {}, versionId) =>
   unwrap(apiClient.post(`/template-versions/${versionId}/suggest`, {}, { params: scope }), "Couldn't get suggestions").then((d) => d.data);
 
+/** → { fontMatches } */
+export const setFontFallback = (scope = {}, versionId, body) =>
+  unwrap(apiClient.patch(`/template-versions/${versionId}/font-fallbacks`, body, { params: scope }), "Couldn't change the font").then((d) => d.data);
+
 /** → { versionId, taskId } */
 export const prepareVersion = (scope = {}, versionId) =>
   unwrap(apiClient.post(`/template-versions/${versionId}/prepare`, {}, { params: scope }), "Failed to start prepare").then((d) => d.data);

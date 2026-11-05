@@ -377,6 +377,7 @@ export default function CertificateEditor() {
             values={viewing === null ? cert.values : versions.find((v) => v.versionNumber === viewing)?.values || cert.values}
             drafts={viewing === null ? drafts : {}}
             catalogueOptions={options}
+            fallbackFonts={cert.fallbackFonts}
             editable={editable}
             onChange={onChange}
             onRevert={onRevert}

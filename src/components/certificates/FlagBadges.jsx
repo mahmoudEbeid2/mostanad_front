@@ -22,7 +22,7 @@ const GLYPH_FALLBACK = "glyph_fallback:";
 function describeFallback(flag, fonts) {
   const chars = Array.from(flag.slice(GLYPH_FALLBACK.length));
   const names = [...new Set(chars.map((ch) => fonts?.[ch]).filter(Boolean))].join(", ");
-  return { tone: "gray", code: "close match", text: `${chars.join(", ")}: drawn in ${names || "a close font"} — close match` };
+  return { tone: "gray", code: "fallback", text: `${chars.join(", ")}: drawn in ${names || "a close font"} — close match` };
 }
 
 function describeFlag(flag, fonts) {

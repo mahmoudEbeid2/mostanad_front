@@ -13,6 +13,7 @@ const STR = {
   toConfirm: (p) => `${p.toConfirm.length} value${p.toConfirm.length === 1 ? "" : "s"} to confirm${p.estimated ? ` (${p.estimated} estimated)` : ""} — use “Confirm all” in the data check below.`,
   labResults: (n) => `${n} lab result${n === 1 ? "" : "s"} still missing — fill ${n === 1 ? "it" : "them"} in the results grid below (or upload the supplier COA).`,
   other: (n) => `${n} other required value${n === 1 ? "" : "s"} missing — see the data check below.`,
+  optional: (n) => `${n} optional value${n === 1 ? "" : "s"} still empty — they will print blank, flagged.`,
   unmatched: (n) => `${n} line${n === 1 ? "" : "s"} still need${n === 1 ? "s" : ""} a product.`,
   ready: "Nothing required is missing — you can generate.",
   cost: (c) => `AI for this invoice so far: ${c.attempts} call${c.attempts === 1 ? "" : "s"} · $${Number(c.costUsd || 0).toFixed(4)}`,
@@ -82,6 +83,7 @@ export default function PreparePanel({ stages, task, onClose }) {
           {p.toConfirm.length > 0 && <p>{STR.toConfirm(p)}</p>}
           {p.missingLabResults > 0 && <p>{STR.labResults(p.missingLabResults)}</p>}
           {p.missingOther > 0 && <p>{STR.other(p.missingOther)}</p>}
+          {p.missingOptional?.length > 0 && <p>{STR.optional(p.missingOptional.length)}</p>}
           {p.unmatchedLines > 0 && <p>{STR.unmatched(p.unmatchedLines)}</p>}
         </div>
       )}

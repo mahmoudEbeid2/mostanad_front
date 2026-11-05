@@ -100,6 +100,8 @@ const STR = {
   labResultHint: "Never inferred or looked up: only a supplier COA, an earlier result of the same batch, or a person fills it.",
   batchFact: "Batch fact (batch / lot number, production or expiry date)",
   batchFactHint: "Never generated: only the invoice, a supplier COA, a packing list or a person fills it.",
+  notApplicable: "Not applicable",
+  notApplicableHint: "Nothing is looked for and it stays empty. Optional fields without this tick are still filled when possible.",
   specField: "Its specification",
   noSpec: "— none —",
   specFieldHint: "Shown next to the result in the results grid; a value outside it is highlighted.",
@@ -304,8 +306,15 @@ function FieldEditor({ field, siblings = [], options, groups, cellOptionsFor, su
         )}
       </div>
       <label className="flex items-center gap-2 text-[13px] text-gray-800">
-        <input type="checkbox" className="w-4 h-4" checked={field.required !== false} onChange={(e) => onChange({ required: e.target.checked })} />
+        <input type="checkbox" className="w-4 h-4" disabled={field.notApplicable === true} checked={field.required !== false && field.notApplicable !== true} onChange={(e) => onChange({ required: e.target.checked })} />
         {STR.required}
+      </label>
+      <label className="flex items-start gap-2 text-[13px] text-gray-800" title={STR.notApplicableHint}>
+        <input type="checkbox" className="w-4 h-4 mt-0.5" checked={field.notApplicable === true} onChange={(e) => onChange({ notApplicable: e.target.checked, ...(e.target.checked ? { required: false } : {}) })} data-testid="field-not-applicable" />
+        <span>
+          {STR.notApplicable}
+          <span className="block text-xs text-gray-500">{STR.notApplicableHint}</span>
+        </span>
       </label>
       <label className="flex items-start gap-2 text-[13px] text-gray-800" title={STR.labResultHint}>
         <input type="checkbox" className="w-4 h-4 mt-0.5" checked={labResultOf(field)} onChange={(e) => onChange({ isLabResult: e.target.checked, ...(e.target.checked ? {} : { showSpecInstead: false }) })} data-testid="field-lab-result" />

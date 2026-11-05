@@ -71,6 +71,8 @@ const toPayload = (drafts) =>
     ...(typeof f.isLabResult === "boolean" ? { isLabResult: f.isLabResult } : {}),
     // the owner's batch-fact tick (backend, owner 2026-10-27); omitted = the server keeps what is stored
     ...(typeof f.isBatchFact === "boolean" ? { isBatchFact: f.isBatchFact } : {}),
+    // owner setting: never looked for; omitted = the server keeps what is stored
+    ...(typeof f.notApplicable === "boolean" ? { notApplicable: f.notApplicable } : {}),
     // backend item 4: its specification, and "print the specification instead"; omitted = the server keeps what is stored
     ...(typeof f.showSpecInstead === "boolean" ? { showSpecInstead: f.showSpecInstead } : {}),
     ...(f.specFieldKey !== undefined ? { specFieldKey: f.specFieldKey || null } : {}),

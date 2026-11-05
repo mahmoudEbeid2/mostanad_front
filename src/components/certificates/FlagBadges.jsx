@@ -7,6 +7,9 @@ const FLAGS = {
   shrunk: { tone: "amber", text: "Shrunk to fit" },
   format: { tone: "amber", text: "Couldn't format as date" },
   missing_span: { tone: "red", text: "Field not found in the design" },
+  unconfirmed: { tone: "amber", text: "Estimated — confirm it in the data check before finalizing" },
+  // informational, never blocks finalize: an optional value nothing could fill
+  empty_optional: { tone: "gray", text: "Optional value is empty" },
   // informational, never blocks finalize: the design's font couldn't be read, so a missing character can't be detected
   glyph_unknown: { tone: "gray", text: "Font couldn't be checked — look at the preview for missing characters" },
 };

@@ -19,8 +19,9 @@ const STR = {
   checking: "Checking what the certificates need…",
   failed: "The data check failed:",
   retry: "Try again",
-  summary: (s) => `${s.certificates} certificate${s.certificates === 1 ? "" : "s"} · ${s.values} values · ${s.ready} ready · ${s.needsConfirmation} need confirmation · ${s.missing} missing`,
+  summary: (s) => `${s.certificates} certificate${s.certificates === 1 ? "" : "s"} · ${s.values} values · ${s.ready} ready · ${s.needsConfirmation} need confirmation · ${s.missing} missing${s.missingOptional ? ` · ${s.missingOptional} missing (optional)` : ""}`,
   allSet: "Every required value is ready.",
+  skip: "Skip",
   nothingYet: "Nothing to check yet — no line is matched to a product with an active template.",
   aiFound: (a) => `AI looked for ${a.asked} missing value${a.asked === 1 ? "" : "s"} in the invoice and your product data and found ${a.filled}, each with evidence the server checked word for word.`,
   aiRefused: (n) => `${n} AI answer${n === 1 ? " was" : "s were"} refused because the evidence didn't check out.`,
@@ -40,7 +41,7 @@ const STR = {
   synonym: "Add as synonym for all products",
   synonymDone: "Synonym added — this key is read for every product from now on.",
   unassigned: (u) => `Line ${u.lineNo}${u.name ? ` (${u.name})` : ""} gets no certificate, so nothing is checked for it.`,
-  status: { resolved: "ready", resolved_ai: "AI ✓", provided: "typed", needs_confirmation: "confirm", missing: "missing", not_applicable: "optional, empty", inferred: "inferred — confirm", web_found: "from web — confirm", catalogue_found: "from catalogue — confirm", reused: "from the product's profile" },
+  status: { resolved: "ready", resolved_ai: "AI ✓", provided: "typed", needs_confirmation: "confirm", missing: "missing", missingOptional: "missing (optional)", not_applicable: "not applicable", inferred: "inferred — confirm", web_found: "from web — confirm", catalogue_found: "from catalogue — confirm", reused: "from the product's profile" },
   // A6 (backend plan.md §15.5): the product's own catalogue page, and estimated product values
   catalogueBadge: (p) => `Catalogue p.${p.page}${p.section ? ` · ${p.section.toLowerCase()}` : ""}`,
   catalogueOpen: "Open the page",
@@ -71,6 +72,7 @@ const OPEN = new Set(["missing", "needs_confirmation", "inferred", "web_found", 
 const AWAITING = new Set(["needs_confirmation", "inferred", "web_found", "catalogue_found"]);
 // "reused" names where code took it from (item 3 profile, item 4 batch result, the specification)
 const statusLabel = (need) => {
+  if (need.status === "missing" && !need.required) return STR.status.missingOptional;
   if (need.status !== "reused") return STR.status[need.status] || need.status;
   const p = need.provenance || {};
   if (p.kind === "batch_result") return p.source === "supplier_coa" ? `supplier COA p.${p.page ?? "?"} · batch ${p.batchNo}` : `from batch ${p.batchNo}${p.fromInvoiceNumber ? ` (invoice ${p.fromInvoiceNumber})` : ""}`;
@@ -248,7 +250,7 @@ function NeedRow({ need, editable, canSynonym, textContent, onDecide, onSynonym 
           {need.label}
           {!need.required && <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>}
         </span>
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[need.status] || ""}`}>{statusLabel(need)}</span>
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${need.status === "missing" && !need.required ? "bg-amber-50 text-amber-800" : STATUS_STYLE[need.status] || ""}`}>{statusLabel(need)}</span>
         {ai && <span className="text-[11px] text-violet-700 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {STR.aiValue(need.provenance.confidence)}</span>}
         {!editing && need.display && <span className="font-mono text-sm text-gray-900">{need.display}</span>}
       </div>
@@ -281,6 +283,11 @@ function NeedRow({ need, editable, canSynonym, textContent, onDecide, onSynonym 
               {need.status !== "missing" && (
                 <button type="button" onClick={() => setEditing(false)} className="text-sm text-gray-500 hover:underline">
                   {STR.cancel}
+                </button>
+              )}
+              {need.status === "missing" && !need.required && (need.labResult || need.batchFact) && (
+                <button type="button" onClick={() => onDecide([{ needId: need.id, action: "skip" }])} className="text-sm text-gray-500 hover:underline" data-testid="need-skip">
+                  {STR.skip}
                 </button>
               )}
             </>

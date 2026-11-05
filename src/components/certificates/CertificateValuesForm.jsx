@@ -18,7 +18,7 @@ const STR = {
   unsaved: "unsaved",
   history: "History",
   generated: "generated",
-  sources: { generation: "generated", user_edit: "edited", restore: "restored", regenerate_field: "reset", duplicate: "duplicated" },
+  sources: { generation: "generated", user_edit: "edited", restore: "restored", regenerate_field: "reset", duplicate: "duplicated", font_fallback: "fallback fonts" },
 };
 const NO_RESET = new Set(["manual", "static"]);
 

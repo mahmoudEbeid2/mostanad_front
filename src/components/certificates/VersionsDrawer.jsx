@@ -10,7 +10,7 @@ const STR = {
   viewing: "Viewing",
   restore: "Restore",
   confirmRestore: (n) => ({ title: `Restore version ${n}?`, message: "Its values become a new version; nothing is deleted.", confirmLabel: "Restore" }),
-  sources: { generation: "Generated", user_edit: "Edited", restore: "Restored", regenerate_field: "Reset from source", duplicate: "Duplicated" },
+  sources: { generation: "Generated", user_edit: "Edited", restore: "Restored", regenerate_field: "Reset from source", duplicate: "Duplicated", font_fallback: "Rendered with fallback fonts" },
   issues: (n) => `${n} issue${n === 1 ? "" : "s"}`,
 };
 

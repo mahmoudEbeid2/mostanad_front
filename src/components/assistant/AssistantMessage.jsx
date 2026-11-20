@@ -1,13 +1,14 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import toast from "react-hot-toast";
 import { Loader2 } from "lucide-react";
 import { entityRoute, isArabic } from "../../utils/assistantContext";
+import TableBlock from "./TableBlock";
 
 // One message of the assistant page (E1): user bubble, or the steps the
-// assistant took + its answer (markdown: entity links, tables with Copy / CSV).
+// assistant took + its answer (markdown with entity links) + the tables its tools
+// returned (TableBlock: rows from the system, never typed by the model).
 
 function EntityLink({ href, children }) {
   const hit = /^entity:([a-z_]+)\/([0-9a-fA-F-]{36})$/.exec(href || "");
@@ -17,43 +18,6 @@ function EntityLink({ href, children }) {
     <Link to={to} className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
       {children}
     </Link>
-  );
-}
-
-const cellText = (el) => el.innerText.replace(/\s+/g, " ").trim();
-const tableRows = (table) => [...table.querySelectorAll("tr")].map((tr) => [...tr.querySelectorAll("th,td")].map(cellText));
-const csv = (rows) => rows.map((r) => r.map((c) => (/[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(",")).join("\r\n");
-
-function AnswerTable({ children }) {
-  const ref = useRef(null);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(tableRows(ref.current).map((r) => r.join("\t")).join("\n"));
-      toast.success("Table copied");
-    } catch (e) {
-      toast.error(`Couldn't copy: ${e.message}`);
-    }
-  };
-  const download = () => {
-    const blob = new Blob(["﻿" + csv(tableRows(ref.current))], { type: "text/csv;charset=utf-8" }); // BOM: Excel reads Arabic as UTF-8
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `assistant-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-  return (
-    <div className="my-2" data-testid="answer-table">
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <table ref={ref} className="w-full border-collapse text-[13px] [&_td]:border-b [&_td]:border-gray-100 [&_td]:px-3.5 [&_td]:py-3 [&_th]:border-b [&_th]:border-gray-200 [&_th]:bg-gray-50 [&_th]:px-3.5 [&_th]:py-2.5 [&_th]:text-xs [&_th]:font-semibold [&_th]:text-gray-600 [&_th]:whitespace-nowrap [&_th]:text-start">
-          {children}
-        </table>
-      </div>
-      <div className="mt-2.5 flex gap-1.5">
-        <button type="button" onClick={copy} data-testid="copy-table" className="min-h-8 rounded-xl border border-gray-300 bg-white px-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">Copy table</button>
-        <button type="button" onClick={download} data-testid="download-csv" className="min-h-8 rounded-xl border border-gray-300 bg-white px-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">Download CSV</button>
-      </div>
-    </div>
   );
 }
 
@@ -100,7 +64,7 @@ export function Steps({ steps }) {
   );
 }
 
-export default function AssistantMessage({ m, onChoose, latest }) {
+export default function AssistantMessage({ m, onChoose, latest, conversationId }) {
   if (m.role === "user") {
     return (
       <div dir="auto" className={`max-w-[85%] self-end whitespace-pre-wrap rounded-[14px_14px_4px_14px] bg-blue-600 px-3 py-2 text-sm leading-relaxed text-white ${isArabic(m.text) ? "font-arabic" : ""}`}>
@@ -114,11 +78,14 @@ export default function AssistantMessage({ m, onChoose, latest }) {
       <Steps steps={m.toolCalls} />
       {m.text && (
         <div dir="auto" data-testid="assistant-answer" className={`self-stretch text-sm leading-relaxed text-gray-900 [&_ol]:list-decimal [&_ol]:ps-5 [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:ps-5 ${isArabic(m.text) ? "font-arabic" : ""}`}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={(u) => u} components={{ a: EntityLink, table: AnswerTable }}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={(u) => u} components={{ a: EntityLink }}>
             {m.text}
           </ReactMarkdown>
         </div>
       )}
+      {(m.blocks || []).map((b) => (
+        <TableBlock key={b.id} block={b} conversationId={conversationId} messageId={m.id} />
+      ))}
       {choices && (
         <div className="flex flex-wrap gap-1.5" data-testid="choices">
           {choices.map((c) => (

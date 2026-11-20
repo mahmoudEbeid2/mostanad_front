@@ -271,7 +271,7 @@ export default function Assistant() {
                 </p>
               )}
               {messages.map((m) => (
-                <AssistantMessage key={m.id} m={m} latest={m === latestAssistant && !busy} onChoose={(c) => send(`I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} />
+                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} latest={m === latestAssistant && !busy} onChoose={(c) => send(`I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} />
               ))}
               {live && (
                 <div className="flex flex-col gap-2" data-testid="assistant-live">

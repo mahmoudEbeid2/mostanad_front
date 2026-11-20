@@ -7,6 +7,7 @@ export const listConversations = async () => (await apiClient.get("/assistant/co
 export const getConversation = async (id) => (await apiClient.get(`/assistant/conversations/${id}`)).data.data.conversation;
 export const createConversation = async (companyId) => (await apiClient.post("/assistant/conversations", companyId === undefined ? {} : { companyId })).data.data.conversation;
 export const deleteConversation = async (id) => apiClient.delete(`/assistant/conversations/${id}`);
+export const loadMoreRows = async (conversationId, messageId, blockId) => (await apiClient.post(`/assistant/conversations/${conversationId}/messages/${messageId}/blocks/${blockId}/more`)).data.data;
 export const listAssistantSettings = async () => (await apiClient.get("/assistant/settings")).data.data;
 export const updateAssistantSetting = async (scopeKey, patch) => (await apiClient.patch(`/assistant/settings/${scopeKey}`, patch)).data.data.setting;
 

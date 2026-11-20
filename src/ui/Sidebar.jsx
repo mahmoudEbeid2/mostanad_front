@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
+import { useAssistantStatus } from "../context/AssistantStatusContext";
 
 const navLinks = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, permission: "read_dashboard" },
@@ -70,6 +71,7 @@ const navLinks = [
 export default function Sidebar() {
   const { logout, user } = useAuth();
   const location = useLocation();
+  const { status: assistant } = useAssistantStatus();
   const [openDropdowns, setOpenDropdowns] = useState({
     Products: location.pathname.startsWith("/products") || location.pathname.startsWith("/catalogues"),
     "Regulatory & EDA": location.pathname.startsWith("/regulatory") || location.pathname.startsWith("/eda"),
@@ -94,6 +96,18 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        {assistant?.enabled && (
+          <NavLink
+            to="/assistant"
+            data-testid="nav-assistant"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`
+            }
+          >
+            <span aria-hidden="true" className="w-5 text-center text-violet-600">✦</span>
+            Assistant
+          </NavLink>
+        )}
         {navLinks.map((link) => {
           if (link.permission && !hasPermission(user, link.permission)) {
             return null;

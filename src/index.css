@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  /* the assistant's Arabic answers (design E1) */
+  --font-arabic: "Noto Sans Arabic", Inter, system-ui, sans-serif;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

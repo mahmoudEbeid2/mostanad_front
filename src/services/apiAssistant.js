@@ -24,9 +24,30 @@ export class AssistantError extends Error {
  * Resolves with { userMessageId, message }. signal aborts (the stop button).
  * axios can't stream in the browser, hence fetch.
  */
-export async function sendAssistantMessage(conversationId, body, { onEvent = () => {}, signal } = {}) {
+export const sendAssistantMessage = (conversationId, body, opts) => streamTurn(`/assistant/conversations/${conversationId}/messages`, body, opts);
+/** A confirmed action finished: the assistant is told and continues (same stream). */
+export const continueAfterAction = (conversationId, actionId, opts) => streamTurn(`/assistant/conversations/${conversationId}/actions/${actionId}/continue`, {}, opts);
+
+// ── files and confirmation cards (C2) ─────────────────────────────────────────
+/** Files for a conversation, with upload progress (0–1). → [attachment] */
+export async function uploadAttachments(conversationId, files, { companyId, onProgress } = {}) {
+  const fd = new FormData();
+  if (companyId !== undefined) fd.append("companyId", companyId ?? "all");
+  for (const f of files) fd.append("files", f);
+  const res = await apiClient.post(`/assistant/conversations/${conversationId}/attachments`, fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: (e) => onProgress?.(e.total ? e.loaded / e.total : 0),
+  });
+  return res.data.data.attachments;
+}
+export const approveAction = async (id) => (await apiClient.post(`/assistant/actions/${id}/approve`)).data.data.action;
+export const cancelAction = async (id) => (await apiClient.post(`/assistant/actions/${id}/cancel`)).data.data.action;
+/** → { action, task } — a running card's job, from its background task */
+export const getActionProgress = async (id) => (await apiClient.get(`/assistant/actions/${id}`)).data.data;
+
+async function streamTurn(path, body, { onEvent = () => {}, signal } = {}) {
   const token = localStorage.getItem("token");
-  const res = await fetch(`${API_URL}/assistant/conversations/${conversationId}/messages`, {
+  const res = await fetch(`${API_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(body),

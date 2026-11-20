@@ -87,7 +87,7 @@ export default function Assistant() {
 
   useEffect(() => {
     if (!isSystem) return;
-    getCompanies({ limit: 100, sort: "name" })
+    getCompanies({ limit: 1000, sort: "name" }) // every company: the picker must not drop any
       .then((r) => setCompanies(r?.data?.companies || []))
       .catch(() => setCompanies([]));
   }, [isSystem]);

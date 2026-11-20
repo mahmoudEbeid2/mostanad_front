@@ -8,6 +8,7 @@ import { loadMoreRows } from "../../services/apiAssistant";
 // system, never from the model's text. "Load more" asks the same tool for the
 // next page directly — no AI call.
 
+const SHOW_ALL_MAX = 200; // the API's limit for "Show all"
 const asText = (v) => (v === null || v === undefined ? "" : String(v));
 const csvOf = (block) =>
   [block.columns.map((c) => c.label), ...block.rows.map((r) => block.columns.map((c) => asText(r.cells[c.key])))]
@@ -24,10 +25,10 @@ export default function TableBlock({ block: initial, conversationId, messageId }
   const shown = block.rows.length;
   const more = block.nextPage ? Math.max(0, (block.total ?? shown) - shown) : 0;
 
-  const loadMore = async () => {
+  const loadMore = async (all = false) => {
     setLoading(true);
     try {
-      setBlock((await loadMoreRows(conversationId, messageId, block.id)).block);
+      setBlock((await loadMoreRows(conversationId, messageId, block.id, { all })).block);
     } catch (e) {
       toast.error(e.response?.data?.message || e.message);
     } finally {
@@ -85,8 +86,13 @@ export default function TableBlock({ block: initial, conversationId, messageId }
           {block.timezone && block.from ? ` · ${block.from} – ${dayBefore(block.to)} (${block.timezone})` : ""}
         </span>
         {more > 0 && (
-          <button type="button" onClick={loadMore} disabled={loading} data-testid="load-more" className="min-h-8 rounded-xl border border-blue-200 bg-blue-50 px-2.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50">
+          <button type="button" onClick={() => loadMore(false)} disabled={loading} data-testid="load-more" className="min-h-8 rounded-xl border border-blue-200 bg-blue-50 px-2.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50">
             {loading ? "Loading…" : `Load more (${more})`}
+          </button>
+        )}
+        {more > 0 && (block.total ?? 0) <= SHOW_ALL_MAX && (
+          <button type="button" onClick={() => loadMore(true)} disabled={loading} data-testid="show-all" className="min-h-8 rounded-xl border border-gray-300 bg-white px-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            Show all ({block.total})
           </button>
         )}
         <button type="button" onClick={copy} data-testid="copy-table" className="min-h-8 rounded-xl border border-gray-300 bg-white px-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">Copy table</button>

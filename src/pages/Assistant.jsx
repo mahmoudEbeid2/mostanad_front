@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CloudOff, Settings, Square } from "lucide-react";
+import { CloudOff, Paperclip, Settings, Square, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAiStatus } from "../context/AiStatusContext";
 import { useAssistantStatus } from "../context/AssistantStatusContext";
@@ -11,9 +11,9 @@ import { getInvoice } from "../services/apiInvoices";
 import { getCertificate } from "../services/apiCertificatesV2";
 import { getCatalogueVersion } from "../services/apiCatalogues";
 import { getProductById } from "../services/apiProducts";
-import { listConversations, getConversation, createConversation, deleteConversation, sendAssistantMessage } from "../services/apiAssistant";
+import { listConversations, getConversation, createConversation, deleteConversation, sendAssistantMessage, continueAfterAction, uploadAttachments } from "../services/apiAssistant";
 import ConversationList from "../components/assistant/ConversationList";
-import AssistantMessage, { Steps } from "../components/assistant/AssistantMessage";
+import AssistantMessage, { Steps, FileChip } from "../components/assistant/AssistantMessage";
 import AssistantSettings from "../components/assistant/AssistantSettings";
 import Spinner from "../ui/Spinner";
 
@@ -72,6 +72,9 @@ export default function Assistant() {
   const [live, setLive] = useState(null); // { status, steps } while an answer streams
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [files, setFiles] = useState([]); // { key, name, sizeBytes, mimeType, progress, attachment?, error? }
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef(null);
   const abortRef = useRef(null);
   const endRef = useRef(null);
   const inputRef = useRef(null);
@@ -147,28 +150,73 @@ export default function Assistant() {
     }
   };
 
-  const send = async (raw) => {
+  const ensureConversation = async () => {
+    if (conversation) return conversation;
+    const conv = await createConversation(isSystem ? scope : undefined);
+    setConversation(conv);
+    return conv;
+  };
+
+  // ── files: uploaded as soon as they are picked or dropped, one request each (its own progress) ──
+  const ACCEPT = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
+  const MAX_BYTES = 60 * 1024 * 1024;
+  const addFiles = async (list) => {
+    const picked = [...list];
+    if (!picked.length) return;
+    setError(null);
+    let conv;
+    try {
+      conv = await ensureConversation();
+    } catch (e) {
+      setError(errorOf(e));
+      return;
+    }
+    for (const file of picked) {
+      const key = `${file.name}-${file.size}-${Math.random()}`;
+      const bad = !ACCEPT.includes(file.type) ? "Attach a PDF, PNG, JPEG or WebP file" : file.size > MAX_BYTES ? "Files are limited to 60 MB" : null;
+      setFiles((fs) => [...fs, { key, name: file.name, sizeBytes: file.size, mimeType: file.type, progress: 0, error: bad }]);
+      if (bad) continue;
+      uploadAttachments(conv.id, [file], { companyId: isSystem ? scope : undefined, onProgress: (p) => setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, progress: p } : x))) })
+        .then(([attachment]) => setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, progress: 1, attachment } : x))))
+        .catch((e) => setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, error: errorOf(e) } : x))));
+    }
+  };
+  const uploading = files.some((f) => !f.error && !f.attachment);
+
+  const send = (raw) => {
     const body = String(raw ?? text).trim();
-    if (!body || busy) return;
+    if (!body || busy || uploading) return;
+    const ready = files.filter((f) => f.attachment).map((f) => f.attachment);
+    if (raw === undefined) setText("");
+    setFiles([]);
+    runTurn({ id: `local-${Date.now()}`, role: "user", text: body, attachments: ready }, (conv, opts) =>
+      sendAssistantMessage(conv.id, { text: body, page: pageOf(context), attachmentIds: ready.map((a) => a.id), ...(isSystem ? { companyId: scope } : {}) }, opts)
+    );
+  };
+
+  /** A confirmed action finished: the assistant is told and continues. */
+  const onActionFinished = (action) => {
+    if (!conversation) return;
+    runTurn({ id: `event-${action.id}`, role: "event", text: action.status === "done" ? "[action finished]" : "[action failed]" }, (conv, opts) => continueAfterAction(conv.id, action.id, opts));
+  };
+
+  const runTurn = async (localMessage, start) => {
+    if (busy) return;
     setError(null);
     setBusy(true);
-    if (raw === undefined) setText("");
-    setMessages((ms) => [...ms, { id: `local-${Date.now()}`, role: "user", text: body }]);
+    setMessages((ms) => [...ms, localMessage]);
     setLive({ status: "Thinking…", steps: [] });
     const ac = new AbortController();
     abortRef.current = ac;
     try {
-      let conv = conversation;
-      if (!conv) {
-        conv = await createConversation(isSystem ? scope : undefined);
-        setConversation(conv);
-      }
-      const out = await sendAssistantMessage(conv.id, { text: body, page: pageOf(context), ...(isSystem ? { companyId: scope } : {}) }, {
+      const conv = await ensureConversation();
+      const out = await start(conv, {
         signal: ac.signal,
         onEvent: (e) =>
           setLive((l) => {
             if (!l) return l;
             if (e.type === "status") return { ...l, status: e.text };
+            if (e.type === "action") return { ...l, status: "Preparing a card for you to confirm…" };
             if (e.type === "tool_start") return { status: `${e.label}…`, steps: [...l.steps, { name: e.tool, label: e.label, args: e.args, running: true }] };
             if (e.type === "tool_end") {
               const steps = [...l.steps];
@@ -181,7 +229,7 @@ export default function Assistant() {
           }),
       });
       setMessages((ms) => [...ms, out.message]);
-      setConversation((c) => (c ? { ...c, title: c.title || body.slice(0, 80) } : c));
+      if (localMessage.role === "user") setConversation((c) => (c ? { ...c, title: c.title || localMessage.text.slice(0, 80) } : c));
       refreshList();
     } catch (e) {
       if (e.name === "AbortError") setMessages((ms) => [...ms, { id: `stop-${Date.now()}`, role: "assistant", text: "", error: "Stopped." }]);
@@ -271,7 +319,7 @@ export default function Assistant() {
                 </p>
               )}
               {messages.map((m) => (
-                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} latest={m === latestAssistant && !busy} onChoose={(c) => send(`I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} />
+                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} onActionFinished={onActionFinished} latest={m === latestAssistant && !busy} onChoose={(c) => send(`I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} />
               ))}
               {live && (
                 <div className="flex flex-col gap-2" data-testid="assistant-live">
@@ -308,13 +356,45 @@ export default function Assistant() {
                     </button>
                   ))}
               </div>
+              {files.length > 0 && (
+                <div className="flex flex-wrap gap-1.5" data-testid="pending-files">
+                  {files.map((f) => (
+                    <FileChip key={f.key} file={f}>
+                      {f.error ? <span className="text-red-700">· {f.error}</span> : !f.attachment ? <span className="tabular-nums text-blue-700" data-testid="upload-progress">· {Math.round(f.progress * 100)}%</span> : null}
+                      <button type="button" aria-label={`Remove ${f.name}`} onClick={() => setFiles((fs) => fs.filter((x) => x.key !== f.key))} className="ms-0.5 text-gray-500 hover:text-gray-900">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </FileChip>
+                  ))}
+                </div>
+              )}
               <form
-                className="flex items-end gap-2 rounded-xl border border-gray-300 bg-white py-2 pe-2 ps-3 focus-within:border-blue-500"
+                data-testid="composer"
+                className={`flex items-end gap-2 rounded-xl border bg-white p-2 focus-within:border-blue-500 ${dragging ? "border-dashed border-blue-400 bg-blue-50/40" : "border-gray-300"}`}
                 onSubmit={(e) => {
                   e.preventDefault();
                   send();
                 }}
+                onDragOver={(e) => {
+                  if (![...e.dataTransfer.types].includes("Files")) return;
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(e) => {
+                  if (!e.dataTransfer.files?.length) return;
+                  e.preventDefault();
+                  setDragging(false);
+                  addFiles(e.dataTransfer.files);
+                }}
               >
+                <input ref={fileInputRef} type="file" multiple accept="application/pdf,image/png,image/jpeg,image/webp" className="hidden" data-testid="file-input" onChange={(e) => {
+                  addFiles(e.target.files);
+                  e.target.value = "";
+                }} />
+                <button type="button" aria-label="Attach files" title="Attach invoice, catalogue, label, template or lab report" onClick={() => fileInputRef.current?.click()} data-testid="attach" className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-blue-600">
+                  <Paperclip className="h-4 w-4" />
+                </button>
                 <textarea
                   ref={inputRef}
                   data-testid="assistant-input"
@@ -330,7 +410,7 @@ export default function Assistant() {
                   rows={2}
                   dir="auto"
                   maxLength={4000}
-                  placeholder="Ask about products, invoices, certificates, labels…"
+                  placeholder="Ask, or drop a file here — invoice, catalogue, label, lab report…"
                   className="flex-1 resize-none border-0 bg-transparent text-sm outline-none"
                 />
                 {busy ? (
@@ -338,12 +418,12 @@ export default function Assistant() {
                     <Square className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <button type="submit" data-testid="assistant-send" aria-label="Send" disabled={!text.trim()} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                  <button type="submit" data-testid="assistant-send" aria-label="Send" disabled={!text.trim() || uploading} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                   </button>
                 )}
               </form>
-              <div className="text-[11px] text-gray-500">Reads your data with your access. It can’t change anything yet.</div>
+              <div className="text-[11px] text-gray-500">Every change asks you first. PDF, PNG, JPEG, WebP · up to 60 MB. The assistant never fills lab results, batch numbers or dates on its own.</div>
             </div>
           </div>
         )}

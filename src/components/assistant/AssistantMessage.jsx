@@ -5,6 +5,22 @@ import remarkGfm from "remark-gfm";
 import { Loader2 } from "lucide-react";
 import { entityRoute, isArabic } from "../../utils/assistantContext";
 import TableBlock from "./TableBlock";
+import ActionCard from "./ActionCard";
+
+const size = (n) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+const KIND = { "application/pdf": "PDF", "image/png": "PNG", "image/jpeg": "JPG", "image/webp": "WEBP" };
+
+/** A file chip: type, name, size (E2). */
+export function FileChip({ file, children }) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700" data-testid="file-chip">
+      <span className="font-mono text-[10px] font-bold text-red-700">{KIND[file.mimeType] || "FILE"}</span>
+      <span className="truncate" dir="auto">{file.name}</span>
+      {file.sizeBytes ? <span className="text-gray-500">· {size(file.sizeBytes)}</span> : null}
+      {children}
+    </span>
+  );
+}
 
 // One message of the assistant page (E1): user bubble, or the steps the
 // assistant took + its answer (markdown with entity links) + the tables its tools
@@ -64,11 +80,25 @@ export function Steps({ steps }) {
   );
 }
 
-export default function AssistantMessage({ m, onChoose, latest, conversationId }) {
+export default function AssistantMessage({ m, onChoose, latest, conversationId, onActionFinished }) {
+  if (m.role === "event") {
+    // what the assistant was told when a confirmed action finished — a quiet line, not a bubble
+    const ok = m.text.startsWith("[action finished]");
+    return <div className="self-center text-xs text-gray-500" data-testid="event-line">{ok ? "✓ The action finished" : "✕ The action didn't finish"}</div>;
+  }
   if (m.role === "user") {
     return (
-      <div dir="auto" className={`max-w-[85%] self-end whitespace-pre-wrap rounded-[14px_14px_4px_14px] bg-blue-600 px-3 py-2 text-sm leading-relaxed text-white ${isArabic(m.text) ? "font-arabic" : ""}`}>
-        {m.text}
+      <div className="flex max-w-[85%] flex-col items-end gap-1.5 self-end">
+        {(m.attachments || []).length > 0 && (
+          <div className="flex flex-wrap justify-end gap-1.5">
+            {m.attachments.map((a) => (
+              <FileChip key={a.id || a.name} file={a} />
+            ))}
+          </div>
+        )}
+        <div dir="auto" className={`whitespace-pre-wrap rounded-[14px_14px_4px_14px] bg-blue-600 px-3 py-2 text-sm leading-relaxed text-white ${isArabic(m.text) ? "font-arabic" : ""}`}>
+          {m.text}
+        </div>
       </div>
     );
   }
@@ -85,6 +115,9 @@ export default function AssistantMessage({ m, onChoose, latest, conversationId }
       )}
       {(m.blocks || []).map((b) => (
         <TableBlock key={b.id} block={b} conversationId={conversationId} messageId={m.id} />
+      ))}
+      {(m.actions || []).map((a) => (
+        <ActionCard key={a.id} action={a} onFinished={onActionFinished} />
       ))}
       {choices && (
         <div className="flex flex-wrap gap-1.5" data-testid="choices">

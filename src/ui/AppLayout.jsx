@@ -4,7 +4,7 @@ import NotificationManager from "./NotificationManager";
 import AiBanner from "./AiBanner";
 import { AiStatusProvider } from "../context/AiStatusContext";
 import { AssistantStatusProvider } from "../context/AssistantStatusContext";
-import AssistantTopButton from "../components/assistant/AssistantTopButton";
+import AssistantFab from "../components/assistant/AssistantFab";
 
 export default function AppLayout() {
   // the assistant (design E1) is a full-bleed page: its own columns, no padding
@@ -20,16 +20,14 @@ export default function AppLayout() {
               <Outlet />
             </main>
           ) : (
-            <main className="flex-1 ml-64 p-8 pt-4 overflow-y-auto h-screen">
+            <main className="flex-1 ml-64 p-8 overflow-y-auto h-screen">
               <div className="max-w-6xl mx-auto">
-                <div className="mb-4 flex justify-end" data-testid="top-bar">
-                  <AssistantTopButton />
-                </div>
                 <AiBanner />
                 <Outlet />
               </div>
             </main>
           )}
+          <AssistantFab />
         </div>
       </AssistantStatusProvider>
     </AiStatusProvider>

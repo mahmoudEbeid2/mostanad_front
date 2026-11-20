@@ -115,6 +115,23 @@ export default function Assistant() {
     endRef.current?.scrollIntoView({ block: "end" }); // returns a Promise in newer browsers: never return it as the cleanup
   }, [messages, live]);
 
+  // typing anywhere on the page goes into the message box (unless another field has focus)
+  useEffect(() => {
+    const onKey = (e) => {
+      const box = inputRef.current;
+      if (!box || e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+      const el = document.activeElement;
+      if (el === box || (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)))) return;
+      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
+      e.preventDefault();
+      setText((t) => (t + e.key).slice(0, 4000));
+      box.focus();
+      requestAnimationFrame(() => box.setSelectionRange(box.value.length, box.value.length));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   const newConversation = () => {
     abortRef.current?.abort();
     setConversation(null);

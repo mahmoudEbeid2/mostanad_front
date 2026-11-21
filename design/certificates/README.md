@@ -28,9 +28,15 @@ status pills like `components/certificates/StatusBadge.jsx`. Build with the proj
 | `C1-catalogue-choose-pages.html` | Catalogue upload step 2 — the person chooses the product pages (click, range, preview, token estimate); no auto-detect | catalogue upload, after the file is uploaded |
 | `D1-upload-invoice-certificate-types.html` | Invoice upload + "Certificates to make": one selectable card per type (all selected by default, "Select all", types without an active template shown dashed with "Create a template"), include-new-types and remember-for-company options | `/invoices` upload |
 | `D2-review-new-product-modal.html` (+ `.closed`) | Review: certificate-type chips with counts; unmatched line → "+ New product" modal: by default only the REQUIRED product fields of the chosen types' templates (tagged per type), or "Full product"; similar-product warning, AI suggest = estimated, remember invoice name | `/invoices/:id` (`review`) |
+| `E0-floating-assistant-button.html` | Floating ✦ button (bottom-right) on every page, tooltip "Ask Dossira · Ctrl K"; click opens the assistant page with this page as context | every page |
+| `E1-assistant-page.html` | AI assistant — full page (opened from the floating ✦ button on any page, Ctrl/Cmd+K, or "Assistant" in the nav): history, Back link + "Opened from" page context, admin company picker, step chips, table answers with Copy/CSV, attach button | `/assistant?from=<type>:<id>` |
+| `E2-assistant-files-and-actions.html` (+ `.confirm-upload`, `.reading`, `.done`) | Assistant with files & actions: attached file, confirmation cards ("Needs your OK" → Run / Cancel → "Approved by you"), task progress, generate-certificates card with what's missing | `/assistant` |
 
 ## Rules the mockups encode
 
+- **AI assistant**: works with the signed-in user's own access — system admin across companies (picker incl. "All companies"),
+  company users only their company (no picker). The floating ✦ button navigates to the page (no drawer). Every change is a
+  confirmation card the person approves; it never fills lab results or batch facts on its own.
 - **Certificate types per invoice**: all selected + "Include new types automatically" = every type with an active template,
   now and later; otherwise only the selected types. Editable on review until Generate. The plan, the data check and Generate use only the chosen types.
 - **New product from a line**: asks only for the REQUIRED product fields the chosen certificate types' templates read ("Full product"

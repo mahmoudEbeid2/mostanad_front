@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Loader2 } from "lucide-react";
+import { Loader2, Pencil, RotateCcw } from "lucide-react";
 import { entityRoute, isArabic } from "../../utils/assistantContext";
 import TableBlock from "./TableBlock";
 import ActionCard from "./ActionCard";
@@ -80,28 +80,89 @@ export function Steps({ steps }) {
   );
 }
 
-export default function AssistantMessage({ m, onChoose, latest, conversationId, onActionFinished }) {
+/** Your message: Edit (change it, then send) or Resend (the same text) — either replaces everything after it. */
+function UserMessage({ m, canEdit, onResend }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(m.text);
+  const startEdit = () => {
+    setDraft(m.text);
+    setEditing(true);
+  };
+  const submit = () => {
+    if (!draft.trim()) return;
+    setEditing(false);
+    onResend?.(m, draft);
+  };
+  return (
+    <div className="group flex max-w-[85%] flex-col items-end gap-1.5 self-end" data-testid="user-message">
+      {(m.attachments || []).length > 0 && (
+        <div className="flex flex-wrap justify-end gap-1.5">
+          {m.attachments.map((a) => (
+            <FileChip key={a.id || a.name} file={a} />
+          ))}
+        </div>
+      )}
+      {editing ? (
+        <form
+          className="flex w-[min(560px,80vw)] flex-col gap-2 rounded-[14px] border border-blue-300 bg-white p-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit();
+          }}
+        >
+          <textarea
+            autoFocus
+            data-testid="edit-input"
+            aria-label="Edit message"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setEditing(false);
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                submit();
+              }
+            }}
+            rows={Math.min(8, Math.max(2, draft.split("\n").length))}
+            dir="auto"
+            maxLength={4000}
+            className={`w-full resize-none border-0 bg-transparent text-sm outline-none ${isArabic(draft) ? "font-arabic" : ""}`}
+          />
+          <div className="flex justify-end gap-1.5">
+            <button type="button" onClick={() => setEditing(false)} className="min-h-8 rounded-xl border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+              Cancel
+            </button>
+            <button type="submit" data-testid="edit-send" disabled={!draft.trim() || !canEdit} className="min-h-8 rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40">
+              Send
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div dir="auto" className={`whitespace-pre-wrap rounded-[14px_14px_4px_14px] bg-blue-600 px-3 py-2 text-sm leading-relaxed text-white ${isArabic(m.text) ? "font-arabic" : ""}`}>
+          {m.text}
+        </div>
+      )}
+      {canEdit && !editing && (
+        <div className="flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+          <button type="button" onClick={startEdit} data-testid="edit-message" title="Edit and send again" aria-label="Edit message" className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900">
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button type="button" onClick={() => onResend?.(m)} data-testid="resend-message" title="Send again" aria-label="Send again" className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900">
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AssistantMessage({ m, onChoose, latest, conversationId, onActionFinished, canEdit = false, onResend }) {
   if (m.role === "event") {
     // what the assistant was told when a confirmed action finished — a quiet line, not a bubble
     const ok = m.text.startsWith("[action finished]");
     return <div className="self-center text-xs text-gray-500" data-testid="event-line">{ok ? "✓ The action finished" : "✕ The action didn't finish"}</div>;
   }
-  if (m.role === "user") {
-    return (
-      <div className="flex max-w-[85%] flex-col items-end gap-1.5 self-end">
-        {(m.attachments || []).length > 0 && (
-          <div className="flex flex-wrap justify-end gap-1.5">
-            {m.attachments.map((a) => (
-              <FileChip key={a.id || a.name} file={a} />
-            ))}
-          </div>
-        )}
-        <div dir="auto" className={`whitespace-pre-wrap rounded-[14px_14px_4px_14px] bg-blue-600 px-3 py-2 text-sm leading-relaxed text-white ${isArabic(m.text) ? "font-arabic" : ""}`}>
-          {m.text}
-        </div>
-      </div>
-    );
-  }
+  if (m.role === "user") return <UserMessage m={m} canEdit={canEdit} onResend={onResend} />;
   const choices = latest ? (m.toolCalls || []).findLast((c) => c.choices?.length)?.choices : null;
   return (
     <>

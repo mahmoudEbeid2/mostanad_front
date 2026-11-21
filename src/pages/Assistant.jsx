@@ -211,17 +211,34 @@ export default function Assistant() {
     );
   };
 
+  /**
+   * Edit (new text) or resend (same text) one of your messages: it and everything after it are
+   * replaced by the new turn. The server keeps its files and page.
+   */
+  const resendFrom = (m, raw = m.text) => {
+    const body = String(raw).trim();
+    if (!body || busy || !conversation || String(m.id).startsWith("local-")) return;
+    runTurn(
+      { id: `local-${Date.now()}`, role: "user", text: body, attachments: m.attachments || [] },
+      (conv, opts) => sendAssistantMessage(conv.id, { text: body, editOf: m.id, ...(isSystem ? { companyId: scope } : {}) }, opts),
+      { replaceFrom: m.id }
+    );
+  };
+
   /** A confirmed action finished: the assistant is told and continues. */
   const onActionFinished = (action) => {
     if (!conversation) return;
     runTurn({ id: `event-${action.id}`, role: "event", text: action.status === "done" ? "[action finished]" : "[action failed]" }, (conv, opts) => continueAfterAction(conv.id, action.id, opts));
   };
 
-  const runTurn = async (localMessage, start) => {
+  const runTurn = async (localMessage, start, { replaceFrom = null } = {}) => {
     if (busy) return;
     setError(null);
     setBusy(true);
-    setMessages((ms) => [...ms, localMessage]);
+    setMessages((ms) => {
+      const cut = replaceFrom ? ms.findIndex((x) => x.id === replaceFrom) : -1;
+      return [...(cut >= 0 ? ms.slice(0, cut) : ms), localMessage];
+    });
     setLive({ status: "Thinking…", steps: [] });
     const ac = new AbortController();
     abortRef.current = ac;
@@ -245,7 +262,8 @@ export default function Assistant() {
             return l;
           }),
       });
-      setMessages((ms) => [...ms, out.message]);
+      // the stored id: what edit / resend point at
+      setMessages((ms) => [...ms.map((x) => (x.id === localMessage.id && out.userMessageId ? { ...x, id: out.userMessageId } : x)), out.message]);
       if (localMessage.role === "user") setConversation((c) => (c ? { ...c, title: c.title || localMessage.text.slice(0, 80) } : c));
       refreshList();
     } catch (e) {
@@ -254,6 +272,10 @@ export default function Assistant() {
         setError(errorOf(e));
         if (e.status === 429 || /quota/i.test(e.message || "")) ai.refresh?.();
       }
+      // an edit that failed may or may not have replaced the old turn: show what the server has
+      if (replaceFrom && conversation) getConversation(conversation.id).then((c) => setMessages(c.messages)).catch(() => {
+        /* the error above is already shown; opening the conversation again reloads it */
+      });
     } finally {
       setBusy(false);
       setLive(null);
@@ -336,7 +358,7 @@ export default function Assistant() {
                 </p>
               )}
               {messages.map((m) => (
-                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} onActionFinished={onActionFinished} latest={m === latestAssistant && !busy} onChoose={(c) => send(`I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} />
+                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} onActionFinished={onActionFinished} latest={m === latestAssistant && !busy} canEdit={!busy && !String(m.id).startsWith("local-")} onResend={resendFrom} onChoose={(c) => send(`I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} />
               ))}
               {live && (
                 <div className="flex flex-col gap-2" data-testid="assistant-live">

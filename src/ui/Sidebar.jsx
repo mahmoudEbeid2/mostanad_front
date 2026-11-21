@@ -14,11 +14,13 @@ import {
   ChevronDown,
   ChevronUp,
   Tag,
-  Scale
+  Scale,
+  PanelLeftClose
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { useAssistantStatus } from "../context/AssistantStatusContext";
+import { useSidebar, SIDEBAR_ID, shortcutLabel } from "../context/sidebarState";
 
 const navLinks = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, permission: "read_dashboard" },
@@ -72,6 +74,7 @@ export default function Sidebar() {
   const { logout, user } = useAuth();
   const location = useLocation();
   const { status: assistant } = useAssistantStatus();
+  const { visible, isMobile, toggle, sidebarRef } = useSidebar();
   const [openDropdowns, setOpenDropdowns] = useState({
     Products: location.pathname.startsWith("/products") || location.pathname.startsWith("/catalogues"),
     "Regulatory & EDA": location.pathname.startsWith("/regulatory") || location.pathname.startsWith("/eda"),
@@ -84,7 +87,15 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0 z-40">
+    <aside
+      id={SIDEBAR_ID}
+      ref={sidebarRef}
+      aria-label="Main navigation"
+      inert={!visible}
+      data-testid="sidebar"
+      data-state={visible ? "shown" : "hidden"}
+      className={`w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0 transition-transform duration-200 ease-out motion-reduce:transition-none ${isMobile ? "z-50 shadow-xl" : "z-40"} ${visible ? "translate-x-0" : "-translate-x-full"}`}
+    >
       
       {/* Logo */}
       <div className="p-6 border-b border-gray-100 flex items-center gap-3">
@@ -92,6 +103,18 @@ export default function Sidebar() {
           <FileCheck className="w-5 h-5 text-white" />
         </div>
         <span className="text-xl font-bold text-gray-900 tracking-tight">Dossira</span>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label="Hide sidebar"
+          aria-expanded={visible}
+          aria-controls={SIDEBAR_ID}
+          title={`Hide sidebar (${shortcutLabel()})`}
+          data-testid="sidebar-hide"
+          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        >
+          <PanelLeftClose className="h-4.5 w-4.5" aria-hidden="true" />
+        </button>
       </div>
 
       {/* Navigation */}

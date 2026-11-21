@@ -86,3 +86,10 @@ async function streamTurn(path, body, { onEvent = () => {}, signal } = {}) {
   if (!result) throw new AssistantError("The answer was cut off.", 0);
   return result;
 }
+
+// ── operation drafts ─────────────────────────────────────────────────────────
+/** A conversation's drafts (open and closed), each with its card and AI cost so far. */
+export const listDrafts = async (conversationId) => (await apiClient.get(`/assistant/conversations/${conversationId}/drafts`)).data.data.drafts;
+/** The form card: values the person typed or chose. → the draft (ready → its card is on it) */
+export const submitDraftFields = async (draftId, values) => (await apiClient.post(`/assistant/drafts/${draftId}/fields`, { values })).data.data.draft;
+export const cancelDraft = async (draftId) => (await apiClient.post(`/assistant/drafts/${draftId}/cancel`, {})).data.data.draft;

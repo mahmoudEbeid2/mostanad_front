@@ -6,6 +6,7 @@ import { Loader2, Pencil, RotateCcw } from "lucide-react";
 import { entityRoute, isArabic } from "../../utils/assistantContext";
 import TableBlock from "./TableBlock";
 import ActionCard from "./ActionCard";
+import DraftCard from "./DraftCard";
 
 const size = (n) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const KIND = { "application/pdf": "PDF", "image/png": "PNG", "image/jpeg": "JPG", "image/webp": "WEBP" };
@@ -156,7 +157,7 @@ function UserMessage({ m, canEdit, onResend }) {
   );
 }
 
-export default function AssistantMessage({ m, onChoose, latest, conversationId, onActionFinished, canEdit = false, onResend }) {
+export default function AssistantMessage({ m, onChoose, latest, conversationId, onActionFinished, canEdit = false, onResend, drafts = [], draftProps = {} }) {
   if (m.role === "event") {
     // what the assistant was told when a confirmed action finished — a quiet line, not a bubble
     const ok = m.text.startsWith("[action finished]");
@@ -177,7 +178,11 @@ export default function AssistantMessage({ m, onChoose, latest, conversationId, 
       {(m.blocks || []).map((b) => (
         <TableBlock key={b.id} block={b} conversationId={conversationId} messageId={m.id} />
       ))}
-      {(m.actions || []).map((a) => (
+      {drafts.map((d) => (
+        <DraftCard key={d.id} draft={d} {...draftProps} />
+      ))}
+      {/* a card made from a draft is shown on its draft */}
+      {(m.actions || []).filter((a) => !a.draftId).map((a) => (
         <ActionCard key={a.id} action={a} onFinished={onActionFinished} />
       ))}
       {choices && (

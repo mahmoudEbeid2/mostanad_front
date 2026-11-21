@@ -11,9 +11,10 @@ import { getInvoice } from "../services/apiInvoices";
 import { getCertificate } from "../services/apiCertificatesV2";
 import { getCatalogueVersion } from "../services/apiCatalogues";
 import { getProductById } from "../services/apiProducts";
-import { listConversations, getConversation, createConversation, deleteConversation, sendAssistantMessage, continueAfterAction, uploadAttachments } from "../services/apiAssistant";
+import { listConversations, getConversation, createConversation, deleteConversation, sendAssistantMessage, continueAfterAction, uploadAttachments, listDrafts, submitDraftFields, cancelDraft } from "../services/apiAssistant";
 import ConversationList from "../components/assistant/ConversationList";
 import AssistantMessage, { Steps, FileChip } from "../components/assistant/AssistantMessage";
+import DraftCard from "../components/assistant/DraftCard";
 import AssistantSettings from "../components/assistant/AssistantSettings";
 import Spinner from "../ui/Spinner";
 
@@ -23,6 +24,8 @@ import Spinner from "../ui/Spinner";
 
 const MAX_TEXT = 4000;
 const MAX_INPUT_PX = 220;
+
+const byId = (list) => Object.fromEntries((list || []).map((d) => [d.id, d]));
 
 const errorOf = (e) => e?.response?.data?.message || e?.message || "Something went wrong";
 
@@ -77,6 +80,8 @@ export default function Assistant() {
   const [showSettings, setShowSettings] = useState(false);
   const [files, setFiles] = useState([]); // { key, name, sizeBytes, mimeType, progress, attachment?, error? }
   const [dragging, setDragging] = useState(false);
+  const [drafts, setDrafts] = useState({}); // id → operation draft (the cards that collect an operation)
+  const [liveDraftIds, setLiveDraftIds] = useState([]); // drafts touched by the answer that is streaming
   const fileInputRef = useRef(null);
   const abortRef = useRef(null);
   const endRef = useRef(null);
@@ -148,6 +153,7 @@ export default function Assistant() {
     abortRef.current?.abort();
     setConversation(null);
     setMessages([]);
+    setDrafts({});
     setError(null);
     setShowSettings(false);
     setContext(from ? { ...from, label: fromLabel || from.type } : null);
@@ -161,6 +167,7 @@ export default function Assistant() {
       const c = await getConversation(id);
       setConversation(c);
       setMessages(c.messages);
+      setDrafts(byId(c.drafts));
       if (isSystem) setScope(c.companyId || "all");
       const last = [...c.messages].reverse().find((m) => m.role === "user" && m.page?.entityType);
       setContext(last ? { type: last.page.entityType === "catalogue_version" ? "catalogue" : last.page.entityType, id: last.page.entityId, label: last.page.entityType.replace("_", " ") } : null);
@@ -237,6 +244,26 @@ export default function Assistant() {
     );
   };
 
+  // ── operation drafts ──
+  const putDraft = (d) => setDrafts((x) => ({ ...x, [d.id]: d }));
+  const refreshDrafts = (conversationId = conversation?.id) => {
+    if (!conversationId) return;
+    listDrafts(conversationId)
+      .then((list) => setDrafts(byId(list)))
+      .catch(() => {
+        /* the cards keep what they showed; the next answer refreshes them */
+      });
+  };
+  const onDraftSubmit = async (id, values) => putDraft(await submitDraftFields(id, values));
+  const onDraftCancel = async (id) => {
+    try {
+      putDraft(await cancelDraft(id));
+    } catch (e) {
+      setError(errorOf(e));
+    }
+  };
+  const draftProps = { onSubmit: onDraftSubmit, onCancel: onDraftCancel, onStep: (t) => send(t), onActionDecided: () => refreshDrafts() };
+
   /** A confirmed action finished: the assistant is told and continues. */
   const onActionFinished = (action) => {
     if (!conversation) return;
@@ -252,13 +279,18 @@ export default function Assistant() {
       return [...(cut >= 0 ? ms.slice(0, cut) : ms), localMessage];
     });
     setLive({ status: "Thinking…", steps: [] });
+    setLiveDraftIds([]);
     const ac = new AbortController();
     abortRef.current = ac;
     try {
       const conv = await ensureConversation();
       const out = await start(conv, {
         signal: ac.signal,
-        onEvent: (e) =>
+        onEvent: (e) => {
+          if (e.type === "draft") {
+            putDraft(e.draft);
+            setLiveDraftIds((ids) => (ids.includes(e.draft.id) ? ids : [...ids, e.draft.id]));
+          }
           setLive((l) => {
             if (!l) return l;
             if (e.type === "status") return { ...l, status: e.text };
@@ -272,12 +304,14 @@ export default function Assistant() {
               return { status: "Reading the results…", steps };
             }
             return l;
-          }),
+          });
+        },
       });
       // the stored id: what edit / resend point at
       setMessages((ms) => [...ms.map((x) => (x.id === localMessage.id && out.userMessageId ? { ...x, id: out.userMessageId } : x)), out.message]);
       if (localMessage.role === "user") setConversation((c) => (c ? { ...c, title: c.title || localMessage.text.slice(0, 80) } : c));
       refreshList();
+      refreshDrafts(conv.id);
     } catch (e) {
       if (e.name === "AbortError") setMessages((ms) => [...ms, { id: `stop-${Date.now()}`, role: "assistant", text: "", error: "Stopped." }]);
       else {
@@ -315,6 +349,11 @@ export default function Assistant() {
   }
 
   const latestAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+  // each draft's card sits under the last answer that worked on it
+  const draftHome = {};
+  messages.forEach((m) => (m.toolCalls || []).forEach((c) => c.draftId && (draftHome[c.draftId] = m.id)));
+  const draftsOf = (m) => Object.entries(draftHome).filter(([, mid]) => mid === m.id).map(([id]) => drafts[id]).filter(Boolean);
+  const openDrafts = Object.values(drafts).filter((d) => d.status === "collecting" || d.status === "ready");
   const title = conversation?.title || "New conversation";
   return (
     <div className="flex h-full min-h-0" data-testid="assistant-page">
@@ -371,12 +410,37 @@ export default function Assistant() {
                   <span className="font-arabic" dir="rtl">اسأل عن المنتجات أو الفواتير أو الشهادات أو التقارير.</span>
                 </p>
               )}
+              {openDrafts.length > 0 && (
+                <div className="flex flex-col gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2.5" data-testid="open-drafts">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">In progress</div>
+                  {openDrafts.map((d) => (
+                    <div key={d.id} className="flex items-center gap-2 text-[13px]" data-testid="open-draft">
+                      <span className="min-w-0 flex-1 truncate font-medium">{d.title}</span>
+                      <span className="text-xs text-gray-500">{d.status === "ready" ? "waiting for your OK" : d.blockedBy.length ? "a step first" : `${d.missing.length} to fill`}</span>
+                      <button type="button" disabled={busy} onClick={() => send(`Continue: ${d.title}`)} data-testid="draft-resume" className="text-xs font-semibold text-blue-600 hover:underline disabled:opacity-50">
+                        Resume
+                      </button>
+                      <button type="button" onClick={() => onDraftCancel(d.id)} className="text-xs font-semibold text-gray-500 hover:text-gray-900 hover:underline">
+                        Cancel
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {messages.map((m) => (
-                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} onActionFinished={onActionFinished} latest={m === latestAssistant && !busy} canEdit={!busy && !String(m.id).startsWith("local-")} onResend={resendFrom} onChoose={(c) => send(`I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} />
+                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} onActionFinished={onActionFinished} latest={m === latestAssistant && !busy} canEdit={!busy && !String(m.id).startsWith("local-")} onResend={resendFrom} onChoose={(c) => send(`I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} drafts={draftsOf(m)} draftProps={{ ...draftProps, onActionFinished }} />
               ))}
+              {Object.values(drafts)
+                .filter((d) => !draftHome[d.id] && !liveDraftIds.includes(d.id) && d.status !== "cancelled" && d.status !== "expired")
+                .map((d) => (
+                  <DraftCard key={d.id} draft={d} {...draftProps} onActionFinished={onActionFinished} />
+                ))}
               {live && (
                 <div className="flex flex-col gap-2" data-testid="assistant-live">
                   <Steps steps={live.steps} />
+                  {liveDraftIds.filter((id) => !draftHome[id] && drafts[id]).map((id) => (
+                    <DraftCard key={id} draft={drafts[id]} {...draftProps} onActionFinished={onActionFinished} />
+                  ))}
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-violet-500" aria-hidden="true" /> {live.status}
                   </div>

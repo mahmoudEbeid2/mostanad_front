@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { approveAction, cancelAction, getActionProgress } from "../../services/apiAssistant";
+import SourceBadge from "./SourceBadge";
 
 // Design E2: a change the assistant proposed. Nothing happens until the person
 // presses Run; then "Approved by you · time" and — for a long job — a progress
@@ -36,12 +37,15 @@ function ProgressCard({ task, status }) {
   );
 }
 
-export default function ActionCard({ action: initial, onFinished }) {
+export default function ActionCard({ action: initial, onFinished, onDecided }) {
   const [action, setAction] = useState(initial);
   const [task, setTask] = useState(null);
   const [busy, setBusy] = useState(false);
   const reported = useRef(["done", "failed"].includes(initial.status)); // only a change seen here continues the chat
   const p = action.preview || {};
+  // a draft's card lists every value with its source; the tool's own details add only what isn't one of them
+  const shown = new Set((p.fields || []).flatMap((f) => [f.label, f.name].map((x) => String(x).toLowerCase())));
+  const details = (p.details || []).filter((d) => !shown.has(String(d.label).toLowerCase()));
   const [label, badgeClass] = BADGE[action.status] || BADGE.pending;
 
   const finished = (a) => {
@@ -85,6 +89,7 @@ export default function ActionCard({ action: initial, onFinished }) {
       if (e.response?.status === 410) setAction((x) => ({ ...x, status: "expired" }));
     } finally {
       setBusy(false);
+      onDecided?.(action.id); // its draft moved on (confirmed, executed, back to collecting, expired)
     }
   };
 
@@ -96,8 +101,21 @@ export default function ActionCard({ action: initial, onFinished }) {
           <span className="text-sm font-bold">{p.title || action.tool}</span>
         </div>
         {p.summary && <p className="m-0 text-[13px] text-gray-600">{p.summary}</p>}
+        {(p.fields || []).length > 0 && (
+          <dl className="m-0 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 border-b border-gray-100 pb-2 text-[13px]" data-testid="action-fields">
+            {p.fields.map((f) => (
+              <div key={f.name} className="contents">
+                <dt className="text-gray-500">{f.label}</dt>
+                <dd className="m-0 flex items-start gap-1.5">
+                  <span className="min-w-0 break-words" dir="auto">{f.value}</span>
+                  <SourceBadge source={f.source} evidence={f.evidence} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
         <dl className="m-0 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 text-[13px]">
-          {(p.details || []).map((d, i) => (
+          {details.map((d, i) => (
             <div key={i} className="contents">
               <dt className="text-gray-500">{d.label}</dt>
               <dd className="m-0 break-words" dir="auto">{d.value}</dd>

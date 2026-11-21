@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CloudOff, Paperclip, Settings, Square, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAiStatus } from "../context/AiStatusContext";
 import { useAssistantStatus } from "../context/AssistantStatusContext";
 import { hasPermission } from "../utils/permissions";
-import { parseFrom, entityRoute, pageOf } from "../utils/assistantContext";
+import { parseFrom, entityRoute, pageOf, isArabic } from "../utils/assistantContext";
 import { getCompanies } from "../services/apiCompanies";
 import { getInvoice } from "../services/apiInvoices";
 import { getCertificate } from "../services/apiCertificatesV2";
@@ -20,6 +20,9 @@ import Spinner from "../ui/Spinner";
 // The assistant (design E1): a full page. Read-only in this phase — it reads
 // with the signed-in user's own access. Opened from a page (?from=type:id) it
 // starts with that page as context, so "this invoice" works.
+
+const MAX_TEXT = 4000;
+const MAX_INPUT_PX = 220;
 
 const errorOf = (e) => e?.response?.data?.message || e?.message || "Something went wrong";
 
@@ -79,6 +82,15 @@ export default function Assistant() {
   const endRef = useRef(null);
   const inputRef = useRef(null);
 
+  // the message box grows with what is typed (up to MAX_INPUT_PX, then it scrolls)
+  useLayoutEffect(() => {
+    const box = inputRef.current;
+    if (!box) return;
+    box.style.height = "auto";
+    box.style.height = `${Math.min(box.scrollHeight, MAX_INPUT_PX)}px`;
+    box.style.overflowY = box.scrollHeight > MAX_INPUT_PX ? "auto" : "hidden";
+  }, [text, showSettings]);
+
   const refreshList = useCallback(() => listConversations().then((d) => setConversations(d.conversations || [])).catch((e) => setError(errorOf(e))), []);
 
   useEffect(() => {
@@ -124,7 +136,7 @@ export default function Assistant() {
       if (el === box || (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)))) return;
       if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
       e.preventDefault();
-      setText((t) => (t + e.key).slice(0, 4000));
+      setText((t) => (t + e.key).slice(0, MAX_TEXT));
       box.focus();
       requestAnimationFrame(() => box.setSelectionRange(box.value.length, box.value.length));
     };
@@ -280,6 +292,8 @@ export default function Assistant() {
       setBusy(false);
       setLive(null);
       abortRef.current = null;
+      // ready for the next question, unless the person moved on to another field
+      if (!document.activeElement || document.activeElement === document.body) inputRef.current?.focus();
     }
   };
 
@@ -445,12 +459,23 @@ export default function Assistant() {
                       e.preventDefault();
                       send();
                     }
+                    if (e.key === "Escape" && text) {
+                      e.preventDefault();
+                      setText("");
+                    }
                   }}
-                  rows={2}
+                  onPaste={(e) => {
+                    // a pasted screenshot or file is attached, like a dropped one
+                    const pasted = [...(e.clipboardData?.files || [])];
+                    if (!pasted.length) return;
+                    e.preventDefault();
+                    addFiles(pasted);
+                  }}
+                  rows={1}
                   dir="auto"
-                  maxLength={4000}
-                  placeholder="Ask, or drop a file here — invoice, catalogue, label, lab report…"
-                  className="flex-1 resize-none border-0 bg-transparent text-sm outline-none"
+                  maxLength={MAX_TEXT}
+                  placeholder="Ask, or drop or paste a file — invoice, catalogue, label, lab report…"
+                  className={`max-h-[220px] min-h-[40px] flex-1 resize-none border-0 bg-transparent py-2 text-sm leading-relaxed outline-none placeholder:text-gray-400 ${isArabic(text) ? "font-arabic" : ""}`}
                 />
                 {busy ? (
                   <button type="button" onClick={() => abortRef.current?.abort()} data-testid="assistant-stop" aria-label="Stop" className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-gray-800 text-white hover:bg-gray-700">
@@ -462,7 +487,18 @@ export default function Assistant() {
                   </button>
                 )}
               </form>
-              <div className="text-[11px] text-gray-500">Every change asks you first. PDF, PNG, JPEG, WebP · up to 60 MB. The assistant never fills lab results, batch numbers or dates on its own.</div>
+              <div className="flex items-start justify-between gap-3 text-[11px] text-gray-500">
+                <span>Every change asks you first. PDF, PNG, JPEG, WebP · up to 60 MB. The assistant never fills lab results, batch numbers or dates on its own.</span>
+                <span className="flex-none whitespace-nowrap" data-testid="composer-hint">
+                  {text.length > MAX_TEXT - 500 ? (
+                    <b className={text.length >= MAX_TEXT ? "text-red-700" : "text-amber-700"} data-testid="char-count">{text.length} / {MAX_TEXT}</b>
+                  ) : (
+                    <>
+                      <kbd className="font-sans font-semibold">Enter</kbd> to send · <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
+                    </>
+                  )}
+                </span>
+              </div>
             </div>
           </div>
         )}

@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Tags, RefreshCw, CheckCircle2, AlertCircle, ShieldAlert, SlidersHorizontal, MessageSquarePlus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { getLabel, postValidate } from "../services/apiGeneratedLabels";
@@ -8,6 +8,7 @@ import VerdictList from "../components/VerdictList";
 import EditFieldModal from "../components/label-detail/EditFieldModal";
 import ChatTab from "../components/label-detail/ChatTab";
 import ApprovalTab from "../components/label-detail/ApprovalTab";
+import LayoutSizeTab from "../components/label-detail/LayoutSizeTab";
 import Button from "../ui/Button";
 
 const STATUS_CLASSES = {
@@ -98,6 +99,10 @@ export default function LabelDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [detail, setDetail] = useState(null); // { label, currentVersion, latestValidation, provenance }
+  // ?tab=layout opens "Layout & size" (the assistant links there after a resize)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = searchParams.get("tab") === "layout" ? "layout" : "content";
+  const setView = (v) => setSearchParams(v === "layout" ? { tab: "layout" } : {}, { replace: true });
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -228,6 +233,21 @@ export default function LabelDetail() {
             </div>
           </div>
 
+          <div className="mb-6 flex gap-1 border-b border-gray-200" role="tablist">
+            {[
+              ["content", "Content & validation"],
+              ["layout", "Layout & size"],
+            ].map(([k, t]) => (
+              <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${view === k ? "border-blue-600 text-blue-700" : "border-transparent text-gray-500 hover:text-gray-800"}`}>
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {view === "layout" ? (
+            <LayoutSizeTab labelId={id} labelName={label.labelData?.productName?.translations?.en || "label"} />
+          ) : (
+          <>
           <div className="mb-6">
             <h2 className="text-lg font-black text-gray-900 mb-3">Label fields</h2>
             <LabelFieldsPanel
@@ -322,6 +342,8 @@ export default function LabelDetail() {
               />
             </div>
           </div>
+          </>
+          )}
         </div>
       </div>
 

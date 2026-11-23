@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { approveAction, cancelAction, getActionProgress } from "../../services/apiAssistant";
 import SourceBadge from "./SourceBadge";
+import { downloadLayoutPdf, layoutFileUrl } from "../../services/apiLabelLayout";
 
 // Design E2: a change the assistant proposed. Nothing happens until the person
 // presses Run; then "Approved by you · time" and — for a long job — a progress
@@ -19,6 +20,44 @@ const BADGE = {
   cancelled: ["Cancelled", "bg-gray-100 text-gray-600"],
   expired: ["Expired", "bg-gray-100 text-gray-600"],
 };
+
+/** A resized label (resize_label / upload_label_and_resize / confirm_label_upload): preview, fit, PDF. */
+function LayoutResult({ layout }) {
+  const [img, setImg] = useState(null);
+  useEffect(() => {
+    if (!layout?.previewUrl) return undefined;
+    let url = null;
+    layoutFileUrl(layout.previewUrl)
+      .then((u) => setImg((url = u)))
+      .catch(() => setImg(null));
+    return () => url && URL.revokeObjectURL(url);
+  }, [layout?.previewUrl]);
+  const fit = layout.fit || {};
+  const lines = [
+    fit.scalePct != null ? `Scaled to ${fit.scalePct} %` : null,
+    fit.fits === false ? "Doesn't fit — no PDF" : fit.fontPt ? `Fits · ${fit.fontPt} pt${fit.columns > 1 ? ` · ${fit.columns} columns` : ""}` : null,
+    fit.smallestTextPt != null ? `Smallest text ${fit.smallestTextPt} pt` : fit.textMeasurable === false ? "Smallest text can't be measured" : null,
+  ].filter(Boolean);
+  return (
+    <div className="flex gap-3 rounded-xl border border-gray-200 bg-white p-3" data-testid="layout-result">
+      {img && <img src={img} alt={`Label at ${layout.size}`} className="w-28 self-start ring-1 ring-gray-200" />}
+      <div className="min-w-0 space-y-1 text-[13px]">
+        <div className="font-semibold text-gray-900">{layout.size}</div>
+        {lines.map((l) => (
+          <div key={l} className="text-gray-700">{l}</div>
+        ))}
+        {[...(fit.overflow || []), ...(fit.warnings || [])].map((w) => (
+          <div key={w} className="text-amber-800">⚠ {w}</div>
+        ))}
+        {layout.hasPdf && (
+          <button type="button" onClick={() => downloadLayoutPdf(layout).catch((e) => toast.error(e.message))} className="font-semibold text-blue-600 hover:underline" data-testid="layout-result-pdf">
+            Download PDF
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function ProgressCard({ task, status }) {
   const pct = Math.max(0, Math.min(100, Number(task?.progress) || (status === "done" ? 100 : 0)));
@@ -149,6 +188,7 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
           </div>
         )}
         {action.status === "failed" && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">{action.error}</div>}
+        {action.status === "done" && action.result?.labelLayout && <LayoutResult layout={action.result.labelLayout} />}
         {action.status === "done" && action.result?.link && (
           <Link to={action.result.link} className="text-[13px] font-semibold text-blue-600 hover:underline">
             Open →

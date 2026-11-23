@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tags, ChevronLeft, ChevronRight } from "lucide-react";
+import { Tags, ChevronLeft, ChevronRight, Ruler } from "lucide-react";
 import { getAllLabels } from "../services/apiGeneratedLabels";
+import { getCompanies } from "../services/apiCompanies";
+import { useAuth } from "../context/AuthContext";
+import { isCompanyUser, hasPermission } from "../utils/permissions";
+import UploadResizeModal from "../components/label-detail/UploadResizeModal";
 import toast from "react-hot-toast";
 
 const STATUS_CLASSES = {
@@ -24,6 +28,17 @@ export default function LabelsList() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  // "Upload label to resize": a system user names the company the file belongs to
+  const { user } = useAuth();
+  const isSystem = !(isCompanyUser(user) || user?.isCompany);
+  const [resizeOpen, setResizeOpen] = useState(false);
+  const [companies, setCompanies] = useState([]);
+  useEffect(() => {
+    if (!resizeOpen || !isSystem || companies.length) return;
+    getCompanies({ limit: 100 })
+      .then((r) => setCompanies(r?.data?.companies || []))
+      .catch(() => setCompanies([]));
+  }, [resizeOpen, isSystem, companies.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,8 +66,16 @@ export default function LabelsList() {
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <Tags className="w-8 h-8 text-blue-600" /> My Labels
         </h1>
-        <p className="text-gray-500 mt-2">Every label you created or checked, ready to open for review, edits, and sign-off.</p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-gray-500">Every label you created or checked, ready to open for review, edits, and sign-off.</p>
+          {hasPermission(user, "update_labels") && (
+            <button type="button" onClick={() => setResizeOpen(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50" data-testid="open-resize-upload">
+              <Ruler className="w-4 h-4 text-blue-600" /> Upload label to resize
+            </button>
+          )}
+        </div>
       </div>
+      {resizeOpen && <UploadResizeModal onClose={() => setResizeOpen(false)} isSystem={isSystem} companies={companies} />}
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

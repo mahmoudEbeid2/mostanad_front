@@ -29,6 +29,7 @@ const ingredientsText = (v) => (Array.isArray(v) ? v.map((i) => [i?.translations
 /** First page of a PDF (blob URL or ArrayBuffer) drawn at `widthPx`. */
 function PdfPreview({ url, widthPx = 260 }) {
   const ref = useRef(null);
+  const [failed, setFailed] = useState(null);
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -43,12 +44,14 @@ function PdfPreview({ url, widthPx = 260 }) {
       c.height = vp.height;
       c.style.width = `${widthPx}px`;
       await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
-    })().catch(() => {});
+      if (alive) c.dataset.rendered = "true";
+    })().catch((e) => alive && setFailed(e.message || "The preview couldn't be drawn"));
     return () => {
       alive = false;
     };
   }, [url, widthPx]);
-  return <canvas ref={ref} className="bg-white shadow ring-1 ring-gray-300" aria-label="PDF preview" />;
+  if (failed) return <p className="w-64 text-xs text-gray-500">No preview ({failed}). The PDF can still be downloaded.</p>;
+  return <canvas ref={ref} className="bg-white shadow ring-1 ring-gray-300" aria-label="PDF preview" data-testid="pdf-preview" />;
 }
 
 export default function UploadResizeModal({ onClose, isSystem, companies = [] }) {
@@ -84,10 +87,20 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [] })
   }, [upload, isSystem, companyId]);
   useEffect(() => {
     if (!layout) return undefined;
+    let alive = true;
     const urls = [];
-    if (layout.hasPdf) layoutFileUrl(layout.pdfUrl).then((u) => urls.push(u) && setPdfUrl(u)).catch(() => {});
-    if (layout.previewUrl) layoutFileUrl(layout.previewUrl).then((u) => urls.push(u) && setPngUrl(u)).catch(() => {});
-    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+    // a URL that arrives after this effect was cleaned up is revoked, never shown
+    const keep = (set) => (u) => {
+      urls.push(u);
+      if (alive) set(u);
+      else URL.revokeObjectURL(u);
+    };
+    if (layout.hasPdf) layoutFileUrl(layout.pdfUrl).then(keep(setPdfUrl)).catch((e) => setError(e.message));
+    if (layout.previewUrl) layoutFileUrl(layout.previewUrl).then(keep(setPngUrl)).catch(() => {});
+    return () => {
+      alive = false;
+      urls.forEach((u) => URL.revokeObjectURL(u));
+    };
   }, [layout]);
 
   const size = preset === "custom" ? { widthMm: Number(custom.w) * 10, heightMm: Number(custom.h) * 10 } : { preset };

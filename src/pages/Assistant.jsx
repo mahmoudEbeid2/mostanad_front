@@ -11,7 +11,7 @@ import { getInvoice } from "../services/apiInvoices";
 import { getCertificate } from "../services/apiCertificatesV2";
 import { getCatalogueVersion } from "../services/apiCatalogues";
 import { getProductById } from "../services/apiProducts";
-import { listConversations, getConversation, createConversation, deleteConversation, sendAssistantMessage, continueAfterAction, uploadAttachments, listDrafts, submitDraftFields, cancelDraft } from "../services/apiAssistant";
+import { listConversations, getConversation, createConversation, deleteConversation, sendAssistantMessage, continueAfterAction, uploadAttachments, listDrafts, submitDraftFields, cancelDraft, startFixDraft, refreshDraft } from "../services/apiAssistant";
 import ConversationList from "../components/assistant/ConversationList";
 import AssistantMessage, { Steps, FileChip } from "../components/assistant/AssistantMessage";
 import DraftCard from "../components/assistant/DraftCard";
@@ -262,7 +262,23 @@ export default function Assistant() {
       setError(errorOf(e));
     }
   };
-  const draftProps = { onSubmit: onDraftSubmit, onCancel: onDraftCancel, onStep: (t) => send(t), onActionDecided: () => refreshDrafts() };
+  // "Do this step" starts the fix operation's draft directly; Refresh rebuilds an expired card
+  const onDraftStep = async (id, key) => {
+    try {
+      putDraft(await startFixDraft(id, key));
+    } catch (e) {
+      setError(errorOf(e));
+    }
+  };
+  const onDraftRefresh = async (id) => {
+    try {
+      putDraft(await refreshDraft(id));
+      refreshDrafts();
+    } catch (e) {
+      setError(errorOf(e));
+    }
+  };
+  const draftProps = { onSubmit: onDraftSubmit, onCancel: onDraftCancel, onStep: onDraftStep, onRefresh: onDraftRefresh, onActionDecided: () => refreshDrafts() };
 
   /** A confirmed action finished: the assistant is told and continues. */
   const onActionFinished = (action) => {

@@ -93,3 +93,7 @@ export const listDrafts = async (conversationId) => (await apiClient.get(`/assis
 /** The form card: values the person typed or chose. → the draft (ready → its card is on it) */
 export const submitDraftFields = async (draftId, values) => (await apiClient.post(`/assistant/drafts/${draftId}/fields`, { values })).data.data.draft;
 export const cancelDraft = async (draftId) => (await apiClient.post(`/assistant/drafts/${draftId}/cancel`, {})).data.data.draft;
+/** "Do this step": the prerequisite's fix operation starts as its own draft. → the new draft */
+export const startFixDraft = async (draftId, key) => (await apiClient.post(`/assistant/drafts/${draftId}/fix`, { key })).data.data.draft;
+/** Refresh an expired card: the same values checked again now. → the new draft */
+export const refreshDraft = async (draftId) => (await apiClient.post(`/assistant/drafts/${draftId}/refresh`, {})).data.data.draft;

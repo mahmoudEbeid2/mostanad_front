@@ -96,7 +96,53 @@ function cleaned(field, v) {
   return typeof v === "string" ? v.trim() || undefined : v;
 }
 
-export default function DraftCard({ draft, onSubmit, onCancel, onStep, onActionFinished, onActionDecided }) {
+const LINE_ACTIONS = [
+  ["match", "ربط بالمنتج / Match"],
+  ["create", "منتج جديد / New product"],
+  ["ignore", "تجاهل / Ignore"],
+];
+
+/** match_invoice_lines: change what happens to each line before pressing the one button. */
+function LinesEditor({ draft, onSubmit }) {
+  const lines = draft.fields.find((f) => f.name === "lines")?.value || [];
+  const [rows, setRows] = useState(null);
+  if (!lines.length) return null;
+  const cur = rows || lines;
+  const save = async () => {
+    try {
+      await onSubmit(draft.id, { lines: cur });
+      setRows(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    }
+  };
+  return (
+    <details className="rounded-lg border border-gray-200 px-3 py-2 text-[13px]" data-testid="lines-editor">
+      <summary className="cursor-pointer font-semibold text-gray-700">تعديل السطور / Change lines</summary>
+      <div className="mt-2 flex flex-col gap-1.5">
+        {cur.map((r, i) => (
+          <label key={r.lineNo} className="flex items-center gap-2">
+            <span className="w-16 flex-none text-gray-500">#{r.lineNo}</span>
+            <select value={r.action} onChange={(e) => setRows(cur.map((x, j) => (j === i ? { ...x, action: e.target.value } : x)))} className={input} aria-label={`Line ${r.lineNo}`}>
+              {LINE_ACTIONS.filter(([k]) => k !== "match" || r.productId).map(([k, l]) => (
+                <option key={k} value={k}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+        {rows && (
+          <button type="button" onClick={save} className="min-h-8 w-fit rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white">
+            حفظ / Save
+          </button>
+        )}
+      </div>
+    </details>
+  );
+}
+
+export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh, onActionFinished, onActionDecided }) {
   const [values, setValues] = useState({});
   const [busy, setBusy] = useState(false);
   const [statusLabel, statusClass] = STATUS[draft.status] || STATUS.collecting;
@@ -164,7 +210,7 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onActionF
                 <div className="text-amber-800" dir="auto">{b.detail}</div>
               </div>
               {b.fix?.length > 0 ? (
-                <button type="button" onClick={() => onStep(`Do this step first: ${b.label} — ${b.detail} (for: ${draft.title})`)} data-testid="draft-step" className="min-h-8 flex-none rounded-xl border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-900 hover:bg-amber-100">
+                <button type="button" onClick={() => onStep(draft.id, b.key)} data-testid="draft-step" className="min-h-8 flex-none rounded-xl border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-900 hover:bg-amber-100">
                   Do this step
                 </button>
               ) : (
@@ -198,9 +244,20 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onActionF
           {draft.error}
         </div>
       )}
-      {draft.status === "expired" && <div className="text-[13px] text-gray-600">{draft.error || "Expired"} Ask again to start over.</div>}
+      {draft.status === "expired" && (
+        <div className="flex items-center justify-between gap-3 text-[13px] text-gray-600" data-testid="draft-expired">
+          <span dir="auto">{draft.error || "Expired"}</span>
+          {onRefresh && (
+            <button type="button" onClick={() => onRefresh(draft.id)} data-testid="draft-refresh" className="min-h-8 flex-none rounded-xl border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-800 hover:bg-gray-50">
+              تحديث / Refresh
+            </button>
+          )}
+        </div>
+      )}
 
-      {draft.action && <ActionCard key={draft.action.id} action={draft.action} onFinished={onActionFinished} onDecided={onActionDecided} />}
+      {/* an expired draft's card can't run: no buttons, only Refresh above */}
+      {draft.action && draft.status !== "expired" && <ActionCard key={draft.action.id} action={draft.action} onFinished={onActionFinished} onDecided={onActionDecided} />}
+      {draft.tool === "match_invoice_lines" && draft.status === "ready" && draft.action?.status === "pending" && <LinesEditor draft={draft} onSubmit={onSubmit} />}
       {draft.costUsd !== null && draft.costUsd !== undefined && draft.aiCalls > 0 && (
         <div className="text-[11px] text-gray-500">
           {draft.aiCalls} AI call{draft.aiCalls === 1 ? "" : "s"} · ${draft.costUsd.toFixed(4)}

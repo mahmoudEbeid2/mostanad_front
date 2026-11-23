@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { Loader2, Pencil, RotateCcw } from "lucide-react";
 import { entityRoute, isArabic } from "../../utils/assistantContext";
 import TableBlock from "./TableBlock";
+import RecordBlock from "./RecordBlock";
 import ActionCard from "./ActionCard";
 import DraftCard from "./DraftCard";
 
@@ -175,9 +176,9 @@ export default function AssistantMessage({ m, onChoose, latest, conversationId, 
           </ReactMarkdown>
         </div>
       )}
-      {(m.blocks || []).map((b) => (
-        <TableBlock key={b.id} block={b} conversationId={conversationId} messageId={m.id} />
-      ))}
+      {(m.blocks || []).map((b) =>
+        b.type === "record" ? <RecordBlock key={b.id} block={b} lang={isArabic(m.text) ? "ar" : "en"} /> : <TableBlock key={b.id} block={b} conversationId={conversationId} messageId={m.id} />
+      )}
       {drafts.map((d) => (
         <DraftCard key={d.id} draft={d} {...draftProps} />
       ))}

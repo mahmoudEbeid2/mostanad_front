@@ -49,7 +49,19 @@ function FieldInput({ field, value, onChange }) {
       <div className="flex flex-col gap-1.5">
         {rows.map((r, i) => (
           <div key={i} className="flex gap-1.5">
-            <input aria-label={`${la} ${i + 1}`} placeholder={la} value={r[a] || ""} onChange={(e) => set(i, a, e.target.value)} dir="auto" className={input} />
+            {field.fieldOptions?.length ? (
+              // the fields this operation may change, labelled in Arabic and English — never free text
+              <select aria-label={`${la} ${i + 1}`} value={r[a] || ""} onChange={(e) => set(i, a, e.target.value)} dir="auto" className={input}>
+                <option value="">{la}…</option>
+                {field.fieldOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input aria-label={`${la} ${i + 1}`} placeholder={la} value={r[a] || ""} onChange={(e) => set(i, a, e.target.value)} dir="auto" className={input} />
+            )}
             <input aria-label={`${lb} ${i + 1}`} placeholder={lb} value={r[b] || ""} onChange={(e) => set(i, b, e.target.value)} dir="auto" className={input} />
             {rows.length > 1 && (
               <button type="button" aria-label={`Remove row ${i + 1}`} onClick={() => onChange(rows.filter((_, j) => j !== i))} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100">
@@ -96,7 +108,10 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onActionF
   const submit = async (e) => {
     e.preventDefault();
     const out = Object.fromEntries(ask.map((f) => [f.name, cleaned(f, values[f.name])]).filter(([, v]) => v !== undefined));
-    if (!Object.keys(out).length) return;
+    // a row with a value but no field (or a field the operation doesn't have) is said, never dropped silently
+    const halfRow = ask.find((f) => f.type === "changes" && (values[f.name] || []).some((r) => String(r.value || "").trim() && (!r.field || (f.fieldOptions && !f.fieldOptions.some((o) => o.value === r.field)))));
+    if (halfRow) return toast.error("اختر الحقل لكل قيمة / Pick the field for each value");
+    if (!Object.keys(out).length) return toast.error("املأ حقلاً واحداً على الأقل / Fill in at least one field");
     setBusy(true);
     try {
       await onSubmit(draft.id, out);

@@ -30,6 +30,19 @@ function FieldInput({ field, value, onChange }) {
       onChange(has ? picked.filter((x) => JSON.stringify(x) !== JSON.stringify(v)) : [...picked, v]);
     };
     const isOn = (v) => (field.multiple ? picked.some((x) => JSON.stringify(x) === JSON.stringify(v)) : JSON.stringify(picked) === JSON.stringify(v));
+    // a long list (countries) is a select, not a wall of buttons
+    if (!field.multiple && (field.options || []).length > 8) {
+      return (
+        <select aria-label={field.label} value={picked === undefined ? "" : JSON.stringify(picked)} onChange={(e) => onChange(e.target.value ? JSON.parse(e.target.value) : undefined)} dir="auto" className={input}>
+          <option value="">—</option>
+          {field.options.map((o) => (
+            <option key={JSON.stringify(o.value)} value={JSON.stringify(o.value)}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      );
+    }
     return (
       <div className="flex flex-wrap gap-1.5" role="group" aria-label={field.label}>
         {(field.options || []).map((o) => (

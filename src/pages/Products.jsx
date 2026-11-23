@@ -6,7 +6,11 @@ import { getProducts, createProduct, updateProduct, deleteProduct, getProductByI
 import { getCompanies } from "../services/apiCompanies";
 import { getBrands } from "../services/apiBrands";
 import { getCategories } from "../services/apiCategories";
-import { Package, Search, Filter, Plus, Edit2, Trash2, X, Sparkles } from "lucide-react";
+import { Package, Search, Filter, Plus, Edit2, Trash2, X, Sparkles, Copy, RefreshCw, Link2, AlertTriangle } from "lucide-react";
+import CopyToBrandModal from "../components/products/CopyToBrandModal";
+import SourceDiffModal from "../components/products/SourceDiffModal";
+import { useAuth } from "../context/AuthContext";
+import { isCompanyUser } from "../utils/permissions";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import toast from "react-hot-toast";
@@ -49,6 +53,25 @@ export default function Products() {
     origin: "", producer: "", activeIngredients: [], targetSpecies: [], userSafety: []
   });
   const [modalBrands, setModalBrands] = useState([]);
+  // Copy to another brand: the products being copied (one or several), the copy whose diff is open, the list selection
+  const { user } = useAuth();
+  const isSystem = !(isCompanyUser(user) || user?.isCompany);
+  const [copyFor, setCopyFor] = useState(null);
+  const [diffFor, setDiffFor] = useState(null);
+  const [selected, setSelected] = useState(() => new Set());
+  const toggleSelected = (id) =>
+    setSelected((cur) => {
+      const n = new Set(cur);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const afterCopy = (out) => {
+    setCopyFor(null);
+    setSelected(new Set());
+    fetchProducts();
+    if (out?.product) openViewModal(out.product);
+  };
 
   // Init Data
   useEffect(() => {
@@ -380,12 +403,29 @@ export default function Products() {
         </div>
       </div>
 
+      {selected.size > 0 && (
+        <div className="flex items-center justify-between gap-3 border-x border-gray-200 bg-teal-50 px-6 py-2 text-sm" data-testid="products-selection">
+          <span className="text-teal-800">{selected.size} selected</span>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setSelected(new Set())} className="px-3 py-1.5 text-gray-600 hover:text-gray-900">
+              Clear
+            </button>
+            <button type="button" onClick={() => setCopyFor(products.filter((p) => selected.has(p.id)))} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 font-medium text-white hover:bg-teal-700">
+              <Copy className="w-4 h-4" /> Copy to brand…
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-b-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase text-xs tracking-wider">
               <tr>
+                <th className="pl-6 pr-0 py-4 w-8">
+                  <input type="checkbox" aria-label="Select all" checked={products.length > 0 && products.every((p) => selected.has(p.id))} onChange={(e) => setSelected(e.target.checked ? new Set(products.map((p) => p.id)) : new Set())} />
+                </th>
                 <th className="px-6 py-4">Product Info</th>
                 <th className="px-6 py-4">Category</th>
                 <th className="px-6 py-4">Company & Brand</th>
@@ -396,7 +436,7 @@ export default function Products() {
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center">
+                  <td colSpan="6" className="px-6 py-12 text-center">
                     <div className="flex justify-center">
                       <span className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
                     </div>
@@ -404,7 +444,7 @@ export default function Products() {
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-16 text-center">
+                  <td colSpan="6" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center text-gray-400">
                       <Package className="w-16 h-16 mb-4 opacity-50" />
                       <p className="text-lg font-medium text-gray-900">No products found</p>
@@ -414,8 +454,19 @@ export default function Products() {
               ) : (
                 products.map((product) => (
                   <tr key={product.id} onClick={() => openViewModal(product)} className="hover:bg-gray-50/50 transition-colors cursor-pointer group">
+                    <td className="pl-6 pr-0 py-4" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" aria-label={`Select ${product.name}`} checked={selected.has(product.id)} onChange={() => toggleSelected(product.id)} />
+                    </td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-900 group-hover:text-teal-600 transition-colors">{product.name}</div>
+                      <div className="font-semibold text-gray-900 group-hover:text-teal-600 transition-colors">
+                        {product.name}
+                        {product.sourceProductId && (
+                          <span className="ml-2 inline-flex items-center gap-1 rounded bg-teal-50 px-1.5 py-0.5 text-[11px] font-medium text-teal-700 align-middle" title="Copied from another product">
+                            <Link2 className="w-3 h-3" />
+                            copy
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 font-mono mt-1 flex items-center gap-1">
                         <Package className="w-3 h-3" />
                         {product.gtin || "No GTIN"}
@@ -446,6 +497,17 @@ export default function Products() {
                           title="Edit"
                         >
                           <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCopyFor([product]);
+                          }}
+                          className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                          title="Copy to another brand"
+                          aria-label={`Copy ${product.name} to another brand`}
+                        >
+                          <Copy className="w-4 h-4" />
                         </button>
                         <button
                           onClick={(e) => {
@@ -488,6 +550,38 @@ export default function Products() {
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Product Name</label>
                       <div className="text-gray-900 font-bold text-xl">{currentProduct.name}</div>
+                      {currentProduct.copyInfo?.source && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs" data-testid="copied-from">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-1 font-medium text-teal-800 border border-teal-100">
+                            <Link2 className="w-3 h-3" /> Copied from {currentProduct.copyInfo.source.name}
+                            {currentProduct.copyInfo.source.brand?.name ? ` · ${currentProduct.copyInfo.source.brand.name}` : ""}
+                            {currentProduct.copyInfo.source.company?.name ? ` (${currentProduct.copyInfo.source.company.name})` : ""}
+                          </span>
+                          <button type="button" onClick={() => setDiffFor(currentProduct.id)} className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 font-medium text-gray-700 hover:bg-gray-50">
+                            <RefreshCw className="w-3 h-3" /> Update from source
+                          </button>
+                        </div>
+                      )}
+                      {currentProduct.copyInfo?.sourceInOtherCompany && <div className="mt-2 text-xs text-gray-500">Copied from a product in another company.</div>}
+                      {currentProduct.copyInfo?.needsRegistrationNumber && (
+                        <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 border border-amber-200" data-testid="needs-registration">
+                          <AlertTriangle className="w-3 h-3" /> Needs its own registration number
+                        </div>
+                      )}
+                      {currentProduct.copyInfo?.copies?.length > 0 && (
+                        <div className="mt-2 text-xs text-gray-600" data-testid="used-by">
+                          Used by:{" "}
+                          {currentProduct.copyInfo.copies.map((c, i) => (
+                            <span key={c.id}>
+                              {i ? ", " : ""}
+                              <button type="button" className="text-teal-700 hover:underline" onClick={() => openViewModal(c)}>
+                                {c.name}
+                              </button>
+                              {c.brand?.name ? ` (${c.brand.name})` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       {currentProduct.description && (
                         <p className="text-gray-600 text-sm mt-2 leading-relaxed">{currentProduct.description}</p>
                       )}
@@ -863,6 +957,10 @@ export default function Products() {
                     <Edit2 className="w-4 h-4 mr-2" />
                     Edit Product
                   </Button>
+                  <Button variant="secondary" onClick={() => setCopyFor([currentProduct])} type="button" className="text-teal-600 border-teal-200 hover:bg-teal-50 hover:border-teal-300">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy to another brand
+                  </Button>
                   <Button 
                     variant="secondary" 
                     onClick={() => {
@@ -920,6 +1018,17 @@ export default function Products() {
         </div>
       </div>
     )}
-  </div>
+      {copyFor && <CopyToBrandModal products={copyFor} isSystem={isSystem} companies={companies} onClose={() => setCopyFor(null)} onDone={afterCopy} />}
+      {diffFor && (
+        <SourceDiffModal
+          productId={diffFor}
+          onClose={() => setDiffFor(null)}
+          onDone={(out) => {
+            setDiffFor(null);
+            if (out?.product) openViewModal(out.product);
+          }}
+        />
+      )}
+    </div>
   );
 }

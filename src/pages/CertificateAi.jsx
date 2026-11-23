@@ -11,7 +11,7 @@ import useCompanyScope from "../hooks/useCompanyScope";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { addDictionarySynonym } from "../services/apiInvoices";
-import { decideSynonym, getAiSettings, getAiStats, getCompleteness, getDictionaryHealth, rebuildDictionary, suggestSynonyms, updateAiSettings } from "../services/apiCertificateAi";
+import { decideSynonym, getAiSettings, getAiStats, getAiStatus, getCompleteness, getDictionaryHealth, rebuildDictionary, suggestSynonyms, updateAiSettings } from "../services/apiCertificateAi";
 import { withNextStep } from "../utils/aiReason";
 
 // /certificate-ai — the certificate AI layers in one place (backend plan.md §8, §9; A4):
@@ -428,6 +428,51 @@ const LIMITS = [
   { key: "webLookupDailyLimit", label: "Web lookups per day (company)", min: 0, max: 1000 },
 ];
 
+// Read-only: which model each AI task runs on (backend config AI_MODEL_DEFAULT /
+// AI_MODEL_FALLBACK / AI_MODEL_<TASK>), its price, and any model the API has
+// paused after repeated overloads.
+const TASK_LABEL = (task) => task.toLowerCase().split("_").map((w, i) => (i ? w : w[0].toUpperCase() + w.slice(1))).join(" ");
+const price = (p) => (p ? `$${p.inputPerMillion} in · $${p.outputPerMillion} out per 1M tokens` : "price not set");
+function AiModels() {
+  const [m, setM] = useState(null);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    getAiStatus()
+      .then((d) => setM(d.models || null))
+      .catch((e) => setError(e.message));
+  }, []);
+  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (!m) return null;
+  return (
+    <section className="max-w-3xl space-y-3" data-testid="ai-models">
+      <h2 className="text-sm font-semibold text-gray-900">AI models</h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Tile label="Default model (every task)" value={<span className="text-base font-mono">{m.default.modelId}</span>} note={price(m.default.price)} />
+        <Tile label="Fallback (only while the default is overloaded)" value={<span className="text-base font-mono">{m.fallback?.modelId || "off"}</span>} note={m.fallback ? price(m.fallback.price) : "No fallback configured"} />
+      </div>
+      {m.paused?.length > 0 && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800" role="status">
+          Paused after repeated overloads: {m.paused.map((p) => `${p.model} (until ${new Date(p.pausedUntil).toLocaleTimeString()})`).join(", ")}. Calls go to the fallback meanwhile.
+        </p>
+      )}
+      <Table testId="ai-models-tasks" head={<><Th>Task</Th><Th>Model</Th></>}>
+        {m.tasks.map((t) => (
+          <tr key={t.task}>
+            <Td>{TASK_LABEL(t.task)}</Td>
+            <Td className="font-mono text-xs">
+              {t.modelId}
+              {t.overridden && <span className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 font-sans text-[11px] text-blue-700">own setting</span>}
+            </Td>
+          </tr>
+        ))}
+      </Table>
+      <p className="text-xs text-gray-500">
+        Set on the server, not here. A failed call is retried up to {m.retry.maxAttempts} times within {Math.round(m.retry.totalTimeMs / 1000)} s; after {m.retry.breakerThreshold} overloads in a row a model is paused for {Math.round(m.retry.breakerPauseMs / 1000)} s.
+      </p>
+    </section>
+  );
+}
+
 function Settings({ scope, canEdit }) {
   const [s, setS] = useState(null);
   const [error, setError] = useState(null);
@@ -524,7 +569,12 @@ export default function CertificateAi() {
             {tab === "quality" && <Quality scope={scope} />}
             {tab === "products" && <Products scope={scope} />}
             {tab === "dictionary" && <Dictionary scope={scope} canEdit={canEdit} />}
-            {tab === "settings" && <Settings scope={scope} canEdit={canEdit} />}
+            {tab === "settings" && (
+              <div className="space-y-8">
+                <Settings scope={scope} canEdit={canEdit} />
+                <AiModels />
+              </div>
+            )}
           </div>
         </>
       )}

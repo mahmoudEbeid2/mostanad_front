@@ -10,12 +10,13 @@ import { getLayoutSizes, uploadLabelToResize, getLabelUpload, confirmLabelUpload
 
 // Labels list → "Upload label to resize": a label the client already has as a
 // file (PDF, PNG, JPEG), at another size. Two ways, chosen per upload:
-//   Rebuild at a new size (recommended) — the label's text is read by AI; every
-//     field is shown to check, the empty ones listed (nothing is filled in);
-//     after "Confirm" it is laid out at the new size like any label.
-//   Keep the original design, just scale — the file on the new page, proportions
-//     kept; the scale, the smallest text after scaling and a warning below the
-//     minimum. "Stretch to fill" only with its warning.
+//   Keep the original design, just scale (the default) — the file on the new
+//     page, proportions kept; the scale, the smallest text after scaling and a
+//     warning below the minimum. "Stretch to fill" only with its warning.
+//   Rebuild (only when chosen) — the label's text is read by AI and re-typed in
+//     a plain layout WITHOUT the original design; every field is shown to check,
+//     the empty ones listed (nothing is filled in); after "Confirm" it is laid
+//     out at the new size like any label.
 
 const FIELD_LABEL = (f) => f.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
 const shown = (v) => {
@@ -58,7 +59,7 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [] })
   const navigate = useNavigate();
   const [sizes, setSizes] = useState(null);
   const [file, setFile] = useState(null);
-  const [mode, setMode] = useState("rebuild");
+  const [mode, setMode] = useState("scale");
   const [preset, setPreset] = useState("100x120");
   const [custom, setCustom] = useState({ w: 10, h: 12 });
   const [stretch, setStretch] = useState(false);
@@ -180,15 +181,16 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [] })
 
               <fieldset className="grid gap-2 sm:grid-cols-2">
                 <legend className="mb-2 text-sm font-semibold text-gray-700">How</legend>
-                <label className={`rounded-xl border px-3 py-2 text-sm ${mode === "rebuild" ? "border-blue-600 bg-blue-50" : "border-gray-200"}`}>
-                  <input type="radio" name="mode" className="mr-2" checked={mode === "rebuild"} onChange={() => setMode("rebuild")} />
-                  <b>Rebuild at a new size</b> <span className="text-xs text-blue-700">recommended</span>
-                  <span className="block text-xs text-gray-500 mt-1">The text is read by AI (about 1 call) — you check every field — then laid out to fit the new size.</span>
-                </label>
                 <label className={`rounded-xl border px-3 py-2 text-sm ${mode === "scale" ? "border-blue-600 bg-blue-50" : "border-gray-200"}`}>
                   <input type="radio" name="mode" className="mr-2" checked={mode === "scale"} onChange={() => setMode("scale")} />
-                  <b>Keep the original design, just scale</b>
-                  <span className="block text-xs text-gray-500 mt-1">The file placed on the new page, proportions kept; text gets smaller with it.</span>
+                  <b>Keep the original design, just scale</b> <span className="text-xs text-blue-700">default</span>
+                  <span className="block text-xs text-gray-500 mt-1">The file placed on the new page, proportions kept — the artwork, colours and logo stay as they are; text gets smaller or larger with it.</span>
+                </label>
+                <label className={`rounded-xl border px-3 py-2 text-sm ${mode === "rebuild" ? "border-amber-600 bg-amber-50" : "border-gray-200"}`}>
+                  <input type="radio" name="mode" className="mr-2" checked={mode === "rebuild"} onChange={() => setMode("rebuild")} />
+                  <b>Rebuild: re-type the text</b>
+                  <span className="block text-xs text-gray-500 mt-1">The text is read by AI (about 1 call), you check every field, then it is laid out in a plain layout to fit the new size.</span>
+                  {mode === "rebuild" && <span className="mt-1 block text-xs font-medium text-amber-800">The original design is not kept: no artwork, colours or logo. Only the text.</span>}
                 </label>
               </fieldset>
 

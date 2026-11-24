@@ -20,7 +20,7 @@ import {
   createReferenceLabelManual,
   deleteReferenceLabel,
   getReferenceLabels,
-  uploadReferenceLabels,
+  uploadReferenceLabelFile,
 } from "../services/apiReferenceLabels";
 import { getBrands } from "../services/apiBrands";
 import { getCategories } from "../services/apiCategories";
@@ -58,6 +58,8 @@ export default function ReferenceLabels() {
   const [modalTab, setModalTab] = useState("upload");
   const [viewingLabel, setViewingLabel] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // per-file upload: [{ file, progress 0..1, state: waiting|uploading|queued|skipped|failed, taskId?, uploadedAt?, reason? }]
+  const [uploads, setUploads] = useState([]);
 
   const fetchLabels = useCallback(async () => {
     try {
@@ -109,6 +111,7 @@ export default function ReferenceLabels() {
   const resetModal = () => {
     setIsModalOpen(false);
     setFiles([]);
+    setUploads([]);
     setForm(emptyForm);
     setModalTab("upload");
   };
@@ -122,32 +125,35 @@ export default function ReferenceLabels() {
     return true;
   };
 
+  // Each file is sent on its own, one after the other, so every file shows its
+  // own progress and its own result (queued / skipped / failed with the reason).
   const handleUploadSubmit = async (event) => {
     event.preventDefault();
     if (!validateSharedFields()) return;
-    if (files.length === 0) return toast.error("Please upload at least one document.");
+    if (files.length === 0) return toast.error("Please choose at least one label file.");
 
-    const payload = new FormData();
-    ["country", "companyId", "brandId", "categoryId", "manualCategoryName"].forEach((key) => {
-      if (form[key]) payload.append(key, form[key]);
-    });
-    Array.from(files).forEach((file) => payload.append("files", file));
-
-    try {
-      setIsSubmitting(true);
-      const res = await uploadReferenceLabels(payload);
-      toast.success(res.message || `Reference queued for AI analysis`);
-      resetModal();
-      fetchLabels();
-      const tasks = res?.data?.tasks || res?.tasks;
-      if (tasks?.length) {
-        navigate("/processing-bulk", { state: { tasks, type: "reference_label_extraction" } });
-      }
-    } catch (error) {
-      toast.error(error.message || "Upload failed");
-    } finally {
-      setIsSubmitting(false);
+    const fields = Object.fromEntries(["country", "companyId", "brandId", "categoryId", "manualCategoryName"].map((key) => [key, form[key]]));
+    const list = Array.from(files).map((file) => ({ file, progress: 0, state: "waiting" }));
+    setUploads(list);
+    setIsSubmitting(true);
+    const patch = (i, change) => setUploads((prev) => prev.map((u, j) => (j === i ? { ...u, ...change } : u)));
+    for (let i = 0; i < list.length; i++) {
+      patch(i, { state: "uploading" });
+      const out = await uploadReferenceLabelFile(list[i].file, fields, (progress) => patch(i, { progress }));
+      list[i] = { ...list[i], ...out, progress: 1 };
+      patch(i, list[i]);
     }
+    setIsSubmitting(false);
+    const count = (state) => list.filter((u) => u.state === state).length;
+    if (count("queued")) fetchLabels();
+    const summary = [`${count("queued")} queued`, count("skipped") && `${count("skipped")} skipped`, count("failed") && `${count("failed")} failed`].filter(Boolean).join(" · ");
+    (count("failed") ? toast.error : toast.success)(summary);
+  };
+
+  const trackQueued = () => {
+    const tasks = uploads.filter((u) => u.state === "queued").map((u) => ({ taskId: u.taskId, fileName: u.file.name }));
+    resetModal();
+    navigate("/processing-bulk", { state: { tasks, type: "reference_label_extraction" } });
   };
 
   const handleManualSubmit = async (event) => {
@@ -310,18 +316,35 @@ export default function ReferenceLabels() {
 
               {modalTab === "upload" ? (
                 <div className="mt-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Document</label>
-                  <label className="flex justify-center w-full h-36 px-4 bg-white border-2 border-gray-300 border-dashed rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/50">
-                    <span className="flex flex-col items-center justify-center gap-2">
-                      <UploadCloud className="w-6 h-6 text-gray-400" />
-                      <span className="text-center">
-                        <span className="text-blue-600 hover:text-blue-700">Click to upload</span> or drag and drop
-                        <br />
-                        <span className="text-xs text-gray-500 font-normal mt-1">Single PDF or Image up to 50MB</span>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Label files</label>
+                  {uploads.length === 0 ? (
+                    <label
+                      className="flex justify-center w-full h-36 px-4 bg-white border-2 border-gray-300 border-dashed rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/50"
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        if (event.dataTransfer.files?.length) setFiles(Array.from(event.dataTransfer.files));
+                      }}
+                    >
+                      <span className="flex flex-col items-center justify-center gap-2">
+                        <UploadCloud className="w-6 h-6 text-gray-400" />
+                        <span className="text-center">
+                          {files.length ? (
+                            <span className="text-gray-800">{files.length === 1 ? files[0].name : `${files.length} files chosen`}</span>
+                          ) : (
+                            <>
+                              <span className="text-blue-600 hover:text-blue-700">Click to upload</span> or drag and drop
+                            </>
+                          )}
+                          <br />
+                          <span className="text-xs text-gray-500 font-normal mt-1">One or more PDFs or images (up to 20 at a time, 50 MB each). Each label is read on its own.</span>
+                        </span>
                       </span>
-                    </span>
-                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={(event) => setFiles(event.target.files)} />
-                  </label>
+                      <input type="file" multiple className="hidden" accept="image/*,.pdf" onChange={(event) => setFiles(Array.from(event.target.files || []).slice(0, 20))} aria-label="Label files" data-testid="reference-files" />
+                    </label>
+                  ) : (
+                    <UploadResults uploads={uploads} />
+                  )}
                 </div>
               ) : (
                 <div className="mt-5">
@@ -337,10 +360,21 @@ export default function ReferenceLabels() {
               )}
 
               <div className="mt-8 flex justify-end gap-3 border-t border-gray-100 pt-5">
-                <Button type="button" variant="secondary" onClick={resetModal}>Cancel</Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : modalTab === "upload" ? "Upload & Analyze" : "Save Reference"}
+                <Button type="button" variant="secondary" onClick={resetModal} disabled={isSubmitting}>
+                  {modalTab === "upload" && uploads.length ? "Close" : "Cancel"}
                 </Button>
+                {modalTab === "upload" && uploads.length > 0 ? (
+                  uploads.some((u) => u.state === "queued") &&
+                  !isSubmitting && (
+                    <Button type="button" onClick={trackQueued} data-testid="track-queued">
+                      Track {uploads.filter((u) => u.state === "queued").length} queued
+                    </Button>
+                  )
+                ) : (
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : modalTab === "upload" ? (files.length > 1 ? `Upload ${files.length} files & analyze` : "Upload & Analyze") : "Save Reference"}
+                  </Button>
+                )}
               </div>
             </form>
           </div>
@@ -467,5 +501,36 @@ function InfoBlock({ title, value, mono = false }) {
         {value}
       </pre>
     </div>
+  );
+}
+
+const STATE_TEXT = { waiting: "Waiting", uploading: "Uploading", queued: "Queued for reading", skipped: "Skipped", failed: "Failed" };
+const STATE_CLASS = { waiting: "text-gray-500", uploading: "text-blue-700", queued: "text-green-700", skipped: "text-amber-700", failed: "text-red-700" };
+
+/** One row per file: its progress while sent, then queued / skipped (with the date) / failed (with the reason). */
+function UploadResults({ uploads }) {
+  return (
+    <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200" data-testid="reference-upload-results">
+      {uploads.map((u, i) => (
+        <li key={`${u.file.name}-${i}`} className="px-4 py-3 text-sm" data-state={u.state}>
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2 text-gray-800">
+              <FileText className="h-4 w-4 shrink-0 text-gray-400" />
+              <span className="truncate" title={u.file.name}>
+                {u.file.name}
+              </span>
+            </span>
+            <span className={`shrink-0 font-medium ${STATE_CLASS[u.state]}`}>{STATE_TEXT[u.state]}</span>
+          </div>
+          {u.state === "uploading" && (
+            <div className="mt-2 h-1.5 rounded-full bg-gray-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(u.progress * 100)} aria-label={`Uploading ${u.file.name}`}>
+              <div className="h-1.5 rounded-full bg-blue-600 transition-all" style={{ width: `${Math.round(u.progress * 100)}%` }} />
+            </div>
+          )}
+          {u.state === "skipped" && <p className="mt-1 text-xs text-amber-700">Already uploaded{u.uploadedAt ? ` on ${new Date(u.uploadedAt).toLocaleDateString()}` : ""} for this company. Not uploaded again.</p>}
+          {u.state === "failed" && <p className="mt-1 text-xs text-red-700">{u.reason}</p>}
+        </li>
+      ))}
+    </ul>
   );
 }

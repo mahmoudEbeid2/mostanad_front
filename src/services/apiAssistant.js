@@ -40,6 +40,8 @@ export async function uploadAttachments(conversationId, files, { companyId, onPr
   });
   return res.data.data.attachments;
 }
+/** Files attached in "All companies" → bound to the company the person picked. → [attachment] */
+export const bindAttachments = async (conversationId, attachmentIds, companyId) => (await apiClient.post(`/assistant/conversations/${conversationId}/attachments/bind`, { attachmentIds, companyId })).data.data.attachments;
 export const approveAction = async (id) => (await apiClient.post(`/assistant/actions/${id}/approve`)).data.data.action;
 export const cancelAction = async (id) => (await apiClient.post(`/assistant/actions/${id}/cancel`)).data.data.action;
 /** → { action, task } — a running card's job, from its background task */

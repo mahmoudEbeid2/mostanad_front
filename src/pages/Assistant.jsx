@@ -11,7 +11,7 @@ import { getInvoice } from "../services/apiInvoices";
 import { getCertificate } from "../services/apiCertificatesV2";
 import { getCatalogueVersion } from "../services/apiCatalogues";
 import { getProductById } from "../services/apiProducts";
-import { listConversations, getConversation, createConversation, deleteConversation, sendAssistantMessage, continueAfterAction, uploadAttachments, listDrafts, submitDraftFields, cancelDraft, startFixDraft, refreshDraft } from "../services/apiAssistant";
+import { listConversations, getConversation, createConversation, deleteConversation, sendAssistantMessage, continueAfterAction, uploadAttachments, bindAttachments, listDrafts, submitDraftFields, cancelDraft, startFixDraft, refreshDraft } from "../services/apiAssistant";
 import ConversationList from "../components/assistant/ConversationList";
 import AssistantMessage, { Steps, FileChip } from "../components/assistant/AssistantMessage";
 import DraftCard from "../components/assistant/DraftCard";
@@ -78,7 +78,9 @@ export default function Assistant() {
   const [live, setLive] = useState(null); // { status, steps } while an answer streams
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [files, setFiles] = useState([]); // { key, name, sizeBytes, mimeType, progress, attachment?, error? }
+  const [files, setFiles] = useState([]); // { key, name, sizeBytes, mimeType, progress, file, attachment?, error?, bad? }
+  // a send that is waiting on the person: { kind: "failed" | "company", text } (see send)
+  const [held, setHeld] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [drafts, setDrafts] = useState({}); // id → operation draft (the cards that collect an operation)
   const [liveDraftIds, setLiveDraftIds] = useState([]); // drafts touched by the answer that is streaming
@@ -210,25 +212,84 @@ export default function Assistant() {
     for (const file of picked) {
       const key = `${file.name}-${file.size}-${Math.random()}`;
       const bad = !ACCEPT.includes(file.type) ? "Attach a PDF, PNG, JPEG or WebP file" : file.size > MAX_BYTES ? "Files are limited to 60 MB" : null;
-      setFiles((fs) => [...fs, { key, name: file.name, sizeBytes: file.size, mimeType: file.type, progress: 0, error: bad }]);
+      setFiles((fs) => [...fs, { key, name: file.name, sizeBytes: file.size, mimeType: file.type, progress: 0, file, error: bad, bad: !!bad }]);
       if (bad) continue;
-      uploadAttachments(conv.id, [file], { companyId: isSystem ? scope : undefined, onProgress: (p) => setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, progress: p } : x))) })
-        .then(([attachment]) => setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, progress: 1, attachment } : x))))
-        .catch((e) => setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, error: errorOf(e) } : x))));
+      upload(conv.id, key, file);
     }
   };
+  // one file: in "All companies" it is kept in the conversation and gets its company when the message is sent
+  const upload = (conversationId, key, file, companyId = isSystem ? scope : undefined) => {
+    setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, progress: 0, error: null } : x)));
+    return uploadAttachments(conversationId, [file], { companyId, onProgress: (p) => setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, progress: p } : x))) })
+      .then(([attachment]) => setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, progress: 1, attachment } : x))))
+      .catch((e) => setFiles((fs) => fs.map((x) => (x.key === key ? { ...x, error: errorOf(e) } : x))));
+  };
+  const retryFailed = (companyId) => {
+    if (!conversation) return;
+    files.filter((f) => f.error && !f.bad && f.file).forEach((f) => upload(conversation.id, f.key, f.file, companyId));
+  };
+  // a company was picked: files that failed to attach are tried again, in that company
+  useEffect(() => {
+    if (isSystem && scope !== "all") retryFailed(scope);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope]);
   const uploading = files.some((f) => !f.error && !f.attachment);
+  const failedFiles = files.filter((f) => f.error);
 
-  const send = (raw) => {
+  /**
+   * Never sends past a file the person may think is attached: while one is
+   * uploading the send waits (and says so); a failed one is named and the person
+   * retries, removes it or sends without it; files attached in "All companies"
+   * first get their company (chips), then the message goes in that company.
+   */
+  const send = (raw, { skipFailed = false, companyId = null, fromComposer = raw === undefined } = {}) => {
     const body = String(raw ?? text).trim();
-    if (!body || busy || uploading) return;
+    if (!body || busy) return;
+    if (uploading) {
+      setHeld({ kind: "uploading", text: body, fromComposer });
+      return;
+    }
+    if (failedFiles.length && !skipFailed) {
+      setHeld({ kind: "failed", text: body, fromComposer });
+      return;
+    }
     const ready = files.filter((f) => f.attachment).map((f) => f.attachment);
-    if (raw === undefined) setText("");
+    const unbound = ready.filter((a) => !a.companyId);
+    const msgCompany = companyId || (isSystem ? scope : null);
+    if (isSystem && unbound.length && (!msgCompany || msgCompany === "all")) {
+      setHeld({ kind: "company", text: body, fromComposer, skipFailed });
+      return;
+    }
+    setHeld(null);
+    if (fromComposer) setText("");
     setFiles([]);
     runTurn({ id: `local-${Date.now()}`, role: "user", text: body, attachments: ready }, (conv, opts) =>
-      sendAssistantMessage(conv.id, { text: body, page: pageOf(context), attachmentIds: ready.map((a) => a.id), ...(isSystem ? { companyId: scope } : {}) }, opts)
+      sendAssistantMessage(conv.id, { text: body, page: pageOf(context), attachmentIds: ready.map((a) => a.id), ...(isSystem ? { companyId: msgCompany } : {}) }, opts)
     );
   };
+  // "which company are these files for?" → bind them, switch the conversation to it, send
+  const sendForCompany = async (companyId) => {
+    const ready = files.filter((f) => f.attachment).map((f) => f.attachment);
+    try {
+      const bound = await bindAttachments(conversation.id, ready.map((a) => a.id), companyId);
+      setFiles((fs) => fs.map((f) => (f.attachment ? { ...f, attachment: bound.find((b) => b.id === f.attachment.id) || f.attachment } : f)));
+      setScope(companyId);
+      const { text: body, fromComposer, skipFailed } = held || {};
+      setHeld(null);
+      // the bound attachments are read from state on the next render
+      setTimeout(() => sendRef.current?.(body, { companyId, fromComposer, skipFailed }), 0);
+    } catch (e) {
+      setError(errorOf(e));
+    }
+  };
+  const sendRef = useRef(null);
+  sendRef.current = send;
+  // the send went through, or the reason it waited is gone: drop the notice
+  useEffect(() => {
+    if (held?.kind === "uploading" && !uploading) send(held.text, { fromComposer: held.fromComposer });
+    if (held?.kind === "failed" && !failedFiles.length) setHeld(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploading, failedFiles.length]);
 
   /**
    * Edit (new text) or resend (same text) one of your messages: it and everything after it are
@@ -493,12 +554,68 @@ export default function Assistant() {
                 <div className="flex flex-wrap gap-1.5" data-testid="pending-files">
                   {files.map((f) => (
                     <FileChip key={f.key} file={f}>
-                      {f.error ? <span className="text-red-700">· {f.error}</span> : !f.attachment ? <span className="tabular-nums text-blue-700" data-testid="upload-progress">· {Math.round(f.progress * 100)}%</span> : null}
+                      {f.error ? (
+                        <span className="text-red-700" data-testid="file-error">
+                          · {f.error}
+                          {!f.bad && f.file && (
+                            <button type="button" onClick={() => conversation && upload(conversation.id, f.key, f.file)} className="ms-1 underline">
+                              Retry
+                            </button>
+                          )}
+                        </span>
+                      ) : !f.attachment ? (
+                        <span className="tabular-nums text-blue-700" data-testid="upload-progress">· {Math.round(f.progress * 100)}%</span>
+                      ) : !f.attachment.companyId && isSystem ? (
+                        <span className="text-amber-700" data-testid="file-needs-company">· company asked on send</span>
+                      ) : null}
                       <button type="button" aria-label={`Remove ${f.name}`} onClick={() => setFiles((fs) => fs.filter((x) => x.key !== f.key))} className="ms-0.5 text-gray-500 hover:text-gray-900">
                         <X className="h-3 w-3" />
                       </button>
                     </FileChip>
                   ))}
+                </div>
+              )}
+              {held && (
+                <div role="status" dir="auto" data-testid="send-held" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  {held.kind === "uploading" && <span>Waiting for the files to finish uploading — the message is sent as soon as they are attached.</span>}
+                  {held.kind === "failed" && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>
+                        {failedFiles.map((f) => f.name).join(", ")} {failedFiles.length === 1 ? "isn't" : "aren't"} attached. Retry or remove {failedFiles.length === 1 ? "it" : "them"}, or send without {failedFiles.length === 1 ? "it" : "them"}.
+                      </span>
+                      <button type="button" data-testid="send-without-failed" onClick={() => send(held.text, { skipFailed: true, fromComposer: held.fromComposer })} className="rounded-md border border-amber-300 bg-white px-2 py-0.5 text-xs font-semibold hover:bg-amber-100">
+                        Send without {failedFiles.length === 1 ? "it" : "them"}
+                      </button>
+                      <button type="button" onClick={() => setHeld(null)} className="text-xs underline">
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                  {held.kind === "company" && (
+                    <div className="flex flex-col gap-2" data-testid="pick-company">
+                      <span>Which company are these files for?</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {companies.slice(0, 12).map((c) => (
+                          <button key={c.id} type="button" onClick={() => sendForCompany(c.id)} className="rounded-full border border-blue-300 bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-50">
+                            {c.name}
+                          </button>
+                        ))}
+                        {companies.length > 12 && (
+                          <select aria-label="Company for the files" defaultValue="" onChange={(e) => e.target.value && sendForCompany(e.target.value)} className="rounded-full border border-blue-300 bg-white px-2 py-0.5 text-xs">
+                            <option value="">More companies…</option>
+                            {companies.slice(12).map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        <button type="button" onClick={() => setHeld(null)} className="text-xs underline">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <form

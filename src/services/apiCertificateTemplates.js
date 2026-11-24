@@ -96,6 +96,13 @@ export const suggestFields = (scope = {}, versionId) =>
 export const setFontFallback = (scope = {}, versionId, body) =>
   unwrap(apiClient.patch(`/template-versions/${versionId}/font-fallbacks`, body, { params: scope }), "Couldn't change the font").then((d) => d.data);
 
+/** A company font for its templates (.ttf / .otf / .woff2) → { font, appliedTo } */
+export const uploadCompanyFont = (scope = {}, file) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  return unwrap(apiClient.post("/certificate-fonts", fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Couldn't upload the font").then((d) => d.data);
+};
+
 /** → { versionId, taskId } */
 export const prepareVersion = (scope = {}, versionId) =>
   unwrap(apiClient.post(`/template-versions/${versionId}/prepare`, {}, { params: scope }), "Failed to start prepare").then((d) => d.data);

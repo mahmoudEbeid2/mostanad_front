@@ -8,6 +8,7 @@ import TableBlock from "./TableBlock";
 import RecordBlock from "./RecordBlock";
 import ActionCard from "./ActionCard";
 import DraftCard from "./DraftCard";
+import IntakeReview from "../intake/IntakeReview";
 
 const size = (n) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const KIND = { "application/pdf": "PDF", "image/png": "PNG", "image/jpeg": "JPG", "image/webp": "WEBP" };
@@ -177,7 +178,16 @@ export default function AssistantMessage({ m, onChoose, latest, conversationId, 
         </div>
       )}
       {(m.blocks || []).map((b) =>
-        b.type === "record" ? <RecordBlock key={b.id} block={b} lang={isArabic(m.text) ? "ar" : "en"} /> : <TableBlock key={b.id} block={b} conversationId={conversationId} messageId={m.id} />
+        b.type === "intake" ? (
+          // files the chat sorted: the same review card as "ارفع ملفاتك"
+          <div key={b.id} className="self-stretch">
+            <IntakeReview batchId={b.batchId} compact />
+          </div>
+        ) : b.type === "record" ? (
+          <RecordBlock key={b.id} block={b} lang={isArabic(m.text) ? "ar" : "en"} />
+        ) : (
+          <TableBlock key={b.id} block={b} conversationId={conversationId} messageId={m.id} />
+        )
       )}
       {drafts.map((d) => (
         <DraftCard key={d.id} draft={d} {...draftProps} />

@@ -5,6 +5,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Assistant from "./pages/Assistant";
+import Intake from "./pages/Intake";
 import Roles from "./pages/Roles";
 import Categories from "./pages/Categories";
 import Products from "./pages/Products";
@@ -55,6 +56,9 @@ function App() {
           >
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/assistant" element={<Assistant />} />
+            {/* "ارفع ملفاتك": drop any files, recognised and filed on one card */}
+            <Route path="/intake" element={<RequirePermission permission="read_products"><Intake /></RequirePermission>} />
+            <Route path="/intake/:batchId" element={<RequirePermission permission="read_products"><Intake /></RequirePermission>} />
             <Route path="/dashboard" element={<RequirePermission permission="read_dashboard"><Dashboard /></RequirePermission>} />
             <Route path="/roles" element={<RequirePermission permission="read_roles"><Roles /></RequirePermission>} />
             <Route path="/categories" element={<RequirePermission permission="read_categories"><Categories /></RequirePermission>} />

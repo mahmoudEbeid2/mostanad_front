@@ -15,7 +15,8 @@ import {
   ChevronUp,
   Tag,
   Scale,
-  PanelLeftClose
+  PanelLeftClose,
+  UploadCloud
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
@@ -24,6 +25,7 @@ import { useSidebar, SIDEBAR_ID, shortcutLabel } from "../context/sidebarState";
 
 const navLinks = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, permission: "read_dashboard" },
+  { name: "ارفع ملفاتك", path: "/intake", icon: UploadCloud, permission: "read_products" },
   { name: "Roles", path: "/roles", icon: ShieldAlert, permission: "read_roles" },
   { name: "Users", path: "/users", icon: Users, permission: "read_users" },
   { name: "Companies", path: "/companies", icon: Building2, permission: "read_companies" },

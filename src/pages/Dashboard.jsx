@@ -6,6 +6,7 @@ import {
   Activity, ArrowUpRight, DollarSign, ListTodo, Zap, Clock, Loader2, CheckCircle, AlertOctagon
 } from "lucide-react";
 import toast from "react-hot-toast";
+import IntakeDropTile from "../components/intake/IntakeDropTile";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -69,6 +70,9 @@ export default function Dashboard() {
         <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
         <p className="text-gray-500 mt-1">Welcome back, {user?.name}. Here is what's happening today.</p>
       </div>
+
+      {/* drop any files here → "ارفع ملفاتك" */}
+      <IntakeDropTile />
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

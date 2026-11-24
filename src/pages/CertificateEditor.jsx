@@ -267,9 +267,13 @@ export default function CertificateEditor() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm text-gray-500">
-            <Link to={`/invoices/${cert.invoiceId}?batch=${cert.batchId}`} className="text-blue-600 hover:underline">
-              {cert.invoiceNumber || "Invoice"}
-            </Link>
+            {cert.withoutInvoice ? (
+              <span data-testid="without-invoice">No invoice</span>
+            ) : (
+              <Link to={`/invoices/${cert.invoiceId}?batch=${cert.batchId}`} className="text-blue-600 hover:underline">
+                {cert.invoiceNumber || "Invoice"}
+              </Link>
+            )}
             {cert.batchNo ? ` / ${STR.batch} ${cert.batchNo}` : ""}
           </p>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3 mt-1" data-testid="editor-title">

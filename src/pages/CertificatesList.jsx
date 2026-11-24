@@ -14,7 +14,7 @@ import { listCertificates } from "../services/apiCertificatesV2";
 // /certificates (plan §13.1): every generated certificate of the company, filterable.
 const STR = {
   title: "Generated certificates",
-  subtitle: "Every certificate made from an invoice. Open one to fix issues, export or finalize it.",
+  subtitle: "Every certificate, from an invoice or made for a product. Open one to fix issues, export or finalize it.",
   search: "Search product, batch or invoice no.",
   allTypes: "All types",
   anyStatus: "Any status",

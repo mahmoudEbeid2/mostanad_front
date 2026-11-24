@@ -104,7 +104,7 @@ function Quality({ scope }) {
         <Tile label="AI calls" value={calls} note={notSent ? `${notSent} not sent (AI off or unavailable)` : "requests sent to the AI"} />
         <Tile label="Answers kept by people" value={pct(decided ? kept / decided : null)} note={`${decided} decided`} />
         <Tile label="Waiting for a person" value={pending} />
-        <Tile label="Estimated cost" value={usd(stats.cost.totalUsd)} note={`$${stats.cost.prices.inputPerM}/M in · $${stats.cost.prices.outputPerM}/M out`} />
+        <Tile label="Estimated cost" value={usd(stats.cost.totalUsd)} note={stats.cost.unpricedAttempts ? `${stats.cost.unpricedAttempts} calls without a price, not counted` : "priced per call at each model's rate"} />
       </div>
 
       <section className="space-y-2">

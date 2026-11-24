@@ -6,6 +6,7 @@ import Spinner from "../../ui/Spinner";
 import { useAiStatus } from "../../context/AiStatusContext";
 import { getCategories } from "../../services/apiCategories";
 import { createProductFromLine, getNewProductDraft, suggestNewProduct } from "../../services/apiInvoices";
+import { categoryOptions } from "../../utils/categoryOptions";
 
 // "+ New product" on an unmatched invoice line (mockup D2). By default it asks only for what this
 // line's certificates require; "Full product" shows every field. The list of fields comes from the
@@ -93,7 +94,7 @@ function Field({ field, mark, value, estimate, onChange, brands, categories }) {
   if (input === "ingredients") control = <Rows value={value} secondKey="concentration" secondLabel={STR.rowAmount} label={label} onChange={onChange} />;
   else if (input === "specs") control = <Rows value={value} secondKey="value" secondLabel={STR.rowValue} label={label} onChange={onChange} />;
   else if (input === "brand" || input === "category") {
-    const options = (input === "brand" ? brands : categories).map((o) => ({ value: o.id, label: o.name }));
+    const options = input === "brand" ? brands.map((o) => ({ value: o.id, label: o.name })) : categoryOptions(categories).map((o) => ({ value: o.id, label: o.label }));
     control = (
       <Select
         inputId={id}

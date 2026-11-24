@@ -68,3 +68,13 @@ export const generateLabelAi = async (data) => {
     throw new Error(error.response?.data?.message || "Failed to generate label with AI");
   }
 };
+
+/** PATCH /reference-labels/:id { brandId } — the reference's brand (null clears it). */
+export const setReferenceLabelBrand = async (id, brandId) => {
+  try {
+    const response = await apiClient.patch(`/reference-labels/${id}`, { brandId });
+    return response.data.data.referenceLabel;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Couldn't change the brand");
+  }
+};

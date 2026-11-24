@@ -20,6 +20,7 @@ import {
   createReferenceLabelManual,
   deleteReferenceLabel,
   getReferenceLabels,
+  setReferenceLabelBrand,
   uploadReferenceLabelFile,
 } from "../services/apiReferenceLabels";
 import { getBrands } from "../services/apiBrands";
@@ -27,6 +28,7 @@ import { getCategories } from "../services/apiCategories";
 import { getCompanies } from "../services/apiCompanies";
 import { useAuth } from "../context/AuthContext";
 import Button from "../ui/Button";
+import { categoryOptions } from "../utils/categoryOptions";
 
 const emptyForm = {
   name: "",
@@ -254,7 +256,7 @@ export default function ReferenceLabels() {
             className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none"
           >
             <option value="">All stored categories</option>
-            {categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
+            {categoryOptions(categories).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
           </select>
         </div>
 
@@ -282,6 +284,7 @@ export default function ReferenceLabels() {
                   <Badge icon={Globe2}>{getFlagEmoji(label.country)} {label.country || "No country"}</Badge>
                   <Badge icon={FolderTree}>{getCategoryName(label)}</Badge>
                   <Badge icon={Tag}>{label.companyId ? "Company" : "Global"}</Badge>
+                  {label.brand?.name ? <Badge icon={Tag}>{label.brand.name}</Badge> : label.extractedData?.brand_match?.candidates?.length > 1 ? <Badge icon={Tag}>Brand: choose</Badge> : null}
                   <Badge icon={label.sourceType === "manual" ? PencilLine : UploadCloud}>{label.sourceType || "upload"}</Badge>
                 </div>
               </div>
@@ -394,6 +397,15 @@ export default function ReferenceLabels() {
               </button>
             </div>
             <div className="p-6 max-h-[70vh] overflow-y-auto space-y-5">
+              {viewingLabel.companyId && (
+                <ReferenceBrand
+                  label={viewingLabel}
+                  onChanged={(updated) => {
+                    setViewingLabel((v) => ({ ...v, brandId: updated.brandId, brand: updated.brand, extractedData: updated.extractedData }));
+                    fetchLabels();
+                  }}
+                />
+              )}
               <InfoBlock title="Full Text" value={viewingLabel.fullText || "No full text saved."} />
               {viewingLabel.extractedData && <InfoBlock title="AI Structured Data" value={JSON.stringify(viewingLabel.extractedData, null, 2)} mono />}
             </div>
@@ -450,7 +462,7 @@ function ReferenceFields({ user, form, companies, brands, categories, updateForm
       <Field label="Stored Product Category">
         <select value={form.categoryId} onChange={(event) => updateForm("categoryId", event.target.value)} className={fieldInputClass}>
           <option value="">Choose from product categories</option>
-          {categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
+          {categoryOptions(categories).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
         </select>
       </Field>
       <Field label="Manual Category">
@@ -532,5 +544,60 @@ function UploadResults({ uploads }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * The reference's brand. The brand printed on the label was matched against the
+ * company's brands when it was read: one clear match is set already; several
+ * are offered as choices here; any brand of the company can be picked.
+ */
+function ReferenceBrand({ label, onChanged }) {
+  const [brands, setBrands] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const match = label.extractedData?.brand_match;
+  useEffect(() => {
+    getBrands(label.companyId)
+      .then((res) => setBrands(res.data?.brands || []))
+      .catch(() => setBrands([]));
+  }, [label.companyId]);
+  const pick = async (brandId) => {
+    setBusy(true);
+    try {
+      onChanged(await setReferenceLabelBrand(label.id, brandId || null));
+      toast.success(brandId ? "Brand set" : "Brand cleared");
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const choices = !label.brandId && match?.candidates?.length > 1 ? match.candidates : [];
+  return (
+    <div className="rounded-xl border border-gray-200 p-4 text-sm" data-testid="reference-brand">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="font-semibold text-gray-700">Brand</span>
+        <select value={label.brandId || ""} disabled={busy || !brands} onChange={(e) => pick(e.target.value)} className="rounded-lg border border-gray-300 bg-white px-2 py-1" aria-label="Reference brand">
+          <option value="">No brand</option>
+          {(brands || []).map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+        {match?.printed && <span className="text-gray-500">Printed on the label: “{match.printed}”{match.chosen && label.brandId === match.chosen ? " — matched" : ""}</span>}
+      </div>
+      {choices.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-amber-800">Several brands match — which one is it?</span>
+          {choices.map((c) => (
+            <button key={c.id} type="button" disabled={busy} onClick={() => pick(c.id)} className="rounded-full border border-blue-300 bg-blue-50 px-3 py-1 text-blue-700 hover:bg-blue-100">
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {match?.printed && match.candidates?.length === 0 && !label.brandId && <p className="mt-2 text-xs text-gray-500">None of this company's brands matches “{match.printed}”. Add the brand on the Brands page, then pick it here.</p>}
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import { Search, Plus, Edit2, Trash2, FolderTree, X } from "lucide-react";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import toast from "react-hot-toast";
+import { categoryOptions } from "../utils/categoryOptions";
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
@@ -14,7 +15,7 @@ export default function Categories() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add" | "edit" | "view"
   const [currentCategory, setCurrentCategory] = useState(null);
-  const [formData, setFormData] = useState({ name: "" });
+  const [formData, setFormData] = useState({ name: "", parentId: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -35,27 +36,31 @@ export default function Categories() {
     }
   };
 
-  const filteredCategories = categories.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // main categories first, each followed by the ones under it
+  const byId = Object.fromEntries(categories.map((c) => [c.id, c]));
+  const filteredCategories = categoryOptions(categories)
+    .map((o) => ({ ...byId[o.id], depth: o.depth, isMain: o.isMain }))
+    .filter((c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  // a parent must be a main-level category (no parent itself), never the category itself
+  const parentChoices = categories.filter((c) => !c.parentId && c.id !== currentCategory?.id);
 
   const openAddModal = () => {
     setModalMode("add");
-    setFormData({ name: "" });
+    setFormData({ name: "", parentId: "" });
     setCurrentCategory(null);
     setIsModalOpen(true);
   };
 
   const openEditModal = (category) => {
     setModalMode("edit");
-    setFormData({ name: category.name });
+    setFormData({ name: category.name, parentId: category.parentId || "" });
     setCurrentCategory(category);
     setIsModalOpen(true);
   };
 
   const openViewModal = async (category) => {
     setModalMode("view");
-    setFormData({ name: category.name || "" });
+    setFormData({ name: category.name || "", parentId: category.parentId || "" });
     setCurrentCategory(category);
     setIsModalOpen(true);
 
@@ -63,7 +68,7 @@ export default function Categories() {
       const res = await getCategoryById(category.id);
       if (res.status === "success" && res.data?.category) {
         const freshCat = res.data.category;
-        setFormData({ name: freshCat.name || "" });
+        setFormData({ name: freshCat.name || "", parentId: freshCat.parentId || "" });
         setCurrentCategory(freshCat);
       }
     } catch (error) {
@@ -85,10 +90,10 @@ export default function Categories() {
     try {
       setIsSubmitting(true);
       if (modalMode === "add") {
-        await createCategory({ name: formData.name });
+        await createCategory({ name: formData.name, parentId: formData.parentId || null });
         toast.success("Category created successfully");
       } else {
-        await updateCategory(currentCategory.id, { name: formData.name });
+        await updateCategory(currentCategory.id, { name: formData.name, parentId: formData.parentId || null });
         toast.success("Category updated successfully");
       }
       closeModal();
@@ -176,8 +181,9 @@ export default function Categories() {
                   <tr key={category.id} onClick={() => openViewModal(category)} className="hover:bg-gray-50/50 transition-colors cursor-pointer group">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-900 flex items-center gap-2 group-hover:text-teal-600 transition-colors">
-                        <FolderTree className="w-4 h-4 text-gray-400 group-hover:text-teal-500" />
-                        {category.name}
+                        {category.depth ? <span className="w-5 text-gray-300">—</span> : <FolderTree className="w-4 h-4 text-gray-400 group-hover:text-teal-500" />}
+                        <span className={category.depth ? "font-normal text-gray-700" : ""}>{category.name}</span>
+                        {category.isMain && <span className="rounded bg-teal-50 px-1.5 py-0.5 text-xs font-medium text-teal-700">main</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center text-sm text-gray-500">
@@ -232,12 +238,33 @@ export default function Categories() {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ name: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
                   placeholder="e.g. Invoices, Contracts"
                   required
                   disabled={modalMode === "view"}
                 />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="category-parent">
+                  Under main category
+                </label>
+                <select
+                  id="category-parent"
+                  value={formData.parentId}
+                  onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
+                  disabled={modalMode === "view" || categories.some((c) => c.parentId && c.parentId === currentCategory?.id)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                >
+                  <option value="">None (a main category)</option>
+                  {categoryOptions(parentChoices).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                {categories.some((c) => c.parentId && c.parentId === currentCategory?.id) && <p className="mt-1 text-xs text-gray-500">Other categories sit under this one, so it stays a main category.</p>}
               </div>
 
               <div className="pt-4 flex justify-between items-center border-t border-gray-100 mt-6">

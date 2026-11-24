@@ -10,6 +10,7 @@ import {
 } from "../services/apiRegulatoryDocuments";
 import { getRules, updateRule, approveRule, rejectRule } from "../services/apiRegulatoryRules";
 import Button from "../ui/Button";
+import { useSearchParams } from "react-router-dom";
 
 const STATUS_CLASSES = {
   pending_review: "bg-amber-50 text-amber-800 border-amber-200",
@@ -40,6 +41,16 @@ export default function RegulatoryDocuments() {
     sourceUrl: "",
     file: null,
   });
+
+  // ?add=1&country=…&productScope=… (from a label's "No approved rules … Add them in Regulatory & EDA"):
+  // the upload form opens with the label's country and scope
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("add") !== "1") return;
+    setUploadForm((f) => ({ ...f, country: searchParams.get("country") || f.country, productScope: searchParams.get("productScope") || f.productScope }));
+    setIsUploadOpen(true);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Actions loading states
   const [isCompiling, setIsCompiling] = useState(false);

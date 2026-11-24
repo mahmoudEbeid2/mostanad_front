@@ -7,7 +7,7 @@ import AiAction from "../../ui/AiAction";
 import { useAiStatus } from "../../context/AiStatusContext";
 import { provenanceForField } from "../../utils/labelFieldCatalog";
 
-export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initialMessage = "", estimatedFields = [], provenance = null }) {
+export default function ChatTab({ labelId, currentVersion, onLabelUpdated, askRequest = null, estimatedFields = [], provenance = null }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,9 +34,20 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
     loadHistory();
   }, [loadHistory]);
 
+  // "Ask Assistant to fix" on the page: the request is sent at once and answered here.
+  // With AI off it stays in the box and the chat says why it can't be sent.
+  const askedRef = useRef(null);
   useEffect(() => {
-    if (initialMessage) setInputMessage(initialMessage);
-  }, [initialMessage]);
+    if (!askRequest || askedRef.current === askRequest.n) return;
+    askedRef.current = askRequest.n;
+    if (!aiAvailable) {
+      setInputMessage(askRequest.text);
+      setMessages((prev) => [...prev, { role: "assistant", content: "AI is unavailable right now, so this couldn't be sent. Edit the field directly instead, or try again later.", createdAt: new Date().toISOString() }]);
+      return;
+    }
+    handleSendMessage(false, askRequest.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askRequest, aiAvailable]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -50,7 +61,10 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
   }, [inputMessage]);
 
   const handleSendMessage = async (overrideAcknowledged = false, textToSend = null) => {
-    if (!aiAvailable) return;
+    if (!aiAvailable) {
+      toast.error("AI is unavailable right now — edit the label fields directly instead.");
+      return;
+    }
     const text = textToSend || (overrideAcknowledged ? activeConflict?.originalMessage : inputMessage.trim());
     if (!text && !overrideAcknowledged) return;
 
@@ -81,6 +95,17 @@ export default function ChatTab({ labelId, currentVersion, onLabelUpdated, initi
             role: "assistant",
             content: result.answer,
             intent: result.intent,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      } else if (result.status === "refused" || result.status === "no_change") {
+        // the chat can't make this change: say why (never a silent nothing)
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: result.status === "refused" ? `I couldn't make that change${result.path ? ` to ${result.path}` : ""}: ${result.reason || "it would break a rule on the label"}.` : result.answer,
+            status: result.status,
             createdAt: new Date().toISOString(),
           },
         ]);

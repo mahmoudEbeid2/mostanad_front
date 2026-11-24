@@ -1,6 +1,7 @@
 import { useState } from "react";
 import VerdictStatusBadge from "./VerdictStatusBadge";
-import { FileText, MapPin, Wrench, ShieldOff, ChevronDown, Pencil, MessageSquareText } from "lucide-react";
+import { Link } from "react-router-dom";
+import { FileText, MapPin, Wrench, ShieldOff, ChevronDown, Pencil, MessageSquareText, BookPlus } from "lucide-react";
 import { LABEL_FIELD_CATALOG } from "../utils/labelFieldCatalog";
 
 const SEVERITY_ORDER = {
@@ -108,9 +109,24 @@ function assistantPrompt(v, field) {
   return `Fix ${fieldName}: ${v.message || plainStatusCopy(v)}`;
 }
 
-function VerdictCard({ v, detailedView, onEditField, onAskAssistant }) {
+// the label's regulatory scope: Regulatory & EDA documents are matched by country and product scope
+const PRODUCT_SCOPE = { veterinary_drug: "veterinary_medicines", feed_additive: "feed_additives", premix: "premixes", supplement: "supplements", compound_feed: "feeds" };
+export const rulesLink = ({ country, productType } = {}) => {
+  const q = new URLSearchParams({ add: "1", ...(country ? { country } : {}), ...(PRODUCT_SCOPE[productType] ? { productScope: PRODUCT_SCOPE[productType] } : {}) });
+  return `/regulatory-documents?${q}`;
+};
+
+/**
+ * The label chat edits label fields. A check it can't act on — no field behind
+ * it, or one that couldn't run (no rules, nothing to compare) — gets no
+ * "Ask Assistant to fix": a button that can only answer "can't" reads as broken.
+ */
+export const chatCanFix = (v, field) => Boolean(field) && ["FAIL", "NEEDS_CONFIRMATION", "WARN", "NEEDS_REVIEW"].includes(v.status);
+
+function VerdictCard({ v, detailedView, onEditField, onAskAssistant, scope }) {
   const known = v.status in SEVERITY_ORDER;
   const field = fieldForVerdict(v);
+  const noRules = v.ruleKey === "NO_AUTHORITATIVE_REQUIREMENTS";
   const action = suggestedAction(v);
   const canEditInline = Boolean(onEditField && field && ["FAIL", "NEEDS_CONFIRMATION", "WARN", "NEEDS_REVIEW"].includes(v.status));
 
@@ -134,7 +150,7 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant }) {
         </div>
       </div>
 
-      <p className="text-sm text-gray-800">{v.message || plainStatusCopy(v)}</p>
+      <p className="text-sm text-gray-800">{noRules ? `No approved rules for ${scope?.country || "this country"}${scope?.productType ? ` (${scope.productType.replace(/_/g, " ")})` : ""} yet, so the regulatory checks couldn't run.` : v.message || plainStatusCopy(v)}</p>
       
       {/* Only show duplicate plain status copy if detailedView is true to avoid clutter */}
       {detailedView && v.message && <p className="text-xs text-gray-500">{plainStatusCopy(v)}</p>}
@@ -160,7 +176,12 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant }) {
             <Pencil className="w-3.5 h-3.5" /> Edit {field.label || "Field"}
           </button>
         )}
-        {Boolean(onAskAssistant) && (
+        {noRules && (
+          <Link to={rulesLink(scope)} data-testid="add-rules-link" className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-100 transition-colors shadow-sm">
+            <BookPlus className="w-3.5 h-3.5" /> Add them in Regulatory &amp; EDA
+          </Link>
+        )}
+        {Boolean(onAskAssistant) && chatCanFix(v, field) && (
           <button
             type="button"
             onClick={() => onAskAssistant?.(assistantPrompt(v, field))}
@@ -207,7 +228,7 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant }) {
   );
 }
 
-function ActionGroup({ group, verdicts, detailedView, onEditField, onAskAssistant }) {
+function ActionGroup({ group, verdicts, detailedView, onEditField, onAskAssistant, scope }) {
   const [open, setOpen] = useState(group.defaultOpen);
 
   return (
@@ -233,6 +254,7 @@ function ActionGroup({ group, verdicts, detailedView, onEditField, onAskAssistan
                 detailedView={detailedView}
                 onEditField={onEditField}
                 onAskAssistant={onAskAssistant}
+                scope={scope}
               />
             ))
           ) : (
@@ -244,7 +266,7 @@ function ActionGroup({ group, verdicts, detailedView, onEditField, onAskAssistan
   );
 }
 
-export default function VerdictList({ verdicts, detailedView = false, onEditField, onAskAssistant }) {
+export default function VerdictList({ verdicts, detailedView = false, onEditField, onAskAssistant, scope = null }) {
   if (!verdicts || verdicts.length === 0) {
     return <p className="text-sm text-gray-500 italic">No verdicts to show.</p>;
   }
@@ -273,7 +295,7 @@ export default function VerdictList({ verdicts, detailedView = false, onEditFiel
   return (
     <div className="space-y-3">
       {actionGroups.map((group) => (
-        <ActionGroup
+        <ActionGroup scope={scope}
           key={group.key}
           group={group}
           verdicts={group.verdicts}
@@ -283,7 +305,7 @@ export default function VerdictList({ verdicts, detailedView = false, onEditFiel
         />
       ))}
       {unknownVerdicts.length > 0 && (
-        <ActionGroup
+        <ActionGroup scope={scope}
           group={{
             key: "unknown",
             title: "Needs manual check",

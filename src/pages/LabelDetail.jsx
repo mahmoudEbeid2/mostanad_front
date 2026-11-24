@@ -110,7 +110,8 @@ export default function LabelDetail() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showOnlyEstimated, setShowOnlyEstimated] = useState(false);
   const [detailedView, setDetailedView] = useState(() => localStorage.getItem("labelDetailDetailedView") === "true");
-  const [assistantDraft, setAssistantDraft] = useState("");
+  // an "Ask Assistant to fix" request: sent as soon as the chat is open (n makes a repeat of the same text a new request)
+  const [assistantDraft, setAssistantDraft] = useState(null);
 
   // Direct Field Edit State
   const [editingField, setEditingField] = useState(null);
@@ -152,7 +153,7 @@ export default function LabelDetail() {
   };
 
   const handleAskAssistant = (message) => {
-    setAssistantDraft(message);
+    setAssistantDraft({ text: message, n: Date.now() });
     setIsChatOpen(true);
   };
 
@@ -327,6 +328,7 @@ export default function LabelDetail() {
                   detailedView={detailedView}
                   onEditField={(field) => setEditingField(field)}
                   onAskAssistant={handleAskAssistant}
+                  scope={{ country: label.country, productType: label.labelData?.productType || null }}
                 />
               </div>
             )}
@@ -353,7 +355,7 @@ export default function LabelDetail() {
           <ChatTab
             labelId={id}
             currentVersion={label.currentVersion}
-            initialMessage={assistantDraft}
+            askRequest={assistantDraft}
             onLabelUpdated={load}
             estimatedFields={label.labelData?.estimatedFields}
             provenance={provenance}

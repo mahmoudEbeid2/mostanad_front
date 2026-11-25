@@ -31,12 +31,18 @@ export async function downloadLayoutPdf(layout, name = "label") {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-/** multipart upload: { file, mode, layout, stretch, productId, country, companyId } → { upload, layout?, taskId? } */
-export function uploadLabelToResize({ file, mode, layout, stretch, productId, country, companyId }) {
+/**
+ * multipart upload: { file, mode (smart | scale | rebuild), layout | sizes, resize, stretch, productId, labelId, country, companyId }
+ * → { upload, layout?, layouts?, taskId? }. smart with sizes: [] keeps the design only (for the editor).
+ */
+export function uploadLabelToResize({ file, mode, layout, sizes, resize, stretch, productId, labelId, country, companyId }) {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("mode", mode);
   fd.append("layout", JSON.stringify(layout || {}));
+  if (sizes) fd.append("sizes", JSON.stringify(sizes));
+  if (resize) fd.append("resize", JSON.stringify(resize));
+  if (labelId) fd.append("labelId", labelId);
   if (stretch) fd.append("stretch", "true");
   if (productId) fd.append("productId", productId);
   if (country) fd.append("country", country);
@@ -46,3 +52,11 @@ export function uploadLabelToResize({ file, mode, layout, stretch, productId, co
 export const getLabelUpload = (id, params = {}) => apiClient.get(`/label-uploads/${id}`, { params }).then(data, fail("Couldn't load the upload"));
 export const confirmLabelUpload = (id, body) => apiClient.post(`/label-uploads/${id}/confirm`, body).then(data, fail("Couldn't lay the label out"));
 export const rescaleLabelUpload = (id, body) => apiClient.post(`/label-uploads/${id}/scale`, body).then(data, fail("Couldn't scale the label"));
+
+// keep the design: the original's blocks, a preview of sizes (nothing saved), save sizes as versions
+/** → { uploadId, originalName, pageMm, pages, blocks, boxNet, minFontPt, minFontRule, originalDataUrl } */
+export const getUploadDesign = (id, params = {}) => apiClient.get(`/label-uploads/${id}/design`, { params }).then(data, fail("Couldn't read the design"));
+/** body: { sizes: [{ widthMm, heightMm }], minFontPt?, bleedMm?, cropMarks?, overrides? } → { results: [{ size, widthMm, heightMm, fit, previewDataUrl, pdfAvailable }] } */
+export const previewUploadResize = (id, body, params = {}) => apiClient.post(`/label-uploads/${id}/preview`, body, { params }).then(data, fail("Couldn't preview the size"));
+/** same body → { layouts } (one saved version per size, each with its PDF when it fits) */
+export const saveUploadResize = (id, body, params = {}) => apiClient.post(`/label-uploads/${id}/resize`, body, { params }).then(data, fail("Couldn't save the sizes"));

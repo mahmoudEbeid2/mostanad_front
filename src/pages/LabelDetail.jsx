@@ -10,6 +10,8 @@ import ChatTab from "../components/label-detail/ChatTab";
 import ApprovalTab from "../components/label-detail/ApprovalTab";
 import LayoutSizeTab from "../components/label-detail/LayoutSizeTab";
 import Button from "../ui/Button";
+import { useAuth } from "../context/AuthContext";
+import { isCompanyUser } from "../utils/permissions";
 
 const STATUS_CLASSES = {
   draft: "bg-gray-50 text-gray-600 border-gray-200",
@@ -96,6 +98,8 @@ function validationContext(latestValidation) {
 }
 
 export default function LabelDetail() {
+  const { user } = useAuth();
+  const isSystem = !(isCompanyUser(user) || user?.isCompany);
   const { id } = useParams();
   const navigate = useNavigate();
   const [detail, setDetail] = useState(null); // { label, currentVersion, latestValidation, provenance }
@@ -246,7 +250,7 @@ export default function LabelDetail() {
           </div>
 
           {view === "layout" ? (
-            <LayoutSizeTab labelId={id} labelName={label.labelData?.productName?.translations?.en || "label"} />
+            <LayoutSizeTab labelId={id} labelName={label.labelData?.productName?.translations?.en || "label"} companyId={label.companyId} isSystem={isSystem} />
           ) : (
           <>
           <div className="mb-6">

@@ -35,3 +35,34 @@ export const approveDocument = (id) =>
 
 export const clearClause = (id, reference) =>
   unwrap(apiClient.patch(`/regulatory-documents/${id}/clauses/clear`, { reference }), "Failed to clear clause").then((d) => d.data.document);
+
+// "No rules for <country>" on a label review: where the country's rules stand, add them
+// (upload for review, resume a stuck document, copy another country's), approve, check again.
+/** → { country, rulesInForce, documents: [{ id, title, status, rules, stuck, awaitingApproval, copied }], copyFrom: [{ country, rules }] } */
+export const getCountryRules = (country) =>
+  unwrap(apiClient.get("/regulatory-documents/coverage", { params: { country } }), "Couldn't load the country's rules").then((d) => d.data);
+/** The regulation PDF for that country, stopped before activation: a person approves it. → { taskId } */
+export const uploadRulesForReview = ({ file, country, title, authority }) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("country", country);
+  fd.append("review", "true");
+  if (title) fd.append("title", title);
+  if (authority) fd.append("authority", authority);
+  return uploadDocument(fd);
+};
+export const resumeRules = (id) => unwrap(apiClient.post(`/regulatory-documents/${id}/resume`), "Couldn't resume reading the rules").then((d) => d.data);
+export const copyRules = (fromCountry, toCountry) => unwrap(apiClient.post("/regulatory-documents/copy", { fromCountry, toCountry }), "Couldn't copy the rules").then((d) => d.data);
+/** Resolves when the background task is done; rejects with its real error. */
+export async function waitForRulesTask(taskId, { timeoutMs = 600_000, onProgress } = {}) {
+  const until = Date.now() + timeoutMs;
+  while (Date.now() < until) {
+    const { data } = await apiClient.get(`/background-tasks/${taskId}`);
+    const t = data?.data;
+    onProgress?.(t);
+    if (t?.status === "completed") return t;
+    if (t?.status === "failed") throw new Error(t.error || "Reading the rules failed");
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  throw new Error("Reading the rules is taking long — it continues in the background; check the Regulatory page later");
+}

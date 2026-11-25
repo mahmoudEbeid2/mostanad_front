@@ -6,8 +6,10 @@ import { getProducts, createProduct, updateProduct, deleteProduct, getProductByI
 import { getCompanies } from "../services/apiCompanies";
 import { getBrands } from "../services/apiBrands";
 import { getCategories } from "../services/apiCategories";
-import { Package, Search, Filter, Plus, Edit2, Trash2, X, Sparkles, Copy, RefreshCw, Link2, AlertTriangle } from "lucide-react";
+import { Package, Search, Filter, Plus, Edit2, Trash2, X, Sparkles, Copy, RefreshCw, Link2, AlertTriangle, Files, FileCheck2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import CopyToBrandModal from "../components/products/CopyToBrandModal";
+import CertificatesForProductsModal from "../components/products/CertificatesForProductsModal";
 import SourceDiffModal from "../components/products/SourceDiffModal";
 import { useAuth } from "../context/AuthContext";
 import { isCompanyUser } from "../utils/permissions";
@@ -58,6 +60,8 @@ export default function Products() {
   const { user } = useAuth();
   const isSystem = !(isCompanyUser(user) || user?.isCompany);
   const [copyFor, setCopyFor] = useState(null);
+  const [certsFor, setCertsFor] = useState(null); // selected products → certificates, no invoice
+  const navigate = useNavigate();
   const [diffFor, setDiffFor] = useState(null);
   const [selected, setSelected] = useState(() => new Set());
   const toggleSelected = (id) =>
@@ -354,10 +358,16 @@ export default function Products() {
           <h1 className="text-3xl font-bold text-gray-900">Products</h1>
           <p className="text-gray-500 mt-1">Manage your products database.</p>
         </div>
-        <Button className="shrink-0" onClick={openAddModal}>
-          <Plus className="w-5 h-5 mr-2" />
-          Add Product
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="secondary" onClick={() => navigate("/products/import")} data-testid="products-from-files">
+            <Files className="w-5 h-5 mr-2" />
+            Add products from files
+          </Button>
+          <Button className="shrink-0" onClick={openAddModal}>
+            <Plus className="w-5 h-5 mr-2" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {/* Catalogue full-text search (backend plan.md §15.6) */}
@@ -410,6 +420,9 @@ export default function Products() {
           <div className="flex gap-2">
             <button type="button" onClick={() => setSelected(new Set())} className="px-3 py-1.5 text-gray-600 hover:text-gray-900">
               Clear
+            </button>
+            <button type="button" onClick={() => setCertsFor(products.filter((p) => selected.has(p.id)))} className="inline-flex items-center gap-1.5 rounded-lg border border-teal-600 bg-white px-3 py-1.5 font-medium text-teal-700 hover:bg-teal-50" data-testid="make-certificates-selected">
+              <FileCheck2 className="w-4 h-4" /> Make certificates…
             </button>
             <button type="button" onClick={() => setCopyFor(products.filter((p) => selected.has(p.id)))} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 font-medium text-white hover:bg-teal-700">
               <Copy className="w-4 h-4" /> Copy to brand…
@@ -1019,6 +1032,7 @@ export default function Products() {
         </div>
       </div>
     )}
+      {certsFor && <CertificatesForProductsModal products={certsFor} onClose={() => setCertsFor(null)} />}
       {copyFor && <CopyToBrandModal products={copyFor} isSystem={isSystem} companies={companies} onClose={() => setCopyFor(null)} onDone={afterCopy} />}
       {diffFor && (
         <SourceDiffModal

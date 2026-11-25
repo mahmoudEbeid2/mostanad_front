@@ -19,7 +19,7 @@ function friendlyFieldLabel(path) {
   return entry?.label || path;
 }
 
-export default function ApprovalTab({ label, latestValidation, currentVersion, provenance, onApprovalChanged }) {
+export default function ApprovalTab({ label, latestValidation, currentVersion, provenance, onApprovalChanged, acknowledge = [] }) {
   const { user } = useAuth();
   // Mirrors the backend's assertCanPublishGlobal (labelApprovalController.js):
   // a company account can never publish globally, and a system user needs the
@@ -59,6 +59,12 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
   useEffect(() => {
     loadApprovals();
   }, [loadApprovals]);
+
+  // "Continue with this warning" on the label page: that warning arrives ticked (still visible, can be unticked)
+  const ackKey = acknowledge.join("|");
+  useEffect(() => {
+    if (ackKey) setAcknowledgedUnverifiable((prev) => [...new Set([...prev, ...ackKey.split("|")])]);
+  }, [ackKey]);
 
   // Gate evaluations
   const gate1Passed = latestValidation && latestValidation.versionNumber === currentVersion;
@@ -202,7 +208,13 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
                         onChange={() => toggleAcknowledgeUnverifiable(v.path)}
                         className="rounded text-blue-600"
                       />
-                      <span>I acknowledge unverifiable check on: <strong>{v.path}</strong> ({v.message || "Manual check required"})</span>
+                      {v.ruleKey === "NO_AUTHORITATIVE_REQUIREMENTS" ? (
+                        <span>
+                          <strong>No rules for {label.country}</strong> — I approve without the regulatory check (recorded with my name and the time).
+                        </span>
+                      ) : (
+                        <span>I acknowledge unverifiable check on: <strong>{v.path}</strong> ({v.message || "Manual check required"})</span>
+                      )}
                     </label>
                   ))}
                 </div>

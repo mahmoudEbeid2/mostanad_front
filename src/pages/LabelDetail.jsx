@@ -9,6 +9,7 @@ import EditFieldModal from "../components/label-detail/EditFieldModal";
 import ChatTab from "../components/label-detail/ChatTab";
 import ApprovalTab from "../components/label-detail/ApprovalTab";
 import LayoutSizeTab from "../components/label-detail/LayoutSizeTab";
+import RulesForCountryModal from "../components/label-detail/RulesForCountryModal";
 import Button from "../ui/Button";
 import { useAuth } from "../context/AuthContext";
 import { isCompanyUser } from "../utils/permissions";
@@ -65,6 +66,15 @@ function verdictBand(latestValidation) {
       jumpTo: true,
     };
   }
+  const onlyRuleGap = unverifiableCount > 0 && (latestValidation.verdicts || []).filter((v) => v.status === "UNVERIFIABLE").every((v) => v.ruleKey === "NO_AUTHORITATIVE_REQUIREMENTS");
+  if (onlyRuleGap) {
+    return {
+      title: "Not checked against rules — none for this country yet",
+      body: "Nothing failed. You can continue and approve with this warning, or add the country's rules and check again.",
+      icon: ShieldAlert,
+      classes: "bg-amber-50 border-amber-300 text-amber-900",
+    };
+  }
   if (unverifiableCount > 0) {
     return {
       title: "Cannot fully check",
@@ -116,6 +126,10 @@ export default function LabelDetail() {
   const [detailedView, setDetailedView] = useState(() => localStorage.getItem("labelDetailDetailedView") === "true");
   // an "Ask Assistant to fix" request: sent as soon as the chat is open (n makes a repeat of the same text a new request)
   const [assistantDraft, setAssistantDraft] = useState(null);
+
+  // "no rules for <country>": continue with the warning (pre-ticked at sign-off) or add the rules
+  const [continueWithWarning, setContinueWithWarning] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   // Direct Field Edit State
   const [editingField, setEditingField] = useState(null);
@@ -323,6 +337,39 @@ export default function LabelDetail() {
             </div>
           </div>
 
+          {latestValidation?.verdicts?.some((v) => v.ruleKey === "NO_AUTHORITATIVE_REQUIREMENTS") && (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-white p-5 shadow-sm" data-testid="rule-gap">
+              <p className="font-bold text-gray-900">Not checked — no rules for {label.country}</p>
+              <p className="mt-1 text-sm text-gray-700">
+                The regulatory check needs {label.country}'s approved rules. This doesn't stop you: continue and approve with this warning (your name and the time are recorded), or add the rules and check again.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  onClick={() => {
+                    setContinueWithWarning(true);
+                    setTimeout(() => document.getElementById("final-sign-off")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                  }}
+                  data-testid="continue-with-warning"
+                >
+                  Continue with this warning
+                </Button>
+                <Button variant="secondary" onClick={() => setRulesOpen(true)} data-testid="add-rules">
+                  Add rules for {label.country}
+                </Button>
+              </div>
+            </div>
+          )}
+          {rulesOpen && (
+            <RulesForCountryModal
+              country={label.country}
+              onClose={() => setRulesOpen(false)}
+              onRecheck={async () => {
+                await handleRunValidation();
+                setRulesOpen(false);
+              }}
+            />
+          )}
+
           <div className="space-y-6">
             {latestValidation?.verdicts?.length > 0 && (
               <div id="verdict-list">
@@ -337,9 +384,10 @@ export default function LabelDetail() {
               </div>
             )}
 
-            <div className="mt-12 pt-8 border-t border-gray-200">
+            <div className="mt-12 pt-8 border-t border-gray-200" id="final-sign-off">
               <h2 className="text-xl font-black mb-4">Final Sign-off</h2>
               <ApprovalTab
+                acknowledge={continueWithWarning ? ["_regulatory"] : []}
                 label={label}
                 latestValidation={latestValidation}
                 currentVersion={label.currentVersion}

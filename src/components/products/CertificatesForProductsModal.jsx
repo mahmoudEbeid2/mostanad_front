@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import Button from "../../ui/Button";
 import Spinner from "../../ui/Spinner";
 import { listCertificateTypes } from "../../services/apiCertificateTypes";
-import { waitForTask, downloadBatchZip } from "../../services/apiCertificatesV2";
+import { waitForTask, downloadBatchZip, exportBatchZip } from "../../services/apiCertificatesV2";
 import { certificatesForProducts } from "../../services/apiProductImports";
 
 // Products page → select products → "Make certificates": certificates for several
@@ -56,6 +56,20 @@ export default function CertificatesForProductsModal({ products, onClose }) {
       toast.success("Certificate drafts are ready");
     } catch (e) {
       setError(e.message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // the ZIP is built by a background export first (as on the batch page)
+  const downloadAll = async () => {
+    setBusy("zip");
+    try {
+      const { taskId } = await exportBatchZip(scope, done.batchId);
+      await waitForTask(taskId, { timeoutMs: 300_000 });
+      await downloadBatchZip(scope, done.batchId);
+    } catch (e) {
+      toast.error(e.message);
     } finally {
       setBusy(null);
     }
@@ -145,7 +159,7 @@ export default function CertificatesForProductsModal({ products, onClose }) {
               {done.missing.length > 0 && <p className="text-xs text-amber-800">Not made (no active template): {done.missing.map((m) => `${m.type} for ${m.product}`).join(", ")}</p>}
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => navigate(`/certificates?invoiceId=${done.invoiceId}`)}>Open the drafts</Button>
-                <Button variant="secondary" onClick={() => downloadBatchZip(scope, done.batchId).catch((e) => toast.error(e.message))}>
+                <Button variant="secondary" isLoading={busy === "zip"} disabled={!!busy} onClick={downloadAll}>
                   <Download className="h-4 w-4" /> Download all (ZIP)
                 </Button>
               </div>

@@ -81,6 +81,8 @@ async function saveDownload(request, fallbackName) {
 export const downloadCertificatePdf = (scope = {}, id) => saveDownload(apiClient.get(`/certificates/${id}/pdf`, { params: scope, responseType: "blob" }), "certificate.pdf");
 
 export const downloadBatchZip = (scope = {}, batchId) => saveDownload(apiClient.get(`/certificate-batches/${batchId}/zip`, { params: scope, responseType: "blob" }), "certificates.zip");
+/** every certificate of a batch in one PDF (made together with the ZIP by the export) */
+export const downloadBatchPdf = (scope = {}, batchId) => saveDownload(apiClient.get(`/certificate-batches/${batchId}/combined.pdf`, { params: scope, responseType: "blob" }), "certificates.pdf");
 
 /** Resolves when a background task completes; rejects with its real error. */
 export async function waitForTask(taskId, { timeoutMs = 120_000 } = {}) {

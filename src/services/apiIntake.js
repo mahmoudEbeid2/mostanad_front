@@ -83,3 +83,8 @@ export async function filesFromDrop(dataTransfer) {
   }
   return [...(dataTransfer.files || [])].map((f) => ({ file: f, relPath: null }));
 }
+
+// Express (urgent orders from the chat): what they made that nobody checked yet, and "checked"
+/** → { count, orders: [{ batchId, createdAt, conversationId, items: [{ id, entityType, entityId, name, link }] }] } */
+export const getExpressToReview = () => data(apiClient.get("/intake/express"));
+export const markExpressReviewed = (ids) => data(apiClient.post("/intake/express/reviewed", { ids }));

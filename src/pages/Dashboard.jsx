@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import IntakeDropTile from "../components/intake/IntakeDropTile";
+import ExpressToReviewTile from "../components/intake/ExpressToReviewTile";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -73,6 +74,7 @@ export default function Dashboard() {
 
       {/* drop any files here → "ارفع ملفاتك" */}
       <IntakeDropTile />
+      <ExpressToReviewTile />
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

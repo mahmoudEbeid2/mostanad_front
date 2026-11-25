@@ -8,6 +8,7 @@ import { getBrands } from "../../services/apiBrands";
 import { getProducts } from "../../services/apiProducts";
 import { useAuth } from "../../context/AuthContext";
 import { isCompanyUser } from "../../utils/permissions";
+import ExpressPanel from "./ExpressPanel";
 
 // The one review card of a drop: every file, what it is, whose, what will happen.
 // Every cell can be changed; nothing exists until "نفّذ الكل". Arabic by default.
@@ -61,17 +62,21 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
   const [companies, setCompanies] = useState([]);
   const [brands, setBrands] = useState({}); // companyId → brands
   const [products, setProducts] = useState({}); // companyId → products
+  const [showAll, setShowAll] = useState(false); // express: every row, not only the ones with a question
 
   const load = useCallback(() => getIntake(batchId).then(setView).catch((e) => setError(e?.response?.data?.message || e.message)), [batchId]);
   useEffect(() => {
     load();
   }, [load]);
   const status = view?.batch?.status;
+  const express = view?.batch?.mode === "express";
+  // an Express order keeps going after filing: templates, then the certificate drafts
+  const expressRunning = express && status === "done" && view?.express?.stage !== "done";
   useEffect(() => {
-    if (!["uploading", "classifying", "executing"].includes(status)) return undefined;
-    const t = setInterval(load, 1500);
+    if (!["uploading", "classifying", "executing"].includes(status) && !expressRunning) return undefined;
+    const t = setInterval(load, expressRunning ? 3000 : 1500);
     return () => clearInterval(t);
-  }, [status, load]);
+  }, [status, expressRunning, load]);
   useEffect(() => {
     if (status === "done") onDone?.(view);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,7 +120,10 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
 
   if (error) return <p className="text-sm text-red-700">{error}</p>;
   if (!view) return <Loader2 className="h-5 w-5 animate-spin text-gray-400" />;
-  const rows = view.items.filter((i) => !i.parentId || view.items.find((p) => p.id === i.parentId)?.action !== "bundle" && view.items.find((p) => p.id === i.parentId)?.action !== "bundle_template");
+  const allRows = view.items.filter((i) => !i.parentId || view.items.find((p) => p.id === i.parentId)?.action !== "bundle" && view.items.find((p) => p.id === i.parentId)?.action !== "bundle_template");
+  // Express asks only what it must: the sure rows are filed as proposed (shown on request)
+  const asks = (i) => i.question || (i.confidence !== null && i.confidence < 0.7);
+  const rows = express && status === "review" && !showAll ? allRows.filter(asks) : allRows;
   const partsOf = (id) => view.items.filter((i) => i.parentId === id);
   const editable = status === "review";
   const unsure = view.items.filter((i) => i.question || (i.confidence !== null && i.confidence < 0.7)).length;
@@ -301,13 +309,23 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           <Loader2 className="h-4 w-4 animate-spin" /> بنتعرف على الملفات… {view.task?.message ? <span dir="ltr" className="text-xs text-gray-500">{view.task.message}</span> : null}
         </p>
       )}
+      {status === "review" && express && (
+        <p className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-900" data-testid="express-intro">
+          طلب سريع: بزرار واحد هنسجّل الملفات ونطلّع الشهادات (مسودات){view.express?.requestedTypes?.length ? ` — ${view.express.requestedTypes.join("، ")}` : ""}. كل اللي هيتعمل هيتعلّم «محتاج مراجعة».
+        </p>
+      )}
       {status === "review" && (
         <>
           <NewBanner n={view.newEntities} />
           {unsure > 0 && <p className="text-xs text-amber-800">{unsure} ملف محتاجين نظرة منك (متعلّمين بالأصفر).</p>}
         </>
       )}
-      {status !== "classifying" && view.items.length > 0 && (
+      {express && status === "review" && (
+        <button type="button" onClick={() => setShowAll(!showAll)} className="text-xs text-blue-700 hover:underline" data-testid="express-show-all">
+          {showAll ? "اعرض الأسئلة بس" : `اعرض كل الملفات (${allRows.length})`}
+        </button>
+      )}
+      {status !== "classifying" && rows.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <table className="w-full min-w-[64rem] text-right text-xs" data-testid="intake-table">
             <thead className="bg-gray-50 text-[11px] font-semibold text-gray-600">
@@ -331,7 +349,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-gray-500">مفيش حاجة هتتعمل قبل ما تدوس الزرار.</p>
           <button type="button" onClick={run} disabled={busy} className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow hover:bg-blue-700 disabled:opacity-50" data-testid="intake-run">
-            {busy ? "…" : "نفّذ الكل"}
+            {busy ? "…" : express ? "طلّع الشهادات" : "نفّذ الكل"}
           </button>
         </div>
       )}
@@ -345,6 +363,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           </div>
         </div>
       )}
+      {express && status === "done" && <ExpressPanel ex={view.express} />}
       {status === "done" && view.summary && (
         <div className="space-y-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-900" data-testid="intake-summary">
           <p className="font-semibold">{view.summary.text?.ar}</p>

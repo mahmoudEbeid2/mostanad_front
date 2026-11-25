@@ -15,6 +15,7 @@ import LabelDetail from "./pages/LabelDetail";
 import LabelGenerator from "./pages/LabelGenerator";
 import Catalogs from "./pages/Catalogs";
 import ProductImport from "./pages/ProductImport";
+import ExpressReview from "./pages/ExpressReview";
 import Catalogues from "./pages/Catalogues";
 import CatalogueVersion from "./pages/CatalogueVersion";
 import CatalogueReview from "./pages/CatalogueReview";
@@ -64,6 +65,7 @@ function App() {
             <Route path="/roles" element={<RequirePermission permission="read_roles"><Roles /></RequirePermission>} />
             <Route path="/categories" element={<RequirePermission permission="read_categories"><Categories /></RequirePermission>} />
             <Route path="/products" element={<RequirePermission permission="read_products"><Products /></RequirePermission>} />
+            <Route path="/express" element={<RequirePermission permission="read_products"><ExpressReview /></RequirePermission>} />
             <Route path="/products/import" element={<RequirePermission permission="create_products"><ProductImport /></RequirePermission>} />
             <Route path="/products/import/:id" element={<RequirePermission permission="read_products"><ProductImport /></RequirePermission>} />
             <Route path="/products/catalog-upload" element={<RequirePermission permission="create_products"><Catalogs /></RequirePermission>} />

@@ -219,7 +219,7 @@ function RequestMatrix({ id }) {
                           <Link to={`/certificates/${cell.certificateId}${scope.companyId ? `?companyId=${scope.companyId}` : ""}`} className="font-semibold hover:underline">
                             {label}
                             {cell.revision > 1 ? ` · نسخة ${cell.revision}` : ""}
-                            {cell.shared ? " · مشتركة" : ""}
+                            {cell.shared ? ` · شهادة واحدة لـ ${cell.covers || ""} منتجات` : ""}
                           </Link>
                         ) : (
                           <span className="font-semibold">{label}</span>

@@ -10,6 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import { isCompanyUser } from "../utils/permissions";
 import DesignerPanel from "../components/certificates/DesignerPanel";
 import useFollowEntityCompany from "../hooks/useFollowEntityCompany";
+import { tr } from "../i18n/lang";
 import useCompanyScope from "../hooks/useCompanyScope";
 
 // The client's workflow (Dossira_Certificate_Workflow_EN): a request from pasted names / chosen
@@ -230,7 +231,7 @@ function RequestMatrix({ id }) {
                         )}
                         {(cell.missing || []).map((m, i) => (
                           <p key={i} className="mt-0.5 text-[11px]">
-                            {m.link ? <Link to={m.link} className="underline">{m.ar}</Link> : m.ar}
+                            {m.link ? <Link to={m.link} className="underline">{tr(m.ar, m.en || m.ar)}</Link> : tr(m.ar, m.en || m.ar)}
                           </p>
                         ))}
                         {(cell.comments || []).map((cm, i) => (

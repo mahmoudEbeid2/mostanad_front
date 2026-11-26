@@ -5,6 +5,7 @@ import { CheckCircle2, Download, FileText, Loader2, AlertTriangle, Files, Wrench
 import { makeExpressTemplates } from "../../services/apiIntake";
 import { acceptAllEstimates } from "../../services/apiWorkflow";
 import { downloadCertificatePdf, downloadBatchZip, downloadBatchPdf } from "../../services/apiCertificatesV2";
+import { tr } from "../../i18n/lang";
 
 // Express (urgent order) on the drop's card, after "طلّع الشهادات": the steps as they
 // happen, then the certificate DRAFTS with their PDFs (each, ZIP, one combined PDF), what
@@ -72,7 +73,7 @@ function Steps({ ex, batchId, onChanged }) {
         return (
           <li key={s.key} className={`flex flex-wrap items-center gap-2 rounded-lg border px-2 py-1.5 ${STEP_STYLE[s.status]}`} data-step={s.key} data-status={s.status}>
             <Icon className="h-3.5 w-3.5 shrink-0" />
-            <span className="min-w-0 flex-1">{s.ar}</span>
+            <span className="min-w-0 flex-1">{tr(s.ar, s.en || s.ar)}</span>
             {s.fix === "make_templates" && (
               <button type="button" disabled={busy} onClick={() => fix(s)} className="rounded-md bg-violet-700 px-2 py-1 font-semibold text-white hover:bg-violet-800 disabled:opacity-50" data-testid="express-fix-templates">
                 {busy ? <Loader2 className="inline h-3 w-3 animate-spin" /> : null} {s.fixAr}

@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { CheckCircle2, Download, FileText, Loader2, AlertTriangle, Files, Wrench } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle2, Download, FileText, Loader2, AlertTriangle, Files, Wrench, XCircle } from "lucide-react";
+import { makeExpressTemplates } from "../../services/apiIntake";
 import { downloadCertificatePdf, downloadBatchZip, downloadBatchPdf } from "../../services/apiCertificatesV2";
 
 // Express (urgent order) on the drop's card, after "طلّع الشهادات": the steps as they
@@ -24,7 +26,58 @@ const TEMPLATE_STATE = {
 };
 const fieldAr = (k) => ({ batch_no: "رقم التشغيلة", batchNo: "رقم التشغيلة", expiry: "تاريخ الانتهاء", expiry_date: "تاريخ الانتهاء", production: "تاريخ الإنتاج", production_date: "تاريخ الإنتاج" })[k] || k.replace(/_/g, " ");
 
-export default function ExpressPanel({ ex, scope = {} }) {
+// what each step really produced: never a green check for a step that made nothing (26 Nov)
+const STEP_STYLE = { ok: "border-green-200 bg-green-50 text-green-900", warn: "border-amber-200 bg-amber-50 text-amber-900", fail: "border-red-200 bg-red-50 text-red-900" };
+const STEP_ICON = { ok: CheckCircle2, warn: AlertTriangle, fail: XCircle };
+
+function Steps({ ex, batchId, onChanged }) {
+  const [busy, setBusy] = useState(false);
+  const firstTemplate = (ex.templates || []).find((t) => t.link);
+  const fix = async (s) => {
+    if (s.fix !== "make_templates") return;
+    setBusy(true);
+    try {
+      const r = await makeExpressTemplates(batchId);
+      if (r.made?.length) toast.success(`اتعمل ${r.made.length} قالب: ${r.made.map((m) => m.code).join("، ")} — بنطلّع الشهادات تاني`);
+      else toast.error("مفيش ملفات شهادات نقدر نعمل منها قوالب");
+      onChanged?.();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <ul className="space-y-1 text-xs" data-testid="express-steps">
+      {ex.steps.map((s) => {
+        const Icon = STEP_ICON[s.status];
+        return (
+          <li key={s.key} className={`flex flex-wrap items-center gap-2 rounded-lg border px-2 py-1.5 ${STEP_STYLE[s.status]}`} data-step={s.key} data-status={s.status}>
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 flex-1">{s.ar}</span>
+            {s.fix === "make_templates" && (
+              <button type="button" disabled={busy} onClick={() => fix(s)} className="rounded-md bg-violet-700 px-2 py-1 font-semibold text-white hover:bg-violet-800 disabled:opacity-50" data-testid="express-fix-templates">
+                {busy ? <Loader2 className="inline h-3 w-3 animate-spin" /> : null} {s.fixAr}
+              </button>
+            )}
+            {s.fix === "open_templates" && firstTemplate && (
+              <Link to={firstTemplate.link} className="font-semibold text-blue-700 hover:underline">
+                {s.fixAr}
+              </Link>
+            )}
+            {s.fix === "add_products" && (
+              <Link to="/products/import" className="font-semibold text-blue-700 hover:underline">
+                {s.fixAr}
+              </Link>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged = null }) {
   if (!ex) return null;
   const at = STAGES.findIndex(([k]) => k === (ex.stage === "generate" ? "rendering" : ex.stage));
   const done = ex.stage === "done";
@@ -36,7 +89,13 @@ export default function ExpressPanel({ ex, scope = {} }) {
       <p className="flex items-center gap-2 font-semibold text-violet-900">
         طلب سريع <span className="rounded bg-violet-200 px-1.5 py-0.5 text-[11px] font-medium text-violet-900">Express — محتاج مراجعة</span>
       </p>
-      <ol className="flex flex-wrap gap-2 text-xs" aria-label="الخطوات">
+      {done && ex.summary && (
+        <p className={`text-sm font-semibold ${ex.summary.ok ? "text-green-900" : "text-red-800"}`} data-testid="express-summary">
+          {ex.summary.ar}
+        </p>
+      )}
+      {done && ex.steps?.length ? <Steps ex={ex} batchId={batchId} onChanged={onChanged} /> : null}
+      <ol className={`flex flex-wrap gap-2 text-xs ${done && ex.steps?.length ? "hidden" : ""}`} aria-label="الخطوات">
         {STAGES.map(([k, l], i) => (
           <li key={k} className={`flex items-center gap-1 rounded-full px-2 py-0.5 ${i < at || done ? "bg-green-100 text-green-800" : i === at ? "bg-violet-200 text-violet-900" : "bg-gray-100 text-gray-500"}`}>
             {i < at || done ? <CheckCircle2 className="h-3.5 w-3.5" /> : i === at ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
@@ -59,11 +118,6 @@ export default function ExpressPanel({ ex, scope = {} }) {
         </ul>
       )}
 
-      {g?.problem && (
-        <p className="flex items-start gap-1.5 text-xs text-amber-900">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> مطلعش شهادات: {g.problem}
-        </p>
-      )}
       {g?.missingTypes?.length > 0 && <p className="text-xs text-amber-900">مفيش قالب للأنواع دي: {g.missingTypes.join("، ")}</p>}
 
       {done && ex.certificates?.length > 0 && (

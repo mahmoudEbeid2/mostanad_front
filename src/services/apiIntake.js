@@ -88,3 +88,5 @@ export async function filesFromDrop(dataTransfer) {
 /** → { count, orders: [{ batchId, createdAt, conversationId, items: [{ id, entityType, entityId, name, link }] }] } */
 export const getExpressToReview = () => data(apiClient.get("/intake/express"));
 export const markExpressReviewed = (ids) => data(apiClient.post("/intake/express/reviewed", { ids }));
+/** "اعمل قوالب من الملفات دي": the drop's certificate files become templates, Express runs again → { made, restarted } */
+export const makeExpressTemplates = (batchId) => data(apiClient.post(`/intake/batches/${batchId}/express/templates-from-files`));

@@ -363,7 +363,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           </div>
         </div>
       )}
-      {express && status === "done" && <ExpressPanel ex={view.express} />}
+      {express && status === "done" && <ExpressPanel ex={view.express} batchId={view.batch?.id} onChanged={load} />}
       {status === "done" && view.summary && (
         <div className="space-y-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-900" data-testid="intake-summary">
           <p className="font-semibold">{view.summary.text?.ar}</p>

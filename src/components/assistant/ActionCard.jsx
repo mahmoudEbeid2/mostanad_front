@@ -177,6 +177,14 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
             </>
           )}
         </dl>
+        {/* a result outside its specification (27 Nov QA): red, before anything is written */}
+        {(p.warnings || []).length > 0 && (
+          <ul className="m-0 list-none space-y-1 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-[13px] font-medium text-red-800" data-testid="action-warnings" dir="auto">
+            {p.warnings.map((w, i) => (
+              <li key={i}>⚠ {w}</li>
+            ))}
+          </ul>
+        )}
         {action.status === "pending" ? (
           <div className="flex gap-2">
             <button type="button" disabled={busy} onClick={() => decide(true)} data-testid="action-run" className="min-h-11 rounded-xl border border-blue-600 bg-blue-600 px-4 text-sm font-semibold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 disabled:opacity-50">

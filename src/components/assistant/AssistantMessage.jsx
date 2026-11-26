@@ -9,6 +9,7 @@ import RecordBlock from "./RecordBlock";
 import ActionCard from "./ActionCard";
 import DraftCard from "./DraftCard";
 import IntakeReview from "../intake/IntakeReview";
+import { isAr } from "../../i18n/lang";
 
 const size = (n) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const KIND = { "application/pdf": "PDF", "image/png": "PNG", "image/jpeg": "JPG", "image/webp": "WEBP" };
@@ -56,8 +57,8 @@ export function StepChip({ step }) {
       >
         {step.running ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> : <span aria-hidden="true">{mark}</span>}
         <span className="truncate">
-          {step.label || step.name}
-          {step.summary ? ` · ${step.summary}` : ""}
+          {(isAr && step.labelAr) || step.label || step.name}
+          {step.summary ? ` · ${isAr && step.summary === "waiting for your OK" ? "مستني موافقتك" : step.summary}` : ""}
         </span>
       </button>
       {open && (

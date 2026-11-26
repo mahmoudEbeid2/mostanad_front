@@ -278,6 +278,11 @@ export default function CertificateEditor() {
     return (
       <div className="space-y-4">
         <RoleBanner scope={scopeState} />
+      {cert.isExperimentSample && (
+        <p dir="rtl" className="rounded-xl border-2 border-red-500 bg-red-50 px-4 py-2 text-sm font-bold text-red-800" data-testid="experiment-sample">
+          عينة من وضع التجربة — «SAMPLE – NOT VALID» على كل صفحة. مينفعش تتعتمد ولا تتصدّر كشهادة صالحة؛ طلّعها تاني والوضع مقفول.
+        </p>
+      )}
         <CompanyPicker scope={scopeState} />
       </div>
     );

@@ -17,6 +17,14 @@ export default function ValueOriginChip({ provenance, flags = [] }) {
       </span>
     );
   }
+  // PART 3: filled by the AI in experiment mode — test data, never a real value
+  if (p.experiment) {
+    return (
+      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-800" title="وضع التجربة: بيانات تجريبية من الذكاء الاصطناعي" data-chip="experiment">
+        {tr("مستنتج (تجربة)", "Estimated (experiment)")}
+      </span>
+    );
+  }
   if (flags.includes("estimated") || (p.estimated && !p.confirmedAt)) {
     const why = [p.reasoning, p.basis ? `${tr("الأساس", "Basis")}: ${p.basis}` : null].filter(Boolean).join("\n");
     return (

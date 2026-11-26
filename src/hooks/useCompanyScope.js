@@ -47,6 +47,7 @@ export default function useCompanyScope() {
     } catch {
       /* storage unavailable — the choice just isn't remembered */
     }
+    window.dispatchEvent(new Event("experiment-mode-changed")); // the experiment banner follows the company in view
   };
 
   const scope = useMemo(() => (isCompany ? {} : companyId ? { companyId } : null), [isCompany, companyId]);

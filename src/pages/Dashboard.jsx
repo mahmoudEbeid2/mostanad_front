@@ -8,6 +8,7 @@ import {
 import toast from "react-hot-toast";
 import IntakeDropTile from "../components/intake/IntakeDropTile";
 import ExpressToReviewTile from "../components/intake/ExpressToReviewTile";
+import ExperimentCard from "../components/ExperimentCard";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -71,6 +72,9 @@ export default function Dashboard() {
         <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
         <p className="text-gray-500 mt-1">Welcome back, {user?.name}. Here is what's happening today.</p>
       </div>
+
+      {/* PART 3: the owner's switch (shown to the owner / super-admin only) */}
+      <ExperimentCard />
 
       {/* drop any files here → "ارفع ملفاتك" */}
       <IntakeDropTile />

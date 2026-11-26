@@ -3,6 +3,7 @@ import { PanelLeftOpen } from "lucide-react";
 import Sidebar from "./Sidebar";
 import NotificationManager from "./NotificationManager";
 import AiBanner from "./AiBanner";
+import ExperimentBanner from "../components/ExperimentBanner";
 import { AiStatusProvider } from "../context/AiStatusContext";
 import { AssistantStatusProvider } from "../context/AssistantStatusContext";
 import { SidebarProvider } from "../context/SidebarContext";
@@ -50,12 +51,16 @@ function Shell() {
         </button>
       )}
       {fullBleed ? (
-        <main className={`flex-1 ${offset} ${MOTION} h-screen min-w-0 overflow-hidden`}>
-          <Outlet />
+        <main className={`flex-1 ${offset} ${MOTION} h-screen min-w-0 overflow-hidden flex flex-col`}>
+          <ExperimentBanner compact />
+          <div className="min-h-0 flex-1">
+            <Outlet />
+          </div>
         </main>
       ) : (
         <main className={`flex-1 ${offset} ${MOTION} p-8 overflow-y-auto h-screen min-w-0`}>
           <div className="max-w-6xl mx-auto">
+            <ExperimentBanner />
             <AiBanner />
             <Outlet />
           </div>

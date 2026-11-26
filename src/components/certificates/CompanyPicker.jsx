@@ -1,5 +1,6 @@
 import { Building2 } from "lucide-react";
 import { pick } from "../../i18n/lang";
+import { useExperimentStatus } from "../ExperimentBanner";
 
 // The company every Certificates V2 page works on (plan §13.1; mockups A1/A2/B1).
 // System users pick it (every call adds ?companyId=); a company session sees
@@ -14,6 +15,9 @@ const STR = pick({
 });
 
 export default function CompanyPicker({ scope, variant = "inline", hint, yours = true, compact = false, labelClassName = "text-xs font-semibold text-gray-600", className = "" }) {
+  // PART 3: a company in experiment mode is marked in the switcher
+  const experiment = useExperimentStatus();
+  const onIds = new Set([...(experiment?.companiesOn || []).map((c) => c.id), ...(experiment?.global?.on ? (scope.companies || []).map((c) => c.id) : [])]);
   const { isCompany, companies, companyId, companyName, setCompanyId, loading } = scope;
   const field = variant === "field";
   const height = compact ? "min-h-10" : "min-h-11";
@@ -38,7 +42,7 @@ export default function CompanyPicker({ scope, variant = "inline", hint, yours =
       {!companies.length && <option value="">{loading ? STR.loading : STR.none}</option>}
       {companies.map((c) => (
         <option key={c.id} value={c.id}>
-          {c.name}
+          {c.name}{onIds.has(c.id) ? " (تجربة)" : ""}
         </option>
       ))}
     </select>

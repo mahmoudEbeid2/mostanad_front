@@ -5,6 +5,7 @@ import { CheckCircle2, CopyPlus, FileText, ShieldCheck } from "lucide-react";
 import Button from "../../../ui/Button";
 import { activateVersion, confirmFields, newVersionFrom } from "../../../services/apiCertificateTemplates";
 import { describeCertificateError } from "../../../utils/certificateErrors";
+import ReadinessPanel from "./ReadinessPanel";
 
 // Wizard step 5 — activate (plan §8.4, §13.4, D10). Lists exactly what
 // changes; refuses while any field is unconfirmed (the server enforces it too).
@@ -32,6 +33,7 @@ const STR = {
 export default function ActivateStep({ scope, template, version, onChanged, goStep }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [readiness, setReadiness] = useState(null);
   // D10 + AI plan §5.1: a suggested field, or an AI mapping nobody confirmed yet
   const unconfirmed = (version.fields || []).filter((f) => !f.confirmed || f.mappingConfirmed === false);
   const current = template.versions?.find((v) => v.id === template.activeVersionId);
@@ -125,10 +127,11 @@ export default function ActivateStep({ scope, template, version, onChanged, goSt
           </Button>
         </div>
       )}
+      <ReadinessPanel scope={scope} versionId={version.id} onChange={setReadiness} onMark={() => goStep("fields")} />
       <p className="text-xs text-gray-600">
         {STR.replaces} <b>{current && current.id !== version.id ? `v${current.versionNumber}` : STR.noActive}</b> {STR.inSlot}
       </p>
-      <Button onClick={activate} isLoading={busy} disabled={unconfirmed.length > 0} className="!bg-emerald-700 hover:!bg-emerald-800 !shadow-none">
+      <Button onClick={activate} isLoading={busy} disabled={unconfirmed.length > 0 || !readiness?.ready} className="!bg-emerald-700 hover:!bg-emerald-800 !shadow-none">
         {STR.activate(version.versionNumber)}
       </Button>
     </div>

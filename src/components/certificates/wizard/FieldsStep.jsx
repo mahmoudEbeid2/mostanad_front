@@ -13,6 +13,7 @@ import { confirmFields, enableGroups, getFieldSources, getVersionHtml, mapFields
 import { cellOptions, slugKey, sourceOptions } from "../../../utils/certificateFieldSources";
 import { describeCertificateError } from "../../../utils/certificateErrors";
 import { withNextStep } from "../../../utils/aiReason";
+import ReadinessPanel from "./ReadinessPanel";
 
 // Wizard step 2 — mark fields (plan §13.4). The document is the sanitized
 // design; the field list autosaves (800 ms debounce) with PUT …/fields, which
@@ -309,10 +310,11 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
       const cur = draftsRef.current;
       const taken = new Set(cur.map((f) => f.key));
       const added = segments.map((s, i) => {
-        const label = `Field ${cur.length + i + 1}`;
+        const label = s.label || `Field ${cur.length + i + 1}`;
         const key = uniqueKey(slugKey(label), taken);
         taken.add(key);
-        return { ...s, uid: nextUid(), key, label, source: { kind: "manual" }, format: null, required: true, align: "left", origin: "manual", confirmed: true, keyEdited: false, mappingOrigin: "manual" };
+        const { label: _l, ...seg } = s;
+        return { ...seg, uid: nextUid(), key, label, source: { kind: "manual" }, format: null, required: true, align: "left", origin: "manual", confirmed: true, keyEdited: false, mappingOrigin: "manual" };
       });
       update((list) => [...list, ...added]);
       setActiveUid(added[added.length - 1]?.uid ?? null);
@@ -396,6 +398,18 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
             )}
           </div>
         </div>
+      )}
+      {!readOnly && (
+        <ReadinessPanel
+          scope={scope}
+          versionId={version.id}
+          reloadKey={`${version.updatedAt}|${(version.fields || []).length}`}
+          onMark={(a) => {
+            // a results row spans table columns: one field per word (a field never spans a column gap)
+            const parts = a.kind === "result" && /\s/.test(a.text) ? [...a.text.matchAll(/\S+/g)].map((m) => ({ s: a.charStart + m.index, t: m[0] })) : [{ s: a.charStart, t: a.text }];
+            make(parts.map((p, i) => ({ lineId: a.lineId, page: a.page, charStart: p.s, charEnd: p.s + p.t.length, sampleValue: p.t, label: parts.length > 1 ? `${a.label} ${i + 1}` : a.label })));
+          }}
+        />
       )}
       <div className="flex flex-wrap gap-5 items-start">
         <DocumentFrame

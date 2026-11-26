@@ -133,3 +133,11 @@ export const getRepairPlan = (scope = {}, versionId) =>
 /** decisions: [{ id, apply?, choice? }] → { templateId, versionId, versionNumber, taskId, applied, reconverted } */
 export const startRepair = (scope = {}, versionId, decisions) =>
   unwrap(apiClient.post(`/template-versions/${versionId}/repair`, { decisions }, { params: scope }), "Failed to apply the changes").then((d) => d.data);
+
+/** Readiness: the design's variable-looking places not marked → { ready, areas[], open, message, link } */
+export const getReadiness = (scope = {}, versionId) =>
+  unwrap(apiClient.get(`/template-versions/${versionId}/readiness`, { params: scope }), "Failed to check the template").then((d) => d.data);
+
+/** Confirm places as "static on purpose" (or take it back) → the readiness after */
+export const setStaticAreas = (scope = {}, versionId, ids, isStatic = true) =>
+  unwrap(apiClient.post(`/template-versions/${versionId}/static-areas`, { ids, static: isStatic }, { params: scope }), "Failed to save").then((d) => d.data);

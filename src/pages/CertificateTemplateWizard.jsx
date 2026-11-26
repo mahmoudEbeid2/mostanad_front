@@ -13,6 +13,7 @@ import FieldsStep from "../components/certificates/wizard/FieldsStep";
 import SettingsStep from "../components/certificates/wizard/SettingsStep";
 import PrepareStep from "../components/certificates/wizard/PrepareStep";
 import ActivateStep from "../components/certificates/wizard/ActivateStep";
+import ReadinessPanel from "../components/certificates/wizard/ReadinessPanel";
 import RepairWizard from "../components/certificates/RepairWizard";
 import { describeCertificateError } from "../utils/certificateErrors";
 import useCompanyScope from "../hooks/useCompanyScope";
@@ -348,6 +349,8 @@ export default function CertificateTemplateWizard() {
                 </p>
                 <Button onClick={() => goStep("fields")}>{STR.next}</Button>
               </div>
+              {/* right after upload: what changes per product / batch and must be marked first (26 Nov) */}
+              <ReadinessPanel scope={scope} versionId={version.id} reloadKey={version.updatedAt} onMark={version.status === "draft" ? () => goStep("fields") : undefined} />
               <DocumentFrame load={() => getVersionHtml(scope, version.id, "sanitized")} reloadKey={version.id} minHeight={640} />
             </div>
           ) : (

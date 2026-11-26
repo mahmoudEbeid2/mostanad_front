@@ -7,6 +7,7 @@ import Spinner from "../../ui/Spinner";
 import { listCertificateTypes } from "../../services/apiCertificateTypes";
 import { waitForTask, downloadBatchZip, exportBatchZip } from "../../services/apiCertificatesV2";
 import { certificatesForProducts } from "../../services/apiProductImports";
+import CertificateSetup from "./CertificateSetup";
 
 // Products page → select products → "Make certificates": certificates for several
 // products at once, no invoice. Choose the types, optionally the batch facts per product
@@ -32,9 +33,10 @@ export default function CertificatesForProductsModal({ products, onClose }) {
   const [done, setDone] = useState(null);
   const [error, setError] = useState(null);
 
+  const loadTypes = () => listCertificateTypes(scope).then(setTypes).catch((e) => setError(e.message));
   useEffect(() => {
     if (!companyId) return;
-    listCertificateTypes(scope).then(setTypes).catch((e) => setError(e.message));
+    loadTypes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
 
@@ -102,9 +104,12 @@ export default function CertificatesForProductsModal({ products, onClose }) {
                       </button>
                     );
                   })}
-                  {!types.length && <span className="text-gray-500">This company has no certificate types yet.</span>}
                 </div>
               </div>
+              {/* nothing set up, or a chosen type with no template: set it up right here */}
+              {(!types.length || plan?.missing?.length > 0) && (
+                <CertificateSetup companyId={companyId} types={types} missingTypes={[...new Set((plan?.missing || []).map((m) => m.type))]} onChanged={loadTypes} />
+              )}
               <div>
                 <p className="mb-1 font-semibold text-gray-800">Batch facts (optional)</p>
                 <p className="mb-2 text-xs text-gray-500">Only what you type is used. Left empty, it stays a marked blank on the draft to fill in later — nothing is made up.</p>
@@ -144,6 +149,18 @@ export default function CertificatesForProductsModal({ products, onClose }) {
                       </li>
                     ))}
                   </ul>
+                  {plan.notReady?.length > 0 && (
+                    <div className="space-y-0.5 text-xs text-red-800" dir="rtl" data-testid="plan-not-ready">
+                      {plan.notReady.map((n) => (
+                        <p key={n.versionId} className="flex items-start gap-1.5">
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {n.type}: {n.message}{" "}
+                          <a href={n.link} className="font-semibold text-blue-700 hover:underline">
+                            حددهم
+                          </a>
+                        </p>
+                      ))}
+                    </div>
+                  )}
                   {plan.missing.length > 0 && (
                     <p className="flex items-start gap-1.5 text-xs text-amber-800">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> No active template: {plan.missing.map((m) => `${m.type} for ${m.product}`).join(", ")}
@@ -173,7 +190,7 @@ export default function CertificatesForProductsModal({ products, onClose }) {
         </div>
         {!done && (
           <div className="flex justify-start gap-3 rounded-b-2xl border-t border-gray-100 bg-gray-50 px-6 py-4">
-            <Button onClick={make} isLoading={busy === "make"} disabled={!plan?.planned.length || !!busy} data-testid="make-certificates">
+            <Button onClick={make} isLoading={busy === "make"} disabled={!plan?.planned.length || plan?.notReady?.length > 0 || !!busy} data-testid="make-certificates">
               Make {plan?.planned.length || ""} draft{plan?.planned.length === 1 ? "" : "s"}
             </Button>
             <Button variant="secondary" onClick={onClose}>

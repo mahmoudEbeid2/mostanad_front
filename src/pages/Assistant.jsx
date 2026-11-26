@@ -17,6 +17,7 @@ import AssistantMessage, { Steps, FileChip } from "../components/assistant/Assis
 import DraftCard from "../components/assistant/DraftCard";
 import AssistantSettings from "../components/assistant/AssistantSettings";
 import Spinner from "../ui/Spinner";
+import { guessCompanyName, normName } from "../utils/companyGuess";
 
 // The assistant (design E1): a full page. Read-only in this phase — it reads
 // with the signed-in user's own access. Opened from a page (?from=type:id) it
@@ -104,12 +105,16 @@ export default function Assistant() {
     if (status?.enabled) refreshList();
   }, [status?.enabled, refreshList]);
 
-  useEffect(() => {
+  // every company: the picker must not drop any. Reloaded after a confirmed card ran (create_company)
+  const loadCompanies = useCallback(() => {
     if (!isSystem) return;
-    getCompanies({ limit: 1000, sort: "name" }) // every company: the picker must not drop any
+    getCompanies({ limit: 1000, sort: "name" })
       .then((r) => setCompanies(r?.data?.companies || []))
       .catch(() => setCompanies([]));
   }, [isSystem]);
+  useEffect(() => {
+    loadCompanies();
+  }, [loadCompanies]);
 
   // opened from a page: that page is the context of a new conversation
   useEffect(() => {
@@ -242,7 +247,7 @@ export default function Assistant() {
    * retries, removes it or sends without it; files attached in "All companies"
    * first get their company (chips), then the message goes in that company.
    */
-  const send = (raw, { skipFailed = false, companyId = null, fromComposer = raw === undefined } = {}) => {
+  const send = (raw, { skipFailed = false, companyId = null, fromComposer = raw === undefined, unbound: sendUnbound = false } = {}) => {
     const body = String(raw ?? text).trim();
     if (!body || busy) return;
     if (uploading) {
@@ -256,7 +261,7 @@ export default function Assistant() {
     const ready = files.filter((f) => f.attachment).map((f) => f.attachment);
     const unbound = ready.filter((a) => !a.companyId);
     const msgCompany = companyId || (isSystem ? scope : null);
-    if (isSystem && unbound.length && (!msgCompany || msgCompany === "all")) {
+    if (isSystem && unbound.length && (!msgCompany || msgCompany === "all") && !sendUnbound) {
       setHeld({ kind: "company", text: body, fromComposer, skipFailed });
       return;
     }
@@ -264,7 +269,7 @@ export default function Assistant() {
     if (fromComposer) setText("");
     setFiles([]);
     runTurn({ id: `local-${Date.now()}`, role: "user", text: body, attachments: ready }, (conv, opts) =>
-      sendAssistantMessage(conv.id, { text: body, page: pageOf(context), attachmentIds: ready.map((a) => a.id), ...(isSystem ? { companyId: msgCompany } : {}) }, opts)
+      sendAssistantMessage(conv.id, { text: body, page: pageOf(context), attachmentIds: ready.map((a) => a.id), ...(isSystem ? { companyId: sendUnbound ? null : msgCompany } : {}) }, opts)
     );
   };
   // "which company are these files for?" → bind them, switch the conversation to it, send
@@ -281,6 +286,13 @@ export default function Assistant() {
     } catch (e) {
       setError(errorOf(e));
     }
+  };
+  // "شركة جديدة: X" / "خلّي السيستم يحدد": the files go unbound; the drop's card creates or finds the company
+  const sendUnboundWith = (note = null) => {
+    const { text: body, fromComposer, skipFailed } = held || {};
+    setHeld(null);
+    send(note ? `${body}
+(${note})` : body, { fromComposer, skipFailed, unbound: true });
   };
   const sendRef = useRef(null);
   sendRef.current = send;
@@ -343,6 +355,7 @@ export default function Assistant() {
 
   /** A confirmed action finished: the assistant is told and continues. */
   const onActionFinished = (action) => {
+    loadCompanies(); // a company made by the card shows in the header and the chips right away
     if (!conversation) return;
     runTurn({ id: `event-${action.id}`, role: "event", text: action.status === "done" ? "[action finished]" : "[action failed]" }, (conv, opts) => continueAfterAction(conv.id, action.id, opts));
   };
@@ -505,7 +518,7 @@ export default function Assistant() {
                 </div>
               )}
               {messages.map((m) => (
-                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} onActionFinished={onActionFinished} latest={m === latestAssistant && !busy} canEdit={!busy && !String(m.id).startsWith("local-")} onResend={resendFrom} onChoose={(c) => send(`I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} drafts={draftsOf(m)} draftProps={{ ...draftProps, onActionFinished }} />
+                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} onActionFinished={onActionFinished} latest={m === latestAssistant && !busy} canEdit={!busy && !String(m.id).startsWith("local-")} onResend={resendFrom} onChoose={(c) => send(c.say || `I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} drafts={draftsOf(m)} draftProps={{ ...draftProps, onActionFinished }} />
               ))}
               {Object.values(drafts)
                 .filter((d) => !draftHome[d.id] && !liveDraftIds.includes(d.id) && d.status !== "cancelled" && d.status !== "expired")
@@ -593,8 +606,25 @@ export default function Assistant() {
                   )}
                   {held.kind === "company" && (
                     <div className="flex flex-col gap-2" data-testid="pick-company">
-                      <span>Which company are these files for?</span>
-                      <div className="flex flex-wrap gap-1.5">
+                      <span dir="rtl">الملفات دي لأنهي شركة؟</span>
+                      <div className="flex flex-wrap gap-1.5" dir="rtl">
+                        {(() => {
+                          const guess = guessCompanyName(files.map((f) => f.name || f.attachment?.name), held.text);
+                          const known = guess && companies.find((c) => normName(c.name) === normName(guess));
+                          if (known) return (
+                            <button type="button" onClick={() => sendForCompany(known.id)} className="rounded-full border border-blue-500 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-800" data-testid="pick-detected">
+                              {known.name} (من الملفات)
+                            </button>
+                          );
+                          return guess ? (
+                            <button type="button" onClick={() => sendUnboundWith(`شركة جديدة: ${guess}`)} className="rounded-full border border-emerald-400 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800" data-testid="pick-new-company">
+                              شركة جديدة: {guess}
+                            </button>
+                          ) : null;
+                        })()}
+                        <button type="button" onClick={() => sendUnboundWith()} className="rounded-full border border-violet-300 bg-white px-2.5 py-0.5 text-xs font-medium text-violet-800 hover:bg-violet-50" data-testid="pick-let-system">
+                          خلّي السيستم يحدد
+                        </button>
                         {companies.slice(0, 12).map((c) => (
                           <button key={c.id} type="button" onClick={() => sendForCompany(c.id)} className="rounded-full border border-blue-300 bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-50">
                             {c.name}

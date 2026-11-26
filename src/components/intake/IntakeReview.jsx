@@ -320,6 +320,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           {unsure > 0 && <p className="text-xs text-amber-800">{unsure} ملف محتاجين نظرة منك (متعلّمين بالأصفر).</p>}
         </>
       )}
+      {status === "review" && <PageQuestions items={view.items} products={products} onAnswer={change} />}
       {express && status === "review" && (
         <button type="button" onClick={() => setShowAll(!showAll)} className="text-xs text-blue-700 hover:underline" data-testid="express-show-all">
           {showAll ? "اعرض الأسئلة بس" : `اعرض كل الملفات (${allRows.length})`}
@@ -380,3 +381,54 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
     </div>
   );
 }
+
+/**
+ * Pages whose product isn't sure (none printed, or the same name on two pages): ONE short
+ * question instead of silent guesses. The suggestion comes from the same page of the drop's
+ * other files ("page 3 of ADDVET OMAN COC is OLIGOVET"); nothing is applied until pressed.
+ */
+function PageQuestions({ items, products, onAnswer }) {
+  const unsure = items.filter((i) => i.question === "product" && i.parentId);
+  if (!unsure.length) return null;
+  const withSuggestion = unsure.filter((i) => i.suggested?.name);
+  const known = (i) => (products[i.company?.id] || []).find((p) => p.name.toUpperCase() === String(i.suggested?.name || "").toUpperCase());
+  const accept = (i, name) => {
+    const p = (products[i.company?.id] || []).find((x) => x.name.toUpperCase() === name.toUpperCase());
+    return onAnswer(i, { products: [p ? { id: p.id } : { name }] });
+  };
+  return (
+    <div className="space-y-1.5 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-950" data-testid="page-questions">
+      <p className="font-semibold">
+        {unsure.length} صفحة مش متأكدين من منتجها — اختار المنتج لكل صفحة
+        {withSuggestion.length > 1 && (
+          <button type="button" className="ms-2 rounded-md bg-amber-700 px-2 py-0.5 font-semibold text-white hover:bg-amber-800" onClick={() => withSuggestion.reduce((p, i) => p.then(() => accept(i, i.suggested.name)), Promise.resolve())} data-testid="accept-suggestions">
+            اقبل الاقتراحات ({withSuggestion.length})
+          </button>
+        )}
+      </p>
+      <ul className="space-y-1">
+        {unsure.map((i) => (
+          <li key={i.id} className="flex flex-wrap items-center gap-1.5">
+            <span className="text-gray-700">{i.name.replace(/ — .*$/, "")} · صفحة {i.pages}</span>
+            {i.products?.[0]?.name && <span className="text-gray-500">(مكتوب عليها {i.products[0].name})</span>}
+            {i.suggested?.name && (
+              <button type="button" onClick={() => accept(i, i.suggested.name)} className="rounded-full border border-amber-500 bg-white px-2 py-0.5 font-semibold text-amber-900 hover:bg-amber-100" title={i.suggested.says}>
+                {i.suggested.name}
+                {known(i) ? "" : " (جديد)"}
+              </button>
+            )}
+            <select aria-label="المنتج" defaultValue="" onChange={(e) => e.target.value && accept(i, e.target.value)} className="rounded border border-amber-300 bg-white px-1 py-0.5">
+              <option value="">منتج تاني…</option>
+              {(products[i.company?.id] || []).map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+

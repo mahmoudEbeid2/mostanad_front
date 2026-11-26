@@ -183,6 +183,17 @@ export default function AssistantMessage({ m, onChoose, latest, conversationId, 
           <div key={b.id} className="self-stretch">
             <IntakeReview batchId={b.batchId} compact />
           </div>
+        ) : b.type === "choices" ? (
+          // what to ask next instead of a dead end (the answer guard's fallback)
+          latest ? (
+            <div key={b.id} className="flex flex-wrap gap-1.5" data-testid="next-steps" dir="auto">
+              {(b.items || []).map((c) => (
+                <button key={c.id} type="button" onClick={() => onChoose(c)} className="min-h-8 rounded-xl border border-violet-200 bg-violet-50 px-3 text-xs font-semibold text-violet-800 hover:bg-violet-100" dir="auto">
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          ) : null
         ) : b.type === "record" ? (
           <RecordBlock key={b.id} block={b} lang={isArabic(m.text) ? "ar" : "en"} />
         ) : (

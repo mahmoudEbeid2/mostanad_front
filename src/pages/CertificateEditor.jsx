@@ -274,7 +274,6 @@ export default function CertificateEditor() {
     return (
       <div className="space-y-4">
         <RoleBanner scope={scopeState} />
-      {["draft", "final"].includes(cert.status) && canEdit && <ReviewBar scope={scope} cert={cert} fields={fields} onChanged={load} />}
         <CompanyPicker scope={scopeState} />
       </div>
     );
@@ -350,6 +349,7 @@ export default function CertificateEditor() {
       </div>
 
       <RoleBanner scope={scopeState} />
+      {["draft", "final"].includes(cert.status) && canEdit && <ReviewBar scope={scope} cert={cert} fields={fields} onChanged={load} />}
 
       {cert.status === "pending" && <p className="text-sm text-blue-700">{STR.pending}</p>}
       {cert.status === "failed" && (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import ReviewBar from "../components/certificates/ReviewBar";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
@@ -241,6 +242,7 @@ export default function CertificateEditor() {
     return (
       <div className="space-y-4">
         <RoleBanner scope={scopeState} />
+      {["draft", "final"].includes(cert.status) && canEdit && <ReviewBar scope={scope} cert={cert} fields={fields} onChanged={load} />}
         <CompanyPicker scope={scopeState} />
       </div>
     );

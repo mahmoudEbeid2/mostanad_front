@@ -98,7 +98,13 @@ export default function CertificatesList() {
           <h1 className="text-2xl font-bold text-gray-900">{STR.title}</h1>
           <p className="text-sm text-gray-500 mt-1">{STR.subtitle}</p>
         </div>
-        <CompanyPicker scope={scopeState} />
+        <div className="flex items-start gap-2">
+          {/* the client's workflow: a request from names / products, its matrix of certificates */}
+          <Link to={`/certificates/requests/new${scopeState?.companyId ? `?companyId=${scopeState.companyId}` : ""}`} className="inline-flex items-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700" data-testid="new-request">
+            طلب شهادات جديد
+          </Link>
+          <CompanyPicker scope={scopeState} />
+        </div>
       </div>
 
       <RoleBanner scope={scopeState} />

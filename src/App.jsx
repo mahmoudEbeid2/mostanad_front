@@ -41,6 +41,7 @@ import CertificateEditor from "./pages/CertificateEditor";
 import ProtectedRoute from "./ui/ProtectedRoute";
 import AppLayout from "./ui/AppLayout";
 import RequirePermission from "./ui/RequirePermission";
+import CertificateRequest from "./pages/CertificateRequest";
 
 function App() {
   return (
@@ -88,6 +89,8 @@ function App() {
             <Route path="/invoices/new" element={<RequirePermission permission="read_invoices"><Invoices /></RequirePermission>} />
             <Route path="/invoices/:id" element={<RequirePermission permission="read_invoices"><InvoiceReview /></RequirePermission>} />
             <Route path="/certificate-ai" element={<RequirePermission permission="read_certificate_templates"><CertificateAi /></RequirePermission>} />
+            <Route path="/certificates/requests/new" element={<RequirePermission permission="create_certificates"><CertificateRequest /></RequirePermission>} />
+            <Route path="/certificates/requests/:id" element={<RequirePermission permission="read_certificates"><CertificateRequest /></RequirePermission>} />
             <Route path="/certificates" element={<RequirePermission permission="read_certificates"><CertificatesList /></RequirePermission>} />
             <Route path="/certificates/:id" element={<RequirePermission permission="read_certificates"><CertificateEditor /></RequirePermission>} />
             <Route path="/users" element={<RequirePermission permission="read_users"><Users /></RequirePermission>} />

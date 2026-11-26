@@ -9,6 +9,8 @@ import { getCompanies } from "../services/apiCompanies";
 import { useAuth } from "../context/AuthContext";
 import { isCompanyUser } from "../utils/permissions";
 import DesignerPanel from "../components/certificates/DesignerPanel";
+import useFollowEntityCompany from "../hooks/useFollowEntityCompany";
+import useCompanyScope from "../hooks/useCompanyScope";
 
 // The client's workflow (Dossira_Certificate_Workflow_EN): a request from pasted names / chosen
 // products (no invoice needed), then one row per product × pack (lot) and one cell per certificate:
@@ -83,6 +85,8 @@ function NewRequest() {
 
 function RequestMatrix({ id }) {
   const [params] = useSearchParams();
+  // the request's company becomes the selected one, so its certificate links open in place (Phase 6)
+  useFollowEntityCompany(useCompanyScope(), "request", id);
   const scope = params.get("companyId") ? { companyId: params.get("companyId") } : {};
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);

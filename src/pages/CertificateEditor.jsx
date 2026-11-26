@@ -31,6 +31,7 @@ import {
   waitForTask,
 } from "../services/apiCertificatesV2";
 import { pick } from "../i18n/lang";
+import useFollowEntityCompany from "../hooks/useFollowEntityCompany";
 
 // /certificates/:id (plan §11, §13.6; mockup B5). The frame always shows a
 // SERVER render; typing only patches the field span's text for instant,
@@ -105,6 +106,8 @@ export default function CertificateEditor() {
   const navigate = useNavigate();
   const scopeState = useCompanyScope();
   const { scope } = scopeState;
+  // a link from another company's page opens here: switch to the certificate's company (Phase 6)
+  useFollowEntityCompany(scopeState, "certificate", id);
   const { user } = useAuth();
   const canEdit = hasPermission(user, "update_certificates");
   const canExport = hasPermission(user, "export_certificates");

@@ -21,6 +21,7 @@ import useTaskProgress from "../hooks/useTaskProgress";
 import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { getTemplate, getVersion, getVersionHtml } from "../services/apiCertificateTemplates";
 import { pick } from "../i18n/lang";
+import useFollowEntityCompany from "../hooks/useFollowEntityCompany";
 
 const STR_EN = {
   newTitle: "New certificate template",
@@ -201,6 +202,7 @@ export default function CertificateTemplateWizard() {
   const navigate = useNavigate();
   const scopeState = useCompanyScope();
   const { scope, companyId } = scopeState;
+  useFollowEntityCompany(scopeState, templateId ? "template" : "version", templateId || versionId);
 
   const [types, setTypes] = useState(null);
   const [template, setTemplate] = useState(null);

@@ -35,3 +35,5 @@ export const acceptAllEstimates = (scope = {}, body) => unwrap(apiClient.post("/
 export const reharvestCompany = (scope = {}, companyId) => unwrap(apiClient.post(`/companies/${companyId}/harvest`, {}, { params: scope }), "Failed to start reading the files").then((d) => d.data);
 /** One issue date for all a request's certificates ("YYYY-MM-DD", or null = today) — Phase 3 */
 export const setRequestIssueDate = (scope = {}, id, issueDate) => unwrap(apiClient.patch(`/certificate-requests/${id}`, { issueDate }, { params: scope }), "Failed to save the date").then((d) => d.data);
+/** «أضف عبوة جديدة لنفس المنتج»: a pack variant of fromProductId (composition and basis copied), the line linked to it — Phase 4 */
+export const addPackVariant = (scope = {}, id, lineId, fromProductId) => unwrap(apiClient.post(`/certificate-requests/${id}/lines/${lineId}/new-pack`, { fromProductId }, { params: scope }), "Failed to add the pack").then((d) => d.data);

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import toast from "react-hot-toast";
 import { ClipboardList, Download, Files, Loader2, Palette, Play, Sparkles } from "lucide-react";
 import Button from "../ui/Button";
-import { createCertificateRequest, getCertificateRequest, resolveRequestLine, generateRequest, acceptAllEstimates, setRequestIssueDate } from "../services/apiWorkflow";
+import { createCertificateRequest, getCertificateRequest, resolveRequestLine, generateRequest, acceptAllEstimates, setRequestIssueDate, addPackVariant } from "../services/apiWorkflow";
 import { waitForTask, exportBatchZip, downloadBatchZip, downloadBatchPdf } from "../services/apiCertificatesV2";
 import { getCompanies } from "../services/apiCompanies";
 import { useAuth } from "../context/AuthContext";
@@ -180,11 +180,21 @@ function RequestMatrix({ id }) {
               <tr key={r.lineId} data-testid="request-row">
                 <td className="p-2 text-gray-500">{r.lineNo}</td>
                 <td className="p-2 font-medium text-gray-900">
+                  {/* Phase 4: the asked pack is never lost — a new pack of the same product in one click */}
+                  {r.match === "new_pack" && r.candidates.length > 0 && (
+                    <div className="mb-1 flex flex-wrap items-center gap-1" data-testid="new-pack">
+                      {r.candidates.slice(0, 3).map((c) => (
+                        <button key={c.id} type="button" onClick={() => run(r.lineId, () => addPackVariant(scope, id, r.lineId, c.id))} className="rounded-full border border-emerald-400 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100">
+                          أضف عبوة جديدة {r.packing} لـ {c.name}{c.packaging ? ` (زي ${c.packaging})` : ""}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {r.match === "matched" ? (
                     r.product
                   ) : (
                     <select defaultValue="" onChange={(e) => e.target.value && run(r.lineId, () => resolveRequestLine(scope, id, r.lineId, e.target.value))} className="rounded border border-amber-400 bg-amber-50 px-1 py-0.5" aria-label={`المنتج لـ ${r.asked}`}>
-                      <option value="">«{r.asked}» — اختار…</option>
+                      <option value="">«{r.asked}» — {r.match === "new_pack" ? `مفيش عبوة ${r.packing} منه — اختار أو أضفها` : "اختار…"}</option>
                       {r.candidates.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name}

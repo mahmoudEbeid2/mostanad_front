@@ -18,6 +18,7 @@ export default function ReviewBar({ scope, cert, fields = [], onChanged }) {
   const [changes, setChanges] = useState(null);
   const [ret, setRet] = useState(null); // { field, comment }
   const [busy, setBusy] = useState(null);
+  const [specWhy, setSpecWhy] = useState("");
   useEffect(() => {
     if (cert.status === "draft") getReviewChecks(scope, cert.id).then(setChecks).catch(() => {});
     if (cert.revisionOfId) getCertificateChanges(scope, cert.id).then(setChanges).catch(() => {});
@@ -89,6 +90,17 @@ export default function ReviewBar({ scope, cert, fields = [], onChanged }) {
               <AlertTriangle className="h-3.5 w-3.5" /> {o.label}: النتيجة {o.value} برّه المواصفة {o.spec} — متسجلة زي ما هي
             </p>
           ))}
+          {/* Phase 3: approval stays blocked until someone writes why it is approved anyway (for this version) */}
+          {(cert.reviewComments || []).some((c) => c.action === "spec_override" && c.version === cert.currentVersion) ? (
+            <p className="text-gray-700">اتسجل سبب الاعتماد رغم المواصفة للنسخة دي.</p>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <input value={specWhy} onChange={(e) => setSpecWhy(e.target.value)} placeholder="ليه هتتعتمد رغم إنها برّه المواصفة؟" className="min-w-0 flex-1 rounded-lg border border-red-300 px-2 py-1 text-xs text-gray-900" data-testid="spec-override-why" />
+              <button type="button" onClick={() => act("override_spec", { comment: specWhy })} disabled={!specWhy.trim() || !!busy} className="rounded-lg bg-red-700 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-40" data-testid="spec-override">
+                سجّل السبب
+              </button>
+            </div>
+          )}
         </div>
       )}
       {open.length > 0 && (

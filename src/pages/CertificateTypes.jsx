@@ -7,6 +7,7 @@ import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
 import RoleBanner from "../components/certificates/RoleBanner";
 import useCompanyScope from "../hooks/useCompanyScope";
+import NumberingPanel from "../components/certificates/NumberingPanel";
 import useConfirm from "../hooks/useConfirm";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
@@ -157,6 +158,7 @@ export default function CertificateTypes() {
       </div>
 
       <RoleBanner scope={scopeState} />
+      {scopeState.companyId && <NumberingPanel companyId={scopeState.companyId} scope={scope} />}
 
       {editing && (
         <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-5 grid gap-4 md:grid-cols-[1fr_180px] shadow-sm">

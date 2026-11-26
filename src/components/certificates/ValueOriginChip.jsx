@@ -9,6 +9,14 @@ const shortName = (s) => String(s || "").replace(/\.(pdf|png|jpe?g|ai|xlsx|csv)$
 
 export default function ValueOriginChip({ provenance, flags = [] }) {
   const p = provenance || {};
+  // Phase 3: an expiry computed from a real production date + the product's validity — its formula is the evidence
+  if (p.kind === "computed") {
+    return (
+      <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800" title={p.formula || undefined} data-chip="computed">
+        {tr("محسوب", "Computed")}
+      </span>
+    );
+  }
   if (flags.includes("estimated") || (p.estimated && !p.confirmedAt)) {
     const why = [p.reasoning, p.basis ? `${tr("الأساس", "Basis")}: ${p.basis}` : null].filter(Boolean).join("\n");
     return (

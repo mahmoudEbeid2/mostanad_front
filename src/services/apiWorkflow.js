@@ -33,3 +33,5 @@ export const decideHarvestConflict = (scope = {}, productId, key, value) => unwr
 /** «اعتمد كل المستنتج»: { productIds } or { certificateIds } */
 export const acceptAllEstimates = (scope = {}, body) => unwrap(apiClient.post("/products/estimates/accept", body, { params: scope }), "Failed to accept").then((d) => d.data);
 export const reharvestCompany = (scope = {}, companyId) => unwrap(apiClient.post(`/companies/${companyId}/harvest`, {}, { params: scope }), "Failed to start reading the files").then((d) => d.data);
+/** One issue date for all a request's certificates ("YYYY-MM-DD", or null = today) — Phase 3 */
+export const setRequestIssueDate = (scope = {}, id, issueDate) => unwrap(apiClient.patch(`/certificate-requests/${id}`, { issueDate }, { params: scope }), "Failed to save the date").then((d) => d.data);

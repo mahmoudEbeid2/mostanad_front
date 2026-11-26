@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import toast from "react-hot-toast";
 import { ClipboardList, Download, Files, Loader2, Palette, Play, Sparkles } from "lucide-react";
 import Button from "../ui/Button";
-import { createCertificateRequest, getCertificateRequest, resolveRequestLine, generateRequest, acceptAllEstimates } from "../services/apiWorkflow";
+import { createCertificateRequest, getCertificateRequest, resolveRequestLine, generateRequest, acceptAllEstimates, setRequestIssueDate } from "../services/apiWorkflow";
 import { waitForTask, exportBatchZip, downloadBatchZip, downloadBatchPdf } from "../services/apiCertificatesV2";
 import { getCompanies } from "../services/apiCompanies";
 import { useAuth } from "../context/AuthContext";
@@ -147,6 +147,17 @@ function RequestMatrix({ id }) {
           )}
         </div>
       </div>
+      {/* Phase 3: one issue date for all the request's certificates (empty = the day each is made) */}
+      <label className="flex flex-wrap items-center gap-2 text-sm text-gray-700" data-testid="request-issue-date">
+        تاريخ الإصدار للشهادات كلها:
+        <input
+          type="date"
+          value={data.request.issueDate || ""}
+          onChange={(e) => run("date", async () => setData(await setRequestIssueDate(scope, id, e.target.value || null)))}
+          className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
+        />
+        <span className="text-xs text-gray-500">{data.request.issueDate ? "الشهادات الجديدة هتاخد التاريخ ده" : "فاضي = تاريخ النهارده"}</span>
+      </label>
       {unclear.length > 0 && <p className="rounded-lg border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">{unclear.length} سطر محتاج تختار المنتج بتاعه قبل ما نطلّع الشهادات.</p>}
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         <table className="w-full min-w-[56rem] text-right text-xs">

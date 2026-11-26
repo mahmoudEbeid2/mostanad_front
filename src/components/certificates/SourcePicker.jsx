@@ -1,5 +1,6 @@
 import Select from "react-select";
 import { findOption } from "../../utils/certificateFieldSources";
+import { tr } from "../../i18n/lang";
 
 // Grouped source picker (plan §13.2) over the server catalogue. Fixed text and
 // combinations get their extra input right below. "Product details" are the
@@ -29,7 +30,7 @@ export default function SourcePicker({ options, value, onChange, inputId, ariaLa
         }
         menuPortalTarget={typeof document !== "undefined" ? document.body : null}
         styles={{ menuPortal: (b) => ({ ...b, zIndex: 60 }), control: (b) => ({ ...b, minHeight: 36 }) }}
-        placeholder="Where does the value come from?"
+        placeholder={tr("القيمة جاية منين؟", "Where does the value come from?")}
       />
       {onRefresh && (
         <p className="text-[11px] text-gray-500">
@@ -43,7 +44,7 @@ export default function SourcePicker({ options, value, onChange, inputId, ariaLa
         <input
           value={value.text || ""}
           onChange={(e) => onChange({ kind: "static", text: e.target.value })}
-          placeholder="Text printed on every certificate"
+          placeholder={tr("نص بيتطبع على كل شهادة", "Text printed on every certificate")}
           aria-label="Fixed text"
           className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
         />

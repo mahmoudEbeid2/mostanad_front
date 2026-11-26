@@ -1,4 +1,5 @@
 import { Building2 } from "lucide-react";
+import { pick } from "../../i18n/lang";
 
 // The company every Certificates V2 page works on (plan §13.1; mockups A1/A2/B1).
 // System users pick it (every call adds ?companyId=); a company session sees
@@ -7,12 +8,10 @@ import { Building2 } from "lucide-react";
 //  - variant "field":  labelled form/filter field ("Company" + optional hint);
 //    `yours` adds "· your company" to a company session's name (A2, not A1/B1);
 //    `compact` matches the 40px selects of a filter card
-const STR = {
-  label: "Company",
-  loading: "Loading companies…",
-  none: "No companies",
-  yours: "your company",
-};
+const STR = pick({
+  en: { label: "Company", loading: "Loading companies…", none: "No companies", yours: "your company" },
+  ar: { label: "الشركة", loading: "بنحمّل الشركات…", none: "مفيش شركات", yours: "شركتك" },
+});
 
 export default function CompanyPicker({ scope, variant = "inline", hint, yours = true, compact = false, labelClassName = "text-xs font-semibold text-gray-600", className = "" }) {
   const { isCompany, companies, companyId, companyName, setCompanyId, loading } = scope;

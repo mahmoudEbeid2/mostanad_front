@@ -6,6 +6,7 @@ import Spinner from "../../ui/Spinner";
 import useTaskProgress from "../../hooks/useTaskProgress";
 import { getRepairPlan, startRepair } from "../../services/apiCertificateTemplates";
 import { describeCertificateError } from "../../utils/certificateErrors";
+import { pick } from "../../i18n/lang";
 
 // "Fix this template" (backend item 2): one checklist of what the scan found —
 // the constituent rows as one repeating list, unnamed fields, fixed text that
@@ -14,7 +15,7 @@ import { describeCertificateError } from "../../utils/certificateErrors";
 // is added, the ticked changes applied, prepare re-run. The gate is shown on
 // that version before anyone activates it.
 
-const STR = {
+const STR_EN = {
   title: "Fix this template",
   scanning: "Reading the design…",
   intro: "Tick what to change. Nothing changes on this version: a new version is made, prepared, and you activate it after checking the gate.",
@@ -37,6 +38,29 @@ const STR = {
   nothing: "Nothing to fix was found on this version.",
   origin: { memory: "remembered", rule: "rule", dictionary: "your data", specification: "specification", none: "no source" },
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "صلّح القالب ده",
+  scanning: "بنقرا التصميم…",
+  intro: "علّم على اللي عايز تغيره. النسخة دي مش هتتغير: بتتعمل نسخة جديدة وتتجهّز، وانت تفعّلها بعد ما تشوف الاختبار.",
+  group: "المكونات كقايمة واحدة",
+  groupHint: (n, keys) => `بتطبع مكونات كل منتج بتاعته (الاسم ← المكوّن، الكمية ← التركيز) بدل ${n} سطر ثابت. بتحل محل الحقول ${keys}.`,
+  unnamed: "حقول من غير اسم",
+  fixed: "نص ثابت بيتغير مع المنتج أو التشغيلة",
+  fixedHint: "كل واحد بيبقى حقل بالمصدر المقترح. تقدر تغيّر أي مصدر بعدين في «حدد الحقول».",
+  results: "نتايج ثابتة — قرّر كل سطر",
+  resultsHint: "بتتطبع زي ما هي على كل شهادة النهارده. مفيش حاجة هنا بتتغير غير لما تختار.",
+  choices: { keep_fixed: "سيبها ثابتة", lab_result_field: "حقل نتيجة تحليل", show_specification: "اطبع المواصفة" },
+  choiceHint: { keep_fixed: "بتتطبع زي دلوقتي", lab_result_field: "بتتملى لكل تشغيلة (شهادة المورد / جدول النتايج)", show_specification: "بتطبع مواصفة السطر" },
+  spec: "المواصفة",
+  ambiguous: (opts) => `ترتيب اليوم والشهر مش واضح — حدده في «حدد الحقول» (${opts.join(" أو ")}).`,
+  decideAll: (n) => `قرّر ${n} سطر نتيجة كمان عشان تكمّل`,
+  apply: (n) => `طبّق ${n} تغيير كنسخة جديدة`,
+  reconvert: "التصميم بيتحوّل تاني بخلفية فيكتور (لازمة للقايمة).",
+  working: "بنعمل النسخة الجديدة",
+  cancel: "اقفل",
+  nothing: "ملقيناش حاجة محتاجة تتصلّح في النسخة دي.",
+  origin: { memory: "متفتكر", rule: "قاعدة", dictionary: "بياناتك", specification: "المواصفة", none: "من غير مصدر" },
+} });
 
 const sourceText = (s) => {
   if (!s) return "—";

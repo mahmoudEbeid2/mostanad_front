@@ -1,11 +1,12 @@
 import { useRef, useState } from "react";
+import { pick } from "../../i18n/lang";
 
 // The repeating group on the design (plan §7.8, §13.4): the detected band is
 // tinted, and the footer line — everything below it stays where it is — is a
 // dashed line the user drags. Positions come from the server's detection
 // (page-relative CSS px); this only adds the page's offset in the frame.
 
-const STR = { footer: "Footer line — drag to move", group: (l) => `Group · ${l}` };
+const STR = pick({ en: { footer: "Footer line — drag to move", group: (l) => `Group · ${l}` }, ar: { footer: "خط الذيل — اسحبه عشان تحركه", group: (l) => `مجموعة · ${l}` } });
 const round1 = (n) => Math.round(n * 10) / 10;
 
 function FooterLine({ y, pageTop, minY, maxY, width, left, scale, disabled, onCommit }) {

@@ -325,7 +325,7 @@ export default function CertificateTemplateWizard() {
             {fieldsEditable && saveState && <SaveState state={saveState} />}
             {["draft", "ready", "active", "superseded"].includes(version.status) && !template?.archivedAt && (
               <Button variant="secondary" className="!py-2 text-sm" onClick={() => setRepairing(true)} data-testid="fix-template">
-                <Wrench className="w-4 h-4" aria-hidden="true" /> Fix this template
+                <Wrench className="w-4 h-4" aria-hidden="true" /> {pick({ en: "Fix this template", ar: "صلّح القالب ده" })}
               </Button>
             )}
           </div>

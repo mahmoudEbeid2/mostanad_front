@@ -9,12 +9,12 @@ import FieldPanel from "../FieldPanel";
 import GroupPanel from "../GroupPanel";
 import GroupOverlay from "../GroupOverlay";
 import ProductMatchSelect from "../ProductMatchSelect";
-import { confirmFields, enableGroups, getFieldSources, getVersionHtml, mapFields, newVersionFrom, proposeLabels, rebuildDataDictionary, saveFields, suggestFields } from "../../../services/apiCertificateTemplates";
+import { confirmAllFields, comparePages, confirmFields, enableGroups, getFieldSources, getVersionHtml, mapFields, newVersionFrom, proposeLabels, rebuildDataDictionary, saveFields, suggestFields } from "../../../services/apiCertificateTemplates";
 import { cellOptions, slugKey, sourceOptions } from "../../../utils/certificateFieldSources";
 import { describeCertificateError } from "../../../utils/certificateErrors";
 import { withNextStep } from "../../../utils/aiReason";
 import ReadinessPanel from "./ReadinessPanel";
-import { pick } from "../../../i18n/lang";
+import { pick, tr } from "../../../i18n/lang";
 
 // Wizard step 2 — mark fields (plan §13.4). The document is the sanitized
 // design; the field list autosaves (800 ms debounce) with PUT …/fields, which
@@ -314,6 +314,36 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
     const f = draftsRef.current.find((x) => x.uid === uid);
     if (f && f.label && f.label !== f.mappedLabel && ((f.mappingOrigin || "manual") !== "manual" || f.source?.kind === "manual")) runMap([f.key]);
   };
+  // Phase 2: «أكّد كل الاقتراحات» — saved first, then every suggestion confirmed at once on the server (its role
+  // kept, never its sample value), then readiness says ready or what's still open
+  const [bulk, setBulk] = useState({ busy: null, note: null, tick: 0 });
+  const unconfirmedCount = drafts.filter((f) => !f.confirmed || f.mappingConfirmed === false).length;
+  const confirmAll = async (minConfidence = null) => {
+    setBulk((b) => ({ ...b, busy: minConfidence === null ? "all" : "high" }));
+    try {
+      await saveFields(scope, version.id, toPayload(draftsRef.current), toGroupPayload(groupsRef.current));
+      const r = await confirmAllFields(scope, version.id, minConfidence);
+      const done = new Set((r.fields || []).filter((f) => f.confirmed).map((f) => f.key));
+      update((cur) => cur.map((f) => (done.has(f.key) ? { ...f, confirmed: true, mappingConfirmed: true } : f)));
+      const note = `${tr(`اتأكد ${r.confirmed} حقل`, `${r.confirmed} field(s) confirmed`)}${r.skipped ? tr(` — ${r.skipped} ثقتهم أقل فسبناهم`, ` — ${r.skipped} less confident left`) : ""}. ${r.readiness?.ready ? tr("القالب جاهز ✓", "The template is ready ✓") : r.readiness?.message || ""}`;
+      setBulk((b) => ({ busy: null, note, tick: b.tick + 1 }));
+    } catch (err) {
+      setBulk((b) => ({ ...b, busy: null }));
+      toast.error(describeCertificateError(err));
+    }
+  };
+  const compare = async () => {
+    setBulk((b) => ({ ...b, busy: "diff" }));
+    try {
+      const r = await comparePages(scope, version.id, 1);
+      const note = r.pagesCompared > 1 ? tr(`قارنّا ${r.pagesCompared} صفحة: ${r.static} مكان ثابت اتعلّم، و${r.extra.length} سطر بيتغير ممكن يبقى حقل.`, `Compared ${r.pagesCompared} pages: ${r.static} static place(s) marked, ${r.extra.length} changing line(s) could be fields.`) : tr("الملف صفحة واحدة — مفيش حاجة نقارنها.", "The file has one page — nothing to compare.");
+      setBulk((b) => ({ busy: null, note, tick: b.tick + 1 }));
+    } catch (err) {
+      setBulk((b) => ({ ...b, busy: null }));
+      toast.error(describeCertificateError(err));
+    }
+  };
+
   // an AI mapping is confirmed on the server (saved first, so the server holds the suggestion link)
   const confirmMapping = async (key) => {
     try {
@@ -420,10 +450,24 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
         </div>
       )}
       {!readOnly && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/60 px-3 py-2 text-sm" data-testid="bulk-confirm">
+          <Button onClick={() => confirmAll(null)} isLoading={bulk.busy === "all"} disabled={!!bulk.busy || !unconfirmedCount} className="py-2! text-sm">
+            {tr(`أكّد كل الاقتراحات (${unconfirmedCount})`, `Confirm all suggestions (${unconfirmedCount})`)}
+          </Button>
+          <Button variant="secondary" onClick={() => confirmAll(0.8)} isLoading={bulk.busy === "high"} disabled={!!bulk.busy || !unconfirmedCount} className="py-2! text-sm">
+            {tr("أكّد الاقتراحات عالية الثقة بس", "Confirm high-confidence only")}
+          </Button>
+          <Button variant="secondary" onClick={compare} isLoading={bulk.busy === "diff"} disabled={!!bulk.busy} className="py-2! text-sm">
+            {tr("قارن صفحات الملف", "Compare the file's pages")}
+          </Button>
+          {bulk.note && <span className="text-xs text-gray-700" data-testid="bulk-note">{bulk.note}</span>}
+        </div>
+      )}
+      {!readOnly && (
         <ReadinessPanel
           scope={scope}
           versionId={version.id}
-          reloadKey={`${version.updatedAt}|${(version.fields || []).length}`}
+          reloadKey={`${version.updatedAt}|${(version.fields || []).length}|${bulk.tick}`}
           onMark={(a) => {
             // a results row spans table columns: one field per word (a field never spans a column gap)
             const parts = a.kind === "result" && /\s/.test(a.text) ? [...a.text.matchAll(/\S+/g)].map((m) => ({ s: a.charStart + m.index, t: m[0] })) : [{ s: a.charStart, t: a.text }];

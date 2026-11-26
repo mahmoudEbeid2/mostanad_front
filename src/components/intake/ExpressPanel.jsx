@@ -171,7 +171,7 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
             <li key={t.versionId} className="flex flex-wrap items-center gap-1.5">
               <FileText className="h-3.5 w-3.5 text-gray-400" />
               <b>{t.code}</b> <span className="text-gray-500">({t.file})</span>:
-              <span className={t.status === "active" ? "text-green-800" : ["needs_table", "no_fields", "failed"].includes(t.status) ? "text-amber-800" : "text-gray-600"}>{TEMPLATE_STATE[t.status] || t.status}</span>
+              <span className={t.status === "active" ? "text-green-800" : ["needs_table", "no_fields", "failed"].includes(t.status) ? "text-amber-800" : "text-gray-600"}>{t.status === "active" && t.suggested ? `اتفعّل بالاقتراحات (${t.suggested} حقل) — أكّدها بعدين من صفحة القالب` : TEMPLATE_STATE[t.status] || t.status}</span>
               {t.why && t.status !== "active" && <span className="text-gray-500">— {whyAr(t.why)}</span>}
               {t.status === "active" && t.toFill?.length > 0 && <span className="text-gray-500">— بيتملى في كل شهادة: {t.toFill.join("، ")}</span>}
             </li>

@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Check, Sparkles, Trash2, X } from "lucide-react";
 import SourcePicker from "./SourcePicker";
 import { BATCH_DATA_NOTE, DATE_PATTERNS, mappingBadge, slugKey, sourceLabel, sourceType } from "../../utils/certificateFieldSources";
 import { getAiSuggestion } from "../../services/apiCertificateTemplates";
+import { pick, tr } from "../../i18n/lang";
 
 // AI plan §5.1 step 5: the origin badge, and the "Why?" behind it — the
 // dictionary entry with its examples, the sample-product check, the rationale.
@@ -30,7 +31,7 @@ function WhyPanel({ field, scope }) {
   return (
     <div className="text-xs">
       <button type="button" onClick={show} className="text-blue-700 underline" aria-expanded={open}>
-        {open ? "Hide why" : "Why?"}
+        {open ? tr("اخفي السبب", "Hide why") : tr("ليه؟", "Why?")}
       </button>
       {open && info && (
         <div className="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 p-2 space-y-1 text-gray-700" data-testid="mapping-why">
@@ -58,7 +59,7 @@ function WhyPanel({ field, scope }) {
 // cell of a repeating group's sample row (plan §7.8): its value then comes
 // from each row (or fixed text / typed), not from the catalogue.
 
-const STR = {
+const STR_EN = {
   title: "Fields",
   empty: "Select the text that changes from one certificate to the next (batch number, dates, product name…) in the design, then press “Make field” or Enter. Ctrl/⌘-select several values to make them at once.",
   label: "Label",
@@ -108,6 +109,57 @@ const STR = {
   showSpec: "Print the specification instead of a result",
   showSpecHint: "The certificate prints the specification here and never asks for a measured value.",
 };
+const STR_AR = {
+  title: "الحقول",
+  empty: "حدّد النص اللي بيتغير من شهادة للتانية (رقم التشغيلة، التواريخ، اسم المنتج…) في التصميم، وبعدين دوس «اعمل حقل» أو Enter. Ctrl/⌘ عشان تحدد كذا قيمة مرة واحدة.",
+  label: "الاسم",
+  key: "المفتاح",
+  source: "القيمة جاية من",
+  format: "الشكل",
+  date: "شكل التاريخ",
+  dateAsIs: "زي ما هو",
+  case: "حالة الحروف",
+  caseAsIs: "زي ما هي",
+  upper: "كبيرة",
+  lower: "صغيرة",
+  titleCase: "أول حرف كبير",
+  decimals: "الكسور العشرية",
+  thousands: "فاصل الآلاف",
+  prefix: "قبلها",
+  suffix: "بعدها",
+  required: "مطلوب — علّم على الشهادة لو فاضي",
+  align: "المحاذاة",
+  alignHint: "المكان اللي القيمة بتفضل ثابتة عنده لما تكون أطول أو أقصر من المثال.",
+  left: "شمال",
+  center: "نص",
+  right: "يمين",
+  sample: "مثال",
+  suggestAlign: (a) => `المقترح: ${a}`,
+  apply: "طبّق",
+  unconfirmed: "مش متأكد",
+  confirm: "أكّد",
+  suggest: "اقترح الحقول (ذكاء اصطناعي)",
+  suggesting: "بنسأل الذكاء الاصطناعي…",
+  aiChipsTitle: "اقتراحات الذكاء الاصطناعي — اقبل أو ارفض كل واحد",
+  accept: "اقبل",
+  reject: "ارفض",
+  readOnly: "النسخة دي مش مسودة، فحقولها للقراية بس.",
+  group: "صف في مجموعة",
+  noGroup: "— مش جزء من مجموعة —",
+  groupHint: "خانة في صف المثال بتاع المجموعة: بتتكرر مرة لكل صف.",
+  labResult: "نتيجة تحليل (بتتقاس لكل تشغيلة)",
+  labResultHint: "عمرها ما بتتستنتج ولا بتتدوّر عليها: شهادة تحليل المورد، أو نتيجة سابقة لنفس التشغيلة، أو شخص بيكتبها.",
+  batchFact: "بيان تشغيلة (رقم التشغيلة، تاريخ الإنتاج أو الانتهاء)",
+  batchFactHint: "عمره ما بيتولّد: الفاتورة، أو شهادة تحليل المورد، أو قايمة التعبئة، أو شخص بيكتبه.",
+  notApplicable: "مش مطلوب هنا",
+  notApplicableHint: "مفيش حاجة بتتدوّر عليها وبتفضل فاضية. الحقول الاختيارية من غير العلامة دي بتتملى لو ينفع.",
+  specField: "المواصفة بتاعته",
+  noSpec: "— مفيش —",
+  specFieldHint: "بتظهر جنب النتيجة في جدول النتايج؛ القيمة اللي برّاها بتتعلّم.",
+  showSpec: "اطبع المواصفة بدل النتيجة",
+  showSpecHint: "الشهادة بتطبع المواصفة هنا ومش بتطلب قيمة مقاسة أبداً.",
+};
+const STR = pick({ en: STR_EN, ar: STR_AR });
 
 // the server's pre-set for a field the owner hasn't ticked yet (backend policy.defaultIsLabResult)
 const LAB_RESULT_LABEL = /\b(results?|assay|complies|conforms?)\b/i;

@@ -141,3 +141,10 @@ export const getReadiness = (scope = {}, versionId) =>
 /** Confirm places as "static on purpose" (or take it back) → the readiness after */
 export const setStaticAreas = (scope = {}, versionId, ids, isStatic = true) =>
   unwrap(apiClient.post(`/template-versions/${versionId}/static-areas`, { ids, static: isStatic }, { params: scope }), "Failed to save").then((d) => d.data);
+
+/** «أكّد كل الاقتراحات» (Phase 2): every suggestion at once (or minConfidence: only the confident ones) → { confirmed, skipped, fields, readiness } */
+export const confirmAllFields = (scope = {}, versionId, minConfidence = null) =>
+  unwrap(apiClient.post(`/template-versions/${versionId}/fields/confirm-all`, minConfidence === null ? {} : { minConfidence }, { params: scope }), "Failed to confirm the suggestions").then((d) => d.data);
+/** The uploaded file's pages compared: same everywhere → static, changing → fields → { pagesCompared, static, extra, readiness } */
+export const comparePages = (scope = {}, versionId, page = 1) =>
+  unwrap(apiClient.post(`/template-versions/${versionId}/page-diff`, { page }, { params: scope }), "Couldn't compare the pages").then((d) => d.data);

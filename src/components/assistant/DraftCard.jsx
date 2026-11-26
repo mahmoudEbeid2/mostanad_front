@@ -92,7 +92,7 @@ function FieldInput({ field, value, onChange }) {
       </div>
     );
   }
-  if (field.type === "list") return <textarea aria-label={field.label} rows={3} placeholder="One per line" value={(value || []).join("\n")} onChange={(e) => onChange(e.target.value.split("\n"))} dir="auto" className={input} />;
+  if (field.type === "list") return <textarea aria-label={field.label} rows={3} placeholder={isAr ? "واحد في كل سطر" : "One per line"} value={(value || []).join("\n")} onChange={(e) => onChange(e.target.value.split("\n"))} dir="auto" className={input} />;
   if (field.type === "boolean") return <input type="checkbox" aria-label={field.label} checked={!!value} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4" />;
   if (field.type === "text" || field.type === "number") return <input aria-label={field.label} type={field.type === "number" ? "number" : "text"} value={value ?? ""} onChange={(e) => onChange(field.type === "number" ? (e.target.value === "" ? undefined : Number(e.target.value)) : e.target.value)} dir="auto" className={input} />;
   return <span className="text-xs text-gray-500">Tell the assistant in the chat.</span>;

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { isArabic } from "../../utils/assistantContext";
+import { tr } from "../../i18n/lang";
 
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 const when = (d, today) => (sameDay(d, today) ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString([], { day: "numeric", month: "short" }));
@@ -25,7 +26,7 @@ export default function ConversationList({ conversations, activeId, isSystem, on
         <button type="button" onClick={onNew} data-testid="new-conversation" className="min-h-11 w-full rounded-xl border border-blue-600 bg-blue-600 px-4 text-sm font-semibold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700">
           + New conversation
         </button>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search conversations" aria-label="Search conversations" className="min-h-[38px] w-full rounded-lg border border-gray-300 px-3 text-[13px] focus:border-blue-500 focus:outline-none" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("دوّر في المحادثات", "Search conversations")} aria-label="Search conversations" className="min-h-[38px] w-full rounded-lg border border-gray-300 px-3 text-[13px] focus:border-blue-500 focus:outline-none" />
       </div>
       <div className="flex-1 overflow-y-auto p-2" data-testid="assistant-history">
         {groups.length === 0 && <p className="p-4 text-center text-xs text-gray-400">{q ? "No conversation matches." : "No conversations yet."}</p>}

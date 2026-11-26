@@ -18,6 +18,7 @@ import DraftCard from "../components/assistant/DraftCard";
 import AssistantSettings from "../components/assistant/AssistantSettings";
 import Spinner from "../ui/Spinner";
 import { guessCompanyName, normName } from "../utils/companyGuess";
+import { tr } from "../i18n/lang";
 
 // The assistant (design E1): a full page. Read-only in this phase — it reads
 // with the signed-in user's own access. Opened from a page (?from=type:id) it
@@ -701,7 +702,7 @@ export default function Assistant() {
                   rows={1}
                   dir="auto"
                   maxLength={MAX_TEXT}
-                  placeholder="Ask, or drop or paste a file — invoice, catalogue, label, lab report…"
+                  placeholder={tr("اسأل، أو ارمي أو الزق ملف — فاتورة، كتالوج، ليبل، تقرير معمل…", "Ask, or drop or paste a file — invoice, catalogue, label, lab report…")}
                   className={`max-h-[220px] min-h-[40px] flex-1 resize-none border-0 bg-transparent py-2 text-sm leading-relaxed outline-none placeholder:text-gray-400 ${isArabic(text) ? "font-arabic" : ""}`}
                 />
                 {busy ? (

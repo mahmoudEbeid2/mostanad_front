@@ -37,6 +37,11 @@ function describeFallback(flag, fonts) {
 
 function describeFlag(flag, fonts) {
   if (flag.startsWith(GLYPH_FALLBACK)) return describeFallback(flag, fonts);
+  // the product has more ingredients than the design has rows — never cut silently
+  if (flag.startsWith("rows_overflow")) {
+    const [have, rows] = flag.split(":")[1]?.split("/") || [];
+    return { tone: "red", code: "rows", text: have ? tr(`المنتج فيه ${have} مكوّن والقالب فيه ${rows} سطر — كبّر الجدول في القالب`, `The product has ${have} ingredients and the template ${rows} rows — enlarge the table`) : tr("مكونات أكتر من سطور القالب", "More ingredients than the template's rows") };
+  }
   if (flag.startsWith("glyph:")) return { tone: "red", code: "glyph", text: `Character not in any available font: ${Array.from(flag.slice(6)).join(", ")}` };
   return FLAGS[flag] || { tone: "amber", text: flag };
 }

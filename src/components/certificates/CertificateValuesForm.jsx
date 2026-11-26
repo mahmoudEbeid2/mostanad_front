@@ -1,5 +1,6 @@
 import { RotateCcw } from "lucide-react";
 import FlagBadges from "./FlagBadges";
+import ValueOriginChip from "./ValueOriginChip";
 import GroupRowsEditor from "./GroupRowsEditor";
 import { sourceLabel } from "../../utils/certificateFieldSources";
 import { pick } from "../../i18n/lang";
@@ -66,6 +67,7 @@ export default function CertificateValuesForm({ fields, groups = [], values, dra
                       {v.provenance?.kind === "manual" ? STR.fromCheckTyped : STR.fromCheck}
                     </span>
                   ) : null}
+                  {!dirty && v.origin !== "manual" && <ValueOriginChip provenance={v.provenance} flags={v.flags || []} />}
                 </label>
                 <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 truncate max-w-[55%]" title={sourceLabel(catalogueOptions, f.source)}>
                   {sourceLabel(catalogueOptions, f.source)}

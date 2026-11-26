@@ -3,6 +3,7 @@ import { getCompanies, createCompany, updateCompany, deleteCompany, getCompanyBy
 import { Search, Plus, Edit2, Trash2, Building2, Copy, Wand2, Key } from "lucide-react";
 import Button from "../ui/Button";
 import toast from "react-hot-toast";
+import ReharvestButton from "../components/intake/ReharvestButton";
 
 export default function Companies() {
   const [companies, setCompanies] = useState([]);
@@ -290,6 +291,7 @@ export default function Companies() {
                     </td>
                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
+                        <ReharvestButton companyId={company.id} compact />
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

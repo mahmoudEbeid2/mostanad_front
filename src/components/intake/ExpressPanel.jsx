@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useState } from "react";
-import { CheckCircle2, Download, FileText, Loader2, AlertTriangle, Files, Wrench, XCircle } from "lucide-react";
+import { CheckCircle2, Download, FileText, Loader2, AlertTriangle, Files, Wrench, XCircle, ClipboardList, Sparkles, MessageSquareText } from "lucide-react";
 import { makeExpressTemplates } from "../../services/apiIntake";
+import { acceptAllEstimates } from "../../services/apiWorkflow";
 import { downloadCertificatePdf, downloadBatchZip, downloadBatchPdf } from "../../services/apiCertificatesV2";
 
 // Express (urgent order) on the drop's card, after "طلّع الشهادات": the steps as they
@@ -94,6 +95,34 @@ function Steps({ ex, batchId, onChanged }) {
   );
 }
 
+// 28 Nov: what was estimated (descriptive values no file states) — accepted at once after a look
+function EstimatesLine({ ex, scope, onChanged }) {
+  const [busy, setBusy] = useState(false);
+  const n = ex.inferred?.filled || 0;
+  if (!n) return null;
+  const accept = async () => {
+    setBusy(true);
+    try {
+      const r = await acceptAllEstimates(scope, { certificateIds: (ex.certificates || []).map((c) => c.id) });
+      toast.success(`اتعمد ${r.accepted} قيمة مستنتجة`);
+      onChanged?.();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-violet-200 bg-white px-2 py-1.5 text-xs text-violet-900" data-testid="express-estimates">
+      <Sparkles className="h-3.5 w-3.5" />
+      <span>{n} قيمة وصفية ملهاش ملف اتستنتجت — عليها علامة «مستنتج» في كل شهادة، ومش بتوقف حاجة.</span>
+      <button type="button" onClick={accept} disabled={busy} className="rounded-md bg-violet-700 px-2 py-1 font-semibold text-white hover:bg-violet-800 disabled:opacity-50">
+        اعتمد كل المستنتج
+      </button>
+    </div>
+  );
+}
+
 export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged = null }) {
   if (!ex) return null;
   const at = STAGES.findIndex(([k]) => k === (ex.stage === "generate" ? "rendering" : ex.stage));
@@ -106,6 +135,21 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
       <p className="flex items-center gap-2 font-semibold text-violet-900">
         طلب سريع <span className="rounded bg-violet-200 px-1.5 py-0.5 text-[11px] font-medium text-violet-900">Express — محتاج مراجعة</span>
       </p>
+      {ex.waitingHarvest && !done && (
+        <p className="flex items-center gap-1.5 text-xs text-gray-700">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> مستنيين قراية الملفات تخلص عشان الشهادات تتملى من اللي فيها…
+        </p>
+      )}
+      {done && ex.replyAr && (
+        <p className="font-semibold text-gray-900" data-testid="express-reply">
+          {ex.replyAr}
+        </p>
+      )}
+      {done && ex.request && (
+        <Link to={ex.request.link} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 ring-1 ring-blue-200 hover:bg-blue-50" data-testid="express-request">
+          <ClipboardList className="h-4 w-4" /> {ex.request.added ? "اتضافت لطلب الشهادات — افتحه" : "افتح طلب الشهادات"}
+        </Link>
+      )}
       {done && ex.summary && (
         <p className={`text-sm font-semibold ${ex.summary.ok ? "text-green-900" : "text-red-800"}`} data-testid="express-summary">
           {ex.summary.ar}
@@ -177,7 +221,16 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
             </div>
           )}
           {g?.exportProblem && <p className="text-xs text-amber-900">الملفات المجمّعة متعملتش: {g.exportProblem}. افتح كل شهادة لوحدها.</p>}
-          <p className="text-xs text-gray-600">كل الشهادات مسودات: بتتراجع وتتعتمد من صفحتها. الخانات الناقصة مش متملّية من عندنا — اكتبها في الشهادة.</p>
+          <EstimatesLine ex={ex} scope={scope} onChanged={onChanged} />
+          {ex.missing?.ar && (
+            <div className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-950" data-testid="express-missing">
+              <p className="whitespace-pre-line">{ex.missing.ar}</p>
+              <p className="flex items-center gap-1 font-semibold text-amber-900">
+                <MessageSquareText className="h-3.5 w-3.5" /> رد في الشات تحت في سطر واحد — هتتملى في نفس الشهادات.
+              </p>
+            </div>
+          )}
+          <p className="text-xs text-gray-600">كل الشهادات مسودات: بتتراجع وتتعتمد من صفحتها. بيانات التشغيلة ونتايج التحليل مبنكتبهاش من عندنا أبداً.</p>
         </div>
       )}
 

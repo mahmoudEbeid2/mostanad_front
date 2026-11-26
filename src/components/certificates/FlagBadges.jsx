@@ -11,6 +11,8 @@ const FLAGS = {
   shrunk: { tone: "amber", text: tr("اتصغّرت عشان تاخد مكانها", "Shrunk to fit") },
   format: { tone: "amber", text: tr("معرفناش نكتبها كتاريخ", "Couldn't format as date") },
   missing_span: { tone: "red", text: tr("الحقل مش موجود في التصميم", "Field not found in the design") },
+  // 28 Nov: a descriptive value the AI estimated — printed, never blocking (the «مستنتج» chip says why)
+  estimated: { tone: "violet", text: tr("مستنتج — راجعه أو اعتمد كل المستنتج", "Estimated — check it, or accept all estimates") },
   unconfirmed: { tone: "amber", text: tr("تقدير — أكّده في مراجعة البيانات قبل الاعتماد", "Estimated — confirm it in the data check before finalizing") },
   // informational, never blocks finalize: an optional value nothing could fill
   empty_optional: { tone: "gray", text: tr("قيمة اختيارية فاضية", "Optional value is empty") },
@@ -21,6 +23,7 @@ const TONES = {
   red: "bg-red-50 text-red-700",
   amber: "bg-amber-50 text-amber-800",
   gray: "bg-gray-100 text-gray-700",
+  violet: "bg-violet-50 text-violet-700",
 };
 
 const GLYPH_FALLBACK = "glyph_fallback:";

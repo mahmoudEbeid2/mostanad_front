@@ -26,3 +26,10 @@ export async function openEvidence(link) {
   const url = URL.createObjectURL(r.data);
   window.open(`${url}${hash ? `#${hash}` : ""}`, "_blank", "noopener");
 }
+
+// 28 Nov — what the files said and what was estimated (backend harvest / harvestInfer)
+export const getProductHarvest = (scope = {}, productId) => unwrap(apiClient.get(`/products/${productId}/harvest`, { params: scope }), "Failed to load what the files say").then((d) => d.data);
+export const decideHarvestConflict = (scope = {}, productId, key, value) => unwrap(apiClient.post(`/products/${productId}/harvest/conflicts/${encodeURIComponent(key)}`, { value }, { params: scope }), "Failed to save the choice").then((d) => d.data);
+/** «اعتمد كل المستنتج»: { productIds } or { certificateIds } */
+export const acceptAllEstimates = (scope = {}, body) => unwrap(apiClient.post("/products/estimates/accept", body, { params: scope }), "Failed to accept").then((d) => d.data);
+export const reharvestCompany = (scope = {}, companyId) => unwrap(apiClient.post(`/companies/${companyId}/harvest`, {}, { params: scope }), "Failed to start reading the files").then((d) => d.data);

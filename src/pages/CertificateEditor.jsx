@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ReviewBar from "../components/certificates/ReviewBar";
+import EstimatesBar from "../components/certificates/EstimatesBar";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
@@ -350,6 +351,7 @@ export default function CertificateEditor() {
 
       <RoleBanner scope={scopeState} />
       {["draft", "final"].includes(cert.status) && canEdit && <ReviewBar scope={scope} cert={cert} fields={fields} onChanged={load} />}
+      {cert.status === "draft" && canEdit && <EstimatesBar scope={scope} values={cert.values} certificateIds={[cert.id]} onAccepted={load} />}
 
       {cert.status === "pending" && <p className="text-sm text-blue-700">{STR.pending}</p>}
       {cert.status === "failed" && (

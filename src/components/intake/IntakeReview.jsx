@@ -9,6 +9,7 @@ import { getProducts } from "../../services/apiProducts";
 import { useAuth } from "../../context/AuthContext";
 import { isCompanyUser } from "../../utils/permissions";
 import ExpressPanel from "./ExpressPanel";
+import HarvestProgress from "./HarvestProgress";
 
 // The one review card of a drop: every file, what it is, whose, what will happen.
 // Every cell can be changed; nothing exists until "نفّذ الكل". Arabic by default.
@@ -368,6 +369,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           </div>
         </div>
       )}
+      {view.harvest && <HarvestProgress batchId={view.batch?.id} initial={view.harvest} line={view.express?.harvestLine} onDone={load} />}
       {express && status === "done" && <ExpressPanel ex={view.express} batchId={view.batch?.id} onChanged={load} />}
       {status === "done" && view.summary && (
         <div className="space-y-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-900" data-testid="intake-summary">

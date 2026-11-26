@@ -90,3 +90,41 @@ export const getExpressToReview = () => data(apiClient.get("/intake/express"));
 export const markExpressReviewed = (ids) => data(apiClient.post("/intake/express/reviewed", { ids }));
 /** "اعمل قوالب من الملفات دي": the drop's certificate files become templates, Express runs again → { made, restarted } */
 export const makeExpressTemplates = (batchId) => data(apiClient.post(`/intake/batches/${batchId}/express/templates-from-files`));
+
+// 28 Nov — the drop's AI read of every file: its progress as Server-Sent Events ("بقرا الملفات… 8/14"),
+// falling back to one JSON read when the stream can't open. onProgress(view) on every move; resolves with the last.
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+export async function followHarvest(batchId, { onProgress = () => {}, signal } = {}) {
+  const token = localStorage.getItem("token");
+  let res;
+  try {
+    res = await fetch(`${API_URL}/intake/batches/${batchId}/harvest`, { headers: { Accept: "text/event-stream", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, signal });
+  } catch (e) {
+    if (signal?.aborted) return null;
+    throw e;
+  }
+  if (!res.headers.get("content-type")?.includes("text/event-stream")) {
+    const view = (await res.json().catch(() => null))?.data || null;
+    onProgress(view);
+    return view;
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let last = null;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let cut;
+    while ((cut = buffer.indexOf("\n\n")) !== -1) {
+      const chunk = buffer.slice(0, cut);
+      buffer = buffer.slice(cut + 2);
+      const data = /^data: (.*)$/m.exec(chunk)?.[1];
+      if (data === undefined) continue;
+      last = JSON.parse(data);
+      onProgress(last);
+    }
+  }
+  return last;
+}

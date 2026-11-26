@@ -13,6 +13,7 @@ import CertificatesForProductsModal from "../components/products/CertificatesFor
 import SourceDiffModal from "../components/products/SourceDiffModal";
 import { useAuth } from "../context/AuthContext";
 import { isCompanyUser } from "../utils/permissions";
+import ReharvestButton from "../components/intake/ReharvestButton";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import toast from "react-hot-toast";
@@ -358,7 +359,9 @@ export default function Products() {
           <h1 className="text-3xl font-bold text-gray-900">Products</h1>
           <p className="text-gray-500 mt-1">Manage your products database.</p>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          {/* a company account: its stored files read again, its products filled (system users: on the companies page) */}
+          {!isSystem && <ReharvestButton companyId={user?.companyId || user?.id} />}
           <Button variant="secondary" onClick={() => navigate("/products/import")} data-testid="products-from-files">
             <Files className="w-5 h-5 mr-2" />
             Add products from files

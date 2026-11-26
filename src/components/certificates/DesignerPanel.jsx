@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { Copy, ExternalLink, Loader2, X } from "lucide-react";
 import Button from "../../ui/Button";
 import { getDesignerData, saveDesignEstimates, getCompositionReview, decideComposition, openEvidence } from "../../services/apiWorkflow";
+import ProductHarvestSection from "./ProductHarvestSection";
 
 // The designer's panel (client workflow §4): the product's data in the order it goes into
 // Illustrator, with copy buttons — the name, the ingredients, the quantities (row-aligned with the
@@ -108,6 +109,8 @@ export default function DesignerPanel({ scope = {}, productId, requestId = null,
                 ))}
               </tbody>
             </table>
+
+            <ProductHarvestSection scope={scope} productId={productId} onChanged={load} />
 
             {review?.conflicts?.length > 0 && (
               <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs" data-testid="composition-conflicts">

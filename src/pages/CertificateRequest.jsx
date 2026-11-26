@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ClipboardList, Download, Files, Loader2, Palette, Play } from "lucide-react";
+import { ClipboardList, Download, Files, Loader2, Palette, Play, Sparkles } from "lucide-react";
 import Button from "../ui/Button";
-import { createCertificateRequest, getCertificateRequest, resolveRequestLine, generateRequest } from "../services/apiWorkflow";
+import { createCertificateRequest, getCertificateRequest, resolveRequestLine, generateRequest, acceptAllEstimates } from "../services/apiWorkflow";
 import { waitForTask, exportBatchZip, downloadBatchZip, downloadBatchPdf } from "../services/apiCertificatesV2";
 import { getCompanies } from "../services/apiCompanies";
 import { useAuth } from "../context/AuthContext";
@@ -109,6 +109,12 @@ function RequestMatrix({ id }) {
     await waitForTask(r.taskId, { timeoutMs: 300_000 });
     toast.success("اتعملت المسودات");
   });
+  // «اعتمد كل المستنتج»: every draft of the request — its estimated descriptive values accepted, marks cleared
+  const certIds = [...new Set((data?.rows || []).flatMap((r) => Object.values(r.cells || {}).map((c) => c.certificateId).filter(Boolean)))];
+  const acceptEstimates = () => run("est", async () => {
+    const r = await acceptAllEstimates(scope, { certificateIds: certIds });
+    toast.success(r.marksCleared ? `اتعمد ${r.marksCleared} قيمة مستنتجة` : "مفيش قيم مستنتجة مستنية اعتماد");
+  });
   const exportAnd = (download) => run(download === downloadBatchZip ? "zip" : "pdf", async () => {
     const { taskId } = await exportBatchZip(scope, data.batch.id);
     await waitForTask(taskId, { timeoutMs: 300_000 });
@@ -124,6 +130,11 @@ function RequestMatrix({ id }) {
           <Button onClick={generate} isLoading={busy === "gen"} disabled={!!busy || unclear.length > 0} data-testid="request-generate">
             <Play className="h-4 w-4" /> طلّع الشهادات
           </Button>
+          {certIds.length > 0 && (
+            <Button variant="secondary" onClick={acceptEstimates} isLoading={busy === "est"} disabled={!!busy} data-testid="request-accept-estimates">
+              <Sparkles className="h-4 w-4" /> اعتمد كل المستنتج
+            </Button>
+          )}
           {data.batch && (
             <>
               <Button variant="secondary" onClick={() => exportAnd(downloadBatchPdf)} isLoading={busy === "pdf"} disabled={!!busy}>

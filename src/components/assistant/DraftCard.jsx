@@ -3,6 +3,9 @@ import toast from "react-hot-toast";
 import { Plus, X } from "lucide-react";
 import ActionCard from "./ActionCard";
 import SourceBadge from "./SourceBadge";
+import { isAr } from "../../i18n/lang";
+
+const L = (x, key) => (isAr && x?.[`${key}Ar`]) || x?.[key];
 
 // An operation the assistant is collecting (a draft): what is filled and where each value came
 // from, what is still missing, the steps that must happen first, and one form for what only the
@@ -186,7 +189,7 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
     <div role="group" aria-label={`Operation: ${draft.title}`} data-testid="draft-card" data-status={draft.status} className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3.5">
       <div className="flex items-center gap-2">
         <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${statusClass}`}>{statusLabel}</span>
-        <span className="min-w-0 flex-1 truncate text-sm font-bold">{draft.title}</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-bold" dir="auto">{L(draft, "title")}</span>
         {draft.companyName && <span className="truncate text-xs text-gray-500">{draft.companyName}</span>}
         {open && (
           <button type="button" onClick={() => onCancel(draft.id)} data-testid="draft-cancel" className="text-xs font-semibold text-gray-500 hover:text-gray-900 hover:underline">
@@ -200,7 +203,7 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
         <dl className="m-0 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1.5 text-[13px]" data-testid="draft-filled">
           {filled.map((f) => (
             <div key={f.name} className="contents">
-              <dt className="text-gray-500">{f.label}</dt>
+              <dt className="text-gray-500">{L(f, "label")}</dt>
               <dd className="m-0 flex min-w-0 flex-col gap-0.5">
                 <span className="flex items-start gap-1.5">
                   <span className="min-w-0 break-words" dir="auto">{f.display ?? String(f.value)}</span>
@@ -241,7 +244,7 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
           <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">Needed from you</div>
           {ask.map((f) => (
             <div key={f.name} role="group" aria-labelledby={`draft-${draft.id}-${f.name}`} className="flex flex-col gap-1 text-[13px]">
-              <span id={`draft-${draft.id}-${f.name}`} className="font-semibold text-gray-800">{f.label}</span>
+              <span id={`draft-${draft.id}-${f.name}`} className="font-semibold text-gray-800">{L(f, "label")}</span>
               <FieldInput field={f} value={values[f.name]} onChange={(v) => setValues((x) => ({ ...x, [f.name]: v }))} />
               {f.error && <span className="text-xs text-red-700">{f.error}</span>}
             </div>

@@ -14,6 +14,7 @@ import { cellOptions, slugKey, sourceOptions } from "../../../utils/certificateF
 import { describeCertificateError } from "../../../utils/certificateErrors";
 import { withNextStep } from "../../../utils/aiReason";
 import ReadinessPanel from "./ReadinessPanel";
+import { pick } from "../../../i18n/lang";
 
 // Wizard step 2 — mark fields (plan §13.4). The document is the sanitized
 // design; the field list autosaves (800 ms debounce) with PUT …/fields, which
@@ -21,7 +22,7 @@ import ReadinessPanel from "./ReadinessPanel";
 // Repeating groups (plan §7.8) are saved in the same request; the server
 // answers with what it detected (shape, footer line, capacity) or why it can't.
 
-const STR = {
+const STR_EN = {
   hint: "Select the text that changes.",
   hintCtrl: "Ctrl",
   hintTail: "+ select to add several.",
@@ -40,6 +41,25 @@ const STR = {
   aiUnavailable: (reason) => withNextStep(reason, "Mark and map the fields by hand."),
   mapped: (n) => `${n} field${n === 1 ? "" : "s"} mapped`,
 };
+const STR = pick({ en: STR_EN, ar: {
+  hint: "حدد النص اللي بيتغير.",
+  hintCtrl: "Ctrl",
+  hintTail: "+ تحديد عشان تضيف أكتر من واحد.",
+  invalid: "ماتحفظش — صلّح:",
+  failed: "ماتحفظش:",
+  back: "رجوع",
+  next: "التالي: الإعدادات",
+  newVersion: "اعمل نسخة جديدة عشان تعدّل",
+  aiNone: "مفيش اقتراحات جديدة.",
+  aiDisabled: "اقتراحات الذكاء الاصطناعي مقفولة.",
+  mapAll: "اربط الكل",
+  mapping: "بنربط…",
+  mapAllHint: "املى «القيمة بتيجي من» لكل حقل لسه بيتكتب بالإيد: اختياراتك القديمة الأول، بعدين بيانات منتجاتك، بعدين الذكاء الاصطناعي.",
+  sample: "منتج المثال (اختياري)",
+  sampleHint: "المنتج اللي التصميم ده اتعمل عشانه — الربط بيتراجع على قيمه.",
+  aiUnavailable: (reason) => withNextStep(reason, "حدد واربط الحقول بالإيد."),
+  mapped: (n) => `اترابط ${n} حقل`,
+} });
 
 let uidSeq = 0;
 const nextUid = () => `f${++uidSeq}`;

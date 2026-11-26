@@ -24,6 +24,23 @@ const TEMPLATE_STATE = {
   no_fields: "ملقيناش فيه حقول",
   failed: "معرفناش نستخدمه",
 };
+// the backend's reasons, in Arabic (the original is kept for anything not known here)
+const WHY_AR = [
+  [/^lists (\d+) products in one table: (.+?) — set up its product rows on the template screen$/, (m) => `فيها ${m[1]} منتج في جدول واحد: ${m[2]} — ظبّط صف المنتجات في صفحة القالب`],
+  [/^lists (\d+) products in one table/, (m) => `فيها ${m[1]} منتج في جدول واحد — ظبّط صف المنتجات في صفحة القالب`],
+  [/^these places couldn't be left blank automatically: (.+?) — mark them/, (m) => `الأماكن دي معرفناش نفضّيها لوحدنا: ${m[1]} — حددها في صفحة القالب (ماطبعناش حاجة من الملف)`],
+  [/^the design didn't pass the preparation check/, () => "التصميم ماعدّاش اختبار التجهيز — افتحه في صفحة القالب"],
+  [/^no field could be found on it/, () => "معرفناش نلاقي فيه حقول — حدد حقوله في صفحة القالب"],
+  [/^the design couldn't be converted/, () => "معرفناش نحوّل التصميم"],
+  [/^the template is gone/, () => "القالب اتمسح"],
+];
+const whyAr = (w) => {
+  for (const [re, f] of WHY_AR) {
+    const m = String(w || "").match(re);
+    if (m) return f(m);
+  }
+  return w;
+};
 const fieldAr = (k) => ({ batch_no: "رقم التشغيلة", batchNo: "رقم التشغيلة", expiry: "تاريخ الانتهاء", expiry_date: "تاريخ الانتهاء", production: "تاريخ الإنتاج", production_date: "تاريخ الإنتاج" })[k] || k.replace(/_/g, " ");
 
 // what each step really produced: never a green check for a step that made nothing (26 Nov)
@@ -111,7 +128,7 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
               <FileText className="h-3.5 w-3.5 text-gray-400" />
               <b>{t.code}</b> <span className="text-gray-500">({t.file})</span>:
               <span className={t.status === "active" ? "text-green-800" : ["needs_table", "no_fields", "failed"].includes(t.status) ? "text-amber-800" : "text-gray-600"}>{TEMPLATE_STATE[t.status] || t.status}</span>
-              {t.why && t.status !== "active" && <span className="text-gray-500">— {t.why}</span>}
+              {t.why && t.status !== "active" && <span className="text-gray-500">— {whyAr(t.why)}</span>}
               {t.status === "active" && t.toFill?.length > 0 && <span className="text-gray-500">— بيتملى في كل شهادة: {t.toFill.join("، ")}</span>}
             </li>
           ))}
@@ -177,7 +194,7 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
                   <Link to={t.link} className="text-blue-700 hover:underline">
                     {t.status === "active" ? `أكّد حقول قالب ${t.code}` : `ظبّط قالب ${t.code}`}
                   </Link>
-                  {needsPerson.includes(t) && t.why ? <span className="text-gray-500"> — {t.why}</span> : null}
+                  {needsPerson.includes(t) && t.why ? <span className="text-gray-500"> — {whyAr(t.why)}</span> : null}
                 </li>
               ))}
             <li>

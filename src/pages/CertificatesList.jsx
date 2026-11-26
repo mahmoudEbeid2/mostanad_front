@@ -10,9 +10,10 @@ import CertificateCard from "../components/certificates/CertificateCard";
 import useCompanyScope from "../hooks/useCompanyScope";
 import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { listCertificates } from "../services/apiCertificatesV2";
+import { pick } from "../i18n/lang";
 
 // /certificates (plan §13.1): every generated certificate of the company, filterable.
-const STR = {
+const STR_EN = {
   title: "Generated certificates",
   subtitle: "Every certificate, from an invoice or made for a product. Open one to fix issues, export or finalize it.",
   search: "Search product, batch or invoice no.",
@@ -27,19 +28,34 @@ const STR = {
   prev: "Previous",
   next: "Next",
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "الشهادات المتعملة",
+  subtitle: "كل شهادة، من فاتورة أو لمنتج من غير فاتورة. افتح أي واحدة عشان تصلح الناقص أو تصدّرها أو تعتمدها.",
+  search: "دوّر بالمنتج أو التشغيلة أو رقم الفاتورة",
+  allTypes: "كل الأنواع",
+  anyStatus: "أي حالة",
+  statuses: { draft: "مسودة", final: "معتمدة", failed: "فشلت", pending: "بتتعمل" },
+  flagged: "اللي فيها مشاكل بس",
+  empty: "لسه مفيش شهادات. ارفع فاتورة، أو اعمل طلب شهادات من أسماء المنتجات.",
+  goInvoices: "روح للفواتير",
+  noMatch: "مفيش شهادة بالفلاتر دي.",
+  pickCompany: "اختار شركة عشان تشوف شهاداتها.",
+  prev: "السابق",
+  next: "التالي",
+} });
 const PAGE_SIZE = 20;
 
 export default function CertificatesList() {
   const scopeState = useCompanyScope();
   const { scope } = scopeState;
   const [params, setParams] = useSearchParams();
-  const f = { q: params.get("q") || "", status: params.get("status") || "", certificateTypeId: params.get("certificateTypeId") || "", flagged: params.get("flagged") === "true", invoiceId: params.get("invoiceId") || "" };
+  const f = { q: params.get("q") || "", status: params.get("status") || "", certificateTypeId: params.get("certificateTypeId") || "", flagged: params.get("flagged") === "true", invoiceId: params.get("invoiceId") || "", batchId: params.get("batchId") || "" };
   const page = Number(params.get("page") || 1);
   const [search, setSearch] = useState(f.q);
   const [types, setTypes] = useState([]);
   const [data, setData] = useState({ certificates: [], total: 0 });
   const [loading, setLoading] = useState(true);
-  const filtered = !!(f.q || f.status || f.certificateTypeId || f.flagged || f.invoiceId);
+  const filtered = !!(f.q || f.status || f.certificateTypeId || f.flagged || f.invoiceId || f.batchId);
 
   const setParam = useCallback(
     (key, value) => {
@@ -71,6 +87,7 @@ export default function CertificatesList() {
           certificateTypeId: q.certificateTypeId || undefined,
           flagged: q.flagged ? "true" : undefined,
           invoiceId: q.invoiceId || undefined,
+          batchId: q.batchId || undefined, // the certificates a chat card or "Make certificates" just made
           page: q.page,
           limit: PAGE_SIZE,
         }),

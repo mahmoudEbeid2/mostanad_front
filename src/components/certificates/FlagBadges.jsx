@@ -1,17 +1,21 @@
 // Field flags with the plan's fixed colours and copy (plan §13.7), shown as in
 // mockup B5: a short code pill ("missing") followed by the sentence — the words
 // carry the meaning, the colour only repeats it.
+import { tr } from "../../i18n/lang";
+
 const FLAGS = {
-  missing: { tone: "red", text: "Required value missing" },
-  overflow: { tone: "red", text: "Doesn't fit — shorten or change" },
-  shrunk: { tone: "amber", text: "Shrunk to fit" },
-  format: { tone: "amber", text: "Couldn't format as date" },
-  missing_span: { tone: "red", text: "Field not found in the design" },
-  unconfirmed: { tone: "amber", text: "Estimated — confirm it in the data check before finalizing" },
+  missing: { tone: "red", text: tr("قيمة مطلوبة ناقصة", "Required value missing") },
+  // 26 Nov: a batch / date / result that equalled the template's own sample was removed, never printed
+  sample_value: { tone: "red", text: tr("دي كانت قيمة مثال القالب — اتشالت، اكتب القيمة الصح", "This was the template's sample value — removed; type the real one") },
+  overflow: { tone: "red", text: tr("مش واخدة مكانها — قصّرها أو غيّرها", "Doesn't fit — shorten or change") },
+  shrunk: { tone: "amber", text: tr("اتصغّرت عشان تاخد مكانها", "Shrunk to fit") },
+  format: { tone: "amber", text: tr("معرفناش نكتبها كتاريخ", "Couldn't format as date") },
+  missing_span: { tone: "red", text: tr("الحقل مش موجود في التصميم", "Field not found in the design") },
+  unconfirmed: { tone: "amber", text: tr("تقدير — أكّده في مراجعة البيانات قبل الاعتماد", "Estimated — confirm it in the data check before finalizing") },
   // informational, never blocks finalize: an optional value nothing could fill
-  empty_optional: { tone: "gray", text: "Optional value is empty" },
+  empty_optional: { tone: "gray", text: tr("قيمة اختيارية فاضية", "Optional value is empty") },
   // informational, never blocks finalize: the design's font couldn't be read, so a missing character can't be detected
-  glyph_unknown: { tone: "gray", text: "Font couldn't be checked — look at the preview for missing characters" },
+  glyph_unknown: { tone: "gray", text: tr("الخط ماتراجعش — بص على المعاينة لو فيه حروف ناقصة", "Font couldn't be checked — look at the preview for missing characters") },
 };
 const TONES = {
   red: "bg-red-50 text-red-700",

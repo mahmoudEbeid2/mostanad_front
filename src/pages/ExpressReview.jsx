@@ -5,14 +5,15 @@ import { CheckCheck, Loader2, Zap } from "lucide-react";
 import Button from "../ui/Button";
 import { getExpressToReview, markExpressReviewed } from "../services/apiIntake";
 import { getCertificate, finalizeCertificate } from "../services/apiCertificatesV2";
+import { openEvidence } from "../services/apiWorkflow";
 
 // "Express items to review": what urgent orders from the chat made — companies, brands,
 // products, templates, certificate drafts — that nobody has checked yet. Open each one;
 // "Checked" removes it from the list. Certificates: "Approve all" approves every draft of
 // the order that has no blank left (one with a blank is refused and says which).
 
-const KIND = { company: "شركة", brand: "براند", product: "منتج", certificate_type: "نوع شهادة", certificate_template: "قالب شهادة", certificate: "شهادة" };
-const ORDER = ["company", "brand", "certificate_type", "product", "certificate_template", "certificate"];
+const KIND = { company: "شركة", brand: "براند", product: "منتج", certificate_type: "نوع شهادة", certificate_template: "قالب شهادة", certificate: "شهادة", evidence: "إثبات (شهادة صادرة)", reference_label: "ليبل مرجعي" };
+const ORDER = ["company", "brand", "certificate_type", "product", "reference_label", "certificate_template", "certificate", "evidence"];
 
 export default function ExpressReview() {
   const [data, setData] = useState(null);
@@ -90,11 +91,16 @@ export default function ExpressReview() {
                 <li key={i.id} className="flex flex-wrap items-center gap-2 py-1.5">
                   <span className="w-24 shrink-0 text-xs text-gray-500">{KIND[i.entityType] || i.entityType}</span>
                   <span className="min-w-0 flex-1 truncate">{i.name}</span>
-                  {i.link && (
-                    <Link to={i.link} className="text-xs text-blue-700 hover:underline">
-                      افتح
-                    </Link>
-                  )}
+                  {i.link &&
+                    (i.link.startsWith("/api/") ? (
+                      <button type="button" onClick={() => openEvidence(i.link).catch(() => {})} className="text-xs text-blue-700 hover:underline">
+                        افتح الملف
+                      </button>
+                    ) : (
+                      <Link to={i.link} className="text-xs text-blue-700 hover:underline">
+                        افتح
+                      </Link>
+                    ))}
                   <button type="button" disabled={!!busy} onClick={() => checked([i.id])} className="text-xs text-gray-500 hover:text-gray-900">
                     اتراجع
                   </button>

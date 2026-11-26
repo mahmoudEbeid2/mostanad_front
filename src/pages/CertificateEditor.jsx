@@ -29,11 +29,12 @@ import {
   restoreCertificateVersion,
   waitForTask,
 } from "../services/apiCertificatesV2";
+import { pick } from "../i18n/lang";
 
 // /certificates/:id (plan §11, §13.6; mockup B5). The frame always shows a
 // SERVER render; typing only patches the field span's text for instant,
 // ephemeral feedback (no layout compensation) until the save re-renders.
-const STR = {
+const STR_EN = {
   whole: "Whole invoice",
   batch: "Batch",
   versions: (n) => `Versions (${n})`,
@@ -64,6 +65,37 @@ const STR = {
   pending: "This certificate is still being rendered.",
   failedCert: "This certificate failed to render:",
 };
+const STR = pick({ en: STR_EN, ar: {
+  whole: "الفاتورة كلها",
+  batch: "تشغيلة",
+  versions: (n) => `النسخ (${n})`,
+  exportPdf: "طلّع PDF",
+  exporting: "بنعمل الـ PDF…",
+  downloadPdf: "نزّل PDF",
+  finalize: "اعتمد",
+  confirmFinalize: { title: "تعتمد الشهادة دي؟", message: "الـ PDF بتاعها هيتثبت ومش هتتعدل تاني. تقدر تعمل منها نسخة جديدة بعدين.", confirmLabel: "اعتمد" },
+  finalized: "الشهادة اتعتمدت",
+  issuesLeft: (n) => `فاضل ${n} حاجة`,
+  unsavedLeft: "احفظ تعديلاتك الأول",
+  duplicate: "اعمل نسخة مسودة",
+  duplicated: "اتعملت مسودة",
+  rendered: "اتعملت على السيرفر · نفس الـ PDF",
+  viewingOld: (n) => `بتتفرج على النسخة ${n} — قراءة بس`,
+  backToCurrent: "ارجع للنسخة الحالية",
+  finalNote: (d) => `معتمدة من ${new Date(d).toLocaleString("ar-EG")} — قراءة بس. اعمل منها نسخة عشان تعدّل.`,
+  saved: (d) => `اتحفظ ${d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}`,
+  saving: "بنحفظ…",
+  dirty: "فيه تعديلات مش محفوظة",
+  failed: "ماتحفظش",
+  conflictTitle: "حد تاني عدّل الشهادة دي",
+  conflictText: (n) => `بقت النسخة ${n}. حمّل نسختهم (تعديلاتك اللي مش محفوظة هتروح)، أو احفظ بتاعتك فوقها.`,
+  reload: "حمّل تاني",
+  overwrite: "احفظ بتاعتي فوقها",
+  restored: (n) => `رجعت النسخة ${n}`,
+  reset: (k) => `${k} رجع لمصدره`,
+  pending: "الشهادة دي لسه بتتعمل.",
+  failedCert: "الشهادة دي فشلت وهي بتتعمل:",
+} });
 
 
 export default function CertificateEditor() {
@@ -257,7 +289,7 @@ export default function CertificateEditor() {
   const final = cert.status === "final";
   const dirty = Object.keys(drafts).length > 0;
   const blocking = Object.entries(cert.flags || {})
-    .filter(([, f]) => f.some((x) => x === "missing" || x === "overflow" || x === "missing_span" || x.startsWith("glyph:")))
+    .filter(([, f]) => f.some((x) => ["missing", "overflow", "missing_span", "sample_value", "unconfirmed"].includes(x) || x.startsWith("glyph:")))
     .map(([k]) => fields.find((f) => f.key === k)?.label || cert.groups?.find((g) => g.key === k)?.label || k);
   const title = `${cert.certificateType?.code || ""} · ${cert.scope === "per_invoice" ? STR.whole : cert.product?.name || "—"}`;
   const saveText =
@@ -306,8 +338,8 @@ export default function CertificateEditor() {
                 {STR.finalize}
               </Button>
               {blocking.length > 0 ? (
-                <span className="text-xs text-red-600 mt-1" title={blocking.join(", ")} data-testid="issues-left">
-                  {STR.issuesLeft(blocking.length)}
+                <span className="text-xs text-red-600 mt-1 max-w-xs text-right" dir="auto" title={blocking.join(", ")} data-testid="issues-left">
+                  {STR.issuesLeft(blocking.length)}: {blocking.slice(0, 6).join("، ")}{blocking.length > 6 ? "…" : ""}
                 </span>
               ) : dirty ? (
                 <span className="text-xs text-gray-500 mt-1">{STR.unsavedLeft}</span>
@@ -372,6 +404,15 @@ export default function CertificateEditor() {
               onReady={({ doc }) => {
                 docRef.current = doc;
                 if (viewing === null) Object.entries(draftsRef.current).forEach(([k, v]) => paint(k, v));
+                // what still blocks finalize, outlined on the certificate itself (an empty field gets a visible box)
+                for (const [k, f] of Object.entries(cert.flags || {})) {
+                  if (!f.some((x) => ["missing", "overflow", "missing_span", "sample_value", "unconfirmed"].includes(x) || x.startsWith("glyph:"))) continue;
+                  doc.querySelectorAll(`[data-field="${CSS.escape(k)}"]`).forEach((el) => {
+                    el.style.outline = "2px solid #dc2626";
+                    el.style.background = "rgba(220,38,38,0.08)";
+                    if (!el.textContent.trim()) Object.assign(el.style, { display: "inline-block", minWidth: "48px", minHeight: "1em" });
+                  });
+                }
               }}
               minHeight={640}
               title="Certificate"

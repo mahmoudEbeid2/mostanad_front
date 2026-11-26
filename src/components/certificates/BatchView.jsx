@@ -8,10 +8,11 @@ import Spinner from "../../ui/Spinner";
 import CertificateCard from "./CertificateCard";
 import useTaskProgress from "../../hooks/useTaskProgress";
 import { downloadBatchZip, exportBatchZip, getBatch, waitForTask } from "../../services/apiCertificatesV2";
+import { pick } from "../../i18n/lang";
 
 // One generation run (plan §10.2, §13.5; mockup B4): progress, counts, the
 // certificate cards and the lines/types no active template covered.
-const STR = {
+const STR_EN = {
   running: "Filling and rendering certificates…",
   queued: "Waiting for the renderer…",
   done: "All certificates are rendered",
@@ -37,6 +38,32 @@ const STR = {
   zip: "Download all (ZIP)",
   progress: "Certificates rendered",
 };
+const STR = pick({ en: STR_EN, ar: {
+  running: "بنملى ونطلّع الشهادات…",
+  queued: "مستنيين الطابعة…",
+  done: "كل الشهادات خلصت",
+  partial: "خلصت — بس فيه شهادات فشلت",
+  failed: "معرفناش نطلّع الشهادات",
+  of: (d, n) => `${d} من ${n}`,
+  ready: "جاهزة",
+  attention: "محتاجة نظرة",
+  rendering: "بتتعمل",
+  failedCount: "فشلت",
+  gap: (g, country) => (
+    <>
+      <b>
+        السطر {g.lineNo}
+        {g.name ? ` (${g.name})` : ""}
+      </b>{" "}
+      ماطلعلوش شهادة {g.typeCode} — مفيش قالب {g.typeCode} شغّال
+      {g.brandName ? ` لـ ${g.brandName}` : ""}
+      {country ? ` في ${country}` : ""}.
+    </>
+  ),
+  create: "اعمل القالب",
+  zip: "نزّل الكل (ZIP)",
+  progress: "الشهادات اللي خلصت",
+} });
 const RUNNING = new Set(["queued", "running"]);
 
 export default function BatchView({ scope, batchId, taskId, onFinished, canExport = false }) {

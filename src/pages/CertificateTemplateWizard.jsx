@@ -20,8 +20,9 @@ import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { getTemplate, getVersion, getVersionHtml } from "../services/apiCertificateTemplates";
+import { pick } from "../i18n/lang";
 
-const STR = {
+const STR_EN = {
   newTitle: "New certificate template",
   back: "← Templates",
   steps: { upload: "Upload", fields: "Mark fields", settings: "Settings", prepare: "Prepare & test", activate: "Activate" },
@@ -50,6 +51,28 @@ const STR = {
   saved: "All changes saved",
   notSaved: "Not saved",
 };
+const STR = pick({ en: STR_EN, ar: {
+  newTitle: "قالب شهادة جديد",
+  back: "→ القوالب",
+  steps: { upload: "الرفع", fields: "حدد الحقول", settings: "الإعدادات", prepare: "جهّز واختبر", activate: "شغّل" },
+  convertingStep: "بيتحوّل…",
+  stageState: { done: "خلص", active: "شغّال دلوقتي", pending: "لسه" },
+  converting: "بنحوّل التصميم بتاعك",
+  convertingHint: "غالبًا أقل من 10 ثواني. تقدر تسيب الصفحة — هنكمّل.",
+  stages: (html) => ["الملف اترفع", html ? "اتقرا تصميم HTML" : "اتحوّل لـ HTML (pdf2htmlEX)", "اتنضّف — اتشالت السكريبتات واللينكات الخارجية", "بنقيس سطور النص والخطوط", "بنعمل الصورة المصغرة"],
+  previewTitle: "معاينة",
+  previewHint: "الصورة المصغرة بتظهر لما التحويل يخلص.",
+  failedTitle: { NO_PDF_CONTENT: "الملف ده مفيهوش محتوى PDF", NO_LIVE_TEXT: "النص اتحوّل لأشكال (outlines)" },
+  convertFailed: "التحويل فشل",
+  uploadNew: "ارفع ملف جديد",
+  converted: "اتحوّل — ده بالظبط شكل الطباعة.",
+  next: "التالي: حدد الحقول",
+  pickCompany: "اختار شركة الأول.",
+  lines: (n) => `${n} سطر نص`,
+  saving: "بنحفظ…",
+  saved: "كل التعديلات اتحفظت",
+  notSaved: "ماتحفظش",
+} });
 
 const STEP_ORDER = ["upload", "fields", "settings", "prepare", "activate"];
 const FILE_INPUT_ID = "template-file";

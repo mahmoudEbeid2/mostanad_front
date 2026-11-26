@@ -11,8 +11,9 @@ import useConfirm from "../hooks/useConfirm";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { createCertificateType, deleteCertificateType, listCertificateTypes, updateCertificateType } from "../services/apiCertificateTypes";
+import { pick } from "../i18n/lang";
 
-const STR = {
+const STR_EN = {
   title: "Certificate types",
   subtitle: "The kinds of certificates your company issues. Every template belongs to one type.",
   add: "New type",
@@ -33,6 +34,27 @@ const STR = {
   uploadTemplate: "Upload a template",
   codeHint: "Short, unique per company — letters, digits, - and _",
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "أنواع الشهادات",
+  subtitle: "أنواع الشهادات اللي شركتك بتطلعها. كل قالب بيتبع نوع.",
+  add: "نوع جديد",
+  name: "الاسم",
+  code: "الكود",
+  description: "الوصف",
+  templates: "القوالب",
+  active: "شغّال",
+  empty: "لسه مفيش أنواع شهادات. اعمل واحد الأول — مثلاً «شهادة تحليل» بكود COA — وبعدين ارفع قالبه.",
+  pickCompany: "اختار شركة عشان تدير أنواع شهاداتها.",
+  created: "اتعمل نوع الشهادة",
+  saved: "اتحفظ نوع الشهادة",
+  deleted: "اتمسح نوع الشهادة",
+  confirmDelete: (n) => ({ title: `تمسح «${n}»؟`, message: "مش هينفع ترجّعه.", confirmLabel: "امسح", tone: "danger" }),
+  save: "احفظ",
+  cancel: "إلغاء",
+  inUse: "عليه قوالب — وقّفه بدل ما تمسحه",
+  uploadTemplate: "ارفع قالب",
+  codeHint: "قصير ومش متكرر في الشركة — حروف وأرقام و - و _",
+} });
 
 const EMPTY = { name: "", code: "", description: "" };
 

@@ -12,13 +12,14 @@ import useTaskProgress from "../../../hooks/useTaskProgress";
 import { getPrepareDiff, getVersionHtml, getVersionThumbnail, prepareVersion, previewVersion, searchCertificateProducts } from "../../../services/apiCertificateTemplates";
 import { getInvoice, listInvoices } from "../../../services/apiInvoices";
 import { describeCertificateError } from "../../../utils/certificateErrors";
+import { pick } from "../../../i18n/lang";
 
 // Wizard step 4 — prepare & test (plan §13.4; mockup A5). "Prepare" clears the
 // fields on the server and runs the gate (§7.6); the test fill renders on the
 // server (POST …/preview) from a product, a confirmed invoice's line and/or
 // typed values — the owner's "100 %" check before go-live. Nothing here measures or stores geometry (D11).
 
-const STR = {
+const STR_EN = {
   title: "Prepare",
   intro: "Prepare clears the marked values out of the design and proves, pixel by pixel, that refilling them reproduces the original.",
   prepare: "Prepare",
@@ -43,6 +44,31 @@ const STR = {
   noActive: "no active version",
   next: (n) => `Next: activate v${n}`,
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "جهّز",
+  intro: "التجهيز بيشيل القيم المحددة من التصميم ويثبت، بكسل ببكسل، إن ملاها تاني بيرجّع الأصل.",
+  prepare: "جهّز",
+  again: "جهّز تاني",
+  preparing: "بنجهّز — بنفضّي الحقول ونراجع النتيجة…",
+  noFields: "حدد حقل واحد على الأقل الأول.",
+  backToFields: "ارجع للحقول",
+  testTitle: "تجربة ملى",
+  testIntro: "اتعملت على السيرفر — بالظبط اللي هيطلع في الـ PDF.",
+  product: "المنتج",
+  productPh: "دوّر على منتج…",
+  item: "سطر فاتورة (اختياري)",
+  itemPh: "دوّر في الفواتير المأكدة…",
+  itemHint: "بيملى قيم الفاتورة والسطر؛ منتجه بيستخدم لو ما اخترتش منتج فوق.",
+  noItems: "مفيش سطور فواتير مأكدة",
+  line: (inv, it) => [`${inv} · سطر ${it.lineNo}`, it.data?.name, it.data?.batchNo].filter(Boolean).join(" · "),
+  override: "قيمة (فاضي = من المصدر)",
+  render: "اعرض المعاينة",
+  sample: "معروض التصميم متملي بقيم المثال بتاعته.",
+  replaces: "التشغيل هيبدّل",
+  inSlot: "في المكان ده.",
+  noActive: "مفيش نسخة شغّالة",
+  next: (n) => `التالي: شغّل النسخة ${n}`,
+} });
 
 export default function PrepareStep({ scope, template, version, onChanged, goStep }) {
   const [taskId, setTaskId] = useState(null);

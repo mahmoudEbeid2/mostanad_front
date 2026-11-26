@@ -1,12 +1,13 @@
 import { Check, AlertTriangle, X } from "lucide-react";
 import AuthImage from "./AuthImage";
+import { pick } from "../../i18n/lang";
 
 // The prepare gate report (plan §7.6, §13.4 step 4; mockup A5): a status band,
 // one card per gate check (measured value vs limit), the pixel comparison and
 // per-field round-trip deltas. Every number was measured on the server (D11);
 // the cards only pick maxima/counts out of the stored report.
 
-const STR = {
+const STR_EN = {
   passedReady: "Prepare passed — ready to activate",
   passed: "Prepare passed",
   passedHint: "The cleared template refilled with the original values matches the uploaded design.",
@@ -41,6 +42,33 @@ const STR = {
   calibrationOff: (d) => `calibration Δ ${d} px`,
   ms: (ms) => `${(ms / 1000).toFixed(1)} s`,
 };
+const STR = pick({ en: STR_EN, ar: {
+  passedReady: "التجهيز عدّى — جاهز للتشغيل",
+  passed: "التجهيز عدّى",
+  passedHint: "القالب بعد ما اتفضّى واتملى بالقيم الأصلية مطابق للتصميم المرفوع.",
+  failed: "التجهيز ماعدّاش",
+  failedHint: "صلّح الحقول اللي تحت، وبعدين جهّز تاني.",
+  stale: "الحقول اتغيرت بعد التقرير ده — جهّز تاني عشان تتراجع.",
+  pass: "عدّى",
+  fail: "ماعدّاش",
+  limit: "الحد",
+  checks: { has_fields: "فيه حقول متحددة", offsets: "الحقول في أماكنها", calibration: "معايرة العرض (أقصى)", round_trip: "الملى تاني لكل حقل (أقصى)", pixel_diff: "فرق البكسلات في الصفحة", transparent: "حقول في نص مخفي", overlap: "حقول فوق بعض" },
+  failures: "مشاكل",
+  pixelTitle: "مقارنة البكسلات",
+  original: "الملف الأصلي",
+  difference: (pct, page, many) => `الفرق${many ? ` · صفحة ${page}` : ""} · ${pct} %`,
+  field: "الحقل",
+  align: "المحاذاة",
+  position: "فرق المكان",
+  width: "فرق العرض",
+  result: "النتيجة",
+  ok: "تمام",
+  errors: { OFFSET_MISMATCH: "النص في المكان المحفوظ اتغير", LINE_NOT_FOUND: "السطر مش موجود", NOT_PROCESSED: "ماتعملش" },
+  overlaps: (k) => `فوق ${k}`,
+  transparent: "جوه نص مخفي",
+  calibrationOff: (d) => `فرق المعايرة ${d} px`,
+  ms: (ms) => `${(ms / 1000).toFixed(1)} ث`,
+} });
 
 const px = (n) => (typeof n === "number" ? `${n.toFixed(2)} px` : "—");
 const maxOf = (list) => (list.length ? Math.max(...list) : 0);

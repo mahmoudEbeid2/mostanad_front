@@ -6,11 +6,12 @@ import Button from "../../../ui/Button";
 import { activateVersion, confirmFields, newVersionFrom } from "../../../services/apiCertificateTemplates";
 import { describeCertificateError } from "../../../utils/certificateErrors";
 import ReadinessPanel from "./ReadinessPanel";
+import { pick } from "../../../i18n/lang";
 
 // Wizard step 5 — activate (plan §8.4, §13.4, D10). Lists exactly what
 // changes; refuses while any field is unconfirmed (the server enforces it too).
 
-const STR = {
+const STR_EN = {
   title: "Activate this version",
   becomes: (n, t) => `Version ${n} becomes the design used for every new “${t}” certificate.`,
   supersedes: (n) => `Version ${n} (active now) will be superseded. Certificates already generated keep the exact design they used.`,
@@ -29,6 +30,25 @@ const STR = {
   backToList: "Back to templates",
   newVersion: "New version from this one",
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "شغّل النسخة دي",
+  becomes: (n, t) => `النسخة ${n} هتبقى التصميم المستخدم في كل شهادة «${t}» جديدة.`,
+  supersedes: (n) => `النسخة ${n} (الشغّالة دلوقتي) هتتبدّل. الشهادات اللي اتعملت بتفضل بتصميمها بالظبط.`,
+  unconfirmedTitle: "الحقول دي اقترحها الذكاء الاصطناعي، أو اقترح «القيمة بتيجي من» بتاعتها. أكّد كل واحد قبل التشغيل:",
+  aiMapping: "ربط بالذكاء الاصطناعي",
+  confirmAll: "أكّد الكل",
+  replaces: "التشغيل هيبدّل",
+  inSlot: "في المكان ده.",
+  noActive: "مفيش نسخة شغّالة",
+  activate: (n) => `شغّل النسخة ${n}`,
+  activated: "النسخة اشتغلت",
+  isActive: "النسخة دي شغّالة.",
+  isSuperseded: "النسخة دي اتبدّلت بأحدث منها. بتفضل مقروءة؛ الشهادات اللي استخدمتها مش بتتأثر.",
+  notReady: "جهّز النسخة دي وعدّي الاختبار الأول.",
+  generate: "اعمل شهادات من فاتورة",
+  backToList: "ارجع للقوالب",
+  newVersion: "نسخة جديدة من دي",
+} });
 
 export default function ActivateStep({ scope, template, version, onChanged, goStep }) {
   const navigate = useNavigate();

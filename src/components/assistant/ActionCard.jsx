@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import { approveAction, cancelAction, getActionProgress } from "../../services/apiAssistant";
 import SourceBadge from "./SourceBadge";
 import { downloadLayoutPdf, layoutFileUrl } from "../../services/apiLabelLayout";
+import CertificatesResult from "./CertificatesResult";
+import { isAr, tr } from "../../i18n/lang";
 
 // Design E2: a change the assistant proposed. Nothing happens until the person
 // presses Run; then "Approved by you · time" and — for a long job — a progress
@@ -13,13 +15,15 @@ import { downloadLayoutPdf, layoutFileUrl } from "../../services/apiLabelLayout"
 const POLL_MS = 1500;
 const time = (d) => (d ? new Date(d).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
 const BADGE = {
-  pending: ["Needs your OK", "bg-amber-50 text-amber-800"],
-  running: ["Running", "bg-blue-50 text-blue-700"],
-  done: ["Done", "bg-green-50 text-green-700"],
-  failed: ["Failed", "bg-red-50 text-red-700"],
-  cancelled: ["Cancelled", "bg-gray-100 text-gray-600"],
-  expired: ["Expired", "bg-gray-100 text-gray-600"],
+  pending: [tr("محتاج موافقتك", "Needs your OK"), "bg-amber-50 text-amber-800"],
+  running: [tr("شغّال", "Running"), "bg-blue-50 text-blue-700"],
+  done: [tr("خلص", "Done"), "bg-green-50 text-green-700"],
+  failed: [tr("فشل", "Failed"), "bg-red-50 text-red-700"],
+  cancelled: [tr("اتلغى", "Cancelled"), "bg-gray-100 text-gray-600"],
+  expired: [tr("انتهى", "Expired"), "bg-gray-100 text-gray-600"],
 };
+// the card's own texts in the page's language (the backend sends both)
+const L = (x, key) => (isAr && x?.[`${key}Ar`]) || x?.[key];
 
 /** A resized label (resize_label / upload_label_and_resize / confirm_label_upload): preview, fit, PDF. */
 function LayoutResult({ layout }) {
@@ -137,14 +141,14 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
       <div role="group" aria-label="Action to confirm" data-testid="action-card" data-status={action.status} className={`flex flex-col gap-2.5 rounded-xl border bg-white px-4 py-3.5 ${action.status === "pending" ? "border-2 border-amber-300" : "border-gray-200"}`}>
         <div className="flex items-center gap-2">
           <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${badgeClass}`}>{label}</span>
-          <span className="text-sm font-bold">{p.title || action.tool}</span>
+          <span className="text-sm font-bold" dir="auto">{L(p, "title") || action.tool}</span>
         </div>
         {p.summary && <p className="m-0 text-[13px] text-gray-600">{p.summary}</p>}
         {(p.fields || []).length > 0 && (
           <dl className="m-0 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 border-b border-gray-100 pb-2 text-[13px]" data-testid="action-fields">
             {p.fields.map((f) => (
               <div key={f.name} className="contents">
-                <dt className="text-gray-500">{f.label}</dt>
+                <dt className="text-gray-500">{L(f, "label")}</dt>
                 <dd className="m-0 flex items-start gap-1.5">
                   <span className="min-w-0 break-words" dir="auto">{f.value}</span>
                   <SourceBadge source={f.source} evidence={f.evidence} />
@@ -156,43 +160,48 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
         <dl className="m-0 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 text-[13px]">
           {details.map((d, i) => (
             <div key={i} className="contents">
-              <dt className="text-gray-500">{d.label}</dt>
+              <dt className="text-gray-500">{L(d, "label")}</dt>
               <dd className="m-0 break-words" dir="auto">{d.value}</dd>
             </div>
           ))}
           {p.aiCalls && (
             <>
-              <dt className="text-gray-500">AI use</dt>
+              <dt className="text-gray-500">{tr("استخدام الذكاء الاصطناعي", "AI use")}</dt>
               <dd className="m-0">{p.aiCalls}</dd>
             </>
           )}
           {(p.missing || []).length > 0 && (
             <>
-              <dt className="text-gray-500">Missing</dt>
-              <dd className="m-0">{p.missing.join(" · ")}</dd>
+              <dt className="text-gray-500">{tr("ناقص", "Missing")}</dt>
+              <dd className="m-0">{(isAr && p.missingAr ? p.missingAr : p.missing).join(" · ")}</dd>
             </>
           )}
         </dl>
         {action.status === "pending" ? (
           <div className="flex gap-2">
             <button type="button" disabled={busy} onClick={() => decide(true)} data-testid="action-run" className="min-h-11 rounded-xl border border-blue-600 bg-blue-600 px-4 text-sm font-semibold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 disabled:opacity-50">
-              {p.runLabel || "Run"}
+              {L(p, "runLabel") || tr("نفّذ", "Run")}
             </button>
             <button type="button" disabled={busy} onClick={() => decide(false)} data-testid="action-cancel" className="min-h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-              Cancel
+              {tr("إلغاء", "Cancel")}
             </button>
           </div>
         ) : (
           <div className="text-[13px] font-medium text-gray-600" data-testid="action-decision">
-            {action.status === "cancelled" ? `Cancelled · ${time(action.decidedAt)}` : action.status === "expired" ? "Expired — ask again for a new one" : `✓ Approved by you · ${time(action.decidedAt)}`}
+            {action.status === "cancelled" ? `${tr("اتلغى", "Cancelled")} · ${time(action.decidedAt)}` : action.status === "expired" ? tr("انتهى — اطلبه تاني", "Expired — ask again for a new one") : `✓ ${tr("وافقت عليه", "Approved by you")} · ${time(action.decidedAt)}`}
           </div>
         )}
         {action.status === "failed" && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">{action.error}</div>}
         {action.status === "done" && action.result?.labelLayout && <LayoutResult layout={action.result.labelLayout} />}
-        {action.status === "done" && action.result?.link && (
-          <Link to={action.result.link} className="text-[13px] font-semibold text-blue-600 hover:underline">
-            Open →
-          </Link>
+        {["done", "running"].includes(action.status) && action.result?.certificates?.length > 0 ? (
+          <CertificatesResult certificates={action.result.certificates} link={action.result.link} companyId={action.companyId} />
+        ) : (
+          action.status === "done" &&
+          action.result?.link && (
+            <Link to={action.result.link} className="text-[13px] font-semibold text-blue-600 hover:underline">
+              {tr("افتح ←", "Open →")}
+            </Link>
+          )
         )}
       </div>
       {action.taskId && ["running", "done", "failed"].includes(action.status) && <ProgressCard task={task} status={action.status} />}

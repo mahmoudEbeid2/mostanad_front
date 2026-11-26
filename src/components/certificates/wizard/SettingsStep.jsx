@@ -8,11 +8,12 @@ import Button from "../../../ui/Button";
 import { updateTemplateSettings } from "../../../services/apiCertificateTemplates";
 import { getBrands } from "../../../services/apiBrands";
 import { describeCertificateError } from "../../../utils/certificateErrors";
+import { pick } from "../../../i18n/lang";
 
 // Wizard step 3 — review the template's slot (plan §13.4): name, type, brand,
 // country, scope. The server re-checks slot uniqueness on save.
 
-const STR = {
+const STR_EN = {
   name: "Template name",
   type: "Certificate type",
   brand: "Brand",
@@ -30,6 +31,24 @@ const STR = {
   slotTaken: "Another template already covers this type, brand, country and scope:",
   open: "Open it",
 };
+const STR = pick({ en: STR_EN, ar: {
+  name: "اسم القالب",
+  type: "نوع الشهادة",
+  brand: "البراند",
+  anyBrand: "أي براند",
+  country: "الدولة",
+  anyCountry: "أي دولة",
+  scope: "شهادة واحدة لكل…",
+  perProduct: "منتج (سطر في الفاتورة)",
+  perInvoice: "فاتورة",
+  save: "احفظ الإعدادات",
+  saved: "الإعدادات اتحفظت",
+  next: "التالي: جهّز واختبر",
+  supersedes: (n) => `تشغيل النسخة دي هيبدّل النسخة ${n} اللي شغّالة دلوقتي. الشهادات اللي اتعملت بتفضل بتصميمها.`,
+  firstActive: "القالب ده مالوش نسخة شغّالة لسه — تشغيل دي بيخليه متاح للشهادات.",
+  slotTaken: "فيه قالب تاني بيغطي نفس النوع والبراند والدولة والنطاق:",
+  open: "افتحه",
+} });
 
 export default function SettingsStep({ scope, companyId, template, version, types, onSaved, onNext }) {
   const countries = useMemo(() => countryList().getData(), []);

@@ -16,58 +16,66 @@ import {
   Tag,
   Scale,
   PanelLeftClose,
-  UploadCloud
+  UploadCloud,
+  Zap,
+  Languages
 } from "lucide-react";
+import { LANG, setLang, tr } from "../i18n/lang";
+
+const label = (l) => (LANG === "en" ? l.en || l.name : l.ar || l.name);
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { useAssistantStatus } from "../context/AssistantStatusContext";
 import { useSidebar, SIDEBAR_ID, shortcutLabel } from "../context/sidebarState";
 
 const navLinks = [
-  { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, permission: "read_dashboard" },
-  { name: "ارفع ملفاتك", path: "/intake", icon: UploadCloud, permission: "read_products" },
-  { name: "Roles", path: "/roles", icon: ShieldAlert, permission: "read_roles" },
-  { name: "Users", path: "/users", icon: Users, permission: "read_users" },
-  { name: "Companies", path: "/companies", icon: Building2, permission: "read_companies" },
-  { name: "Brands", path: "/brands", icon: Tag },
-  { name: "Categories", path: "/categories", icon: FolderTree, permission: "read_categories" },
+  { name: "Dashboard", ar: "الرئيسية", path: "/dashboard", icon: LayoutDashboard, permission: "read_dashboard" },
+  { name: "ارفع ملفاتك", en: "Upload files", path: "/intake", icon: UploadCloud, permission: "read_products" },
+  // 26 Nov: what urgent orders from the chat made (companies, products, templates, certificates, evidence) — to check
+  { name: "الطلبات السريعة", en: "Urgent orders", path: "/express", icon: Zap, permission: "read_products" },
+  { name: "Roles", ar: "الأدوار", path: "/roles", icon: ShieldAlert, permission: "read_roles" },
+  { name: "Users", ar: "المستخدمين", path: "/users", icon: Users, permission: "read_users" },
+  { name: "Companies", ar: "الشركات", path: "/companies", icon: Building2, permission: "read_companies" },
+  { name: "Brands", ar: "البراندات", path: "/brands", icon: Tag },
+  { name: "Categories", ar: "الفئات", path: "/categories", icon: FolderTree, permission: "read_categories" },
   { 
-    name: "Products", 
+    name: "Products", ar: "المنتجات", 
     icon: Package,
     permission: "read_products",
     subLinks: [
-      { name: "Product List", path: "/products" },
-      { name: "Catalogues", path: "/catalogues" }
+      { name: "Product List", ar: "قائمة المنتجات", path: "/products" },
+      { name: "Catalogues", ar: "الكتالوجات", path: "/catalogues" }
     ]
   },
   { 
-    name: "Regulatory & EDA", 
+    name: "Regulatory & EDA", ar: "اللوائح والتسجيل", 
     icon: Scale,
     subLinks: [
-      { name: "Regulations & Rules", path: "/regulatory-documents" },
-      { name: "Legacy EDA Requirements", path: "/eda-requirements" }
+      { name: "Regulations & Rules", ar: "اللوائح والقواعد", path: "/regulatory-documents" },
+      { name: "Legacy EDA Requirements", ar: "متطلبات EDA القديمة", path: "/eda-requirements" }
     ]
   },
   { 
-    name: "Labels", 
+    name: "Labels", ar: "الليبلات", 
     icon: Tags,
     subLinks: [
-      { name: "My Labels", path: "/labels/browse" },
-      { name: "Check a Label", path: "/labels" },
-      { name: "Create a Label", path: "/labels/generator" },
-      { name: "Reference Labels", path: "/reference-labels" }
+      { name: "My Labels", ar: "ليبلاتي", path: "/labels/browse" },
+      { name: "Check a Label", ar: "افحص ليبل", path: "/labels" },
+      { name: "Create a Label", ar: "اعمل ليبل", path: "/labels/generator" },
+      { name: "Reference Labels", ar: "ليبلات مرجعية", path: "/reference-labels" }
     ]
   },
   {
     // Certificates V2 (CERTIFICATES_V2_PLAN.md §13.1)
-    name: "Certificates",
+    name: "Certificates", ar: "الشهادات",
     icon: Sparkles,
     subLinks: [
-      { name: "Templates", path: "/certificates/templates", permission: "read_certificate_templates" },
-      { name: "Types", path: "/certificates/types", permission: "read_certificate_types" },
-      { name: "Invoices", path: "/invoices", permission: "read_invoices" },
-      { name: "Generated certificates", path: "/certificates", permission: "read_certificates" },
-      { name: "AI", path: "/certificate-ai", permission: "read_certificate_templates" },
+      { name: "Templates", ar: "القوالب", path: "/certificates/templates", permission: "read_certificate_templates" },
+      { name: "Types", ar: "أنواع الشهادات", path: "/certificates/types", permission: "read_certificate_types" },
+      { name: "Invoices", ar: "الفواتير", path: "/invoices", permission: "read_invoices" },
+      { name: "Generated certificates", ar: "الشهادات المتعملة", path: "/certificates", permission: "read_certificates" },
+      { name: "New request", ar: "طلب شهادات جديد", path: "/certificates/requests/new", permission: "create_certificates" },
+      { name: "AI", ar: "الذكاء الاصطناعي", path: "/certificate-ai", permission: "read_certificate_templates" },
     ]
   },
 ];
@@ -144,7 +152,7 @@ export default function Sidebar() {
             const isOpen = openDropdowns[link.name];
             const isActive = subLinks.some(sub => location.pathname === sub.path);
             return (
-              <div key={link.name} className="flex flex-col">
+              <div key={label(link)} className="flex flex-col">
                 <button
                   onClick={() => toggleDropdown(link.name)}
                   className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full ${
@@ -153,7 +161,7 @@ export default function Sidebar() {
                 >
                   <div className="flex items-center gap-3">
                     <link.icon className="w-5 h-5 opacity-75" />
-                    {link.name}
+                    {label(link)}
                   </div>
                   {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
@@ -161,7 +169,7 @@ export default function Sidebar() {
                   <div className="mt-1 ml-4 pl-4 border-l border-gray-200 flex flex-col space-y-1">
                     {subLinks.map(sub => (
                       <NavLink
-                        key={sub.name}
+                        key={label(sub)}
                         to={sub.path}
                         end={sub.path === "/products" || sub.path === "/regulatory-documents" || sub.path === "/certificates"}
                         className={({ isActive: subActive }) =>
@@ -170,7 +178,7 @@ export default function Sidebar() {
                           }`
                         }
                       >
-                        {sub.name}
+                        {label(sub)}
                       </NavLink>
                     ))}
                   </div>
@@ -181,7 +189,7 @@ export default function Sidebar() {
 
           return (
             <NavLink
-              key={link.name}
+              key={label(link)}
               to={link.path}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -192,7 +200,7 @@ export default function Sidebar() {
               }
             >
               <link.icon className="w-5 h-5 opacity-75" />
-              {link.name}
+              {label(link)}
             </NavLink>
           );
         })}
@@ -213,7 +221,7 @@ export default function Sidebar() {
           <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 uppercase">
             {user?.name?.charAt(0) || "U"}
           </div>
-          <span className="truncate">My Account</span>
+          <span className="truncate">{tr("حسابي", "My Account")}</span>
         </NavLink>
 
         <button
@@ -221,7 +229,16 @@ export default function Sidebar() {
           className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
         >
           <LogOut className="w-5 h-5 opacity-75" />
-          Logout
+          {tr("تسجيل الخروج", "Logout")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setLang(LANG === "en" ? "ar" : "en")}
+          className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+          data-testid="lang-toggle"
+        >
+          <Languages className="w-5 h-5 opacity-75" />
+          {LANG === "en" ? "العربية" : "English"}
         </button>
       </div>
     </aside>

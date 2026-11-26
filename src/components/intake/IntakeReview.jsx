@@ -123,7 +123,9 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
   const allRows = view.items.filter((i) => !i.parentId || view.items.find((p) => p.id === i.parentId)?.action !== "bundle" && view.items.find((p) => p.id === i.parentId)?.action !== "bundle_template");
   // Express asks only what it must: the sure rows are filed as proposed (shown on request)
   const asks = (i) => i.question || (i.confidence !== null && i.confidence < 0.7);
-  const rows = express && status === "review" && !showAll ? allRows.filter(asks) : allRows;
+  // Express: the product blocks show what is sure; the table only carries the questions to answer here
+  // (a page's product is asked in the one-question panel above)
+  const rows = express && status === "review" && !showAll ? allRows.filter((i) => asks(i) && i.question !== "product") : allRows;
   const partsOf = (id) => view.items.filter((i) => i.parentId === id);
   const editable = status === "review";
   const unsure = view.items.filter((i) => i.question || (i.confidence !== null && i.confidence < 0.7)).length;
@@ -326,6 +328,8 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           {showAll ? "اعرض الأسئلة بس" : `اعرض كل الملفات (${allRows.length})`}
         </button>
       )}
+      {/* Express: one block per product (its certificates and pages), the sure ones folded — not 25 rows to scroll (26 Nov) */}
+      {express && status === "review" && !showAll && <ByProduct items={view.items} />}
       {status !== "classifying" && rows.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <table className="w-full min-w-[64rem] text-right text-xs" data-testid="intake-table">
@@ -428,6 +432,50 @@ function PageQuestions({ items, products, onAnswer }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/** Express review grouped by product: product → the files / pages that concern it; a product with nothing unsure is folded. */
+function ByProduct({ items }) {
+  const parents = new Set(items.filter((i) => items.some((x) => x.parentId === i.id)).map((i) => i.id));
+  const leaves = items.filter((i) => !parents.has(i.id) && !["duplicate", "skip"].includes(i.action));
+  const unsure = (i) => !!i.question || (i.confidence !== null && i.confidence < 0.7);
+  const groups = new Map();
+  for (const i of leaves) {
+    const names = (i.products || []).map((p) => p.name).filter(Boolean);
+    for (const n of names.length ? names : ["__none"]) {
+      if (!groups.has(n)) groups.set(n, []);
+      groups.get(n).push(i);
+    }
+  }
+  const what = (i) => [i.certCode || DOC_TYPES[i.docType] || i.docType, i.pages && i.parentId ? `ص ${i.pages}` : null].filter(Boolean).join(" · ");
+  const list = [...groups.entries()].sort(([a, x], [b, y]) => Number(y.some(unsure)) - Number(x.some(unsure)) || (a === "__none") - (b === "__none") || a.localeCompare(b));
+  return (
+    <div className="space-y-1.5" data-testid="express-by-product">
+      {list.map(([name, its]) => {
+        const open = its.some(unsure);
+        const isNew = its.some((i) => i.products?.some((p) => p.name === name && p.isNew));
+        return (
+          <details key={name} open={open} className={`rounded-lg border bg-white px-3 py-1.5 text-xs ${open ? "border-amber-300" : "border-gray-200"}`}>
+            <summary className="cursor-pointer font-semibold text-gray-900">
+              {name === "__none" ? "ملفات من غير منتج" : name}
+              {isNew && <span className="ms-1 rounded bg-emerald-100 px-1 text-[10px] text-emerald-800">جديد</span>}
+              <span className="ms-2 font-normal text-gray-500">{[...new Set(its.map((i) => i.certCode || DOC_TYPES[i.docType]))].filter(Boolean).join("، ")}</span>
+              {open && <span className="ms-2 text-amber-800">محتاج نظرة</span>}
+            </summary>
+            <ul className="mt-1 space-y-0.5 pr-3">
+              {its.map((i) => (
+                <li key={i.id} className={unsure(i) ? "text-amber-900" : "text-gray-600"}>
+                  {what(i)} — {i.name.replace(/ — .*$/, "")}
+                  {i.country ? ` · ${i.country}` : ""}
+                  {unsure(i) && i.question ? ` · ${i.question === "product" ? "مين المنتج؟" : i.question === "country" ? "أنهي دولة؟" : "ده إيه؟"}` : ""}
+                </li>
+              ))}
+            </ul>
+          </details>
+        );
+      })}
     </div>
   );
 }

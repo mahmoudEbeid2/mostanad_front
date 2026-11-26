@@ -7,6 +7,7 @@ import Spinner from "../../ui/Spinner";
 import { addDictionarySynonym, decideDataNeeds, getDataCheck, runDataCheck, webLookup } from "../../services/apiInvoices";
 import { withNextStep } from "../../utils/aiReason";
 import ResultsGrid from "./ResultsGrid";
+import { pick } from "../../i18n/lang";
 
 // "Certificate data check" (backend plan.md §6.2, A2): every value the
 // certificates about to be generated need, what code read, what the AI found
@@ -14,7 +15,7 @@ import ResultsGrid from "./ResultsGrid";
 // results (batch data) are typed once per line, whatever the number of
 // certificate types that print them. Generation is blocked by the parent while
 // `summary.blocking` > 0.
-const STR = {
+const STR_EN = {
   title: "Certificate data check",
   checking: "Checking what the certificates need…",
   failed: "The data check failed:",
@@ -68,6 +69,53 @@ const STR = {
   aiValue: (c) => `AI ${Math.round((c ?? 0) * 100)}%`,
   placeholder: "Type the value",
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "مراجعة بيانات الشهادات",
+  checking: "بنشوف الشهادات محتاجة إيه…",
+  failed: "مراجعة البيانات فشلت:",
+  retry: "جرّب تاني",
+  summary: (s) => `${s.certificates} شهادة · ${s.values} قيمة · ${s.ready} جاهزة · ${s.needsConfirmation} محتاجة تأكيد · ${s.missing} ناقصة${s.missingOptional ? ` · ${s.missingOptional} ناقصة (اختيارية)` : ""}`,
+  allSet: "كل القيم المطلوبة جاهزة.",
+  skip: "تخطّي",
+  nothingYet: "مفيش حاجة تتراجع لسه — مفيش سطر متطابق مع منتج عليه قالب شغّال.",
+  aiFound: (a) => `الذكاء الاصطناعي دوّر على ${a.asked} قيمة ناقصة في الفاتورة وبيانات منتجاتك ولقى ${a.filled}، كل واحدة بإثبات السيرفر راجعه كلمة بكلمة.`,
+  aiRefused: (n) => `${n} إجابة من الذكاء الاصطناعي اترفضت لأن الإثبات ماطابقش.`,
+  aiOff: (reason) => withNextStep(reason, "املى القيم الناقصة بالإيد."),
+  showAll: "اعرض كل القيم",
+  showOpen: "اللي محتاج نظرة بس",
+  certHeader: (c) => `${c.typeCode || c.typeName || "شهادة"} · ${c.scope === "per_invoice" ? `الفاتورة كلها (السطور ${c.lineNos.join("، ")})` : `سطر ${c.lineNos[0]} · ${c.productName || ""}${c.batchNo ? ` · ${c.batchNo}` : ""}`}`,
+  open: (n) => `${n} مفتوحة`,
+  accept: "اقبل",
+  reject: "ارفض",
+  edit: "عدّل",
+  override: "غيّر",
+  reset: "رجّع",
+  save: "احفظ",
+  cancel: "إلغاء",
+  forLine: "استخدمها لكل شهادات السطر ده",
+  synonym: "ضيفها كاسم تاني لكل المنتجات",
+  synonymDone: "اتضاف الاسم التاني — المفتاح ده بيتقرا لكل منتج من دلوقتي.",
+  unassigned: (u) => `السطر ${u.lineNo}${u.name ? ` (${u.name})` : ""} مالوش شهادة، فمفيش حاجة بتتراجع له.`,
+  status: { resolved: "جاهزة", resolved_ai: "ذكاء اصطناعي ✓", provided: "اتكتبت", needs_confirmation: "أكّد", missing: "ناقصة", missingOptional: "ناقصة (اختيارية)", not_applicable: "مش مطلوبة", inferred: "مستنتجة — أكّد", web_found: "من النت — أكّد", catalogue_found: "من الكتالوج — أكّد", reused: "من ملف المنتج" },
+  catalogueBadge: (p) => `الكتالوج ص ${p.page}${p.section ? ` · ${p.section.toLowerCase()}` : ""}`,
+  catalogueOpen: "افتح الصفحة",
+  estimatedBadge: "تقدير",
+  estimatedHint: "القيمة دي متقدّرة، مش مكتوبة في مصدر — أكّدها قبل ما تتحط على شهادة.",
+  confirmOnProduct: "أكّدها على المنتج",
+  confirmHint: "امضي على التقدير ده في المنتج، عشان الفاتورة الجاية تستخدمه من غير ما تسأل",
+  inferredBadge: "مستنتجة من بيانات المنتج",
+  webBadge: "من النت",
+  derivation: { quoted: "مكتوبة في المنتج", unit_conversion: "تحويل وحدات", select_from_list: "مختارة من قائمة", join_list: "متجمّعة من قائمة", normalize_case: "حالة الحروف" },
+  saveToProduct: "احفظها في المنتج",
+  saveHint: "اكتب القيمة المأكدة في المنتج، عشان الفاتورة الجاية مش محتاجة تدوّر عليها",
+  webLookup: (n) => `دوّر على النت عن ${n} معلومة منتج ناقصة`,
+  webHint: "معلومات المنتج بس (أبدًا نتايج تحليل أو تشغيلات أو تواريخ أو كميات). كل قيمة بلينك واقتباس السيرفر راجعه في الصفحة.",
+  webDone: (w) => (w.unavailable ? withNextStep(w.reason, "اكتب القيم الناقصة بالإيد.") : `البحث على النت: لقينا ${w.found}${w.fromCache ? ` (${w.fromCache} من بحث قبل كده)` : ""}${w.rejected ? `، ${w.rejected} اترفضت (الصفحة ماطابقتش)` : ""}`),
+  inferNote: (i) => `${i.inferred} قيمة اتستنتجت من بيانات منتجاتك${i.rejected ? ` (${i.rejected} اترفضت — مش متثبتة من المنتج)` : ""}.`,
+  source: { manual: "كتبتها إنت", static: "نص ثابت", today: "تاريخ الإصدار", template: "تركيبة" },
+  aiValue: (c) => `ذكاء اصطناعي ${Math.round((c ?? 0) * 100)}%`,
+  placeholder: "اكتب القيمة",
+} });
 const OPEN = new Set(["missing", "needs_confirmation", "inferred", "web_found", "catalogue_found"]);
 const AWAITING = new Set(["needs_confirmation", "inferred", "web_found", "catalogue_found"]);
 // "reused" names where code took it from (item 3 profile, item 4 batch result, the specification)

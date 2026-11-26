@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
+import { pick } from "../../i18n/lang";
 
 // "What Generate will produce" (plan §13.5; mockup B3): one row per template
 // version, then every line/type that no active template covers, with a link
 // to create the missing template.
-const STR = {
+const STR_EN = {
   title: "Plan preview",
   // I19: the preview is advisory — Generate re-runs the selection on the server
   recalculated: "A preview of the current templates — the plan is recalculated when you click Generate.",
@@ -25,6 +26,27 @@ const STR = {
   unassigned: (u) => `Line ${u.lineNo}${u.name ? ` (${u.name})` : ""} gets no certificate at all.`,
   create: "Create template",
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "اللي هيتعمل",
+  recalculated: "معاينة على القوالب الحالية — بيتحسب تاني لما تدوس «طلّع».",
+  perProduct: (n) => `${n} شهادة · واحدة لكل منتج`,
+  perInvoice: (n, lines) => `${n} شهادة · للفاتورة كلها (${lines} سطر)`,
+  nothing: "مفيش قالب شغّال على أي سطر لسه.",
+  gap: (g, country) => (
+    <>
+      السطر {g.lineNo}
+      {g.name ? ` (${g.name})` : ""} مالوش قالب {g.typeCode}
+      {g.brandName || country ? (
+        <>
+          {" "}
+          لـ <b>{[g.brandName, country].filter(Boolean).join(" · ")}</b>
+        </>
+      ) : null}
+    </>
+  ),
+  unassigned: (u) => `السطر ${u.lineNo}${u.name ? ` (${u.name})` : ""} مش هيطلعله أي شهادة.`,
+  create: "اعمل قالب",
+} });
 
 export default function PlanPreview({ plan }) {
   if (!plan) return null;

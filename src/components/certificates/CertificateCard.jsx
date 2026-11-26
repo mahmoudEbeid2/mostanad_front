@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import AuthImage from "./AuthImage";
 import StatusBadge from "./StatusBadge";
 import { getCertificateThumbnail } from "../../services/apiCertificatesV2";
+import { pick } from "../../i18n/lang";
 
 // One generated certificate (plan §13.5; mockup B4): thumbnail, type, what it
 // covers, status, blocking issues and the next action.
-const STR = {
+const STR_EN = {
   whole: (n) => `Whole invoice · ${n} product${n === 1 ? "" : "s"}`,
   batch: (b) => `Batch ${b}`,
   issues: (n) => `${n} issue${n === 1 ? "" : "s"}`,
@@ -15,6 +16,16 @@ const STR = {
   view: "Open",
   wait: "Please wait",
 };
+const STR = pick({ en: STR_EN, ar: {
+  whole: (n) => `الفاتورة كلها · ${n} منتج`,
+  batch: (b) => `تشغيلة ${b}`,
+  issues: (n) => `${n} حاجة ناقصة`,
+  rendering: "بتتعمل…",
+  open: "افتح واعتمد",
+  fix: "صلّح الناقص",
+  view: "افتح",
+  wait: "استنى شوية",
+} });
 
 export default function CertificateCard({ scope, cert }) {
   const pending = cert.status === "pending";

@@ -8,6 +8,7 @@ import { listCertificateTypes } from "../../services/apiCertificateTypes";
 import { waitForTask, downloadBatchZip, exportBatchZip } from "../../services/apiCertificatesV2";
 import { certificatesForProducts } from "../../services/apiProductImports";
 import CertificateSetup from "./CertificateSetup";
+import { tr } from "../../i18n/lang";
 
 // Products page → select products → "Make certificates": certificates for several
 // products at once, no invoice. Choose the types, optionally the batch facts per product
@@ -15,9 +16,9 @@ import CertificateSetup from "./CertificateSetup";
 // will be made and what has no template, then make them: drafts, reviewed before final.
 
 const FACTS = [
-  ["batchNo", "Batch no."],
-  ["productionDate", "Production date"],
-  ["expiryDate", "Expiry date"],
+  ["batchNo", tr("رقم التشغيلة", "Batch no.")],
+  ["productionDate", tr("تاريخ الإنتاج", "Production date")],
+  ["expiryDate", tr("تاريخ الانتهاء", "Expiry date")],
 ];
 
 export default function CertificatesForProductsModal({ products, onClose }) {
@@ -55,7 +56,7 @@ export default function CertificatesForProductsModal({ products, onClose }) {
       const out = await certificatesForProducts(body(false));
       await waitForTask(out.taskId, { timeoutMs: 300_000 });
       setDone(out);
-      toast.success("Certificate drafts are ready");
+      toast.success(tr("المسودات جاهزة", "Certificate drafts are ready"));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -82,19 +83,19 @@ export default function CertificatesForProductsModal({ products, onClose }) {
       <div className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <FileCheck2 className="h-5 w-5 text-teal-600" /> Certificates for {products.length} product{products.length > 1 ? "s" : ""}
+            <FileCheck2 className="h-5 w-5 text-teal-600" /> {tr(`شهادات لـ ${products.length} منتج`, `Certificates for ${products.length} product${products.length > 1 ? "s" : ""}`)}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="space-y-5 overflow-y-auto px-6 py-5 text-sm">
-          {!companyId && <p className="text-red-700">Choose products of one company.</p>}
+          {!companyId && <p className="text-red-700">{tr("اختار منتجات شركة واحدة.", "Choose products of one company.")}</p>}
           {companyId && !types && !error && <Spinner />}
           {types && !done && (
             <>
               <div>
-                <p className="mb-2 font-semibold text-gray-800">Certificates</p>
+                <p className="mb-2 font-semibold text-gray-800">{tr("الشهادات", "Certificates")}</p>
                 <div className="flex flex-wrap gap-2">
                   {types.map((t) => {
                     const on = chosen.includes(t.id);
@@ -111,12 +112,12 @@ export default function CertificatesForProductsModal({ products, onClose }) {
                 <CertificateSetup companyId={companyId} types={types} missingTypes={[...new Set((plan?.missing || []).map((m) => m.type))]} onChanged={loadTypes} />
               )}
               <div>
-                <p className="mb-1 font-semibold text-gray-800">Batch facts (optional)</p>
-                <p className="mb-2 text-xs text-gray-500">Only what you type is used. Left empty, it stays a marked blank on the draft to fill in later — nothing is made up.</p>
+                <p className="mb-1 font-semibold text-gray-800">{tr("بيانات التشغيلة (اختياري)", "Batch facts (optional)")}</p>
+                <p className="mb-2 text-xs text-gray-500">{tr("اللي بتكتبه بس هو اللي بيستخدم. لو سبته فاضي بيفضل خانة فاضية متعلّم عليها في المسودة — مش بنألّف حاجة.", "Only what you type is used. Left empty, it stays a marked blank on the draft to fill in later — nothing is made up.")}</p>
                 <table className="w-full text-xs">
                   <thead className="text-gray-500">
                     <tr>
-                      <th className="py-1 text-left font-semibold">Product</th>
+                      <th className="py-1 text-start font-semibold">{tr("المنتج", "Product")}</th>
                       {FACTS.map(([, l]) => (
                         <th key={l} className="py-1 text-left font-semibold">
                           {l}
@@ -145,7 +146,7 @@ export default function CertificatesForProductsModal({ products, onClose }) {
                     {plan.planned.map((e, i) => (
                       <li key={i}>
                         {e.type} — {e.products.join(", ")}
-                        {e.scope === "per_invoice" && e.products.length > 1 ? " (one certificate for all)" : ""}
+                        {e.scope === "per_invoice" && e.products.length > 1 ? tr(" (شهادة واحدة للكل)", " (one certificate for all)") : ""}
                       </li>
                     ))}
                   </ul>
@@ -163,7 +164,7 @@ export default function CertificatesForProductsModal({ products, onClose }) {
                   )}
                   {plan.missing.length > 0 && (
                     <p className="flex items-start gap-1.5 text-xs text-amber-800">
-                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> No active template: {plan.missing.map((m) => `${m.type} for ${m.product}`).join(", ")}
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {tr("مفيش قالب شغّال:", "No active template:")} {plan.missing.map((m) => tr(`${m.type} لـ ${m.product}`, `${m.type} for ${m.product}`)).join("، ")}
                     </p>
                   )}
                 </div>
@@ -172,12 +173,12 @@ export default function CertificatesForProductsModal({ products, onClose }) {
           )}
           {done && (
             <div className="space-y-3" data-testid="certs-done">
-              <p className="font-semibold text-green-800">{done.planned.length} certificate draft{done.planned.length === 1 ? "" : "s"} made. Review each one and approve it when it's right.</p>
-              {done.missing.length > 0 && <p className="text-xs text-amber-800">Not made (no active template): {done.missing.map((m) => `${m.type} for ${m.product}`).join(", ")}</p>}
+              <p className="font-semibold text-green-800">{tr(`اتعمل ${done.planned.length} مسودة. راجع كل واحدة واعتمدها لما تبقى مظبوطة.`, `${done.planned.length} certificate draft${done.planned.length === 1 ? "" : "s"} made. Review each one and approve it when it's right.`)}</p>
+              {done.missing.length > 0 && <p className="text-xs text-amber-800">{tr("ماتعملتش (مفيش قالب شغّال):", "Not made (no active template):")} {done.missing.map((m) => `${m.type} · ${m.product}`).join("، ")}</p>}
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => navigate(`/certificates?invoiceId=${done.invoiceId}`)}>Open the drafts</Button>
+                <Button onClick={() => navigate(`/certificates?batchId=${done.batchId}${companyId ? `&companyId=${companyId}` : ""}`)}>{tr("افتح المسودات", "Open the drafts")}</Button>
                 <Button variant="secondary" isLoading={busy === "zip"} disabled={!!busy} onClick={downloadAll}>
-                  <Download className="h-4 w-4" /> Download all (ZIP)
+                  <Download className="h-4 w-4" /> {tr("نزّل الكل (ZIP)", "Download all (ZIP)")}
                 </Button>
               </div>
             </div>
@@ -191,10 +192,10 @@ export default function CertificatesForProductsModal({ products, onClose }) {
         {!done && (
           <div className="flex justify-start gap-3 rounded-b-2xl border-t border-gray-100 bg-gray-50 px-6 py-4">
             <Button onClick={make} isLoading={busy === "make"} disabled={!plan?.planned.length || plan?.notReady?.length > 0 || !!busy} data-testid="make-certificates">
-              Make {plan?.planned.length || ""} draft{plan?.planned.length === 1 ? "" : "s"}
+              {tr(`اعمل ${plan?.planned.length || ""} مسودة`, `Make ${plan?.planned.length || ""} draft${plan?.planned.length === 1 ? "" : "s"}`)}
             </Button>
             <Button variant="secondary" onClick={onClose}>
-              Cancel
+              {tr("إلغاء", "Cancel")}
             </Button>
           </div>
         )}

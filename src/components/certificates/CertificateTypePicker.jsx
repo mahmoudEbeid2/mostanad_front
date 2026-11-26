@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { hasPermission } from "../../utils/permissions";
+import { pick } from "../../i18n/lang";
 
 // "Certificates to make" on the invoice upload (mockup D1): one card per type. A type with no
 // active template can't be chosen; it offers to create one. All selected + "Include new types
 // automatically" is sent as null: every type with an active template, now and later.
-const STR = {
+const STR_EN = {
   title: "Certificates to make",
   hint: "Pick the certificates this shipment needs. Each one is made for every matched product.",
   selectAll: (n, m) => `Select all · ${n} of ${m}`,
@@ -21,6 +22,22 @@ const STR = {
   noneUsable: "No certificate type has an active template yet, so nothing is chosen here. You can still upload the invoice.",
   failed: "Couldn't load the certificate types. The upload uses the company's usual choice.",
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "الشهادات المطلوبة",
+  hint: "اختار الشهادات اللي الشحنة دي محتاجاها. كل واحدة بتتعمل لكل منتج متطابق.",
+  selectAll: (n, m) => `اختار الكل · ${n} من ${m}`,
+  group: "أنواع الشهادات",
+  templates: (n) => `${n} قالب`,
+  scope: { per_product: "واحدة لكل منتج", per_invoice: "واحدة للفاتورة كلها" },
+  noTemplate: "لسه مفيش قالب شغّال",
+  createTemplate: "اعمل قالب ←",
+  willMake: (codes) => `هيتعمل ${codes.join(" + ")} لكل منتج متطابق`,
+  pickOne: "اختار شهادة واحدة على الأقل.",
+  includeNew: "ضيف أنواع الشهادات الجديدة لوحدها",
+  remember: (company) => `افتكر الاختيار ده لـ ${company}`,
+  noneUsable: "مفيش نوع شهادة عليه قالب شغّال لسه، فمفيش حاجة متختارة هنا. تقدر ترفع الفاتورة برضه.",
+  failed: "معرفناش نحمّل أنواع الشهادات. الرفع هيستخدم اختيار الشركة المعتاد.",
+} });
 
 // mockup D1: a square per type, by its place in the list
 const COLOURS = ["bg-blue-100 text-blue-700", "bg-green-100 text-green-700", "bg-amber-100 text-amber-700", "bg-pink-100 text-pink-700", "bg-violet-100 text-violet-700"];

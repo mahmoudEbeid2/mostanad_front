@@ -2,12 +2,13 @@ import { RotateCcw } from "lucide-react";
 import FlagBadges from "./FlagBadges";
 import GroupRowsEditor from "./GroupRowsEditor";
 import { sourceLabel } from "../../utils/certificateFieldSources";
+import { pick } from "../../i18n/lang";
 
 // The editor's right panel (plan §13.6; mockup B5): one row per field — label,
 // source chip, value, flags and "reset to source". Typing only updates drafts;
 // the page saves them and the server re-renders. A repeating group's cells are
 // not fields of their own here: the group is edited as a list of rows (§7.8).
-const STR = {
+const STR_EN = {
   title: "Values",
   keys: "Tab · Ctrl+S saves · Esc reverts",
   reset: "Reset to the value from its source",
@@ -20,6 +21,19 @@ const STR = {
   generated: "generated",
   sources: { generation: "generated", user_edit: "edited", restore: "restored", regenerate_field: "reset", duplicate: "duplicated", font_fallback: "fallback fonts" },
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "القيم",
+  keys: "Tab · Ctrl+S يحفظ · Esc يرجّع",
+  reset: "رجّعها لقيمة مصدرها",
+  edited: "اتعدلت",
+  restored: "رجعت",
+  fromCheck: "من مراجعة البيانات",
+  fromCheckTyped: "اتكتبت في مراجعة البيانات",
+  unsaved: "مش محفوظة",
+  history: "السجل",
+  generated: "اتولدت",
+  sources: { generation: "اتولدت", user_edit: "اتعدلت", restore: "رجعت", regenerate_field: "رجعت لمصدرها", duplicate: "نسخة", font_fallback: "خطوط بديلة" },
+} });
 const NO_RESET = new Set(["manual", "static"]);
 
 export default function CertificateValuesForm({ fields, groups = [], values, drafts, catalogueOptions, fallbackFonts, editable, onChange, onRevert, onReset, versions = [] }) {

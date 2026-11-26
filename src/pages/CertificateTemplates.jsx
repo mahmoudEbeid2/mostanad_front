@@ -14,10 +14,11 @@ import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { archiveTemplate, getVersionThumbnail, listTemplates } from "../services/apiCertificateTemplates";
 import { getBrands } from "../services/apiBrands";
 import { describeCertificateError } from "../utils/certificateErrors";
+import { pick } from "../i18n/lang";
 
 // /certificates/templates (plan §13.1; mockup A1): filter card, status pills,
 // one card per template with a status-specific next action.
-const STR = {
+const STR_EN = {
   title: "Certificate templates",
   subtitle: "Upload a design once, mark what changes, and every invoice fills it automatically.",
   upload: "Upload template",
@@ -58,6 +59,45 @@ const STR = {
   // fieldCount / pixelDiffPct of the version that passed the gate (active, else latest ready)
   gate: (n, pct) => [n !== null ? `${n} field${n === 1 ? "" : "s"}` : null, pct !== null ? `round-trip ${pct < 0.001 ? "< 0.001" : pct.toFixed(3)} %` : null].filter(Boolean).join(" · "),
 };
+const STR = pick({ en: STR_EN, ar: {
+  title: "قوالب الشهادات",
+  subtitle: "ارفع التصميم مرة، حدد الأماكن اللي بتتغير، وكل شهادة بتتملى لوحدها.",
+  upload: "ارفع قالب",
+  types: "أنواع الشهادات",
+  type: "النوع",
+  allTypes: "كل الأنواع",
+  brand: "البراند",
+  allBrands: "كل البراندات",
+  all: "الكل",
+  statuses: { active: "شغّال", ready: "جاهز", draft: "مسودة", failed: "فشل", converting: "بيتحوّل" },
+  showArchived: "اعرض المؤرشف",
+  noTypes: "اعمل نوع شهادة الأول — كل قالب بيتبع نوع.",
+  goTypes: "روح لأنواع الشهادات",
+  empty: "لسه مفيش قوالب. ارفع أول تصميم شهادة (.ai أو .pdf أو .html).",
+  pickCompany: "اختار شركة عشان تشوف قوالبها.",
+  tileTitle: "ارفع تصميم",
+  tileHint: ".ai (متوافق مع PDF) أو .pdf أو .html — لحد 60 ميجا",
+  archive: "أرشف",
+  archived: "القالب اتأرشف",
+  confirmArchive: (n) => ({ title: `تأرشف «${n}»؟`, message: "مش هيستخدم في شهادات جديدة. الشهادات اللي اتعملت بيه بتفضل زي ما هي.", confirmLabel: "أرشف", tone: "danger" }),
+  perProduct: "لكل منتج",
+  perInvoice: "للفاتورة كلها",
+  anyBrand: "أي براند",
+  anyCountry: "كل الدول",
+  prev: "السابق",
+  next: "التالي",
+  hint: {
+    converting: "بنحوّل التصميم…",
+    uploaded: "بنحوّل التصميم…",
+    draft: "حدد الأماكن اللي بتتغير، وبعدين جهّزه.",
+    preparing: "بنراجع الحقول…",
+    ready: "عدّى الاختبار — لسه مش شغّال",
+    active: "بيستخدم في كل شهادة جديدة من النوع ده.",
+  },
+  action: { converting: "شوف التقدم", uploaded: "شوف التقدم", draft: "كمّل تحديد الحقول", ready: "شغّله", failed: "ارفع نسخة جديدة" },
+  open: "افتح",
+  gate: (n, pct) => [n !== null ? `${n} حقل` : null, pct !== null ? `فرق الطباعة ${pct < 0.001 ? "< 0.001" : pct.toFixed(3)} %` : null].filter(Boolean).join(" · "),
+} });
 
 const HINT_TONE = { draft: "text-amber-800", ready: "text-emerald-700", failed: "text-red-700" };
 const PAGE_SIZE = 20;

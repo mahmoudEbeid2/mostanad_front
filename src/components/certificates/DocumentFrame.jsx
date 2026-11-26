@@ -137,11 +137,16 @@ export default function DocumentFrame({ load, reloadKey, onReady, overlay, hint,
 
   const scale = zoom ?? (fit ? fitScale : 1);
 
+  // 27 Nov QA: the label said "Page 2 / 2" while page 1 stayed in view — the frame's box grows to the whole
+  // document on the certificate page, so it has nothing to scroll. A marker at the page's top is scrolled
+  // into view instead, by whichever ancestor scrolls (the box itself, the page, the window).
+  const markRef = useRef(null);
   const goTo = (n) => {
     const p = size.pages.find((x) => x.page === n);
-    if (!p || !containerRef.current) return;
+    if (!p || !markRef.current) return;
     setPage(n);
-    containerRef.current.scrollTo({ top: p.top * scale, behavior: "smooth" });
+    markRef.current.style.top = `${p.top * scale}px`;
+    markRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
@@ -185,7 +190,8 @@ export default function DocumentFrame({ load, reloadKey, onReady, overlay, hint,
           </div>
         )}
         {!error && (
-          <div style={{ width: size.width * scale, height: size.height * scale, visibility: html === null && !size.width ? "hidden" : "visible", opacity: html === null ? 0.4 : 1 }} className="mx-auto">
+          <div style={{ width: size.width * scale, height: size.height * scale, visibility: html === null && !size.width ? "hidden" : "visible", opacity: html === null ? 0.4 : 1 }} className="relative mx-auto">
+            <div ref={markRef} aria-hidden="true" className="pointer-events-none absolute left-0 h-px w-px" style={{ top: 0, scrollMarginTop: 56 }} />
             <div style={{ width: size.width, height: size.height, transform: `scale(${scale})`, transformOrigin: "0 0" }} className="relative bg-white shadow-md">
               <iframe
                 ref={frameRef}

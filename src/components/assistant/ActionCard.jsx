@@ -143,7 +143,7 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
           <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${badgeClass}`}>{label}</span>
           <span className="text-sm font-bold" dir="auto">{L(p, "title") || action.tool}</span>
         </div>
-        {p.summary && <p className="m-0 text-[13px] text-gray-600">{p.summary}</p>}
+        {p.summary && <p className="m-0 text-[13px] text-gray-600" dir="auto">{L(p, "summary") || p.summary}</p>}
         {(p.fields || []).length > 0 && (
           <dl className="m-0 grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 border-b border-gray-100 pb-2 text-[13px]" data-testid="action-fields">
             {p.fields.map((f) => (

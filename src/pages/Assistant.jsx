@@ -250,7 +250,9 @@ export default function Assistant() {
    */
   const send = (raw, { skipFailed = false, companyId = null, fromComposer = raw === undefined, unbound: sendUnbound = false } = {}) => {
     const body = String(raw ?? text).trim();
-    if (!body || busy) return;
+    // files alone can be sent (27 Nov QA): the server words such a message itself
+    const withFiles = files.length > 0;
+    if ((!body && !withFiles) || busy) return;
     if (uploading) {
       setHeld({ kind: "uploading", text: body, fromComposer });
       return;
@@ -263,6 +265,15 @@ export default function Assistant() {
     const unbound = ready.filter((a) => !a.companyId);
     const msgCompany = companyId || (isSystem ? scope : null);
     if (isSystem && unbound.length && (!msgCompany || msgCompany === "all") && !sendUnbound) {
+      // the message or the files name exactly one known company ("لـ ADDVET"): it is that one, no question (27 Nov QA)
+      const said = companies.filter((c) => normName(c.name).length >= 3 && normName(body).includes(normName(c.name)));
+      const guess = guessCompanyName(files.map((f) => f.name || f.attachment?.name), body);
+      const fromFiles = guess ? companies.filter((c) => normName(c.name) === normName(guess)) : [];
+      const sure = said.length === 1 ? said[0] : !said.length && fromFiles.length === 1 ? fromFiles[0] : null;
+      if (sure) {
+        sendForCompany(sure.id, { text: body, fromComposer, skipFailed });
+        return;
+      }
       setHeld({ kind: "company", text: body, fromComposer, skipFailed });
       return;
     }
@@ -274,13 +285,13 @@ export default function Assistant() {
     );
   };
   // "which company are these files for?" → bind them, switch the conversation to it, send
-  const sendForCompany = async (companyId) => {
+  const sendForCompany = async (companyId, payload = null) => {
     const ready = files.filter((f) => f.attachment).map((f) => f.attachment);
     try {
       const bound = await bindAttachments(conversation.id, ready.map((a) => a.id), companyId);
       setFiles((fs) => fs.map((f) => (f.attachment ? { ...f, attachment: bound.find((b) => b.id === f.attachment.id) || f.attachment } : f)));
       setScope(companyId);
-      const { text: body, fromComposer, skipFailed } = held || {};
+      const { text: body, fromComposer, skipFailed } = payload || held || {};
       setHeld(null);
       // the bound attachments are read from state on the next render
       setTimeout(() => sendRef.current?.(body, { companyId, fromComposer, skipFailed }), 0);
@@ -710,7 +721,7 @@ export default function Assistant() {
                     <Square className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <button type="submit" data-testid="assistant-send" aria-label="Send" disabled={!text.trim() || uploading} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                  <button type="submit" data-testid="assistant-send" aria-label="Send" disabled={(!text.trim() && !files.length) || uploading} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                   </button>
                 )}

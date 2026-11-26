@@ -91,6 +91,24 @@ export default function HarvestProgress({ batchId, initial, line = null, onDone 
         </ul>
       )}
       {!isRunning && h.review > 0 && <p className="text-amber-900">{h.review} قيمة المراجعة شكّت فيها — متحفظة «محتاجة مراجعة» ومش متملية.</p>}
+      {/* 27 Nov QA: the conflicts themselves, not only their count — each value with its file and page */}
+      {!isRunning && (h.summary?.conflictList || []).length > 0 && (
+        <details className="text-amber-950" data-testid="harvest-conflicts">
+          <summary className="cursor-pointer font-semibold">التعارضات ({h.summary.conflictList.length}) — ملف بيقول حاجة وملف تاني بيقول حاجة تانية</summary>
+          <ul className="mt-1 space-y-0.5">
+            {h.summary.conflictList.map((c, i) => (
+              <li key={i}>
+                <span className="font-semibold">{c.product}</span> · {c.fieldAr}:{" "}
+                {c.values.map((v, j) => (
+                  <span key={j} dir="auto">
+                    {j > 0 && " ↔ "}«{v.value}»{v.file ? ` (${v.file}${v.page ? ` ص${v.page}` : ""})` : ""}
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {!isRunning && failed.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-amber-900">
           <AlertTriangle className="h-3.5 w-3.5" />

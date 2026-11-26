@@ -4,6 +4,7 @@ import ValueOriginChip from "./ValueOriginChip";
 import GroupRowsEditor from "./GroupRowsEditor";
 import { sourceLabel } from "../../utils/certificateFieldSources";
 import { pick } from "../../i18n/lang";
+import { fieldLabelAr } from "../../utils/fieldLabelAr";
 
 // The editor's right panel (plan §13.6; mockup B5): one row per field — label,
 // source chip, value, flags and "reset to source". Typing only updates drafts;
@@ -55,7 +56,7 @@ export default function CertificateValuesForm({ fields, groups = [], values, dra
             <div key={f.key} className="px-4 py-3 space-y-1.5" data-field-row={f.key}>
               <div className="flex items-center justify-between gap-2">
                 <label htmlFor={`cv-${f.key}`} className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  {f.label}
+                  {fieldLabelAr(f.label)}
                   {dirty ? (
                     <span className="text-[11px] font-medium text-blue-600">{STR.unsaved}</span>
                   ) : v.origin === "manual" ? (
@@ -90,7 +91,7 @@ export default function CertificateValuesForm({ fields, groups = [], values, dra
                   className={`flex-1 border rounded-lg px-3 py-2 text-sm bg-white disabled:bg-gray-50 disabled:text-gray-700 ${red ? "border-red-400" : flags.length ? "border-amber-400" : "border-gray-300"}`}
                 />
                 {editable && !NO_RESET.has(f.source?.kind) && (
-                  <button type="button" title={STR.reset} aria-label={`${STR.reset}: ${f.label}`} onClick={() => onReset(f.key)} className="text-gray-400 hover:text-blue-600" data-reset={f.key}>
+                  <button type="button" title={STR.reset} aria-label={`${STR.reset}: ${fieldLabelAr(f.label)}`} onClick={() => onReset(f.key)} className="text-gray-400 hover:text-blue-600" data-reset={f.key}>
                     <RotateCcw className="w-4 h-4" />
                   </button>
                 )}

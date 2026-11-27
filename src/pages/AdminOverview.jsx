@@ -1,14 +1,16 @@
+// Admin → Overview (UI plan, Phase E): the numbers that were on the dashboard — users, companies, products,
+// AI tasks with the failed ones one click away. Revenue and subscriptions stay hidden until billing exists.
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getDashboardStats } from "../services/apiDashboard";
 import { 
-  Users, Building2, Package, CreditCard, AlertCircle, CheckCircle2, 
-  Activity, ArrowUpRight, DollarSign, ListTodo, Zap, Clock, Loader2, CheckCircle, AlertOctagon
+  Users, Building2, Package, AlertCircle, Zap, Clock, Loader2, CheckCircle, AlertOctagon
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { t } from "../i18n";
+import { fmtNum, t } from "../i18n";
 
-export default function Dashboard() {
+export default function AdminOverview() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,19 +66,15 @@ export default function Dashboard() {
       
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">{t("dashboard.dashboardOverview")}</h1>
-        <p className="text-gray-500 mt-1">{t("dashboard.welcomeBackHereIsWhats", { name: user?.name })}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t("placeholders.adminOverview")}</h1>
+        <p className="text-gray-500 mt-1">{t("adminOverview.subtitle")}</p>
       </div>
 
-      {/* UI plan, Phase E (27 Nov): the experiment switch moved to Admin → Experiment mode; uploading lives on
-          Uploads and in the chat; the flat "items need review" banner is replaced by the requests list */}
-
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title={t("dashboard.totalUsers")} value={data?.stats?.users} growth={data?.stats?.growth?.users} icon={Users} color="blue" />
-        <StatCard title={t("dashboard.companies")} value={data?.stats?.companies} growth={data?.stats?.growth?.companies} icon={Building2} color="indigo" />
-        <StatCard title={t("dashboard.products")} value={data?.stats?.products} growth={data?.stats?.growth?.products} icon={Package} color="emerald" />
-        <StatCard title={t("dashboard.monthlyRevenue")} value={`$${data?.stats?.totalMonthlyRevenue || 0}`} growth={data?.stats?.growth?.revenue} icon={DollarSign} color="amber" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard title={t("dashboard.totalUsers")} value={data?.stats?.users} icon={Users} color="blue" />
+        <StatCard title={t("dashboard.companies")} value={data?.stats?.companies} icon={Building2} color="indigo" />
+        <StatCard title={t("dashboard.products")} value={data?.stats?.products} icon={Package} color="emerald" />
       </div>
 
       {/* Secondary Stats & Tasks */}
@@ -95,7 +93,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex flex-col items-end">
-              <span className="text-2xl font-black text-gray-900">{data?.tasks?.total || 0}</span>
+              <span className="text-2xl font-black text-gray-900">{fmtNum(data?.tasks?.total || 0)}</span>
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t("dashboard.totalTasks")}</span>
             </div>
           </div>
@@ -124,19 +122,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* System Plans */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-indigo-500" />{t("dashboard.subscriptions")}</h2>
-          </div>
-          <div className="flex flex-col gap-4 justify-center items-center h-full pb-8">
-            <div className="w-24 h-24 rounded-full border-8 border-indigo-100 flex items-center justify-center relative">
-              <span className="text-3xl font-extrabold text-indigo-600">{data?.stats?.activeSubscriptions}</span>
-            </div>
-            <p className="text-gray-500 font-medium">{t("dashboard.activeSubscriptions")}</p>
-            <p className="text-sm text-gray-400">{t("dashboard.outOfAvailablePlans", { plans: data?.stats?.plans })}</p>
-          </div>
+        {/* failed tasks: listed with their reason on System health */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col gap-3">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <AlertOctagon className="w-5 h-5 text-red-500" aria-hidden="true" />
+            {t("adminOverview.failedTasks")}
+          </h2>
+          <p className="text-4xl font-extrabold text-red-600">{fmtNum(data?.tasks?.byStatus?.failed || 0)}</p>
+          <p className="text-sm text-gray-500">{t("adminOverview.failedHint")}</p>
+          <Link to="/admin/health" className="mt-auto self-start rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-800 hover:bg-gray-50">{t("adminOverview.seeFailed")}</Link>
+          <Link to="/admin/ai-usage" className="self-start text-sm font-medium text-blue-700 hover:underline">{t("adminOverview.aiCost")}</Link>
         </div>
       </div>
 
@@ -145,31 +140,19 @@ export default function Dashboard() {
 }
 
 // Subcomponents
-function StatCard({ title, value, growth = 0, icon: Icon, color }) {
+function StatCard({ title, value, icon: Icon, color }) {
   const colors = {
     blue: "bg-blue-50 text-blue-600",
     indigo: "bg-indigo-50 text-indigo-600",
     emerald: "bg-emerald-50 text-emerald-600",
-    amber: "bg-amber-50 text-amber-600",
   };
-
-  const isPositive = growth >= 0;
-  const growthColor = isPositive ? "text-emerald-500 bg-emerald-50" : "text-red-500 bg-red-50";
-
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-3 rounded-xl ${colors[color]}`}>
-          <Icon className="w-6 h-6" />
-        </div>
-        <span className={`text-xs font-semibold px-2 py-1 rounded-md flex items-center gap-1 ${growthColor}`}>
-          <ArrowUpRight className={`w-3 h-3 ${!isPositive && "rotate-90"}`} /> {isPositive ? "+" : ""}{growth}%
-        </span>
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
+      <div className={`mb-4 self-start p-3 rounded-xl ${colors[color]}`}>
+        <Icon className="w-6 h-6" aria-hidden="true" />
       </div>
-      <div>
-        <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-        <h3 className="text-2xl font-extrabold text-gray-900">{value || 0}</h3>
-      </div>
+      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+      <h3 className="text-2xl font-extrabold text-gray-900">{fmtNum(value || 0)}</h3>
     </div>
   );
 }
@@ -184,7 +167,7 @@ function TaskBox({ label, count, color, bg, icon: Icon, border }) {
         <div className={`w-8 h-8 rounded-full bg-white/60 flex items-center justify-center ${color} shadow-sm backdrop-blur-sm`}>
           {Icon && <Icon className="w-4 h-4" />}
         </div>
-        <span className={`text-3xl font-black ${color} tracking-tight`}>{count}</span>
+        <span className={`text-3xl font-black ${color} tracking-tight`}>{fmtNum(count)}</span>
         <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{label}</span>
       </div>
     </div>

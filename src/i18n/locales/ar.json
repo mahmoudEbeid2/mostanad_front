@@ -1472,10 +1472,6 @@
     "missingCount": "لسه ناقص {items} حاجة في {certificates} شهادة — رد في الشات تحت عشان تتملى.",
     "removedRows": "فيه تحاليل اتشالت من الشهادة دي — مفيش نتيجة لسه. ابعت النتايج في سطر وترجع."
   },
-  "expressToReviewTile": {
-    "expressRequestsItemsNeedReview": "الطلبات السريعة: {n} عنصر محتاج مراجعة",
-    "reviewThem": "راجعها"
-  },
   "harvestProgress": {
     "readingTheFilesThatWerent": "بنقرا الملفات اللي مااتقرتش تاني",
     "readingTheFiles": "بقرا الملفات… {done}/{total}",
@@ -1497,10 +1493,6 @@
     "conflictsBelow_other": "{count} تعارض — تحت",
     "noConflicts": "مفيش تعارضات",
     "batchMissing_other": "{count} خانة باتش ناقصة"
-  },
-  "intakeDropTile": {
-    "uploadYourFiles": "ارفع ملفاتك",
-    "dropAnyFilesOrA": "ارمي هنا أي ملفات أو فولدر — السيستم يعرف كل ملف إيه وتبع مين."
   },
   "intakeReview": {
     "label": "ليبل",
@@ -2859,28 +2851,6 @@
     "createCompany": "اعمل الشركة",
     "saveChanges": "احفظ التعديلات"
   },
-  "dashboard": {
-    "failedToLoadDashboardStatistics": "ماقدرناش نحمّل الإحصائيات",
-    "accessDenied": "مش مسموح",
-    "youDoNotHaveThe": "مالكش صلاحية تشوف الإحصائيات. كلّم مدير السيستم.",
-    "dashboardOverview": "نظرة عامة",
-    "welcomeBackHereIsWhats": "أهلًا {name}. ده اللي بيحصل النهارده.",
-    "totalUsers": "المستخدمين",
-    "companies": "الشركات",
-    "products": "المنتجات",
-    "monthlyRevenue": "الإيراد الشهري",
-    "aiTasksProcessing": "مهام الذكاء الاصطناعي",
-    "realTimeStatusOfBackground": "حالة المهام اللي شغّالة في الخلفية",
-    "totalTasks": "كل المهام",
-    "pending": "مستنية",
-    "processing": "شغّالة",
-    "completed": "خلصت",
-    "failed": "فشلت",
-    "overallCompletionRate": "نسبة الإنجاز",
-    "subscriptions": "الاشتراكات",
-    "activeSubscriptions": "الاشتراكات الشغّالة",
-    "outOfAvailablePlans": "من {plans} خطة متاحة"
-  },
   "edaRequirements": {
     "failedToFetchEdaRequirements": "ماقدرناش نجيب متطلبات EDA",
     "pleaseUploadADocument": "ارفع مستند.",
@@ -4122,5 +4092,100 @@
     "healthHint": "العمليات والطوابير وقراية الملفات — المهام الفاشلة بسببها وزرار إعادة المحاولة.",
     "conflicts": "التعارضات",
     "conflictsHint": "لما ملفين يختلفوا على قيمة في منتج: القيمتين ومصدرهم، واختار واحدة."
+  },
+  "home": {
+    "title": "أهلًا {name}",
+    "subtitle": "طلباتك: إيه اللي مستنيك، إيه اللي شغّال، وإيه اللي جاهز.",
+    "shortcuts": "اختصارات",
+    "newRequest": "طلب جديد",
+    "newRequestHint": "الصق المنتجات اللي العميل طلبها",
+    "askAssistant": "اسأل المساعد",
+    "askAssistantHint": "ارمي ملفات أو اسأل بأي لغة",
+    "uploadFiles": "ارفع ملفات",
+    "uploadFilesHint": "فواتير، شهادات، ليبلات، كتالوجات",
+    "pickCompany": "اختار شركة عشان تشوف طلباتها.",
+    "loading": "بنحمّل",
+    "loadFailed": "ماقدرناش نحمّل طلباتك: {message}",
+    "retry": "حاول تاني",
+    "waiting": "مستنيك",
+    "nothingWaiting": "مفيش حاجة مستنياك. 🎉",
+    "inProgress": "طلبات شغّالة",
+    "allRequests": "كل الطلبات ←",
+    "lastUpdate": "آخر تحديث",
+    "noneInProgress": "مفيش طلب شغّال.",
+    "finished": "خلصت قريب",
+    "noneFinished": "مفيش طلب خلص لسه.",
+    "combinedPdf": "PDF واحد",
+    "open": "افتح",
+    "action": {
+      "product": "اختار المنتجات",
+      "failed": "شوف اللي فشل",
+      "template": "ظبّط القالب",
+      "lab": "زوّد نتايج المعمل",
+      "value": "املى القيم الناقصة",
+      "composition": "كمّل التركيبة",
+      "layout": "صلّح التصميم",
+      "generate": "طلّع الشهادات",
+      "review": "راجع واعتمد",
+      "other": "افتح الطلب"
+    }
+  },
+  "requestNeeds": {
+    "code": {
+      "lab_report": "نتايج المعمل ناقصة",
+      "composition": "التركيبة ناقصة في المنتج",
+      "layout": "كلام أطول من مكانه في التصميم",
+      "failed": "فشلت وهي بتتعمل",
+      "no_type": "الشركة مفيهاش النوع ده",
+      "no_template": "مفيش قالب شغّال للنوع ده",
+      "not_ready": "القالب فيه أماكن متغيرة مش متحددة",
+      "unmatched": "اختار المنتج الأول",
+      "not_generated": "لسه متعملتش — دوس «طلّع الشهادات»",
+      "new_pack": "العبوة دي مش موجودة — أضفها كعبوة جديدة لنفس المنتج",
+      "value": "ناقص",
+      "valueOf": "ناقص: {label}",
+      "templateNotReady": "قالب الـ {type} لسه مش جاهز — متعملتش {type}"
+    },
+    "group": {
+      "product_other": "{count} سطر محتاج تختار المنتج بتاعه",
+      "failed_other": "{count} شهادة {type} فشلت",
+      "template_other": "{type}: القالب مش جاهز",
+      "lab_other": "{count} شهادة {type} محتاجة نتايج معمل",
+      "value_other": "{count} شهادة {type} محتاجة {label}",
+      "composition_other": "{count} شهادة {type} محتاجة تركيبة المنتج",
+      "layout_other": "{count} شهادة {type}: الكلام مش راكب في التصميم",
+      "generate_other": "{count} شهادة {type} لسه متعملتش",
+      "review_other": "{count} شهادة {type} جاهزة لمراجعتك",
+      "other_other": "{type}: {label}"
+    }
+  },
+  "adminOverview": {
+    "subtitle": "المستخدمين والشركات والمنتجات وشغل الذكاء الاصطناعي في الخلفية.",
+    "failedTasks": "مهام فشلت",
+    "failedHint": "مهام في الخلفية وقفت بخطأ.",
+    "seeFailed": "شوفها في صحة السيستم",
+    "aiCost": "استخدام وتكلفة الذكاء الاصطناعي ←"
+  },
+  "dashboard": {
+    "failedToLoadDashboardStatistics": "ماقدرناش نحمّل الإحصائيات",
+    "accessDenied": "مش مسموح",
+    "youDoNotHaveThe": "مالكش صلاحية تشوف الإحصائيات. كلّم مدير السيستم.",
+    "dashboardOverview": "نظرة عامة",
+    "welcomeBackHereIsWhats": "أهلًا {name}. ده اللي بيحصل النهارده.",
+    "totalUsers": "المستخدمين",
+    "companies": "الشركات",
+    "products": "المنتجات",
+    "monthlyRevenue": "الإيراد الشهري",
+    "aiTasksProcessing": "مهام الذكاء الاصطناعي",
+    "realTimeStatusOfBackground": "حالة المهام اللي شغّالة في الخلفية",
+    "totalTasks": "كل المهام",
+    "pending": "مستنية",
+    "processing": "شغّالة",
+    "completed": "خلصت",
+    "failed": "فشلت",
+    "overallCompletionRate": "نسبة الإنجاز",
+    "subscriptions": "الاشتراكات",
+    "activeSubscriptions": "الاشتراكات الشغّالة",
+    "outOfAvailablePlans": "من {plans} خطة متاحة"
   }
 }

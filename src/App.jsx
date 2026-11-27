@@ -3,7 +3,8 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
 
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
+import AdminOverview from "./pages/AdminOverview";
 import Assistant from "./pages/Assistant";
 import Intake from "./pages/Intake";
 import Roles from "./pages/Roles";
@@ -44,7 +45,7 @@ import RequirePermission from "./ui/RequirePermission";
 import CertificateRequest from "./pages/CertificateRequest";
 import CertificateRequests from "./pages/CertificateRequests";
 import AdminExperiment from "./pages/AdminExperiment";
-import { AdminOverview, AdminAiUsage, AdminHealth, ProductConflicts } from "./pages/Placeholders";
+import { AdminAiUsage, AdminHealth, ProductConflicts } from "./pages/Placeholders";
 
 function App() {
   return (
@@ -65,7 +66,7 @@ function App() {
             {/* "ارفع ملفاتك": drop any files, recognised and filed on one card */}
             <Route path="/intake" element={<RequirePermission permission="read_products"><Intake /></RequirePermission>} />
             <Route path="/intake/:batchId" element={<RequirePermission permission="read_products"><Intake /></RequirePermission>} />
-            <Route path="/dashboard" element={<RequirePermission permission="read_dashboard"><Dashboard /></RequirePermission>} />
+            <Route path="/dashboard" element={<Home />} />
             <Route path="/roles" element={<Navigate to="/admin/roles" replace />} />
             <Route path="/categories" element={<RequirePermission permission="read_categories"><Categories /></RequirePermission>} />
             <Route path="/products" element={<RequirePermission permission="read_products"><Products /></RequirePermission>} />

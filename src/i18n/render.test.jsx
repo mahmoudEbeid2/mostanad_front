@@ -60,7 +60,7 @@ class Boundary extends Component {
 
 // screens: [route path, module, route pattern]
 const SCREENS = [
-  ["/dashboard", "../pages/Dashboard", "/dashboard"],
+  ["/dashboard", "../pages/Home", "/dashboard"],
   ["/intake", "../pages/Intake", "/intake"],
   ["/certificates/requests", "../pages/CertificateRequests", "/certificates/requests"],
   ["/certificates/requests/new", "../pages/CertificateRequest", "/certificates/requests/new"],
@@ -80,7 +80,7 @@ const SCREENS = [
   ["/admin/experiment", "../pages/AdminExperiment", "/admin/experiment"],
   ["/certificate-ai", "../pages/CertificateAi", "/certificate-ai"],
   ["/express/items", "../pages/ExpressReview", "/express/items"],
-  ["/admin", "../pages/Placeholders", "/admin"],
+  ["/admin", "../pages/AdminOverview", "/admin"],
   ["/catalogues", "../pages/Catalogues", "/catalogues"],
   ["/reference-labels", "../pages/ReferenceLabels", "/reference-labels"],
 ];

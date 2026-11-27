@@ -1507,10 +1507,6 @@
     "missingCount": "{items} items are still missing on {certificates} certificates — reply in the chat below to fill them.",
     "removedRows": "Some tests were taken off this certificate — no result yet. Send the results in one line and they come back."
   },
-  "expressToReviewTile": {
-    "expressRequestsItemsNeedReview": "Express requests: {n} items need review",
-    "reviewThem": "Review them"
-  },
   "harvestProgress": {
     "readingTheFilesThatWerent": "Reading the files that weren't read again",
     "readingTheFiles": "Reading the files… {done}/{total}",
@@ -1536,10 +1532,6 @@
     "noConflicts": "no conflicts",
     "batchMissing_one": "{count} batch field missing",
     "batchMissing_other": "{count} batch fields missing"
-  },
-  "intakeDropTile": {
-    "uploadYourFiles": "Upload your files",
-    "dropAnyFilesOrA": "Drop any files or a folder here — the system works out what each file is and whose it is."
   },
   "intakeReview": {
     "label": "Label",
@@ -2920,28 +2912,6 @@
     "createCompany": "Create Company",
     "saveChanges": "Save Changes"
   },
-  "dashboard": {
-    "failedToLoadDashboardStatistics": "Failed to load dashboard statistics",
-    "accessDenied": "Access Denied",
-    "youDoNotHaveThe": "You do not have the required permissions to view the dashboard statistics. Please contact your system administrator.",
-    "dashboardOverview": "Dashboard Overview",
-    "welcomeBackHereIsWhats": "Welcome back, {name}. Here is what's happening today.",
-    "totalUsers": "Total Users",
-    "companies": "Companies",
-    "products": "Products",
-    "monthlyRevenue": "Monthly Revenue",
-    "aiTasksProcessing": "AI Tasks Processing",
-    "realTimeStatusOfBackground": "Real-time status of background AI jobs",
-    "totalTasks": "Total Tasks",
-    "pending": "Pending",
-    "processing": "Processing",
-    "completed": "Completed",
-    "failed": "Failed",
-    "overallCompletionRate": "Overall Completion Rate",
-    "subscriptions": "Subscriptions",
-    "activeSubscriptions": "Active Subscriptions",
-    "outOfAvailablePlans": "Out of {plans} available plans"
-  },
   "edaRequirements": {
     "failedToFetchEdaRequirements": "Failed to fetch EDA Requirements",
     "pleaseUploadADocument": "Please upload a document.",
@@ -4198,5 +4168,110 @@
     "healthHint": "Workers, queues and file reading — failed tasks with their reason and a retry.",
     "conflicts": "Conflicts",
     "conflictsHint": "Where two files disagree on a product's value: both values, both sources, pick one."
+  },
+  "home": {
+    "title": "Welcome, {name}",
+    "subtitle": "Your requests: what's waiting for you, what's in progress, what's ready.",
+    "shortcuts": "Shortcuts",
+    "newRequest": "New request",
+    "newRequestHint": "Paste the products the customer asked for",
+    "askAssistant": "Ask the assistant",
+    "askAssistantHint": "Drop files or ask in any language",
+    "uploadFiles": "Upload files",
+    "uploadFilesHint": "Invoices, certificates, labels, catalogues",
+    "pickCompany": "Pick a company to see its requests.",
+    "loading": "Loading",
+    "loadFailed": "Couldn't load your requests: {message}",
+    "retry": "Try again",
+    "waiting": "Waiting for you",
+    "nothingWaiting": "Nothing is waiting for you. 🎉",
+    "inProgress": "Requests in progress",
+    "allRequests": "All requests →",
+    "lastUpdate": "Last update",
+    "noneInProgress": "No request in progress.",
+    "finished": "Recently finished",
+    "noneFinished": "No finished request yet.",
+    "combinedPdf": "Combined PDF",
+    "open": "Open",
+    "action": {
+      "product": "Pick the products",
+      "failed": "See what failed",
+      "template": "Set up the template",
+      "lab": "Add lab results",
+      "value": "Fill in the missing values",
+      "composition": "Complete the composition",
+      "layout": "Fix the layout",
+      "generate": "Make the certificates",
+      "review": "Review and approve",
+      "other": "Open the request"
+    }
+  },
+  "requestNeeds": {
+    "code": {
+      "lab_report": "Lab results missing",
+      "composition": "The product's composition is missing",
+      "layout": "Text longer than its place on the design",
+      "failed": "Failed while being made",
+      "no_type": "The company has no such certificate type",
+      "no_template": "No active template for this type",
+      "not_ready": "The template has unmarked variable places",
+      "unmatched": "Pick the product first",
+      "not_generated": "Not made yet — press «Make the certificates»",
+      "new_pack": "This pack doesn't exist — add it as a new pack of the same product",
+      "value": "Missing",
+      "valueOf": "Missing: {label}",
+      "templateNotReady": "The {type} template isn't ready yet — no {type} was made"
+    },
+    "group": {
+      "product_one": "{count} line needs its product picked",
+      "product_other": "{count} lines need their product picked",
+      "failed_one": "{count} {type} failed",
+      "failed_other": "{count} {type} certificates failed",
+      "template_one": "{type}: the template isn't ready",
+      "template_other": "{type}: the template isn't ready ({count} lines)",
+      "lab_one": "{count} {type} needs lab results",
+      "lab_other": "{count} {type} certificates need lab results",
+      "value_one": "{type} needs {label}",
+      "value_other": "{count} {type} certificates need {label}",
+      "composition_one": "{type} needs the product's composition",
+      "composition_other": "{count} {type} certificates need the product's composition",
+      "layout_one": "{type}: text doesn't fit the design",
+      "layout_other": "{count} {type} certificates: text doesn't fit the design",
+      "generate_one": "{type} not made yet",
+      "generate_other": "{count} {type} certificates not made yet",
+      "review_one": "{count} {type} ready for your review",
+      "review_other": "{count} {type} certificates ready for your review",
+      "other_one": "{type}: {label}",
+      "other_other": "{type}: {label} ({count})"
+    }
+  },
+  "adminOverview": {
+    "subtitle": "Users, companies, products and the AI work in the background.",
+    "failedTasks": "Failed tasks",
+    "failedHint": "Background tasks that stopped with an error.",
+    "seeFailed": "See them on System health",
+    "aiCost": "AI usage & cost →"
+  },
+  "dashboard": {
+    "failedToLoadDashboardStatistics": "Failed to load dashboard statistics",
+    "accessDenied": "Access Denied",
+    "youDoNotHaveThe": "You do not have the required permissions to view the dashboard statistics. Please contact your system administrator.",
+    "dashboardOverview": "Dashboard Overview",
+    "welcomeBackHereIsWhats": "Welcome back, {name}. Here is what's happening today.",
+    "totalUsers": "Total Users",
+    "companies": "Companies",
+    "products": "Products",
+    "monthlyRevenue": "Monthly Revenue",
+    "aiTasksProcessing": "AI Tasks Processing",
+    "realTimeStatusOfBackground": "Real-time status of background AI jobs",
+    "totalTasks": "Total Tasks",
+    "pending": "Pending",
+    "processing": "Processing",
+    "completed": "Completed",
+    "failed": "Failed",
+    "overallCompletionRate": "Overall Completion Rate",
+    "subscriptions": "Subscriptions",
+    "activeSubscriptions": "Active Subscriptions",
+    "outOfAvailablePlans": "Out of {plans} available plans"
   }
 }

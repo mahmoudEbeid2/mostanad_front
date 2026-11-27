@@ -12,7 +12,7 @@ import { LANG, setLang, t } from "../i18n";
 
 // labels: sidebar.nav.<group> and sidebar.nav.<group>_.<link>; `match` = path prefixes that keep a group open
 export const NAV = [
-  { key: "home", path: "/dashboard", icon: Home, permission: "read_dashboard" },
+  { key: "home", path: "/dashboard", icon: Home },
   {
     key: "certificates",
     icon: Sparkles,

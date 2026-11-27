@@ -3,8 +3,7 @@
 import ComingSoon from "../ui/ComingSoon";
 import { t } from "../i18n";
 
-export const AdminOverview = () => <ComingSoon title={t("placeholders.adminOverview")} subtitle={t("placeholders.adminOverviewHint")} />;
 export const AdminAiUsage = () => <ComingSoon title={t("placeholders.aiUsage")} subtitle={t("placeholders.aiUsageHint")} />;
 export const AdminHealth = () => <ComingSoon title={t("placeholders.health")} subtitle={t("placeholders.healthHint")} />;
 export const ProductConflicts = () => <ComingSoon title={t("placeholders.conflicts")} subtitle={t("placeholders.conflictsHint")} />;
-export default AdminOverview;
+export default AdminAiUsage;

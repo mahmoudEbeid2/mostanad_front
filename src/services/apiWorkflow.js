@@ -11,7 +11,7 @@ export const getCertificateRequest = (scope = {}, id) => unwrap(apiClient.get(`/
 export const resolveRequestLine = (scope = {}, id, lineId, productId) => unwrap(apiClient.patch(`/certificate-requests/${id}/lines/${lineId}`, { productId }, { params: scope }), t("errors.failedToSaveTheProduct")).then((d) => d.data);
 export const generateRequest = (scope = {}, id) => unwrap(apiClient.post(`/certificate-requests/${id}/generate`, {}, { params: scope }), t("errors.failedToStart")).then((d) => d.data);
 
-export const reviewCertificate = (scope = {}, id, body) => unwrap(apiClient.post(`/certificates/${id}/review`, body, { params: scope }), "Failed").then((d) => d.data.certificate);
+export const reviewCertificate = (scope = {}, id, body) => unwrap(apiClient.post(`/certificates/${id}/review`, body, { params: scope }), t("errors.failedToSave")).then((d) => d.data.certificate);
 export const getReviewChecks = (scope = {}, id) => unwrap(apiClient.get(`/certificates/${id}/review-checks`, { params: scope }), t("errors.failedToLoadTheChecks")).then((d) => d.data);
 export const reviseCertificate = (scope = {}, id) => unwrap(apiClient.post(`/certificates/${id}/revise`, {}, { params: scope }), t("errors.failedToMakeARevision")).then((d) => d.data.certificate);
 export const getCertificateChanges = (scope = {}, id) => unwrap(apiClient.get(`/certificates/${id}/changes`, { params: scope }), t("errors.failedToLoadTheChanges")).then((d) => d.data);

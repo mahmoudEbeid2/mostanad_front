@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useState } from "react";
 import { CheckCircle2, Download, FileText, Loader2, AlertTriangle, Files, Wrench, XCircle, ClipboardList, Sparkles, MessageSquareText } from "lucide-react";
-import { makeExpressTemplates } from "../../services/apiIntake";
+import { makeExpressTemplates, expressNewRequest } from "../../services/apiIntake";
 import { acceptAllEstimates } from "../../services/apiWorkflow";
 import { downloadCertificatePdf, downloadBatchZip, downloadBatchPdf } from "../../services/apiCertificatesV2";
 import { tr } from "../../i18n/lang";
@@ -48,6 +48,28 @@ const fieldAr = (k) => ({ batch_no: "رقم التشغيلة", batchNo: "رقم 
 // what each step really produced: never a green check for a step that made nothing (26 Nov)
 const STEP_STYLE = { ok: "border-green-200 bg-green-50 text-green-900", warn: "border-amber-200 bg-amber-50 text-amber-900", fail: "border-red-200 bg-red-50 text-red-900" };
 const STEP_ICON = { ok: CheckCircle2, warn: AlertTriangle, fail: XCircle };
+
+// QA 27 Nov (re-test): the same files dropped again reuse the earlier request; «طلب جديد» makes a separate one
+function NewRequestButton({ batchId, onChanged }) {
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    setBusy(true);
+    try {
+      await expressNewRequest(batchId);
+      toast.success(tr("بنعمل طلب جديد بالملفات دي", "Making a new request from these files"));
+      onChanged?.();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button type="button" onClick={go} disabled={busy} className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-50" data-testid="express-new-request">
+      {busy ? "…" : tr("طلب جديد", "New request")}
+    </button>
+  );
+}
 
 function Steps({ ex, batchId, onChanged }) {
   const [busy, setBusy] = useState(false);
@@ -147,9 +169,12 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
         </p>
       )}
       {done && ex.request && (
-        <Link to={ex.request.link} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 ring-1 ring-blue-200 hover:bg-blue-50" data-testid="express-request">
-          <ClipboardList className="h-4 w-4" /> {ex.request.added ? "اتضافت لطلب الشهادات — افتحه" : "افتح طلب الشهادات"}
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to={ex.request.link} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 ring-1 ring-blue-200 hover:bg-blue-50" data-testid="express-request">
+            <ClipboardList className="h-4 w-4" /> {ex.request.sameFiles ? tr("نفس الملفات اتبعتت قبل كده — استخدمنا نفس الطلب، افتحه", "The same files were sent before — the same request was used, open it") : ex.request.added ? tr("اتضافت لطلب الشهادات — افتحه", "Added to the certificate request — open it") : tr("افتح طلب الشهادات", "Open the certificate request")}
+          </Link>
+          {ex.request.sameFiles && <NewRequestButton batchId={batchId} onChanged={onChanged} />}
+        </div>
       )}
       {done && ex.summary && (
         <p className={`text-sm font-semibold ${ex.summary.ok ? "text-green-900" : "text-red-800"}`} data-testid="express-summary">

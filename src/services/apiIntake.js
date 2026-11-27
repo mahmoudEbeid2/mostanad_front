@@ -90,6 +90,8 @@ export const getExpressToReview = () => data(apiClient.get("/intake/express"));
 export const markExpressReviewed = (ids) => data(apiClient.post("/intake/express/reviewed", { ids }));
 /** "اعمل قوالب من الملفات دي": the drop's certificate files become templates, Express runs again → { made, restarted } */
 export const makeExpressTemplates = (batchId) => data(apiClient.post(`/intake/batches/${batchId}/express/templates-from-files`));
+// a drop that reused an earlier request (the same files): make its drafts on a new request instead
+export const expressNewRequest = (batchId) => data(apiClient.post(`/intake/batches/${batchId}/express/new-request`));
 
 // 28 Nov — the drop's AI read of every file: its progress as Server-Sent Events ("بقرا الملفات… 8/14"),
 // falling back to one JSON read when the stream can't open. onProgress(view) on every move; resolves with the last.

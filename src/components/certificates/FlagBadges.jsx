@@ -18,6 +18,8 @@ const FLAGS = {
   out_of_spec: { tone: "red", text: t("flagBadges.outsideItsSpecificationFinalizingNeeds") },
   // QA 27 Nov (re-test): a draft holds no certificate number — it is given when the certificate is finalized
   number_on_finalize: { tone: "gray", code: "number", text: t("flagBadges.givenOnFinalize") },
+  // 28 Nov (owner), COA: a result / batch size nobody gave — its cell is printed empty; never blocks finalize
+  no_result: { tone: "amber", code: "empty", text: t("flagBadges.noResult") },
   // informational, never blocks finalize: an optional value nothing could fill
   empty_optional: { tone: "gray", text: t("flagBadges.optionalValueIsEmpty") },
   // informational, never blocks finalize: the design's font couldn't be read, so a missing character can't be detected

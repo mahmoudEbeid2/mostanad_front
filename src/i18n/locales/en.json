@@ -553,7 +553,7 @@
     "invoice": "Invoice",
     "aSampleFromExperimentMode": "A sample from experiment mode — «SAMPLE – NOT VALID» on every page. It can't be approved or exported as a valid certificate; make it again with the mode off.",
     "certificate": "Certificate",
-    "removedRows": "Taken off the certificate: {list} — no result. Send the result in one line and it comes back"
+    "emptyResults": "Results missing: {list} — send them in one line to fill them"
   },
   "certificateRequests": {
     "title": "Requests",
@@ -1067,6 +1067,7 @@
     "estimatedConfirmItInThe": "Estimated — confirm it in the data check before finalizing",
     "outsideItsSpecificationFinalizingNeeds": "Outside its specification — finalizing needs a comment",
     "givenOnFinalize": "Given on finalize",
+    "noResult": "Result missing — printed as an empty cell. Send it in one line to fill it (doesn’t block finalize)",
     "optionalValueIsEmpty": "Optional value is empty",
     "fontCouldntBeCheckedLook": "Font couldn't be checked — look at the preview for missing characters",
     "theProductHasIngredientsAnd": "The product has {have} ingredients and the template {rows} rows — enlarge the table",
@@ -1530,7 +1531,7 @@
     },
     "missingResults": "Missing results: {list} — send them in one line and they're filled",
     "missingCount": "{items} items are still missing on {certificates} certificates — reply in the chat below to fill them.",
-    "removedRows": "Some tests were taken off this certificate — no result yet. Send the results in one line and they come back."
+    "emptyResults": "Some results are missing — their cells are printed empty. Send them in one line to fill them."
   },
   "harvestProgress": {
     "readingTheFilesThatWerent": "Reading the files that weren't read again",

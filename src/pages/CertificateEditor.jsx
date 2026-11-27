@@ -44,14 +44,15 @@ const STR = {
   saved: (d) => t("certificateEditor.saved", { time: fmtTime(d) }),
 };
 
-// 28 Nov (owner), COA: a test with no result is taken off the certificate — said in one line; it comes back
-// once its result is given (a test the product type doesn't have isn't listed: no result brings it back)
-function removedLine(values, fields) {
+// 28 Nov (owner), COA: a result / batch size nobody gave stays an EMPTY cell on the certificate (the design
+// untouched) — said in one line, outlined on the preview; never blocks finalize
+const NO_RESULT = "no_result";
+function emptyResultsLine(values, fields) {
   const label = new Map((fields || []).map((f) => [f.key, f.label]));
   const names = Object.entries(values || {})
-    .filter(([, v]) => (v?.flags || []).includes("row_removed") && !v.removedWith && v.provenance?.rule !== "not_applicable_oral")
+    .filter(([, v]) => (v?.flags || []).includes(NO_RESULT))
     .map(([k]) => String(label.get(k) || k).replace(/\s*(result|النتيجة|نتيجة)\s*$/i, "").trim());
-  return names.length ? t("certificateEditor.removedRows", { list: [...new Set(names)].join(t("common.listSep")) }) : null;
+  return names.length ? t("certificateEditor.emptyResults", { list: [...new Set(names)].join(t("common.listSep")) }) : null;
 }
 
 export default function CertificateEditor() {
@@ -313,9 +314,9 @@ export default function CertificateEditor() {
       {["draft", "final"].includes(cert.status) && canEdit && <ReviewBar scope={scope} cert={cert} fields={fields} onChanged={load} />}
       {/* an experiment sample's AI values are test data — never accepted (QA 28 Nov) */}
       {cert.status === "draft" && canEdit && !cert.isExperimentSample && <EstimatesBar scope={scope} values={cert.values} certificateIds={[cert.id]} onAccepted={load} />}
-      {removedLine(cert.values, fields) && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-900" data-testid="removed-rows">
-          {removedLine(cert.values, fields)}
+      {emptyResultsLine(cert.values, fields) && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-900" data-testid="empty-results">
+          {emptyResultsLine(cert.values, fields)}
         </p>
       )}
 
@@ -373,6 +374,15 @@ export default function CertificateEditor() {
                 docRef.current = doc;
                 if (viewing === null) Object.entries(draftsRef.current).forEach(([k, v]) => paint(k, v));
                 // what still blocks finalize, outlined on the certificate itself (an empty field gets a visible box)
+                // a COA's empty result (never blocking): a dashed amber box on the preview only — the stored certificate is untouched
+                for (const [k, v] of Object.entries(cert.values || {})) {
+                  if (!(v?.flags || []).includes(NO_RESULT)) continue;
+                  doc.querySelectorAll(`[data-field="${CSS.escape(k)}"]`).forEach((el) => {
+                    el.style.outline = "2px dashed #d97706";
+                    el.style.background = "rgba(217,119,6,0.10)";
+                    if (!el.textContent.trim()) Object.assign(el.style, { display: "inline-block", minWidth: "48px", minHeight: "1em" });
+                  });
+                }
                 for (const [k, f] of Object.entries(cert.flags || {})) {
                   if (!f.some((x) => ["missing", "overflow", "missing_span", "sample_value", "unconfirmed"].includes(x) || x.startsWith("glyph:"))) continue;
                   doc.querySelectorAll(`[data-field="${CSS.escape(k)}"]`).forEach((el) => {

@@ -543,7 +543,7 @@
     "invoice": "فاتورة",
     "aSampleFromExperimentMode": "عينة من وضع التجربة — «SAMPLE – NOT VALID» على كل صفحة. مينفعش تتعتمد ولا تتصدّر كشهادة صالحة؛ طلّعها تاني والوضع مقفول.",
     "certificate": "الشهادة",
-    "removedRows": "اتشال من الشهادة: {list} — مفيش نتيجة. ابعت النتيجة في سطر وترجع"
+    "emptyResults": "نتايج ناقصة: {list} — ابعتها في سطر وتتملى"
   },
   "certificateRequests": {
     "title": "الطلبات",
@@ -1051,6 +1051,7 @@
     "estimatedConfirmItInThe": "تقدير — أكّده في مراجعة البيانات قبل الاعتماد",
     "outsideItsSpecificationFinalizingNeeds": "النتيجة برّا المواصفة — الاعتماد محتاج تعليق يشرح السبب",
     "givenOnFinalize": "سيُعطى عند الاعتماد",
+    "noResult": "نتيجة ناقصة — الخانة هتطلع فاضية على الشهادة. ابعتها في سطر وتتملى (مبتمنعش الاعتماد)",
     "optionalValueIsEmpty": "قيمة اختيارية فاضية",
     "fontCouldntBeCheckedLook": "الخط ماتراجعش — بص على المعاينة لو فيه حروف ناقصة",
     "theProductHasIngredientsAnd": "المنتج فيه {have} مكوّن والقالب فيه {rows} سطر — كبّر الجدول في القالب",
@@ -1495,7 +1496,7 @@
     },
     "missingResults": "نتايج ناقصة: {list} — ابعتها في سطر وتتملى",
     "missingCount": "لسه ناقص {items} حاجة في {certificates} شهادة — رد في الشات تحت عشان تتملى.",
-    "removedRows": "فيه تحاليل اتشالت من الشهادة دي — مفيش نتيجة لسه. ابعت النتايج في سطر وترجع."
+    "emptyResults": "فيه نتايج ناقصة — خاناتها هتطلع فاضية. ابعتها في سطر وتتملى."
   },
   "harvestProgress": {
     "readingTheFilesThatWerent": "بنقرا الملفات اللي مااتقرتش تاني",

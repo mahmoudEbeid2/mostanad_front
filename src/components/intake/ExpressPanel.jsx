@@ -176,7 +176,14 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
       )}
       {done && ex.summary && (
         <p className={`text-sm font-semibold ${ex.summary.ok ? "text-green-900" : "text-red-800"}`} data-testid="express-summary">
-          {pickText(ex.summary)}
+          {/* the same files again: the earlier request was reused — its link (28 Nov) */}
+          {ex.summary.link ? (
+            <Link to={ex.summary.link} className="hover:underline">
+              {pickText(ex.summary)}
+            </Link>
+          ) : (
+            pickText(ex.summary)
+          )}
         </p>
       )}
       {done && ex.steps?.length ? <Steps ex={ex} batchId={batchId} onChanged={onChanged} /> : null}
@@ -221,9 +228,9 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
                 ) : (
                   <>
                     {c.blanks?.length > 0 && <span className="text-amber-800">{t("expressPanel.missing")}{" "}{c.blanks.map(fieldAr).join(t("common.listSep"))}</span>}
-                    {c.removedAr && (
-                      <span className="basis-full text-amber-800" data-testid="express-removed">
-                        {isAr ? c.removedAr : t("expressPanel.removedRows")}
+                    {c.emptyResultsAr && (
+                      <span className="basis-full text-amber-800" data-testid="express-empty-results">
+                        {isAr ? c.emptyResultsAr : t("expressPanel.emptyResults")}
                       </span>
                     )}
                     <Link to={`/certificates/${c.id}`} className="text-blue-700 hover:underline">{t("expressPanel.open")}</Link>

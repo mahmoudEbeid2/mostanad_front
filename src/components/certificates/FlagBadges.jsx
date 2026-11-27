@@ -16,6 +16,8 @@ const FLAGS = {
   unconfirmed: { tone: "amber", text: tr("تقدير — أكّده في مراجعة البيانات قبل الاعتماد", "Estimated — confirm it in the data check before finalizing") },
   // 27 Nov QA: a lab result outside its specification — finalize needs a comment saying why
   out_of_spec: { tone: "red", text: tr("النتيجة برّا المواصفة — الاعتماد محتاج تعليق يشرح السبب", "Outside its specification — finalizing needs a comment") },
+  // QA 27 Nov (re-test): a draft holds no certificate number — it is given when the certificate is finalized
+  number_on_finalize: { tone: "gray", code: "number", text: tr("سيُعطى عند الاعتماد", "Given on finalize") },
   // informational, never blocks finalize: an optional value nothing could fill
   empty_optional: { tone: "gray", text: tr("قيمة اختيارية فاضية", "Optional value is empty") },
   // informational, never blocks finalize: the design's font couldn't be read, so a missing character can't be detected

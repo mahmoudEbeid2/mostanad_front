@@ -1066,6 +1066,8 @@
     "estimatedCheckItOrAccept": "Estimated — check it, or accept all estimates",
     "estimatedConfirmItInThe": "Estimated — confirm it in the data check before finalizing",
     "outsideItsSpecificationFinalizingNeeds": "Outside its specification — finalizing needs a comment",
+    "tableFull": "{have} rows and the template’s table has {rows} — it can’t grow without breaking the page. Split them over two certificates",
+    "tableFullShort": "The table is full",
     "givenOnFinalize": "Given on finalize",
     "noResult": "Result missing — printed as an empty cell. Send it in one line to fill it (doesn’t block finalize)",
     "optionalValueIsEmpty": "Optional value is empty",

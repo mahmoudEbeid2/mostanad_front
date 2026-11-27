@@ -48,6 +48,11 @@ function describeFlag(flag, fonts) {
     const [have, rows] = flag.split(":")[1]?.split("/") || [];
     return { tone: "red", code: "rows", text: have ? t("flagBadges.theProductHasIngredientsAnd", { have, rows }) : t("flagBadges.moreIngredientsThanTheTemplates") };
   }
+  // 28 Nov: more rows than the design’s table, and growing it would break the page below (blocked)
+  if (flag.startsWith("table_full")) {
+    const [have, rows] = flag.split(":")[1]?.split("/") || [];
+    return { tone: "red", code: "table", text: have ? t("flagBadges.tableFull", { have, rows }) : t("flagBadges.tableFullShort") };
+  }
   if (flag.startsWith("glyph:")) return { tone: "red", code: "glyph", text: t("flagBadges.characterNotInAnyAvailable", { join: Array.from(flag.slice(6)).join(", ") }) };
   return FLAGS[flag] || { tone: "amber", text: flag };
 }

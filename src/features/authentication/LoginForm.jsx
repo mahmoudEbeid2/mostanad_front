@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import FormRow from "../../ui/FormRow";
+import { t } from "../../i18n";
 
 export default function LoginForm() {
   const [identifier, setIdentifier] = useState("");
@@ -19,7 +20,7 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!identifier || !password) {
-      toast.error("Please enter your email/username and password");
+      toast.error(t("loginForm.pleaseEnterYourEmailUsername"));
       return;
     }
 
@@ -28,12 +29,12 @@ export default function LoginForm() {
       const data = await loginApi({ identifier, password });
       
       if (data.status === "success") {
-        toast.success("Successfully logged in!");
+        toast.success(t("loginForm.successfullyLoggedIn"));
         loginAuth(data.data.user, data.data.token);
         navigate("/", { replace: true });
       }
     } catch (error) {
-      const message = error.response?.data?.message || "An error occurred during login";
+      const message = error.response?.data?.message || t("loginForm.anErrorOccurredDuringLogin");
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -42,9 +43,9 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full">
-      <FormRow label="Email or Username">
+      <FormRow label={t("loginForm.emailOrUsername")}>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
             <Mail className="h-5 w-5 text-gray-400" />
           </div>
           <Input
@@ -52,15 +53,15 @@ export default function LoginForm() {
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             disabled={isLoading}
-            placeholder="admin or admin@example.com"
-            className="pl-10"
+            placeholder={t("loginForm.adminOrAdminExampleCom")}
+            className="ps-10"
           />
         </div>
       </FormRow>
 
-      <FormRow label="Password">
+      <FormRow label={t("loginForm.password")}>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
             <Lock className="h-5 w-5 text-gray-400" />
           </div>
           <Input
@@ -69,7 +70,7 @@ export default function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
             placeholder="••••••••"
-            className="pl-10"
+            className="ps-10"
           />
         </div>
       </FormRow>
@@ -82,21 +83,15 @@ export default function LoginForm() {
             type="checkbox"
             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-          <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600">
-            Remember me
-          </label>
+          <label htmlFor="remember-me" className="ms-2 block text-sm text-gray-600">{t("loginForm.rememberMe")}</label>
         </div>
         <div className="text-sm">
-          <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-            Forgot password?
-          </a>
+          <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">{t("loginForm.forgotPassword")}</a>
         </div>
       </div>
 
       <Button type="submit" isLoading={isLoading} className="w-full">
-        <LogIn className="w-5 h-5" />
-        Sign In
-      </Button>
+        <LogIn className="w-5 h-5" />{t("loginForm.signIn")}</Button>
     </form>
   );
 }

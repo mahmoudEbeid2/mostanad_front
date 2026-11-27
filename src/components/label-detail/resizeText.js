@@ -1,35 +1,36 @@
+import { t } from "../../i18n";
 // The resize report (backend designResizeService.fitOf) in plain Arabic — no
 // technical words. Same wording as the backend's fitLinesAr (the assistant's card).
 
-const ROLE_AR = { product_name: "اسم المنتج", heading: "عنوان", paragraph: "فقرة", table: "جدول التركيب", rotated_text: "نص عمودي", barcode_digits: "أرقام الباركود", logo_or_image: "شعار / صورة", artwork: "رسم" };
-export const roleAr = (r) => ROLE_AR[r] || "جزء";
+const ROLE_AR = { product_name: t("resizeText.productName"), heading: t("resizeText.title"), paragraph: t("resizeText.paragraph"), table: t("resizeText.compositionTable"), rotated_text: t("resizeText.verticalText"), barcode_digits: t("resizeText.barcodeDigits"), logo_or_image: t("resizeText.logoImage"), artwork: t("resizeText.graphic") };
+export const roleAr = (r) => ROLE_AR[r] || t("resizeText.part");
 export const cm = (mm) => String(Math.round(mm) / 10).replace(/\.0$/, "");
-export const sizeAr = (w, h) => `${cm(w)} × ${cm(h)} سم`;
+export const sizeAr = (w, h) => t("resizeText.cm", { cm: cm(w), cm2: cm(h) });
 
 /** → [{ kind: "ok" | "info" | "warn" | "bad", text }] */
 export function fitLinesAr(fit = {}) {
   const out = [];
-  if (fit.fits === false) out.push({ kind: "bad", text: "لا يتّسع بهذا المقاس — لن يُعمل ملف PDF، ولم يُقصّ أي نص." });
-  else out.push({ kind: "ok", text: fit.engineMode === "scale" ? `نفس التصميم بنفس النسب (${fit.scalePct}%)` : "نفس التصميم، أُعيد ترتيبه على المقاس الجديد" });
-  if (fit.boxNet) out.push({ kind: "warn", text: "هذا تصميم علبة (وجوه وألسنة وخطوط قص وطي): يتغيّر مقاسه بنفس النسب فقط، لأن تغيير النسب يعني علبة أخرى." });
-  if (fit.smallestTextPt != null) out.push({ kind: "info", text: `أصغر نص: ${fit.smallestTextPt} نقطة (الحد الأدنى ${fit.minFontPt} نقطة)` });
+  if (fit.fits === false) out.push({ kind: "bad", text: t("resizeText.doesntFitAtThisSize") });
+  else out.push({ kind: "ok", text: fit.engineMode === "scale" ? t("resizeText.theSameDesignInThe", { scalePct: fit.scalePct }) : t("resizeText.theSameDesignReArranged") });
+  if (fit.boxNet) out.push({ kind: "warn", text: t("resizeText.thisIsABoxDesign") });
+  if (fit.smallestTextPt != null) out.push({ kind: "info", text: t("resizeText.smallestTextPtMinimumPt", { smallestTextPt: fit.smallestTextPt, minFontPt: fit.minFontPt }) });
   for (const w of fit.warnings || []) {
-    if (w.code === "below_min") out.push({ kind: "warn", text: `بعض النص صار ${w.fontPt} نقطة — أقل من الحد الأدنى ${w.minFontPt}. مقاس أكبر يبقيه مقروءًا.` });
-    else if (w.code === "original_below_min") out.push({ kind: "info", text: `في التصميم الأصلي نص بحجم ${w.fontPt} نقطة (أقل من ${w.minFontPt}) — تُرك بنفس نسبة التصميم.` });
-    else if (w.code === "font_raised_to_min") out.push({ kind: "info", text: `حجم الخط المختار أقل من المسموح، فرُفع إلى ${w.minFontPt} نقطة.` });
+    if (w.code === "below_min") out.push({ kind: "warn", text: t("resizeText.someTextBecamePtBelow", { fontPt: w.fontPt, minFontPt: w.minFontPt }) });
+    else if (w.code === "original_below_min") out.push({ kind: "info", text: t("resizeText.theOriginalDesignHasText", { fontPt: w.fontPt, minFontPt: w.minFontPt }) });
+    else if (w.code === "font_raised_to_min") out.push({ kind: "info", text: t("resizeText.theChosenFontSizeIs", { minFontPt: w.minFontPt }) });
   }
   for (const o of (fit.overflow || []).filter((x) => x.code !== "box_net")) {
     const what = `${roleAr(o.role)}${o.text ? ` «${o.text.slice(0, 40)}»` : ""}`;
-    if (o.code === "text_too_small") out.push({ kind: "bad", text: `${what}: نصه يصغر عن الحد الأدنى بهذا المقاس.` });
-    else if (o.over === "panel") out.push({ kind: "bad", text: `${what} يخرج عن خلفيته بـ ${o.overflowMm} مم.` });
-    else if (o.over === "artwork") out.push({ kind: "bad", text: `${what} يغطي رسمًا بـ ${o.overflowMm} مم.` });
-    else out.push({ kind: "bad", text: `${what} ينقصه ${o.overflowMm} مم ${o.axis === "x" ? "في العرض" : "في الطول"}.` });
+    if (o.code === "text_too_small") out.push({ kind: "bad", text: t("resizeText.itsTextGetsSmallerThan", { what }) });
+    else if (o.over === "panel") out.push({ kind: "bad", text: t("resizeText.goesMmOutsideItsBackground", { what, overflowMm: o.overflowMm }) });
+    else if (o.over === "artwork") out.push({ kind: "bad", text: t("resizeText.coversAGraphicByMm", { what, overflowMm: o.overflowMm }) });
+    else out.push({ kind: "bad", text: t(o.axis === "x" ? "resizeText.shortWidth" : "resizeText.shortHeight", { what, mm: o.overflowMm }) });
   }
   const rewrapped = (fit.blocks || []).filter((b) => b.rewrapped).length;
   const raised = (fit.blocks || []).filter((b) => b.raisedToMin).length;
-  if (rewrapped) out.push({ kind: "info", text: `أُعيد توزيع أسطر ${rewrapped} ${rewrapped === 1 ? "فقرة" : "فقرات"} بنفس كلماتها.` });
-  if (raised) out.push({ kind: "info", text: `كُبّر خط ${raised} ${raised === 1 ? "جزء" : "أجزاء"} إلى الحد الأدنى.` });
-  if (fit.bleedMm) out.push({ kind: "info", text: `هامش قص ${fit.bleedMm} مم${fit.cropMarks ? " مع علامات القص" : ""}.` });
+  if (rewrapped) out.push({ kind: "info", text: t("resizeText.rewrapped", { count: rewrapped }) });
+  if (raised) out.push({ kind: "info", text: t("resizeText.raised", { count: raised }) });
+  if (fit.bleedMm) out.push({ kind: "info", text: `${t("resizeText.bleed", { mm: fit.bleedMm })}${fit.cropMarks ? t("resizeText.withCropMarks") : ""}.` });
   return out;
 }
 

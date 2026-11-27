@@ -10,45 +10,45 @@ import { useAuth } from "../../context/AuthContext";
 import { isCompanyUser } from "../../utils/permissions";
 import ExpressPanel from "./ExpressPanel";
 import HarvestProgress from "./HarvestProgress";
+import { pickText, t } from "../../i18n";
 
 // The one review card of a drop: every file, what it is, whose, what will happen.
 // Every cell can be changed; nothing exists until "نفّذ الكل". Arabic by default.
 // Used on "ارفع ملفاتك" and under the assistant's answer (compact).
 
 export const DOC_TYPES = {
-  label: "ليبل",
-  certificate_template: "قالب شهادة",
-  certificate_filled: "شهادة صادرة",
-  invoice: "فاتورة",
-  manufacturing_order: "أمر تصنيع",
-  catalogue: "كتالوج",
-  product_list: "قائمة منتجات",
-  other: "مش معروف",
+  label: t("intakeReview.label"),
+  certificate_template: t("intakeReview.certificateTemplate"),
+  certificate_filled: t("intakeReview.issuedCertificate"),
+  invoice: t("intakeReview.invoice"),
+  manufacturing_order: t("intakeReview.manufacturingOrder"),
+  catalogue: t("intakeReview.catalogue"),
+  product_list: t("intakeReview.productList"),
+  other: t("intakeReview.unknown"),
 };
-const CERT_ACTIONS = { certificate_template: "يتعمل منها قالب", certificate_filled: "تتحفظ كإثبات", certificate_both: "قالب + إثبات", issued_document: "تتحفظ كشهادة صادرة" };
+const CERT_ACTIONS = { certificate_template: t("intakeReview.makeATemplateFromIt"), certificate_filled: t("intakeReview.keepAsEvidence"), certificate_both: t("intakeReview.templateEvidence"), issued_document: t("intakeReview.keepAsAnIssuedCertificate") };
 const QUESTIONS = {
-  doc_type: { q: "ده ليبل ولا شهادة؟", choices: [["label", "ليبل"], ["certificate_filled", "شهادة"], ["invoice", "فاتورة"], ["catalogue", "كتالوج"]] },
-  country: { q: "الليبل ده لأنهي دولة؟" },
-  product: { q: "الصفحة دي لأنهي منتج؟" },
-  certificate_type: { q: "نوع الشهادة إيه؟" },
+  doc_type: { q: t("intakeReview.isThisALabelOr"), choices: [["label", t("intakeReview.label")], ["certificate_filled", t("intakeReview.certificate")], ["invoice", t("intakeReview.invoice")], ["catalogue", t("intakeReview.catalogue")]] },
+  country: { q: t("intakeReview.whichCountryIsThisLabel") },
+  product: { q: t("intakeReview.whichProductIsThisPage") },
+  certificate_type: { q: t("intakeReview.whatTypeOfCertificate") },
 };
-const COUNTRIES = [["OM", "عُمان"], ["SA", "السعودية"], ["AE", "الإمارات"], ["EG", "مصر"], ["JO", "الأردن"], ["IQ", "العراق"], ["KW", "الكويت"], ["QA", "قطر"], ["BH", "البحرين"], ["PK", "باكستان"], ["LY", "ليبيا"], ["YE", "اليمن"], ["SD", "السودان"], ["LB", "لبنان"]];
+const COUNTRIES = [["OM", t("intakeReview.oman")], ["SA", t("intakeReview.saudiArabia")], ["AE", t("intakeReview.uae")], ["EG", t("intakeReview.egypt")], ["JO", t("intakeReview.jordan")], ["IQ", t("intakeReview.iraq")], ["KW", t("intakeReview.kuwait")], ["QA", t("intakeReview.qatar")], ["BH", t("intakeReview.bahrain")], ["PK", t("intakeReview.pakistan")], ["LY", t("intakeReview.libya")], ["YE", t("intakeReview.yemen")], ["SD", t("intakeReview.sudan")], ["LB", t("intakeReview.lebanon")]];
 const pct = (c) => (c === null || c === undefined ? "—" : `${Math.round(c * 100)}%`);
 const cell = "px-2 py-2 align-top";
 const select = "w-full min-w-[8.5rem] max-w-[14rem] rounded-md border border-gray-300 bg-white px-1.5 py-1 text-xs";
 
 function NewBanner({ n }) {
   const parts = [
-    n.companies.length && `شركة ${n.companies.map((c) => c.name).join("، ")}`,
-    n.brands.length && `براند ${n.brands.map((b) => b.name).join("، ")}`,
-    n.products.length && `${n.products.length} منتجات`,
-    n.certificateTypes.length && `أنواع شهادات ${n.certificateTypes.join("، ")}`,
+    n.companies.length && t("intakeReview.company", { join: n.companies.map((c) => c.name).join(t("common.listSep")) }),
+    n.brands.length && t("intakeReview.brand", { join: n.brands.map((b) => b.name).join(t("common.listSep")) }),
+    n.products.length && t("intakeReview.products", { length: n.products.length }),
+    n.certificateTypes.length && t("intakeReview.certificateTypes", { join: n.certificateTypes.join(t("common.listSep")) }),
   ].filter(Boolean);
   if (!parts.length) return null;
   return (
     <p className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900" data-testid="intake-new">
-      <Sparkles className="ml-1 inline h-4 w-4" /> هيتعمل: {parts.join("، ")}
-    </p>
+      <Sparkles className="ms-1 inline h-4 w-4" />{" "}{t("intakeReview.willMake", { join: parts.join(t("common.listSep")) })}</p>
   );
 }
 
@@ -111,7 +111,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
       await load();
     } catch (e) {
       if (e?.response?.data?.code === "STALE_CARD") {
-        toast.error("الكارت اتغير — اتحدث، راجعه تاني");
+        toast.error(t("intakeReview.theCardChangedItWas"));
         await load();
       } else toast.error(e?.response?.data?.message || e.message);
     } finally {
@@ -144,7 +144,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           <td className={cell}>
             <div className="flex items-start gap-1.5" style={{ paddingInlineStart: depth * 16 }}>
               {isBundle ? (
-                <button type="button" onClick={() => setOpen((o) => ({ ...o, [i.id]: !o[i.id] }))} aria-label="اعرض الصفحات" className="mt-0.5">
+                <button type="button" onClick={() => setOpen((o) => ({ ...o, [i.id]: !o[i.id] }))} aria-label={t("intakeReview.showThePages")} className="mt-0.5">
                   {open[i.id] ? <ChevronDown className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                 </button>
               ) : (
@@ -154,7 +154,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
                 <p className="truncate font-medium text-gray-900" dir="ltr" title={i.name}>
                   {i.name}
                 </p>
-                {i.pages && <p className="text-[11px] text-gray-500">{isBundle ? `${parts.length} شهادة — شهادة لكل صفحة` : `صفحات ${i.pages}`}</p>}
+                {i.pages && <p className="text-[11px] text-gray-500">{isBundle ? t("intakeReview.certificatesOnePerPage", { length: parts.length }) : t("intakeReview.pages", { pages: i.pages })}</p>}
                 {unsureRow && editable && i.question && QUESTIONS[i.question] && (
                   <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-amber-900" data-testid="intake-question">
                     <AlertTriangle className="h-3.5 w-3.5" /> {QUESTIONS[i.question].q}
@@ -170,7 +170,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           </td>
           <td className={cell}>
             {editable && !skipped ? (
-              <select className={select} value={i.docType || "other"} onChange={(e) => change(i, { docType: e.target.value })} aria-label={`نوع ${i.name}`}>
+              <select className={select} value={i.docType || "other"} onChange={(e) => change(i, { docType: e.target.value })} aria-label={t("intakeReview.typeOf", { name: i.name })}>
                 {Object.entries(DOC_TYPES).map(([v, l]) => (
                   <option key={v} value={v}>
                     {l}
@@ -180,7 +180,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
             ) : (
               DOC_TYPES[i.docType] || "—"
             )}
-            {i.certCode && <span className="mr-1 rounded bg-gray-100 px-1 text-[11px] font-semibold text-gray-700">{i.certCode}</span>}
+            {i.certCode && <span className="me-1 rounded bg-gray-100 px-1 text-[11px] font-semibold text-gray-700">{i.certCode}</span>}
           </td>
           <td className={cell}>
             {editable && isSystem && !skipped ? (
@@ -188,9 +188,9 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
                 className={select}
                 value={i.company?.id || (i.company?.name ? `new:${i.company.name}` : "")}
                 onChange={(e) => change(i, { company: e.target.value.startsWith("new:") ? { name: e.target.value.slice(4) } : e.target.value ? { id: e.target.value } : null })}
-                aria-label={`شركة ${i.name}`}
+                aria-label={t("intakeReview.companyOf", { name: i.name })}
               >
-                {i.company?.isNew && <option value={`new:${i.company.name}`}>جديدة: {i.company.name}</option>}
+                {i.company?.isNew && <option value={`new:${i.company.name}`}>{t("intakeReview.new")}{" "}{i.company.name}</option>}
                 {!i.company && <option value="">—</option>}
                 {companies.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -199,7 +199,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
                 ))}
               </select>
             ) : (
-              <span>{i.company ? `${i.company.isNew && editable ? "جديدة: " : ""}${i.company.name}` : "—"}</span>
+              <span>{i.company ? `${i.company.isNew && editable ? t("intakeReview.new5") : ""}${i.company.name}` : "—"}</span>
             )}
           </td>
           <td className={cell}>
@@ -208,10 +208,10 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
                 className={select}
                 value={i.brand?.id || (i.brand?.name ? `new:${i.brand.name}` : "")}
                 onChange={(e) => change(i, { brand: e.target.value.startsWith("new:") ? { name: e.target.value.slice(4) } : e.target.value ? { id: e.target.value } : null })}
-                aria-label={`براند ${i.name}`}
+                aria-label={t("intakeReview.brandOf", { name: i.name })}
               >
-                <option value="">من غير براند</option>
-                {i.brand?.isNew && <option value={`new:${i.brand.name}`}>جديد: {i.brand.name}</option>}
+                <option value="">{t("intakeReview.noBrand")}</option>
+                {i.brand?.isNew && <option value={`new:${i.brand.name}`}>{t("intakeReview.new2")}{" "}{i.brand.name}</option>}
                 {brandList.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
@@ -219,7 +219,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
                 ))}
               </select>
             ) : (
-              <span>{i.brand ? `${i.brand.isNew && editable ? "جديد: " : ""}${i.brand.name}` : "—"}</span>
+              <span>{i.brand ? `${i.brand.isNew && editable ? t("intakeReview.new6") : ""}${i.brand.name}` : "—"}</span>
             )}
           </td>
           <td className={`${cell} min-w-[15rem]`}>
@@ -230,7 +230,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
                   {p.name}
                   {p.volume ? ` ${p.volume}` : ""}
                   {editable && !skipped && (
-                    <button type="button" className="ml-1 text-gray-400 hover:text-gray-700" onClick={() => change(i, { products: i.products.filter((_, j) => j !== k) })} aria-label={`شيل ${p.name}`}>
+                    <button type="button" className="ms-1 text-gray-400 hover:text-gray-700" onClick={() => change(i, { products: i.products.filter((_, j) => j !== k) })} aria-label={t("intakeReview.remove", { name: p.name })}>
                       ×
                     </button>
                   )}
@@ -242,8 +242,8 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
                 </button>
               )}
               {editable && !skipped && productList.length > 0 && (
-                <select className="max-w-[8rem] rounded-md border border-dashed border-gray-300 bg-white px-1 py-0.5 text-[11px]" value="" onChange={(e) => e.target.value && change(i, { products: [...i.products.map((p) => (p.id ? { id: p.id } : { name: p.name, volume: p.volume })), { id: e.target.value }] })} aria-label={`ضيف منتج لـ ${i.name}`}>
-                  <option value="">+ منتج موجود</option>
+                <select className="max-w-[8rem] rounded-md border border-dashed border-gray-300 bg-white px-1 py-0.5 text-[11px]" value="" onChange={(e) => e.target.value && change(i, { products: [...i.products.map((p) => (p.id ? { id: p.id } : { name: p.name, volume: p.volume })), { id: e.target.value }] })} aria-label={t("intakeReview.addAProductTo", { name: i.name })}>
+                  <option value="">{t("intakeReview.existingProduct")}</option>
                   {productList.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -256,7 +256,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           </td>
           <td className={cell}>
             {editable && !skipped && ["label", "certificate_template", "certificate_filled"].includes(i.docType) ? (
-              <select className={select} value={i.country || ""} onChange={(e) => change(i, { country: e.target.value || null })} aria-label={`دولة ${i.name}`}>
+              <select className={select} value={i.country || ""} onChange={(e) => change(i, { country: e.target.value || null })} aria-label={t("intakeReview.countryOf", { name: i.name })}>
                 <option value="">—</option>
                 {COUNTRIES.map(([c, l]) => (
                   <option key={c} value={c}>
@@ -270,7 +270,7 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
           </td>
           <td className={cell}>
             {editable && !skipped && i.docType?.startsWith("certificate") && !isBundle ? (
-              <select className={select} value={i.action} onChange={(e) => change(i, { action: e.target.value })} aria-label={`اللي هيحصل لـ ${i.name}`}>
+              <select className={select} value={i.action} onChange={(e) => change(i, { action: e.target.value })} aria-label={t("intakeReview.whatHappensTo", { name: i.name })}>
                 {Object.entries(CERT_ACTIONS).map(([v, l]) => (
                   <option key={v} value={v}>
                     {l}
@@ -278,26 +278,23 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
                 ))}
               </select>
             ) : (
-              <span className="text-xs">{i.actionText?.ar || "—"}</span>
+              <span className="text-xs">{pickText(i.actionText) || "—"}</span>
             )}
             {i.result?.link && (
-              <Link to={i.result.link} className="mt-1 block text-[11px] text-blue-700 hover:underline">
-                افتح
-              </Link>
+              <Link to={i.result.link} className="mt-1 block text-[11px] text-blue-700 hover:underline">{t("intakeReview.open")}</Link>
             )}
             {i.status === "failed" && <span className="mt-1 block text-[11px] text-red-700">{i.error}</span>}
             {editable && (
               <label className="mt-1 flex items-center gap-1 text-[11px] text-gray-500">
-                <input type="checkbox" checked={i.action === "skip"} onChange={(e) => change(i, { skip: e.target.checked })} /> سيبه
-              </label>
+                <input type="checkbox" checked={i.action === "skip"} onChange={(e) => change(i, { skip: e.target.checked })} />{" "}{t("intakeReview.leaveIt")}</label>
             )}
           </td>
           <td className={`${cell} text-xs`}>
             <span className={i.confidence !== null && i.confidence < 0.7 ? "font-semibold text-amber-700" : "text-gray-600"} title={(i.evidence || []).map((e) => e.says).join(" · ")}>
               {pct(i.confidence)}
             </span>
-            {i.status === "done" && <CheckCircle2 className="mr-1 inline h-3.5 w-3.5 text-green-600" />}
-            {i.status === "failed" && <XCircle className="mr-1 inline h-3.5 w-3.5 text-red-600" />}
+            {i.status === "done" && <CheckCircle2 className="me-1 inline h-3.5 w-3.5 text-green-600" />}
+            {i.status === "failed" && <XCircle className="me-1 inline h-3.5 w-3.5 text-red-600" />}
           </td>
         </tr>
         {isBundle && open[i.id] && parts.map((p) => <Row key={p.id} i={p} depth={1} />)}
@@ -306,37 +303,35 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
   };
 
   return (
-    <div dir="rtl" className={`space-y-3 ${compact ? "text-sm" : ""}`} data-testid="intake-review" data-status={status}>
+    <div className={`space-y-3 ${compact ? "text-sm" : ""}`} data-testid="intake-review" data-status={status}>
       {["uploading", "classifying"].includes(status) && (
         <p className="flex items-center gap-2 text-sm text-gray-700" role="status">
-          <Loader2 className="h-4 w-4 animate-spin" /> بنتعرف على الملفات… {view.task?.message ? <span dir="ltr" className="text-xs text-gray-500">{view.task.message}</span> : null}
+          <Loader2 className="h-4 w-4 animate-spin" />{" "}{t("intakeReview.recognisingTheFiles")}{" "}{view.task?.message ? <span dir="ltr" className="text-xs text-gray-500">{view.task.message}</span> : null}
         </p>
       )}
       {status === "review" && express && (
-        <p className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-900" data-testid="express-intro">
-          طلب سريع: بزرار واحد هنسجّل الملفات ونطلّع الشهادات (مسودات){view.express?.requestedTypes?.length ? ` — ${view.express.requestedTypes.join("، ")}` : ""}. كل اللي هيتعمل هيتعلّم «محتاج مراجعة».
-        </p>
+        <p className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-900" data-testid="express-intro">{t("intakeReview.expressRequestOneButtonFiles")}{view.express?.requestedTypes?.length ? ` — ${view.express.requestedTypes.join(t("common.listSep"))}` : ""}{t("intakeReview.everythingMadeIsMarkedNeeds")}</p>
       )}
       {status === "review" && (
         <>
           <NewBanner n={view.newEntities} />
-          {unsure > 0 && <p className="text-xs text-amber-800">{unsure} ملف محتاجين نظرة منك (متعلّمين بالأصفر).</p>}
+          {unsure > 0 && <p className="text-xs text-amber-800">{unsure}{" "}{t("intakeReview.filesNeedALookFrom")}</p>}
         </>
       )}
       {status === "review" && <PageQuestions items={view.items} products={products} onAnswer={change} />}
       {express && status === "review" && (
         <button type="button" onClick={() => setShowAll(!showAll)} className="text-xs text-blue-700 hover:underline" data-testid="express-show-all">
-          {showAll ? "اعرض الأسئلة بس" : `اعرض كل الملفات (${allRows.length})`}
+          {showAll ? t("intakeReview.showOnlyTheQuestions") : t("intakeReview.showAllFiles", { length: allRows.length })}
         </button>
       )}
       {/* Express: one block per product (its certificates and pages), the sure ones folded — not 25 rows to scroll (26 Nov) */}
       {express && status === "review" && !showAll && <ByProduct items={view.items} />}
       {status !== "classifying" && rows.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[64rem] text-right text-xs" data-testid="intake-table">
+          <table className="w-full min-w-[64rem] text-end text-xs" data-testid="intake-table">
             <thead className="bg-gray-50 text-[11px] font-semibold text-gray-600">
               <tr>
-                {["الملف", "ده إيه", "الشركة", "البراند", "المنتجات", "الدولة", "اللي هيحصل", "الثقة"].map((h) => (
+                {[t("intakeReview.file"), t("intakeReview.whatItIs"), t("intakeReview.company2"), t("intakeReview.brand2"), t("intakeReview.products2"), t("intakeReview.country"), t("intakeReview.whatHappens"), t("intakeReview.confidence")].map((h) => (
                   <th key={h} className="px-2 py-2">
                     {h}
                   </th>
@@ -353,16 +348,16 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
       )}
       {status === "review" && (
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-gray-500">مفيش حاجة هتتعمل قبل ما تدوس الزرار.</p>
+          <p className="text-xs text-gray-500">{t("intakeReview.nothingHappensBeforeYouPress")}</p>
           <button type="button" onClick={run} disabled={busy} className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow hover:bg-blue-700 disabled:opacity-50" data-testid="intake-run">
-            {busy ? "…" : express ? "طلّع الشهادات" : "نفّذ الكل"}
+            {busy ? "…" : express ? t("intakeReview.makeTheCertificates") : t("intakeReview.doItAll")}
           </button>
         </div>
       )}
       {status === "executing" && (
         <div className="space-y-1" role="status">
           <p className="flex items-center gap-2 text-sm text-gray-700">
-            <Loader2 className="h-4 w-4 animate-spin" /> بنرتب الملفات… {view.task?.progress ? `${view.task.progress}%` : ""}
+            <Loader2 className="h-4 w-4 animate-spin" />{" "}{t("intakeReview.sortingTheFiles")}{" "}{view.task?.progress ? `${view.task.progress}%` : ""}
           </p>
           <div className="h-1.5 rounded-full bg-gray-100">
             <div className="h-1.5 rounded-full bg-blue-600 transition-all" style={{ width: `${view.task?.progress || 5}%` }} />
@@ -373,13 +368,13 @@ export default function IntakeReview({ batchId, compact = false, onDone }) {
       {express && status === "done" && <ExpressPanel ex={view.express} batchId={view.batch?.id} onChanged={load} />}
       {status === "done" && view.summary && (
         <div className="space-y-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-900" data-testid="intake-summary">
-          <p className="font-semibold">{view.summary.text?.ar}</p>
+          <p className="font-semibold">{pickText(view.summary.text)}</p>
           {view.summary.needs?.length > 0 && (
-            <ul className="list-disc space-y-0.5 pr-5 text-xs text-gray-800">
+            <ul className="list-disc space-y-0.5 pe-5 text-xs text-gray-800">
               {view.summary.needs.slice(0, 12).map((n, k) => (
-                <li key={k}>{n.link ? <Link to={n.link} className="text-blue-700 hover:underline">{n.ar}</Link> : n.ar}</li>
+                <li key={k}>{n.link ? <Link to={n.link} className="text-blue-700 hover:underline">{pickText(n)}</Link> : pickText(n)}</li>
               ))}
-              {view.summary.needs.length > 12 && <li>و{view.summary.needs.length - 12} كمان…</li>}
+              {view.summary.needs.length > 12 && <li>{t("intakeReview.andMore", { v: view.summary.needs.length - 12 })}</li>}
             </ul>
           )}
         </div>
@@ -405,26 +400,23 @@ function PageQuestions({ items, products, onAnswer }) {
   return (
     <div className="space-y-1.5 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-950" data-testid="page-questions">
       <p className="font-semibold">
-        {unsure.length} صفحة مش متأكدين من منتجها — اختار المنتج لكل صفحة
-        {withSuggestion.length > 1 && (
-          <button type="button" className="ms-2 rounded-md bg-amber-700 px-2 py-0.5 font-semibold text-white hover:bg-amber-800" onClick={() => withSuggestion.reduce((p, i) => p.then(() => accept(i, i.suggested.name)), Promise.resolve())} data-testid="accept-suggestions">
-            اقبل الاقتراحات ({withSuggestion.length})
-          </button>
+        {unsure.length}{" "}{t("intakeReview.pagesWereNotSureOf")}{withSuggestion.length > 1 && (
+          <button type="button" className="ms-2 rounded-md bg-amber-700 px-2 py-0.5 font-semibold text-white hover:bg-amber-800" onClick={() => withSuggestion.reduce((p, i) => p.then(() => accept(i, i.suggested.name)), Promise.resolve())} data-testid="accept-suggestions">{t("intakeReview.acceptTheSuggestions", { length: withSuggestion.length })}</button>
         )}
       </p>
       <ul className="space-y-1">
         {unsure.map((i) => (
           <li key={i.id} className="flex flex-wrap items-center gap-1.5">
-            <span className="text-gray-700">{i.name.replace(/ — .*$/, "")} · صفحة {i.pages}</span>
-            {i.products?.[0]?.name && <span className="text-gray-500">(مكتوب عليها {i.products[0].name})</span>}
+            <span className="text-gray-700">{i.name.replace(/ — .*$/, "")}{" "}{t("intakeReview.page")}{" "}{i.pages}</span>
+            {i.products?.[0]?.name && <span className="text-gray-500">{t("intakeReview.says", { name: i.products[0].name })}</span>}
             {i.suggested?.name && (
               <button type="button" onClick={() => accept(i, i.suggested.name)} className="rounded-full border border-amber-500 bg-white px-2 py-0.5 font-semibold text-amber-900 hover:bg-amber-100" title={i.suggested.says}>
                 {i.suggested.name}
-                {known(i) ? "" : " (جديد)"}
+                {known(i) ? "" : t("intakeReview.new3")}
               </button>
             )}
-            <select aria-label="المنتج" defaultValue="" onChange={(e) => e.target.value && accept(i, e.target.value)} className="rounded border border-amber-300 bg-white px-1 py-0.5">
-              <option value="">منتج تاني…</option>
+            <select aria-label={t("intakeReview.product")} defaultValue="" onChange={(e) => e.target.value && accept(i, e.target.value)} className="rounded border border-amber-300 bg-white px-1 py-0.5">
+              <option value="">{t("intakeReview.anotherProduct")}</option>
               {(products[i.company?.id] || []).map((p) => (
                 <option key={p.id} value={p.name}>
                   {p.name}
@@ -451,7 +443,7 @@ function ByProduct({ items }) {
       groups.get(n).push(i);
     }
   }
-  const what = (i) => [i.certCode || DOC_TYPES[i.docType] || i.docType, i.pages && i.parentId ? `ص ${i.pages}` : null].filter(Boolean).join(" · ");
+  const what = (i) => [i.certCode || DOC_TYPES[i.docType] || i.docType, i.pages && i.parentId ? t("intakeReview.p", { pages: i.pages }) : null].filter(Boolean).join(" · ");
   const list = [...groups.entries()].sort(([a, x], [b, y]) => Number(y.some(unsure)) - Number(x.some(unsure)) || (a === "__none") - (b === "__none") || a.localeCompare(b));
   return (
     <div className="space-y-1.5" data-testid="express-by-product">
@@ -461,17 +453,17 @@ function ByProduct({ items }) {
         return (
           <details key={name} open={open} className={`rounded-lg border bg-white px-3 py-1.5 text-xs ${open ? "border-amber-300" : "border-gray-200"}`}>
             <summary className="cursor-pointer font-semibold text-gray-900">
-              {name === "__none" ? "ملفات من غير منتج" : name}
-              {isNew && <span className="ms-1 rounded bg-emerald-100 px-1 text-[10px] text-emerald-800">جديد</span>}
-              <span className="ms-2 font-normal text-gray-500">{[...new Set(its.map((i) => i.certCode || DOC_TYPES[i.docType]))].filter(Boolean).join("، ")}</span>
-              {open && <span className="ms-2 text-amber-800">محتاج نظرة</span>}
+              {name === "__none" ? t("intakeReview.filesWithNoProduct") : name}
+              {isNew && <span className="ms-1 rounded bg-emerald-100 px-1 text-[10px] text-emerald-800">{t("intakeReview.new4")}</span>}
+              <span className="ms-2 font-normal text-gray-500">{[...new Set(its.map((i) => i.certCode || DOC_TYPES[i.docType]))].filter(Boolean).join(t("common.listSep"))}</span>
+              {open && <span className="ms-2 text-amber-800">{t("intakeReview.needsALook")}</span>}
             </summary>
-            <ul className="mt-1 space-y-0.5 pr-3">
+            <ul className="mt-1 space-y-0.5 pe-3">
               {its.map((i) => (
                 <li key={i.id} className={unsure(i) ? "text-amber-900" : "text-gray-600"}>
                   {what(i)} — {i.name.replace(/ — .*$/, "")}
                   {i.country ? ` · ${i.country}` : ""}
-                  {unsure(i) && i.question ? ` · ${i.question === "product" ? "مين المنتج؟" : i.question === "country" ? "أنهي دولة؟" : "ده إيه؟"}` : ""}
+                  {unsure(i) && i.question ? ` · ${i.question === "product" ? t("intakeReview.whichProduct") : i.question === "country" ? t("intakeReview.whichCountry") : t("intakeReview.whatIsIt")}` : ""}
                 </li>
               ))}
             </ul>

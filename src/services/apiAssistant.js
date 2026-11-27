@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { t } from "../i18n";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
 
@@ -56,7 +57,7 @@ async function streamTurn(path, body, { onEvent = () => {}, signal } = {}) {
     signal,
   });
   if (!res.headers.get("content-type")?.includes("text/event-stream")) {
-    let message = `Request failed (${res.status})`;
+    let message = t("errors.requestFailed", { status: res.status });
     try {
       message = (await res.json())?.message || message;
     } catch {
@@ -85,7 +86,7 @@ async function streamTurn(path, body, { onEvent = () => {}, signal } = {}) {
       else onEvent(payload);
     }
   }
-  if (!result) throw new AssistantError("The answer was cut off.", 0);
+  if (!result) throw new AssistantError(t("errors.theAnswerWasCutOff"), 0);
   return result;
 }
 

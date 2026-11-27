@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAssistantStatus } from "../../context/AssistantStatusContext";
 import { fromOf } from "../../utils/assistantContext";
+import { t } from "../../i18n";
 
 // Design E0: the floating ✦ button, bottom-right on every page (not on
 // /assistant). It navigates to the assistant with this page as context, as
@@ -87,13 +88,11 @@ export default function AssistantFab() {
   if (!enabled || onAssistant || state.hidden) return null;
   return (
     <div ref={ref} className="group fixed z-40 flex items-center gap-2.5 print:hidden" style={{ right: GAP, bottom: GAP + state.lift }} data-testid="assistant-fab">
-      <span role="tooltip" id="assistant-fab-tip" className="pointer-events-none whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-        Ask Dossira · Ctrl K
-      </span>
+      <span role="tooltip" id="assistant-fab-tip" className="pointer-events-none whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">{t("assistantFab.askDossiraCtrlK")}</span>
       <button
         type="button"
         onClick={open}
-        aria-label="Open the assistant"
+        aria-label={t("assistantFab.openTheAssistant")}
         aria-describedby="assistant-fab-tip"
         data-testid="assistant-button"
         className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-[0_10px_24px_rgba(79,70,229,0.35)] transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"

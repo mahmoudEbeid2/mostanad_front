@@ -1,27 +1,27 @@
+import { t } from "../../i18n";
 // Field flags with the plan's fixed colours and copy (plan §13.7), shown as in
 // mockup B5: a short code pill ("missing") followed by the sentence — the words
 // carry the meaning, the colour only repeats it.
-import { tr } from "../../i18n/lang";
 
 const FLAGS = {
-  missing: { tone: "red", text: tr("قيمة مطلوبة ناقصة", "Required value missing") },
+  missing: { tone: "red", text: t("flagBadges.requiredValueMissing") },
   // 26 Nov: a batch / date / result that equalled the template's own sample was removed, never printed
-  sample_value: { tone: "red", text: tr("دي كانت قيمة مثال القالب — اتشالت، اكتب القيمة الصح", "This was the template's sample value — removed; type the real one") },
-  overflow: { tone: "red", text: tr("مش واخدة مكانها — قصّرها أو غيّرها", "Doesn't fit — shorten or change") },
-  shrunk: { tone: "amber", text: tr("اتصغّرت عشان تاخد مكانها", "Shrunk to fit") },
-  format: { tone: "amber", text: tr("معرفناش نكتبها كتاريخ", "Couldn't format as date") },
-  missing_span: { tone: "red", text: tr("الحقل مش موجود في التصميم", "Field not found in the design") },
+  sample_value: { tone: "red", text: t("flagBadges.thisWasTheTemplatesSample") },
+  overflow: { tone: "red", text: t("flagBadges.doesntFitShortenOrChange") },
+  shrunk: { tone: "amber", text: t("flagBadges.shrunkToFit") },
+  format: { tone: "amber", text: t("flagBadges.couldntFormatAsDate") },
+  missing_span: { tone: "red", text: t("flagBadges.fieldNotFoundInThe") },
   // 28 Nov: a descriptive value the AI estimated — printed, never blocking (the «مستنتج» chip says why)
-  estimated: { tone: "violet", text: tr("مستنتج — راجعه أو اعتمد كل المستنتج", "Estimated — check it, or accept all estimates") },
-  unconfirmed: { tone: "amber", text: tr("تقدير — أكّده في مراجعة البيانات قبل الاعتماد", "Estimated — confirm it in the data check before finalizing") },
+  estimated: { tone: "violet", text: t("flagBadges.estimatedCheckItOrAccept") },
+  unconfirmed: { tone: "amber", text: t("flagBadges.estimatedConfirmItInThe") },
   // 27 Nov QA: a lab result outside its specification — finalize needs a comment saying why
-  out_of_spec: { tone: "red", text: tr("النتيجة برّا المواصفة — الاعتماد محتاج تعليق يشرح السبب", "Outside its specification — finalizing needs a comment") },
+  out_of_spec: { tone: "red", text: t("flagBadges.outsideItsSpecificationFinalizingNeeds") },
   // QA 27 Nov (re-test): a draft holds no certificate number — it is given when the certificate is finalized
-  number_on_finalize: { tone: "gray", code: "number", text: tr("سيُعطى عند الاعتماد", "Given on finalize") },
+  number_on_finalize: { tone: "gray", code: "number", text: t("flagBadges.givenOnFinalize") },
   // informational, never blocks finalize: an optional value nothing could fill
-  empty_optional: { tone: "gray", text: tr("قيمة اختيارية فاضية", "Optional value is empty") },
+  empty_optional: { tone: "gray", text: t("flagBadges.optionalValueIsEmpty") },
   // informational, never blocks finalize: the design's font couldn't be read, so a missing character can't be detected
-  glyph_unknown: { tone: "gray", text: tr("الخط ماتراجعش — بص على المعاينة لو فيه حروف ناقصة", "Font couldn't be checked — look at the preview for missing characters") },
+  glyph_unknown: { tone: "gray", text: t("flagBadges.fontCouldntBeCheckedLook") },
 };
 const TONES = {
   red: "bg-red-50 text-red-700",
@@ -36,7 +36,7 @@ const GLYPH_FALLBACK = "glyph_fallback:";
 function describeFallback(flag, fonts) {
   const chars = Array.from(flag.slice(GLYPH_FALLBACK.length));
   const names = [...new Set(chars.map((ch) => fonts?.[ch]).filter(Boolean))].join(", ");
-  return { tone: "gray", code: "fallback", text: `${chars.join(", ")}: drawn in ${names || "a close font"} — close match` };
+  return { tone: "gray", code: "fallback", text: t("flagBadges.drawnIn", { chars: chars.join(t("common.listSep")), font: names || t("flagBadges.aCloseFont") }) };
 }
 
 function describeFlag(flag, fonts) {
@@ -44,9 +44,9 @@ function describeFlag(flag, fonts) {
   // the product has more ingredients than the design has rows — never cut silently
   if (flag.startsWith("rows_overflow")) {
     const [have, rows] = flag.split(":")[1]?.split("/") || [];
-    return { tone: "red", code: "rows", text: have ? tr(`المنتج فيه ${have} مكوّن والقالب فيه ${rows} سطر — كبّر الجدول في القالب`, `The product has ${have} ingredients and the template ${rows} rows — enlarge the table`) : tr("مكونات أكتر من سطور القالب", "More ingredients than the template's rows") };
+    return { tone: "red", code: "rows", text: have ? t("flagBadges.theProductHasIngredientsAnd", { have, rows }) : t("flagBadges.moreIngredientsThanTheTemplates") };
   }
-  if (flag.startsWith("glyph:")) return { tone: "red", code: "glyph", text: `Character not in any available font: ${Array.from(flag.slice(6)).join(", ")}` };
+  if (flag.startsWith("glyph:")) return { tone: "red", code: "glyph", text: t("flagBadges.characterNotInAnyAvailable", { join: Array.from(flag.slice(6)).join(", ") }) };
   return FLAGS[flag] || { tone: "amber", text: flag };
 }
 

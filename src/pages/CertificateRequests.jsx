@@ -11,58 +11,12 @@ import CompanyPicker from "../components/certificates/CompanyPicker";
 import RoleBanner from "../components/certificates/RoleBanner";
 import useCompanyScope from "../hooks/useCompanyScope";
 import { listCertificateRequests } from "../services/apiWorkflow";
-import { pick, LANG } from "../i18n/lang";
+import { fmtDate, strings } from "../i18n";
 
-const STR = pick({
-  en: {
-    title: "Requests",
-    subtitle: "Every certificate request: what it covers and how far each certificate type is.",
-    newRequest: "New request",
-    pickCompany: "Pick a company to see its requests.",
-    empty: "No requests yet.",
-    emptyHint: "Start one with “New request”, or drop files in the assistant.",
-    request: "Request",
-    company: "Company",
-    products: "Products",
-    progress: "Progress",
-    status: "Status",
-    updated: "Updated",
-    more: (n) => `+${n} more`,
-    finalOf: (f, t) => `${f}/${t} final`,
-    none: "none yet",
-    failed: (n) => `${n} failed`,
-    statuses: { new: "New", in_progress: "In progress", ready: "Ready" },
-    prev: "Previous",
-    next: "Next",
-    page: (p, n) => `Page ${p} of ${n}`,
-  },
-  ar: {
-    title: "الطلبات",
-    subtitle: "كل طلبات الشهادات: كل طلب فيه إيه، وكل نوع شهادة وصل لفين.",
-    newRequest: "طلب جديد",
-    pickCompany: "اختار شركة عشان تشوف طلباتها.",
-    empty: "مفيش طلبات لسه.",
-    emptyHint: "ابدأ طلب من «طلب جديد»، أو ارمي الملفات في المساعد.",
-    request: "الطلب",
-    company: "الشركة",
-    products: "المنتجات",
-    progress: "التقدّم",
-    status: "الحالة",
-    updated: "آخر تعديل",
-    more: (n) => `+${n} كمان`,
-    finalOf: (f, t) => `${f}/${t} نهائية`,
-    none: "لسه مفيش",
-    failed: (n) => `${n} فشلت`,
-    statuses: { new: "جديد", in_progress: "شغّال", ready: "جاهز" },
-    prev: "السابق",
-    next: "التالي",
-    page: (p, n) => `صفحة ${p} من ${n}`,
-  },
-});
+const STR = strings("certificateRequests");
 const STATUS_STYLE = { new: "bg-gray-100 text-gray-700", in_progress: "bg-amber-50 text-amber-800", ready: "bg-green-50 text-green-800" };
 const PAGE_SIZE = 25;
 // Western digits in both languages, DD/MM/YYYY (UI plan, Phase A §6)
-const fmtDate = (d) => new Intl.DateTimeFormat(`${LANG === "ar" ? "ar-EG" : "en-GB"}-u-nu-latn`, { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(d));
 
 export default function CertificateRequests() {
   const scopeState = useCompanyScope();

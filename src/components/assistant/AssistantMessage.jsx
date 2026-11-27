@@ -9,7 +9,7 @@ import RecordBlock from "./RecordBlock";
 import ActionCard from "./ActionCard";
 import DraftCard from "./DraftCard";
 import IntakeReview from "../intake/IntakeReview";
-import { isAr } from "../../i18n/lang";
+import { pickField, t } from "../../i18n";
 
 const size = (n) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const KIND = { "application/pdf": "PDF", "image/png": "PNG", "image/jpeg": "JPG", "image/webp": "WEBP" };
@@ -57,8 +57,8 @@ export function StepChip({ step }) {
       >
         {step.running ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> : <span aria-hidden="true">{mark}</span>}
         <span className="truncate">
-          {(isAr && step.labelAr) || step.label || step.name}
-          {step.summary ? ` · ${isAr && step.summary === "waiting for your OK" ? "مستني موافقتك" : step.summary}` : ""}
+          {pickField(step, "label") || step.name}
+          {step.summary ? ` · ${step.summary === "waiting for your OK" ? t("assistantMessage.waitingForYourOk") : step.summary}` : ""}
         </span>
       </button>
       {open && (
@@ -66,7 +66,7 @@ export function StepChip({ step }) {
           {`${step.name}(${JSON.stringify(step.args || {}, null, 2)})`}
           {step.summary ? `\n→ ${step.summary}` : ""}
           {step.error && step.error !== step.summary ? `\n${step.error}` : ""}
-          {step.ms !== undefined ? `\n${step.ms} ms` : ""}
+          {step.ms !== undefined ? t("assistantMessage.ms", { ms: step.ms }) : ""}
         </pre>
       )}
     </div>
@@ -117,7 +117,7 @@ function UserMessage({ m, canEdit, onResend }) {
           <textarea
             autoFocus
             data-testid="edit-input"
-            aria-label="Edit message"
+            aria-label={t("assistantMessage.editMessage")}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -133,12 +133,8 @@ function UserMessage({ m, canEdit, onResend }) {
             className={`w-full resize-none border-0 bg-transparent text-sm outline-none ${isArabic(draft) ? "font-arabic" : ""}`}
           />
           <div className="flex justify-end gap-1.5">
-            <button type="button" onClick={() => setEditing(false)} className="min-h-8 rounded-xl border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50">
-              Cancel
-            </button>
-            <button type="submit" data-testid="edit-send" disabled={!draft.trim() || !canEdit} className="min-h-8 rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40">
-              Send
-            </button>
+            <button type="button" onClick={() => setEditing(false)} className="min-h-8 rounded-xl border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50">{t("assistantMessage.cancel")}</button>
+            <button type="submit" data-testid="edit-send" disabled={!draft.trim() || !canEdit} className="min-h-8 rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40">{t("assistantMessage.send")}</button>
           </div>
         </form>
       ) : (
@@ -148,10 +144,10 @@ function UserMessage({ m, canEdit, onResend }) {
       )}
       {canEdit && !editing && (
         <div className="flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-          <button type="button" onClick={startEdit} data-testid="edit-message" title="Edit and send again" aria-label="Edit message" className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900">
+          <button type="button" onClick={startEdit} data-testid="edit-message" title={t("assistantMessage.editAndSendAgain")} aria-label={t("assistantMessage.editMessage")} className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900">
             <Pencil className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={() => onResend?.(m)} data-testid="resend-message" title="Send again" aria-label="Send again" className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900">
+          <button type="button" onClick={() => onResend?.(m)} data-testid="resend-message" title={t("assistantMessage.sendAgain")} aria-label={t("assistantMessage.sendAgain")} className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900">
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -164,7 +160,7 @@ export default function AssistantMessage({ m, onChoose, latest, conversationId, 
   if (m.role === "event") {
     // what the assistant was told when a confirmed action finished — a quiet line, not a bubble
     const ok = m.text.startsWith("[action finished]");
-    return <div className="self-center text-xs text-gray-500" data-testid="event-line">{ok ? "✓ The action finished" : "✕ The action didn't finish"}</div>;
+    return <div className="self-center text-xs text-gray-500" data-testid="event-line">{ok ? t("assistantMessage.theActionFinished") : t("assistantMessage.theActionDidntFinish")}</div>;
   }
   if (m.role === "user") return <UserMessage m={m} canEdit={canEdit} onResend={onResend} />;
   const choices = latest ? (m.toolCalls || []).findLast((c) => c.choices?.length)?.choices : null;

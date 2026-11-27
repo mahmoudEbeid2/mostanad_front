@@ -12,63 +12,18 @@ import useTaskProgress from "../../../hooks/useTaskProgress";
 import { getPrepareDiff, getVersionHtml, getVersionThumbnail, prepareVersion, previewVersion, searchCertificateProducts } from "../../../services/apiCertificateTemplates";
 import { getInvoice, listInvoices } from "../../../services/apiInvoices";
 import { describeCertificateError } from "../../../utils/certificateErrors";
-import { pick } from "../../../i18n/lang";
+import { strings, t } from "../../../i18n";
 
 // Wizard step 4 — prepare & test (plan §13.4; mockup A5). "Prepare" clears the
 // fields on the server and runs the gate (§7.6); the test fill renders on the
 // server (POST …/preview) from a product, a confirmed invoice's line and/or
 // typed values — the owner's "100 %" check before go-live. Nothing here measures or stores geometry (D11).
 
-const STR_EN = {
-  title: "Prepare",
-  intro: "Prepare clears the marked values out of the design and proves, pixel by pixel, that refilling them reproduces the original.",
-  prepare: "Prepare",
-  again: "Run again",
-  preparing: "Preparing — clearing fields and checking the result…",
-  noFields: "Mark at least one field first.",
-  backToFields: "Back to fields",
-  testTitle: "Test fill",
-  testIntro: "Rendered on the server — exactly what the PDF will show.",
-  product: "Product",
-  productPh: "Search products…",
-  item: "Invoice item (optional)",
-  itemPh: "Search confirmed invoices…",
-  itemHint: "Fills invoice and line values; its matched product is used unless you pick one above.",
-  noItems: "No confirmed invoice lines",
-  line: (inv, it) => [`${inv} · line ${it.lineNo}`, it.data?.name, it.data?.batchNo].filter(Boolean).join(" · "),
-  override: "Value (empty = from source)",
-  render: "Render preview",
-  sample: "Showing the design refilled with its sample values.",
-  replaces: "Activating replaces",
-  inSlot: "in this slot.",
-  noActive: "no active version",
-  next: (n) => `Next: activate v${n}`,
+
+const STR = {
+  ...strings("prepareStep"),
+  line: (inv, it) => [t("prepareStep.line", { invoice: inv, n: it.lineNo }), it.data?.name, it.data?.batchNo].filter(Boolean).join(" · "),
 };
-const STR = pick({ en: STR_EN, ar: {
-  title: "جهّز",
-  intro: "التجهيز بيشيل القيم المحددة من التصميم ويثبت، بكسل ببكسل، إن ملاها تاني بيرجّع الأصل.",
-  prepare: "جهّز",
-  again: "جهّز تاني",
-  preparing: "بنجهّز — بنفضّي الحقول ونراجع النتيجة…",
-  noFields: "حدد حقل واحد على الأقل الأول.",
-  backToFields: "ارجع للحقول",
-  testTitle: "تجربة ملى",
-  testIntro: "اتعملت على السيرفر — بالظبط اللي هيطلع في الـ PDF.",
-  product: "المنتج",
-  productPh: "دوّر على منتج…",
-  item: "سطر فاتورة (اختياري)",
-  itemPh: "دوّر في الفواتير المأكدة…",
-  itemHint: "بيملى قيم الفاتورة والسطر؛ منتجه بيستخدم لو ما اخترتش منتج فوق.",
-  noItems: "مفيش سطور فواتير مأكدة",
-  line: (inv, it) => [`${inv} · سطر ${it.lineNo}`, it.data?.name, it.data?.batchNo].filter(Boolean).join(" · "),
-  override: "قيمة (فاضي = من المصدر)",
-  render: "اعرض المعاينة",
-  sample: "معروض التصميم متملي بقيم المثال بتاعته.",
-  replaces: "التشغيل هيبدّل",
-  inSlot: "في المكان ده.",
-  noActive: "مفيش نسخة شغّالة",
-  next: (n) => `التالي: شغّل النسخة ${n}`,
-} });
 
 export default function PrepareStep({ scope, template, version, onChanged, goStep }) {
   const [taskId, setTaskId] = useState(null);
@@ -242,7 +197,7 @@ function TestFill({ scope, template, version, goStep }) {
             {STR.itemHint}
           </span>
         </label>
-        <div className="flex flex-col gap-3 max-h-[360px] overflow-auto pr-1">
+        <div className="flex flex-col gap-3 max-h-[360px] overflow-auto pe-1">
           {version.fields.map((f) => (
             <label key={f.key} className="flex flex-col gap-1.5 text-xs font-semibold text-gray-600">
               <span className="flex items-center justify-between gap-2">
@@ -272,7 +227,7 @@ function TestFill({ scope, template, version, goStep }) {
       {version.status === "ready" && (
         <div className="mt-auto p-4 border-t border-gray-200 flex flex-col gap-2.5">
           <p className="text-xs text-gray-600">
-            {STR.replaces} <b>{current ? `v${current.versionNumber}` : STR.noActive}</b> {STR.inSlot}
+            {STR.replaces} <b>{current ? t("prepareStep.v", { versionNumber: current.versionNumber }) : STR.noActive}</b> {STR.inSlot}
           </p>
           <Button className="w-full" onClick={() => goStep("activate")}>
             {STR.next(version.versionNumber)} <ArrowRight className="w-4 h-4" />

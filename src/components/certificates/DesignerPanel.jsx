@@ -4,6 +4,7 @@ import { Copy, ExternalLink, Loader2, X } from "lucide-react";
 import Button from "../../ui/Button";
 import { getDesignerData, saveDesignEstimates, getCompositionReview, decideComposition, openEvidence } from "../../services/apiWorkflow";
 import ProductHarvestSection from "./ProductHarvestSection";
+import { t } from "../../i18n";
 
 // The designer's panel (client workflow §4): the product's data in the order it goes into
 // Illustrator, with copy buttons — the name, the ingredients, the quantities (row-aligned with the
@@ -14,9 +15,9 @@ import ProductHarvestSection from "./ProductHarvestSection";
 const copy = async (text, what) => {
   try {
     await navigator.clipboard.writeText(text || "");
-    toast.success(`اتنسخ: ${what}`);
+    toast.success(t("designerPanel.copied", { what }));
   } catch {
-    toast.error("المتصفح منع النسخ");
+    toast.error(t("designerPanel.theBrowserBlockedCopying"));
   }
 };
 const CopyBtn = ({ text, what, testid }) => (
@@ -24,7 +25,7 @@ const CopyBtn = ({ text, what, testid }) => (
     <Copy className="h-3 w-3" /> {what}
   </button>
 );
-const LABEL_AR = { name: "اسم المنتج", packaging: "العبوة", type: "النوع", form: "الشكل", compositionBasis: "أساس التركيب", ingredients: "المكونات", quantities: "الكميات", appearance: "المظهر / اللون", ph: "pH" };
+const LABEL_AR = { name: t("designerPanel.productName"), packaging: t("designerPanel.pack"), type: t("designerPanel.type"), form: t("designerPanel.form"), compositionBasis: t("designerPanel.compositionBasis"), ingredients: t("designerPanel.ingredients"), quantities: t("designerPanel.amounts"), appearance: t("designerPanel.appearanceColour"), ph: "pH" };
 
 export default function DesignerPanel({ scope = {}, productId, requestId = null, onClose }) {
   const [d, setD] = useState(null);
@@ -47,7 +48,7 @@ export default function DesignerPanel({ scope = {}, productId, requestId = null,
     setBusy(true);
     try {
       setD(await saveDesignEstimates(scope, productId, est));
-      toast.success("اتحفظ التقدير");
+      toast.success(t("designerPanel.estimateSaved"));
     } catch (e) {
       toast.error(e?.response?.data?.message || e.message);
     } finally {
@@ -64,11 +65,11 @@ export default function DesignerPanel({ scope = {}, productId, requestId = null,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label="بيانات المصمم">
-      <div dir="rtl" className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label={t("designerPanel.designerData")}>
+      <div className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
-          <h2 className="text-lg font-bold text-gray-900">بيانات المصمم{d ? ` — ${d.fields[0].value}` : ""}</h2>
-          <button onClick={onClose} aria-label="اقفل" className="text-gray-400 hover:text-gray-600">
+          <h2 className="text-lg font-bold text-gray-900">{t("designerPanel.designerData")}{d ? ` — ${d.fields[0].value}` : ""}</h2>
+          <button onClick={onClose} aria-label={t("designerPanel.close")} className="text-gray-400 hover:text-gray-600">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -77,23 +78,21 @@ export default function DesignerPanel({ scope = {}, productId, requestId = null,
         ) : (
           <div className="space-y-4 overflow-y-auto px-5 py-4 text-sm" data-testid="designer-panel">
             <div className="flex flex-wrap gap-1.5">
-              <CopyBtn text={d.fields[0].value} what="الاسم" />
-              <CopyBtn text={d.tsv.names} what="المكونات" testid="copy-names" />
-              <CopyBtn text={d.tsv.quantities} what="الكميات" testid="copy-quantities" />
-              <CopyBtn text={d.tsv.table} what="الجدول كله (TSV)" testid="copy-table" />
-              {d.tsv.shipment && <CopyBtn text={d.tsv.shipment} what="بيانات الشحنة" />}
+              <CopyBtn text={d.fields[0].value} what={t("designerPanel.name")} />
+              <CopyBtn text={d.tsv.names} what={t("designerPanel.ingredients")} testid="copy-names" />
+              <CopyBtn text={d.tsv.quantities} what={t("designerPanel.amounts")} testid="copy-quantities" />
+              <CopyBtn text={d.tsv.table} what={t("designerPanel.theWholeTableTsv")} testid="copy-table" />
+              {d.tsv.shipment && <CopyBtn text={d.tsv.shipment} what={t("designerPanel.shipmentData")} />}
             </div>
             <table className="w-full text-xs">
               <tbody className="divide-y divide-gray-100">
                 {d.fields.map((f) => (
                   <tr key={f.key} className="align-top">
-                    <th className="w-32 py-1.5 text-right font-semibold text-gray-600">{LABEL_AR[f.key] || f.label}</th>
+                    <th className="w-32 py-1.5 text-end font-semibold text-gray-600">{LABEL_AR[f.key] || f.label}</th>
                     <td className="py-1.5 whitespace-pre-line text-gray-900" dir="auto">
                       {f.value || <span className="text-gray-400">—</span>}
                       {f.estimate && (
-                        <span className="ms-1 rounded bg-amber-100 px-1 text-[10px] font-semibold text-amber-900" title={f.assumptions || ""}>
-                          تقدير
-                        </span>
+                        <span className="ms-1 rounded bg-amber-100 px-1 text-[10px] font-semibold text-amber-900" title={f.assumptions || ""}>{t("designerPanel.estimate")}</span>
                       )}
                     </td>
                     <td className="w-40 py-1.5 text-[11px] text-gray-500">
@@ -114,25 +113,23 @@ export default function DesignerPanel({ scope = {}, productId, requestId = null,
 
             {review?.conflicts?.length > 0 && (
               <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs" data-testid="composition-conflicts">
-                <p className="font-semibold text-red-900">مصادر مختلفة على نفس المكوّن — القرار عند المراجع:</p>
+                <p className="font-semibold text-red-900">{t("designerPanel.differentSourcesOnTheSame")}</p>
                 {review.conflicts.map((c) => (
                   <div key={c.index} className="space-y-1 rounded-md bg-white p-2">
                     <p className="font-semibold">{c.ingredient}</p>
-                    {c.comparison && <p className="text-red-800">على نفس الأساس: {c.comparison}</p>}
+                    {c.comparison && <p className="text-red-800">{t("designerPanel.onTheSameBasis")}{" "}{c.comparison}</p>}
                     {c.values.map((v, k) => (
                       <p key={k} dir="auto">
-                        {k + 1}. {v.amountRaw} {v.basis ? `(${v.basis})` : ""} — {v.source?.file || v.source?.source || "المنتج"}
+                        {k + 1}. {v.amountRaw} {v.basis ? `(${v.basis})` : ""} — {v.source?.file || v.source?.source || t("designerPanel.product")}
                         {!c.decision && (
-                          <button type="button" onClick={() => decide(c.index, k)} className="ms-2 text-blue-700 hover:underline">
-                            اعتمد ده
-                          </button>
+                          <button type="button" onClick={() => decide(c.index, k)} className="ms-2 text-blue-700 hover:underline">{t("designerPanel.useThisOne")}</button>
                         )}
                       </p>
                     ))}
                     {c.decision ? (
-                      <p className="text-green-800">اتقرر: {c.decision.amountRaw} — {c.decision.reason}</p>
+                      <p className="text-green-800">{t("designerPanel.decided", { amountRaw: c.decision.amountRaw })}{" "}{c.decision.reason}</p>
                     ) : (
-                      <input value={reason[c.index] || ""} onChange={(e) => setReason({ ...reason, [c.index]: e.target.value })} placeholder="السبب (مطلوب، بيتسجل)" className="w-full rounded border border-gray-300 px-2 py-1" />
+                      <input value={reason[c.index] || ""} onChange={(e) => setReason({ ...reason, [c.index]: e.target.value })} placeholder={t("designerPanel.reasonRequiredItIsRecorded")} className="w-full rounded border border-gray-300 px-2 py-1" />
                     )}
                   </div>
                 ))}
@@ -140,15 +137,13 @@ export default function DesignerPanel({ scope = {}, productId, requestId = null,
             )}
 
             <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/60 p-3 text-xs">
-              <p className="font-semibold text-amber-900">تقدير للتصميم بس (مش نتيجة تحليل — شهادة التحليل بتاخد النتيجة من تقرير التشغيلة)</p>
+              <p className="font-semibold text-amber-900">{t("designerPanel.anEstimateForTheDesign")}</p>
               <div className="grid gap-2 sm:grid-cols-2">
-                <input value={est.appearance} onChange={(e) => setEst({ ...est, appearance: e.target.value })} placeholder="المظهر / اللون المتوقع" className="rounded border border-gray-300 px-2 py-1" />
-                <input value={est.ph} onChange={(e) => setEst({ ...est, ph: e.target.value })} placeholder="pH متوقع" className="rounded border border-gray-300 px-2 py-1" />
+                <input value={est.appearance} onChange={(e) => setEst({ ...est, appearance: e.target.value })} placeholder={t("designerPanel.expectedAppearanceColour")} className="rounded border border-gray-300 px-2 py-1" />
+                <input value={est.ph} onChange={(e) => setEst({ ...est, ph: e.target.value })} placeholder={t("designerPanel.expectedPh")} className="rounded border border-gray-300 px-2 py-1" />
               </div>
-              <input value={est.assumptions} onChange={(e) => setEst({ ...est, assumptions: e.target.value })} placeholder="الافتراضات (الوسط، التخفيف، المرحلة اللي اتقاست)" className="w-full rounded border border-gray-300 px-2 py-1" />
-              <Button variant="secondary" className="!px-3 !py-1 text-xs" onClick={saveEst} isLoading={busy}>
-                احفظ التقدير
-              </Button>
+              <input value={est.assumptions} onChange={(e) => setEst({ ...est, assumptions: e.target.value })} placeholder={t("designerPanel.assumptionsMediumDilutionStageMeasured")} className="w-full rounded border border-gray-300 px-2 py-1" />
+              <Button variant="secondary" className="!px-3 !py-1 text-xs" onClick={saveEst} isLoading={busy}>{t("designerPanel.saveTheEstimate")}</Button>
             </div>
           </div>
         )}

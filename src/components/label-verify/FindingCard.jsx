@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { XCircle, CircleHelp, AlertTriangle, FileText, Database, LayoutGrid, Sparkles, CheckCircle2, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
+import { t } from "../../i18n";
 
 const STATUS_ICON = {
   FAIL: { Icon: XCircle, classes: "text-red-600" },
@@ -11,25 +12,25 @@ const STATUS_ICON = {
 
 // The three sourced kinds + the one unsourced kind (§ visual distinctness is the point).
 const WHY_SOURCE_CONFIG = {
-  regulation: { label: "Regulation", Icon: FileText, badge: "bg-indigo-50 text-indigo-800 border-indigo-200", panel: "bg-indigo-50/60 border-indigo-100" },
-  your_data: { label: "Your data", Icon: Database, badge: "bg-rose-50 text-rose-800 border-rose-200", panel: "bg-rose-50/60 border-rose-100" },
-  structure: { label: "Structure", Icon: LayoutGrid, badge: "bg-gray-100 text-gray-700 border-gray-300", panel: "bg-gray-50 border-gray-200" },
-  plausibility: { label: "Plausibility — unverified", Icon: Sparkles, badge: "bg-purple-50 text-purple-800 border-purple-200", panel: "bg-purple-50/60 border-purple-100" },
+  regulation: { label: t("findingCard.regulation"), Icon: FileText, badge: "bg-indigo-50 text-indigo-800 border-indigo-200", panel: "bg-indigo-50/60 border-indigo-100" },
+  your_data: { label: t("findingCard.yourData"), Icon: Database, badge: "bg-rose-50 text-rose-800 border-rose-200", panel: "bg-rose-50/60 border-rose-100" },
+  structure: { label: t("findingCard.structure"), Icon: LayoutGrid, badge: "bg-gray-100 text-gray-700 border-gray-300", panel: "bg-gray-50 border-gray-200" },
+  plausibility: { label: t("findingCard.plausibilityUnverified"), Icon: Sparkles, badge: "bg-purple-50 text-purple-800 border-purple-200", panel: "bg-purple-50/60 border-purple-100" },
 };
 
 const REMEDIATION_TRUST = {
-  rule: { label: "Sourced from the regulation", classes: "text-blue-800", trusted: true },
-  product_row: { label: "Sourced from your own catalogue", classes: "text-blue-800", trusted: true },
-  reference: { label: "From an approved reference — check it applies here", classes: "text-sky-800", trusted: true },
-  common_practice: { label: "Common practice, not a verified source — check this before you print", classes: "text-amber-800", trusted: false },
-  none: { label: "No sourced fix available", classes: "text-gray-500", trusted: false },
+  rule: { label: t("findingCard.sourcedFromTheRegulation"), classes: "text-blue-800", trusted: true },
+  product_row: { label: t("findingCard.sourcedFromYourOwnCatalogue"), classes: "text-blue-800", trusted: true },
+  reference: { label: t("findingCard.fromAnApprovedReferenceCheck"), classes: "text-sky-800", trusted: true },
+  common_practice: { label: t("findingCard.commonPracticeNotAVerified"), classes: "text-amber-800", trusted: false },
+  none: { label: t("findingCard.noSourcedFixAvailable"), classes: "text-gray-500", trusted: false },
 };
 
 function FixBlock({ v }) {
   const r = v.remediation;
   if (!r || !r.source || r.source === "none") {
     return (
-      <p className="text-sm text-gray-500 italic">No sourced fix available — nothing was invented to fill this gap.</p>
+      <p className="text-sm text-gray-500 italic">{t("findingCard.noSourcedFixAvailableNothing")}</p>
     );
   }
   const trust = REMEDIATION_TRUST[r.source] || REMEDIATION_TRUST.none;
@@ -39,7 +40,7 @@ function FixBlock({ v }) {
       {r.suggested ? (
         <p className="text-sm font-semibold text-gray-900">{r.suggested}</p>
       ) : r.action ? (
-        <p className="text-sm font-semibold text-gray-900 capitalize">{r.action} this field</p>
+        <p className="text-sm font-semibold text-gray-900 capitalize">{r.action}{" "}{t("findingCard.thisField")}</p>
       ) : null}
       <p className={`text-xs font-medium ${trust.classes}`}>{trust.label}</p>
     </div>
@@ -58,17 +59,15 @@ function WhyBlock({ v, whyConfig }) {
         {v.message && <p className="text-sm text-gray-800">{v.message}</p>}
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-lg border border-rose-200 bg-white px-2.5 py-2">
-            <p className="font-bold uppercase tracking-wide text-rose-700 text-[10px] mb-0.5">Label says</p>
-            <p className="text-gray-900">{v.observed ?? "(empty)"}</p>
+            <p className="font-bold uppercase tracking-wide text-rose-700 text-[10px] mb-0.5">{t("findingCard.labelSays")}</p>
+            <p className="text-gray-900">{v.observed ?? t("findingCard.empty")}</p>
           </div>
           <div className="rounded-lg border border-rose-200 bg-white px-2.5 py-2">
-            <p className="font-bold uppercase tracking-wide text-rose-700 text-[10px] mb-0.5">Your records say</p>
-            <p className="text-gray-900">{v.expected ?? "(empty)"}</p>
+            <p className="font-bold uppercase tracking-wide text-rose-700 text-[10px] mb-0.5">{t("findingCard.yourRecordsSay")}</p>
+            <p className="text-gray-900">{v.expected ?? t("findingCard.empty")}</p>
           </div>
         </div>
-        <p className="text-xs text-rose-900">
-          Two ways to close this: change the label to match your records (already in the correction list), or —
-          if the record is wrong — <Link to="/products" className="font-bold underline">fix it in the catalogue instead</Link>.
+        <p className="text-xs text-rose-900">{t("findingCard.twoWaysToCloseThis")}{" "}<Link to="/products" className="font-bold underline">{t("findingCard.fixItInTheCatalogue")}</Link>.
         </p>
       </div>
     );
@@ -77,10 +76,10 @@ function WhyBlock({ v, whyConfig }) {
   if (v.whySource === "your_data") {
     return (
       <div className="space-y-2">
-        <p className="text-sm text-gray-800">{v.message || "We could not read this field with confidence."}</p>
+        <p className="text-sm text-gray-800">{v.message || t("findingCard.weCouldNotReadThis")}</p>
         {v.snippet && (
           <div className="rounded-lg border border-rose-200 bg-white px-2.5 py-2">
-            <p className="font-bold uppercase tracking-wide text-rose-700 text-[10px] mb-0.5">What we read</p>
+            <p className="font-bold uppercase tracking-wide text-rose-700 text-[10px] mb-0.5">{t("findingCard.whatWeRead")}</p>
             <p className="text-gray-900 font-mono">{v.snippet}</p>
           </div>
         )}
@@ -93,7 +92,7 @@ function WhyBlock({ v, whyConfig }) {
       <div className="space-y-1">
         {v.message && <p className="text-sm text-gray-800">{v.message}</p>}
         {v.triggeredBy && <p className="text-sm text-gray-800">{v.triggeredBy[0].toUpperCase() + v.triggeredBy.slice(1)}.</p>}
-        <p className="text-xs text-gray-500 italic">This is a required field in our schema, not a named authority's rule.</p>
+        <p className="text-xs text-gray-500 italic">{t("findingCard.thisIsARequiredField")}</p>
       </div>
     );
   }
@@ -102,7 +101,7 @@ function WhyBlock({ v, whyConfig }) {
     return (
       <div className="space-y-1">
         <p className="text-sm text-gray-800">{v.message}</p>
-        <p className="text-xs text-purple-700 italic">This is a plausibility flag — it has no source behind it. Use your judgement.</p>
+        <p className="text-xs text-purple-700 italic">{t("findingCard.thisIsAPlausibilityFlag")}</p>
       </div>
     );
   }
@@ -140,12 +139,12 @@ export default function FindingCard({ v, onConfirm, confirmed }) {
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-start gap-3 px-4 py-3.5 text-left"
+        className="w-full flex items-start gap-3 px-4 py-3.5 text-start"
       >
         <StatusIcon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${statusConf.classes}`} />
         <span className="flex-1 font-bold text-gray-900 text-sm">
           {v.label?.en || v.path}
-          {confirmed && <span className="ml-2 text-xs font-normal text-green-700">— confirmed</span>}
+          {confirmed && <span className="ms-2 text-xs font-normal text-green-700">{t("findingCard.confirmed")}</span>}
         </span>
         <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border flex-shrink-0 ${whyConfig.badge}`}>
           <whyConfig.Icon className="w-3 h-3" /> {whyConfig.label}
@@ -156,19 +155,19 @@ export default function FindingCard({ v, onConfirm, confirmed }) {
       {expanded && (
         <div className="px-4 pb-4 space-y-3">
           <div className={`rounded-lg border px-3 py-2.5 ${whyConfig.panel}`}>
-            <p className="text-[10px] font-black uppercase tracking-wide text-gray-500 mb-1.5">Why</p>
+            <p className="text-[10px] font-black uppercase tracking-wide text-gray-500 mb-1.5">{t("findingCard.why")}</p>
             <WhyBlock v={v} whyConfig={whyConfig} />
           </div>
 
           {v.status !== "NEEDS_CONFIRMATION" || v.whySource !== "your_data" ? (
             <div>
-              <p className="text-[10px] font-black uppercase tracking-wide text-gray-500 mb-1.5">Fix</p>
+              <p className="text-[10px] font-black uppercase tracking-wide text-gray-500 mb-1.5">{t("findingCard.fix")}</p>
               <FixBlock v={v} />
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
               {v.confidence != null && (
-                <p className="text-xs text-gray-500">We read this with {Math.round(v.confidence * 100)}% confidence.</p>
+                <p className="text-xs text-gray-500">{t("findingCard.weReadThisWithConfidence", { round: Math.round(v.confidence * 100) })}</p>
               )}
               {!confirmed ? (
                 <button
@@ -176,12 +175,10 @@ export default function FindingCard({ v, onConfirm, confirmed }) {
                   onClick={() => onConfirm(v)}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-bold text-green-800 hover:bg-green-100 flex-shrink-0"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Confirm this reading is correct
-                </button>
+                  <CheckCircle2 className="w-3.5 h-3.5" />{" "}{t("findingCard.confirmThisReadingIsCorrect")}</button>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-green-700 flex-shrink-0">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Confirmed for this check
-                </span>
+                  <CheckCircle2 className="w-3.5 h-3.5" />{" "}{t("findingCard.confirmedForThisCheck")}</span>
               )}
             </div>
           )}

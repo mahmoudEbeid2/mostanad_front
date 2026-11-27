@@ -21,72 +21,72 @@ import {
   Languages,
   FlaskConical,
 } from "lucide-react";
-import { LANG, setLang, tr } from "../i18n/lang";
 
 const label = (l) => (LANG === "en" ? l.en || l.name : l.ar || l.name);
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { useAssistantStatus } from "../context/AssistantStatusContext";
 import { useSidebar, SIDEBAR_ID, shortcutLabel } from "../context/sidebarState";
+import { LANG, setLang, t } from "../i18n";
 
 const navLinks = [
-  { name: "Dashboard", ar: "الرئيسية", path: "/dashboard", icon: LayoutDashboard, permission: "read_dashboard" },
-  { name: "ارفع ملفاتك", en: "Upload files", path: "/intake", icon: UploadCloud, permission: "read_products" },
+  { name: "Dashboard", ar: t("sidebar.home"), path: "/dashboard", icon: LayoutDashboard, permission: "read_dashboard" },
+  { name: t("sidebar.uploadYourFiles"), en: t("sidebar.uploadFiles"), path: "/intake", icon: UploadCloud, permission: "read_products" },
   // 26 Nov: what urgent orders from the chat made (companies, products, templates, certificates, evidence) — to check
-  { name: "الطلبات السريعة", en: "Urgent orders", path: "/express", icon: Zap, permission: "read_products" },
-  { name: "Roles", ar: "الأدوار", path: "/roles", icon: ShieldAlert, permission: "read_roles" },
-  { name: "Users", ar: "المستخدمين", path: "/users", icon: Users, permission: "read_users" },
-  { name: "Companies", ar: "الشركات", path: "/companies", icon: Building2, permission: "read_companies" },
-  { name: "Brands", ar: "البراندات", path: "/brands", icon: Tag },
-  { name: "Categories", ar: "الفئات", path: "/categories", icon: FolderTree, permission: "read_categories" },
+  { name: t("sidebar.expressRequests"), en: t("sidebar.urgentOrders"), path: "/express", icon: Zap, permission: "read_products" },
+  { name: "Roles", ar: t("sidebar.roles"), path: "/roles", icon: ShieldAlert, permission: "read_roles" },
+  { name: "Users", ar: t("sidebar.users"), path: "/users", icon: Users, permission: "read_users" },
+  { name: "Companies", ar: t("sidebar.companies"), path: "/companies", icon: Building2, permission: "read_companies" },
+  { name: "Brands", ar: t("sidebar.brands"), path: "/brands", icon: Tag },
+  { name: "Categories", ar: t("sidebar.categories"), path: "/categories", icon: FolderTree, permission: "read_categories" },
   { 
-    name: "Products", ar: "المنتجات", 
+    name: "Products", ar: t("sidebar.products"), 
     icon: Package,
     permission: "read_products",
     subLinks: [
-      { name: "Product List", ar: "قائمة المنتجات", path: "/products" },
-      { name: "Catalogues", ar: "الكتالوجات", path: "/catalogues" }
+      { name: "Product List", ar: t("sidebar.productList"), path: "/products" },
+      { name: "Catalogues", ar: t("sidebar.catalogues"), path: "/catalogues" }
     ]
   },
   { 
-    name: "Regulatory & EDA", ar: "اللوائح والتسجيل", 
+    name: "Regulatory & EDA", ar: t("sidebar.regulationsRegistration"), 
     icon: Scale,
     subLinks: [
-      { name: "Regulations & Rules", ar: "اللوائح والقواعد", path: "/regulatory-documents" },
-      { name: "Legacy EDA Requirements", ar: "متطلبات EDA القديمة", path: "/eda-requirements" }
+      { name: "Regulations & Rules", ar: t("sidebar.regulationsRules"), path: "/regulatory-documents" },
+      { name: "Legacy EDA Requirements", ar: t("sidebar.oldEdaRequirements"), path: "/eda-requirements" }
     ]
   },
   { 
-    name: "Labels", ar: "الليبلات", 
+    name: "Labels", ar: t("sidebar.labels"), 
     icon: Tags,
     subLinks: [
-      { name: "My Labels", ar: "ليبلاتي", path: "/labels/browse" },
-      { name: "Check a Label", ar: "افحص ليبل", path: "/labels" },
-      { name: "Create a Label", ar: "اعمل ليبل", path: "/labels/generator" },
-      { name: "Reference Labels", ar: "ليبلات مرجعية", path: "/reference-labels" }
+      { name: "My Labels", ar: t("sidebar.myLabels"), path: "/labels/browse" },
+      { name: t("sidebar.checkALabel2"), ar: t("sidebar.checkALabel"), path: "/labels" },
+      { name: t("sidebar.createALabel2"), ar: t("sidebar.createALabel"), path: "/labels/generator" },
+      { name: "Reference Labels", ar: t("sidebar.referenceLabels"), path: "/reference-labels" }
     ]
   },
   {
     // Certificates V2 (CERTIFICATES_V2_PLAN.md §13.1)
-    name: "Certificates", ar: "الشهادات",
+    name: "Certificates", ar: t("sidebar.certificates"),
     icon: Sparkles,
     subLinks: [
-      { name: "Templates", ar: "القوالب", path: "/certificates/templates", permission: "read_certificate_templates" },
-      { name: "Types", ar: "أنواع الشهادات", path: "/certificates/types", permission: "read_certificate_types" },
-      { name: "Invoices", ar: "الفواتير", path: "/invoices", permission: "read_invoices" },
-      { name: "Generated certificates", ar: "الشهادات المتعملة", path: "/certificates", permission: "read_certificates" },
-      { name: "Requests", ar: "الطلبات", path: "/certificates/requests", permission: "read_certificates" },
-      { name: "New request", ar: "طلب شهادات جديد", path: "/certificates/requests/new", permission: "create_certificates" },
-      { name: "AI", ar: "الذكاء الاصطناعي", path: "/certificate-ai", permission: "read_certificate_templates" },
+      { name: "Templates", ar: t("sidebar.templates"), path: "/certificates/templates", permission: "read_certificate_templates" },
+      { name: "Types", ar: t("sidebar.certificateTypes"), path: "/certificates/types", permission: "read_certificate_types" },
+      { name: "Invoices", ar: t("sidebar.invoices"), path: "/invoices", permission: "read_invoices" },
+      { name: t("sidebar.generatedCertificates"), ar: t("sidebar.generatedCertificates"), path: "/certificates", permission: "read_certificates" },
+      { name: "Requests", ar: t("sidebar.requests"), path: "/certificates/requests", permission: "read_certificates" },
+      { name: t("sidebar.newRequest"), ar: t("sidebar.newCertificateRequest"), path: "/certificates/requests/new", permission: "create_certificates" },
+      { name: "AI", ar: t("sidebar.certificateAi"), path: "/certificate-ai", permission: "read_certificate_templates" },
     ]
   },
   {
     // UI plan, Phase D/E: owner / admin tools off the client's dashboard
-    name: "Admin", ar: "الإدارة",
+    name: "Admin", ar: t("sidebar.admin"),
     icon: FlaskConical,
     permission: "read_users",
     subLinks: [
-      { name: "Experiment mode", ar: "وضع التجربة", path: "/admin/experiment", permission: "read_users" },
+      { name: t("sidebar.experimentMode"), ar: t("sidebar.experimentMode"), path: "/admin/experiment", permission: "read_users" },
     ]
   },
 ];
@@ -112,11 +112,11 @@ export default function Sidebar() {
     <aside
       id={SIDEBAR_ID}
       ref={sidebarRef}
-      aria-label="Main navigation"
+      aria-label={t("sidebar.mainNavigation")}
       inert={!visible}
       data-testid="sidebar"
       data-state={visible ? "shown" : "hidden"}
-      className={`w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0 transition-transform duration-200 ease-out motion-reduce:transition-none ${isMobile ? "z-50 shadow-xl" : "z-40"} ${visible ? "translate-x-0" : "-translate-x-full"}`}
+      className={`w-64 bg-white border-e border-gray-200 h-screen flex flex-col fixed start-0 top-0 transition-transform duration-200 ease-out motion-reduce:transition-none ${isMobile ? "z-50 shadow-xl" : "z-40"} ${visible ? "translate-x-0" : "-translate-x-full rtl:translate-x-full"}`}
     >
       
       {/* Logo */}
@@ -124,16 +124,16 @@ export default function Sidebar() {
         <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
           <FileCheck className="w-5 h-5 text-white" />
         </div>
-        <span className="text-xl font-bold text-gray-900 tracking-tight">Dossira</span>
+        <span className="text-xl font-bold text-gray-900 tracking-tight">{t("sidebar.dossira")}</span>
         <button
           type="button"
           onClick={toggle}
-          aria-label="Hide sidebar"
+          aria-label={t("sidebar.hideSidebar")}
           aria-expanded={visible}
           aria-controls={SIDEBAR_ID}
-          title={`Hide sidebar (${shortcutLabel()})`}
+          title={t("sidebar.hideSidebar2", { shortcutLabel: shortcutLabel() })}
           data-testid="sidebar-hide"
-          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         >
           <PanelLeftClose className="h-4.5 w-4.5" aria-hidden="true" />
         </button>
@@ -149,9 +149,7 @@ export default function Sidebar() {
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`
             }
           >
-            <span aria-hidden="true" className="w-5 text-center text-violet-600">✦</span>
-            Assistant
-          </NavLink>
+            <span aria-hidden="true" className="w-5 text-center text-violet-600">✦</span>{t("sidebar.assistant")}</NavLink>
         )}
         {navLinks.map((link) => {
           if (link.permission && !hasPermission(user, link.permission)) {
@@ -178,7 +176,7 @@ export default function Sidebar() {
                   {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {isOpen && (
-                  <div className="mt-1 ml-4 pl-4 border-l border-gray-200 flex flex-col space-y-1">
+                  <div className="mt-1 ms-4 ps-4 border-s border-gray-200 flex flex-col space-y-1">
                     {subLinks.map(sub => (
                       <NavLink
                         key={label(sub)}
@@ -233,7 +231,7 @@ export default function Sidebar() {
           <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 uppercase">
             {user?.name?.charAt(0) || "U"}
           </div>
-          <span className="truncate">{tr("حسابي", "My Account")}</span>
+          <span className="truncate">{t("sidebar.myAccount")}</span>
         </NavLink>
 
         <button
@@ -241,7 +239,7 @@ export default function Sidebar() {
           className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
         >
           <LogOut className="w-5 h-5 opacity-75" />
-          {tr("تسجيل الخروج", "Logout")}
+          {t("sidebar.logout")}
         </button>
         <button
           type="button"
@@ -250,7 +248,7 @@ export default function Sidebar() {
           data-testid="lang-toggle"
         >
           <Languages className="w-5 h-5 opacity-75" />
-          {LANG === "en" ? "العربية" : "English"}
+          {LANG === "en" ? "العربية" : "English"}{/* i18n-ignore: each language is named in its own script */}
         </button>
       </div>
     </aside>

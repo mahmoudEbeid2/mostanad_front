@@ -2,14 +2,27 @@
 // reading / verifying / done / failed (with the reason) — live over Server-Sent Events, and polled every
 // 5 s when the stream drops. Then what it filled ("قريت 14 ملف — ملّيت 212 قيمة — …"); a file that wasn't
 // read says why, with «إعادة قراءة». Nothing waits on this: the certificates are made anyway.
+import { keyAr } from "../certificates/ProductHarvestSection";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { BookOpenCheck, Loader2, AlertTriangle, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
 import apiClient from "../../services/apiClient";
 import { followHarvest } from "../../services/apiIntake";
+import { isAr, t } from "../../i18n";
 
-const STAGE_AR = { waiting: "مستني", uploading: "بيترفع", reading: "بيتقرا", verifying: "بيتراجع", read: "اتقرا", failed: "مااتقراش", skipped: "اتساب" };
+const STAGE_AR = { waiting: t("harvestProgress.waiting"), uploading: t("harvestProgress.uploading"), reading: t("harvestProgress.reading"), verifying: t("harvestProgress.reviewing"), read: t("harvestProgress.read"), failed: t("harvestProgress.notRead"), skipped: t("harvestProgress.skipped") };
 const running = (h) => ["queued", "running"].includes(h?.status);
+
+// the backend's line is Arabic only ("قريت 5 ملف — …", BACKEND_STRINGS_TODO.md): other languages build it from the counts
+const summaryLine = (sum) =>
+  sum && sum.files != null
+    ? [
+        t("harvestProgress.readN", { count: sum.files }),
+        sum.filled ? t("harvestProgress.filledNew", { count: sum.filled }) : t("harvestProgress.nothingNew"),
+        sum.conflicts ? t("harvestProgress.conflictsBelow", { count: sum.conflicts }) : t("harvestProgress.noConflicts"),
+        ...(sum.batchMissing ? [t("harvestProgress.batchMissing", { count: sum.batchMissing })] : []),
+      ].join(" — ")
+    : null;
 
 export default function HarvestProgress({ batchId, initial, line = null, onDone }) {
   const [h, setH] = useState(initial || null);
@@ -55,7 +68,7 @@ export default function HarvestProgress({ batchId, initial, line = null, onDone 
     try {
       const r = await apiClient.post(`/intake/batches/${batchId}/harvest/retry`);
       setH(r.data.data);
-      toast.success("بنقرا الملفات اللي مااتقرتش تاني");
+      toast.success(t("harvestProgress.readingTheFilesThatWerent"));
     } catch (e) {
       toast.error(e?.response?.data?.message || e.message);
     } finally {
@@ -71,7 +84,7 @@ export default function HarvestProgress({ batchId, initial, line = null, onDone 
     <div className="space-y-1.5 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs text-emerald-950" data-testid="harvest-progress" data-status={h.status}>
       <p className="flex items-center gap-1.5 font-semibold">
         {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpenCheck className="h-3.5 w-3.5" />}
-        {isRunning ? `بقرا الملفات… ${h.done}/${h.total}` : line || h.ar || `قريت ${files.filter((f) => f.status === "read").length} ملف`}
+        {isRunning ? t("harvestProgress.readingTheFiles", { done: h.done, total: h.total }) : (isAr && (line || h.ar)) || summaryLine(h.summary) || t("harvestProgress.readN", { count: files.filter((f) => f.status === "read").length })}
       </p>
       {isRunning && h.total > 0 && (
         <div className="h-1.5 overflow-hidden rounded-full bg-emerald-100">
@@ -90,18 +103,18 @@ export default function HarvestProgress({ batchId, initial, line = null, onDone 
           ))}
         </ul>
       )}
-      {!isRunning && h.review > 0 && <p className="text-amber-900">{h.review} قيمة المراجعة شكّت فيها — متحفظة «محتاجة مراجعة» ومش متملية.</p>}
+      {!isRunning && h.review > 0 && <p className="text-amber-900">{h.review}{" "}{t("harvestProgress.aValueTheReviewDoubted")}</p>}
       {/* 27 Nov QA: the conflicts themselves, not only their count — each value with its file and page */}
       {!isRunning && (h.summary?.conflictList || []).length > 0 && (
         <details className="text-amber-950" data-testid="harvest-conflicts">
-          <summary className="cursor-pointer font-semibold">التعارضات ({h.summary.conflictList.length}) — ملف بيقول حاجة وملف تاني بيقول حاجة تانية</summary>
+          <summary className="cursor-pointer font-semibold">{t("harvestProgress.conflictsOneFileSaysOne", { length: h.summary.conflictList.length })}</summary>
           <ul className="mt-1 space-y-0.5">
             {h.summary.conflictList.map((c, i) => (
               <li key={i}>
-                <span className="font-semibold">{c.product}</span> · {c.fieldAr}:{" "}
+                <span className="font-semibold">{c.product}</span> · {isAr ? c.fieldAr : keyAr(c.field)}:{" "}
                 {c.values.map((v, j) => (
                   <span key={j} dir="auto">
-                    {j > 0 && " ↔ "}«{v.value}»{v.file ? ` (${v.file}${v.page ? ` ص${v.page}` : ""})` : ""}
+                    {j > 0 && " ↔ "}«{v.value}»{v.file ? ` (${v.file}${v.page ? t("harvestProgress.p", { page: v.page }) : ""})` : ""}
                   </span>
                 ))}
               </li>
@@ -112,10 +125,9 @@ export default function HarvestProgress({ batchId, initial, line = null, onDone 
       {!isRunning && failed.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-amber-900">
           <AlertTriangle className="h-3.5 w-3.5" />
-          <span>{failed.length} ملف مااتقراش — الشهادات اتعملت بالبيانات المتسجلة.</span>
+          <span>{failed.length}{" "}{t("harvestProgress.aFileWasntReadThe")}</span>
           <button type="button" onClick={retry} disabled={busy} className="inline-flex items-center gap-1 rounded-md bg-emerald-700 px-2 py-1 font-semibold text-white hover:bg-emerald-800 disabled:opacity-50" data-testid="harvest-retry">
-            <RotateCcw className="h-3.5 w-3.5" /> إعادة قراءة
-          </button>
+            <RotateCcw className="h-3.5 w-3.5" />{" "}{t("harvestProgress.readAgain")}</button>
         </div>
       )}
     </div>

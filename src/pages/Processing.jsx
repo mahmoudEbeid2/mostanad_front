@@ -4,6 +4,7 @@ import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 import io from "socket.io-client";
 import Button from "../ui/Button";
 import { getTaskStatus } from "../services/apiProducts";
+import { t } from "../i18n";
 
 export default function Processing() {
   const { jobId } = useParams();
@@ -13,7 +14,7 @@ export default function Processing() {
   const type = searchParams.get("type") || "processing";
   
   const [status, setStatus] = useState("pending");
-  const [message, setMessage] = useState("Initializing background task...");
+  const [message, setMessage] = useState(t("processing.initializingBackgroundTask"));
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   
@@ -84,16 +85,14 @@ export default function Processing() {
               </div>
             </div>
             
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Processing Document
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("processing.processingDocument")}</h2>
             <p className="text-gray-500 mb-8 max-w-sm mx-auto">
               {message}
             </p>
             
             <div className="w-full max-w-md bg-gray-100 rounded-full h-2 mb-2 overflow-hidden relative">
               <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out absolute left-0 top-0" 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out absolute start-0 top-0" 
                 style={{ width: `${progress}%` }}
               ></div>
               {/* Indeterminate loader effect if progress is 0 or stuck */}
@@ -102,7 +101,7 @@ export default function Processing() {
               )}
             </div>
             {progress > 0 && (
-              <p className="text-xs font-semibold text-gray-400 mt-2">{progress}% Complete</p>
+              <p className="text-xs font-semibold text-gray-400 mt-2">{progress}{t("processing.complete")}</p>
             )}
           </div>
         ) : status === "completed" ? (
@@ -110,14 +109,10 @@ export default function Processing() {
             <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6 border border-green-100">
               <CheckCircle2 className="w-12 h-12 text-green-500" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Complete!</h2>
-            <p className="text-gray-500 mb-8">
-              The document has been successfully processed and analyzed.
-            </p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">{t("processing.complete2")}</h2>
+            <p className="text-gray-500 mb-8">{t("processing.theDocumentHasBeenSuccessfully")}</p>
             <div className="flex gap-4">
-              <Button onClick={handleReturn} className="px-8">
-                View Results
-              </Button>
+              <Button onClick={handleReturn} className="px-8">{t("processing.viewResults")}</Button>
             </div>
           </div>
         ) : (
@@ -125,17 +120,13 @@ export default function Processing() {
             <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6 border border-red-100">
               <XCircle className="w-12 h-12 text-red-500" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Processing Failed</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">{t("processing.processingFailed")}</h2>
             <p className="text-red-600 font-medium mb-2">
-              {error || "An unexpected error occurred during processing."}
+              {error || t("processing.anUnexpectedErrorOccurredDuring")}
             </p>
-            <p className="text-gray-500 mb-8 text-sm">
-              Please try uploading the document again or contact support if the issue persists.
-            </p>
+            <p className="text-gray-500 mb-8 text-sm">{t("processing.pleaseTryUploadingTheDocument")}</p>
             <Button onClick={handleReturn} variant="secondary">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go Back
-            </Button>
+              <ArrowLeft className="w-4 h-4 me-2" />{t("processing.goBack")}</Button>
           </div>
         )}
       </div>

@@ -10,6 +10,7 @@ import { hasPermission } from "../utils/permissions";
 import { listCatalogues } from "../services/apiCatalogues";
 import CatalogueUpload from "../components/catalogues/CatalogueUpload";
 import CatalogueStatusPill, { Pill } from "../components/catalogues/CatalogueStatusPill";
+import { fmtDate, strings, t } from "../i18n";
 
 // /catalogues (backend plan.md §15.2): a company's manufacturer catalogues, kept
 // as source documents. A system user with manage_catalogues uploads one FOR a
@@ -17,20 +18,13 @@ import CatalogueStatusPill, { Pill } from "../components/catalogues/CatalogueSta
 // keeps working until this flow replaces it (§15.8). Upload is step 1 of 4 (design
 // C0): once the file is checked a person chooses which pages the AI reads.
 const STR = {
-  title: "Catalogues",
-  subtitle: "Manufacturer catalogues kept as source documents — every product value can be traced to its page.",
-  pickCompany: "Pick a company to see its catalogues.",
-  empty: "No catalogue yet for this company.",
-  cols: ["Edition", "Uploaded", "Pages", "Blocks", "Status", ""],
-  open: "Open",
-  choosePages: "Choose pages",
-  uploading: "Uploading",
+  ...strings("catalogues"),
+  cols: [t("catalogues.colEdition"), t("catalogues.colUploaded"), t("catalogues.colPages"), t("catalogues.colBlocks"), t("catalogues.colStatus"), ""],
 };
 
 // not extracted yet → the next step is choosing its pages
 const needsPages = (v) => ["pages_ready", "segmented"].includes(v.status) && !v.pageSelection?.extractedAt;
 
-const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 
 export default function Catalogues() {
   const scopeState = useCompanyScope();
@@ -93,7 +87,7 @@ export default function Catalogues() {
                   {c.brand && <span className="text-xs text-gray-500">{c.brand.name}</span>}
                 </div>
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-left text-xs text-gray-500">
+                  <thead className="bg-gray-50 text-start text-xs text-gray-500">
                     <tr>
                       {STR.cols.map((h, i) => (
                         <th key={i} className="px-4 py-2 font-semibold">
@@ -118,7 +112,7 @@ export default function Catalogues() {
                             </p>
                           ))}
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap space-x-3">
+                        <td className="px-4 py-3 text-end whitespace-nowrap space-x-3">
                           {needsPages(v) && (
                             <Link to={`/catalogues/versions/${v.id}/pages`} className="font-medium text-blue-600 hover:underline" data-testid="choose-pages">
                               {STR.choosePages}

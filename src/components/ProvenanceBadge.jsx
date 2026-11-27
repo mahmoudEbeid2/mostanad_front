@@ -1,28 +1,29 @@
 import { useState } from "react";
 import { ShieldCheck, FileSearch, BookMarked, Globe2, PenLine, ChevronDown } from "lucide-react";
+import { fmtDateTime, t } from "../i18n";
 
 const PROVENANCE_CONFIG = {
-  confirmed: { label: "Confirmed", icon: ShieldCheck, classes: "bg-green-50 text-green-800 border-green-200" },
-  extracted: { label: "Extracted", icon: FileSearch, classes: "bg-amber-50 text-amber-800 border-amber-200" },
-  reference: { label: "Reference", icon: BookMarked, classes: "bg-blue-50 text-blue-800 border-blue-200" },
-  external: { label: "External", icon: Globe2, classes: "bg-purple-50 text-purple-800 border-purple-200" },
-  inferred: { label: "Inferred", icon: FileSearch, classes: "bg-amber-50 text-amber-800 border-amber-200" },
-  manual: { label: "Manual Edit", icon: PenLine, classes: "bg-gray-50 text-gray-700 border-gray-200" },
+  confirmed: { label: t("provenanceBadge.confirmed"), icon: ShieldCheck, classes: "bg-green-50 text-green-800 border-green-200" },
+  extracted: { label: t("provenanceBadge.extracted"), icon: FileSearch, classes: "bg-amber-50 text-amber-800 border-amber-200" },
+  reference: { label: t("provenanceBadge.reference"), icon: BookMarked, classes: "bg-blue-50 text-blue-800 border-blue-200" },
+  external: { label: t("provenanceBadge.external"), icon: Globe2, classes: "bg-purple-50 text-purple-800 border-purple-200" },
+  inferred: { label: t("provenanceBadge.inferred"), icon: FileSearch, classes: "bg-amber-50 text-amber-800 border-amber-200" },
+  manual: { label: t("provenanceBadge.manualEdit"), icon: PenLine, classes: "bg-gray-50 text-gray-700 border-gray-200" },
 };
 
 const SIMPLE_PROVENANCE_CONFIG = {
-  confirmed: { label: "Confirmed", icon: ShieldCheck, classes: "bg-green-50 text-green-800 border-green-200" },
-  reference: { label: "Approved reference", icon: BookMarked, classes: "bg-sky-50 text-sky-800 border-sky-200" },
-  estimate: { label: "AI estimate", icon: FileSearch, classes: "bg-amber-50 text-amber-900 border-amber-300" },
+  confirmed: { label: t("provenanceBadge.confirmed"), icon: ShieldCheck, classes: "bg-green-50 text-green-800 border-green-200" },
+  reference: { label: t("provenanceBadge.approvedReference"), icon: BookMarked, classes: "bg-sky-50 text-sky-800 border-sky-200" },
+  estimate: { label: t("provenanceBadge.aiEstimate"), icon: FileSearch, classes: "bg-amber-50 text-amber-900 border-amber-300" },
 };
 
 function sourceRefSummary(sourceRef) {
   if (!sourceRef) return null;
   switch (sourceRef.kind) {
     case "product_row":
-      return `From this product's record (field: ${sourceRef.field})`;
+      return t("provenanceBadge.fromThisProductsRecordField", { field: sourceRef.field });
     case "reference_label":
-      return `From reference label ${sourceRef.id}${sourceRef.matchTier ? ` (${sourceRef.matchTier})` : ""}${sourceRef.score ? `, match score ${sourceRef.score}` : ""}`;
+      return t("provenanceBadge.fromReferenceLabel", { id: sourceRef.id }) + (sourceRef.matchTier ? ` (${sourceRef.matchTier})` : "") + (sourceRef.score ? t("provenanceBadge.matchScore", { score: sourceRef.score }) : "");
     default:
       return sourceRef.id ? `${sourceRef.kind || "source"}: ${sourceRef.id}` : sourceRef.kind || null;
   }
@@ -44,7 +45,7 @@ export default function ProvenanceBadge({ entries, detailed = false }) {
 
   const config = detailed
     ? PROVENANCE_CONFIG[primary.provenance] || {
-        label: primary.provenance || "Unknown",
+        label: primary.provenance || t("provenanceBadge.unknown"),
         icon: FileSearch,
         classes: "bg-gray-50 text-gray-600 border-gray-200",
       }
@@ -59,25 +60,23 @@ export default function ProvenanceBadge({ entries, detailed = false }) {
         className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${config.classes}`}
       >
         <Icon className="w-3 h-3" /> {config.label}
-        {detailed && primary.tier != null && <span className="opacity-70">tier {primary.tier}</span>}
+        {detailed && primary.tier != null && <span className="opacity-70">{t("provenanceBadge.tier")}{" "}{primary.tier}</span>}
         {entries.length > 1 && <ChevronDown className="w-3 h-3" />}
       </button>
       {open && (
-        <div className="absolute z-20 top-full mt-1 left-0 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-3 space-y-2 text-xs text-gray-700">
+        <div className="absolute z-20 top-full mt-1 start-0 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-3 space-y-2 text-xs text-gray-700">
           {entries.map((e) => (
             <div key={e.key} className="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
               <p className="font-mono text-[10px] text-gray-400">{e.key}</p>
               <p className="font-bold text-gray-900">
                 {PROVENANCE_CONFIG[e.provenance]?.label || e.provenance}
-                {e.tier != null ? ` - tier ${e.tier}` : ""}
+                {e.tier != null ? t("provenanceBadge.tier2", { tier: e.tier }) : ""}
               </p>
               {sourceRefSummary(e.sourceRef) && <p className="mt-0.5">{sourceRefSummary(e.sourceRef)}</p>}
               {e.selfConsistency && (
-                <p className="mt-0.5 text-gray-500">
-                  Self-consistency: {e.selfConsistency.agreed ? "agreed" : "disagreed"} across {e.selfConsistency.runs} runs
-                </p>
+                <p className="mt-0.5 text-gray-500">{t("provenanceBadge.selfConsistency")}{" "}{e.selfConsistency.agreed ? t("provenanceBadge.agreed") : t("provenanceBadge.disagreed")}{" "}{t("provenanceBadge.acrossRuns", { runs: e.selfConsistency.runs })}</p>
               )}
-              {e.at && <p className="mt-0.5 text-gray-400">{new Date(e.at).toLocaleString()}</p>}
+              {e.at && <p className="mt-0.5 text-gray-400">{fmtDateTime(e.at)}</p>}
             </div>
           ))}
         </div>

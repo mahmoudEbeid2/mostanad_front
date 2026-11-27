@@ -7,40 +7,16 @@ import { useAiStatus } from "../../context/AiStatusContext";
 import { getCategories } from "../../services/apiCategories";
 import { createProductFromLine, getNewProductDraft, suggestNewProduct } from "../../services/apiInvoices";
 import { categoryOptions } from "../../utils/categoryOptions";
+import { strings, t } from "../../i18n";
 
 // "+ New product" on an unmatched invoice line (mockup D2). By default it asks only for what this
 // line's certificates require; "Full product" shows every field. The list of fields comes from the
 // server (the line's selected templates) and follows the certificate type chips on the page.
 // Required fields may stay empty: they show up as missing in the data check.
 const STR = {
-  title: (n) => `New product from line ${n}`,
-  group: "How much to add",
-  needed: "Only what the certificates need",
-  neededHint: (n, codes) => `${n} required field${n === 1 ? "" : "s"}${codes.length ? ` for ${codes.join(" + ")}` : ""}`,
-  full: "Full product",
-  fullHint: "Every product field — for the product list too",
-  name: "Name",
-  required: (codes, done, total) => `Required for ${codes.join(" + ") || "these certificates"} · ${done} of ${total} filled`,
-  allFields: "Product fields",
-  suggest: "Suggest with AI",
-  suggesting: "Asking…",
-  nothingSuggested: "AI had nothing to suggest for the empty fields.",
-  estimated: "estimated",
-  stays: "Batch, quantity and dates stay on the invoice line; lab results go in the results grid.",
-  rowName: "Name",
-  rowAmount: "Amount",
-  rowValue: "Value",
-  addRow: "Add a row",
-  removeRow: "Remove this row",
-  remember: "Use this name for future invoices",
-  cancel: "Cancel",
-  create: (n) => `Create product and match line ${n}`,
-  createFull: (n) => `Create full product and match line ${n}`,
-  close: "Close",
-  registry: "From the official registry only",
-  tags: "Separate with commas",
-  brand: "Choose a brand…",
-  category: "Choose a category…",
+  ...strings("newProductModal"),
+  neededHint: (n, codes) => t("newProductModal.neededHint", { count: n }) + (codes.length ? t("newProductModal.forCodes", { codes: codes.join(" + ") }) : ""),
+  required: (codes, done, total) => t("newProductModal.required", { codes: codes.join(" + ") || t("newProductModal.theseCertificates"), done, total }),
 };
 
 const inputClass = "mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white";
@@ -291,7 +267,7 @@ export default function NewProductModal({ scope, invoiceId, item, typesKey, bran
                   { id: "needed", label: STR.needed, hint: STR.neededHint(required.length, codes) },
                   { id: "full", label: STR.full, hint: STR.fullHint },
                 ].map((o) => (
-                  <button key={o.id} type="button" role="radio" aria-checked={mode === o.id} onClick={() => setMode(o.id)} data-testid={`mode-${o.id}`} className={`flex items-start gap-2.5 rounded-xl p-3 text-left border-2 ${mode === o.id ? "border-blue-600 bg-blue-50/40" : "border-gray-200 hover:border-gray-300"}`}>
+                  <button key={o.id} type="button" role="radio" aria-checked={mode === o.id} onClick={() => setMode(o.id)} data-testid={`mode-${o.id}`} className={`flex items-start gap-2.5 rounded-xl p-3 text-start border-2 ${mode === o.id ? "border-blue-600 bg-blue-50/40" : "border-gray-200 hover:border-gray-300"}`}>
                     <span aria-hidden="true" className={`mt-0.5 w-4 h-4 rounded-full shrink-0 border-2 ${mode === o.id ? "border-[5px] border-blue-600" : "border-gray-300"}`} />
                     <span className="flex flex-col">
                       <span className="text-sm font-semibold text-gray-900">{o.label}</span>
@@ -343,7 +319,7 @@ export default function NewProductModal({ scope, invoiceId, item, typesKey, bran
         </div>
 
         <div className="flex flex-wrap items-center gap-3 px-6 py-3.5 border-t border-gray-100">
-          <label className="flex items-center gap-2 text-xs text-gray-600 mr-auto">
+          <label className="flex items-center gap-2 text-xs text-gray-600 me-auto">
             <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="w-4 h-4 accent-blue-600" data-testid="remember-name" /> {STR.remember}
           </label>
           <Button type="button" variant="secondary" onClick={onClose}>

@@ -1,52 +1,28 @@
 import { Link } from "react-router-dom";
-import { pick } from "../../i18n/lang";
+import { strings, t } from "../../i18n";
 
 // "What Generate will produce" (plan §13.5; mockup B3): one row per template
 // version, then every line/type that no active template covers, with a link
 // to create the missing template.
-const STR_EN = {
-  title: "Plan preview",
-  // I19: the preview is advisory — Generate re-runs the selection on the server
-  recalculated: "A preview of the current templates — the plan is recalculated when you click Generate.",
-  perProduct: (n) => `${n} certificate${n === 1 ? "" : "s"} · one per product`,
-  perInvoice: (n, lines) => `${n} certificate${n === 1 ? "" : "s"} · whole invoice (${lines} line${lines === 1 ? "" : "s"})`,
-  nothing: "No active template applies to any line yet.",
+
+const STR = {
+  ...strings("planPreview"),
+  perProduct: (n) => t("planPreview.perProduct", { count: n }),
+  perInvoice: (n, lines) => t("planPreview.perInvoice", { count: n, lines }),
   gap: (g, country) => (
     <>
-      Line {g.lineNo}
-      {g.name ? ` (${g.name})` : ""} has no {g.typeCode} template
+      {t("planPreview.gapLine", { lineNo: g.lineNo })}
+      {g.name ? ` (${g.name})` : ""} {t("planPreview.gapText", { type: g.typeCode })}
       {g.brandName || country ? (
         <>
           {" "}
-          for <b>{[g.brandName, country].filter(Boolean).join(" · ")}</b>
+          {t("planPreview.gapFor")} <b>{[g.brandName, country].filter(Boolean).join(" · ")}</b>
         </>
       ) : null}
     </>
   ),
-  unassigned: (u) => `Line ${u.lineNo}${u.name ? ` (${u.name})` : ""} gets no certificate at all.`,
-  create: "Create template",
+  unassigned: (u) => t("planPreview.unassigned", { lineNo: u.lineNo, name: u.name ? ` (${u.name})` : "" }),
 };
-const STR = pick({ en: STR_EN, ar: {
-  title: "اللي هيتعمل",
-  recalculated: "معاينة على القوالب الحالية — بيتحسب تاني لما تدوس «طلّع».",
-  perProduct: (n) => `${n} شهادة · واحدة لكل منتج`,
-  perInvoice: (n, lines) => `${n} شهادة · للفاتورة كلها (${lines} سطر)`,
-  nothing: "مفيش قالب شغّال على أي سطر لسه.",
-  gap: (g, country) => (
-    <>
-      السطر {g.lineNo}
-      {g.name ? ` (${g.name})` : ""} مالوش قالب {g.typeCode}
-      {g.brandName || country ? (
-        <>
-          {" "}
-          لـ <b>{[g.brandName, country].filter(Boolean).join(" · ")}</b>
-        </>
-      ) : null}
-    </>
-  ),
-  unassigned: (u) => `السطر ${u.lineNo}${u.name ? ` (${u.name})` : ""} مش هيطلعله أي شهادة.`,
-  create: "اعمل قالب",
-} });
 
 export default function PlanPreview({ plan }) {
   if (!plan) return null;
@@ -59,16 +35,16 @@ export default function PlanPreview({ plan }) {
         <div key={s.templateVersionId} className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
           <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-gray-700">{s.typeCode}</span>
           <span className="text-gray-900">{s.scope === "per_invoice" ? STR.perInvoice(s.count, s.lines) : STR.perProduct(s.count)}</span>
-          <span className="ml-auto text-gray-500 text-xs">
+          <span className="ms-auto text-gray-500 text-xs">
             {s.templateName}
-            {s.versionNumber ? ` v${s.versionNumber}` : ""}
+            {s.versionNumber ? t("planPreview.v", { versionNumber: s.versionNumber }) : ""}
           </span>
         </div>
       ))}
       {plan.gaps.map((g) => (
         <div key={`${g.invoiceItemId}:${g.certificateTypeId}:${g.scope}`} className="flex items-center gap-3 rounded-lg border border-dashed border-red-300 bg-red-50 px-3 py-2.5 text-sm text-red-800">
           <span>{STR.gap(g, g.country)}</span>
-          <Link to={`/certificates/templates/new?certificateTypeId=${g.certificateTypeId}`} className="ml-auto font-semibold text-red-700 hover:underline whitespace-nowrap">
+          <Link to={`/certificates/templates/new?certificateTypeId=${g.certificateTypeId}`} className="ms-auto font-semibold text-red-700 hover:underline whitespace-nowrap">
             {STR.create}
           </Link>
         </div>

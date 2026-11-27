@@ -8,26 +8,12 @@ import { getBrands } from "../../services/apiBrands";
 import { listCertificateTypesForPicker } from "../../services/apiCertificateTypes";
 import { useAiStatus } from "../../context/AiStatusContext";
 import CertificateTypePicker from "./CertificateTypePicker";
+import { localizeCountries, strings } from "../../i18n";
 
 // Invoice upload (plan §13.5, mockup B1): drop zone + optional brand hint and
 // destination country, then straight to the review page while it is read.
 // `companyField` (the company picker, or a company's own name) leads the form.
-const STR = {
-  drop: "Drop the invoice here, or",
-  browse: "browse",
-  dropHint: "PDF, PNG, JPEG or WebP · up to 15 MB · a phone photo works",
-  brand: "Brand",
-  brandHint: "optional hint",
-  detectBrand: "Detect from products",
-  country: "Destination country",
-  countryHint: "optional",
-  readCountry: "Read from invoice",
-  upload: "Upload & read invoice →",
-  uploadByHand: "Upload & enter it by hand →",
-  noAiHint: "AI is unavailable, so the invoice won't be read for you: it opens next to empty fields for you to type its lines.",
-  tooLarge: "Invoices are limited to 15 MB.",
-  changeLater: "You can change the types on the review page before generating.",
-};
+const STR = strings("invoiceUploadPanel");
 
 const MAX_BYTES = 15 * 1024 * 1024;
 
@@ -42,7 +28,7 @@ export default function InvoiceUploadPanel({ scope, companyId, companyName = "",
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [picker, setPicker] = useState({ types: null, failed: false, selected: new Set(), includeNew: true, remember: false });
-  const countries = useMemo(() => countryList().getData(), []);
+  const countries = useMemo(() => localizeCountries(countryList().getData()), []);
 
   useEffect(() => {
     if (!companyId) return;
@@ -121,7 +107,7 @@ export default function InvoiceUploadPanel({ scope, companyId, companyName = "",
           </span>
           {file ? (
             <span className="font-semibold text-gray-900">
-              {file.name} <span className="text-gray-500 font-normal">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+              {file.name} <span className="text-gray-500 font-normal">({(file.size / 1024 / 1024).toFixed(2)}{" "}MB)</span>
             </span>
           ) : (
             <span className="font-semibold text-gray-900">
@@ -162,8 +148,8 @@ export default function InvoiceUploadPanel({ scope, companyId, companyName = "",
       <CertificateTypePicker {...picker} companyName={companyName} onChange={(patch) => setPicker((p) => ({ ...p, ...patch }))} />
 
       <div className="flex flex-wrap items-center justify-end gap-3 text-sm">
-        {error && <p className="text-red-600 mr-auto">{error}</p>}
-        {!aiAvailable && <p className="text-xs text-amber-800 mr-auto" data-testid="invoice-no-ai">{STR.noAiHint}</p>}
+        {error && <p className="text-red-600 me-auto">{error}</p>}
+        {!aiAvailable && <p className="text-xs text-amber-800 me-auto" data-testid="invoice-no-ai">{STR.noAiHint}</p>}
         {usable.length > 0 && <span className="text-gray-500">{STR.changeLater}</span>}
         <Button type="submit" isLoading={busy} disabled={!file || file.size > MAX_BYTES || noneChosen}>
           {aiAvailable ? STR.upload : STR.uploadByHand}

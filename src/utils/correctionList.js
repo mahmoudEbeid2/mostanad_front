@@ -1,27 +1,28 @@
 import { localizedText } from "./localizedText";
+import { fmtDateTime, t } from "../i18n";
 
 const STATUS_LABEL = {
-  FAIL: "MUST FIX",
-  NEEDS_CONFIRMATION: "CONFIRM",
-  NEEDS_REVIEW: "WORTH A LOOK",
-  WARN: "WORTH A LOOK",
+  FAIL: t("correctionList.mustFix"),
+  NEEDS_CONFIRMATION: t("correctionList.confirm"),
+  NEEDS_REVIEW: t("correctionList.worthALook"),
+  WARN: t("correctionList.worthALook"),
 };
 
 const WHY_SOURCE_LABEL = {
-  regulation: "Regulation",
-  your_data: "Your data",
-  structure: "Structure",
-  plausibility: "Plausibility (unverified)",
+  regulation: t("correctionList.regulation"),
+  your_data: t("correctionList.yourData"),
+  structure: t("correctionList.structure"),
+  plausibility: t("correctionList.plausibilityUnverified"),
 };
 
 function fixLine(v) {
   const r = v.remediation;
   if (!r || r.source === "none" || !r.source) return "No sourced fix available.";
   const parts = [];
-  if (r.suggested) parts.push(`Suggested: "${r.suggested}"`);
-  else if (r.action) parts.push(`Suggested action: ${r.action}`);
+  if (r.suggested) parts.push(t("correctionList.suggested", { suggested: r.suggested }));
+  else if (r.action) parts.push(t("correctionList.suggestedAction", { action: r.action }));
   if (r.source === "common_practice") parts.push("(Common practice — not a verified source. Check this before you print.)");
-  else if (r.source === "reference") parts.push("(From an approved reference — check it applies here.)");
+  else if (r.source === "reference") parts.push(t("correctionList.fromAnApprovedReferenceCheck"));
   return parts.join(" ") || "No sourced fix available.";
 }
 
@@ -31,9 +32,9 @@ export function buildCorrectionListText({ verdicts = [], productName, country, u
   const findings = verdicts.filter((v) => ["FAIL", "NEEDS_CONFIRMATION", "WARN", "NEEDS_REVIEW"].includes(v.status));
 
   const lines = [];
-  lines.push(`CORRECTION LIST${productName ? ` — ${productName}` : ""}`);
-  if (country) lines.push(`Target country: ${country}`);
-  lines.push(`Generated: ${new Date().toLocaleString()}`);
+  lines.push(t("correctionList.correctionList", { v: productName ? ` — ${productName}` : "" }));
+  if (country) lines.push(t("correctionList.targetCountry", { country }));
+  lines.push(t("correctionList.generated", { date: fmtDateTime(new Date()) }));
   lines.push("");
 
   if (findings.length === 0) {
@@ -42,13 +43,13 @@ export function buildCorrectionListText({ verdicts = [], productName, country, u
     findings.forEach((v, idx) => {
       const label = v.label?.en || localizedText(v.label) || v.path;
       lines.push(`${idx + 1}. ${label} [${STATUS_LABEL[v.status] || v.status}]`);
-      lines.push(`   What: ${v.message || "(see report)"}`);
+      lines.push(`   ${t("correctionList.what", { v: v.message || t("correctionList.seeReport") })}`);
       if (v.triggeredBy) lines.push(`   Why: ${v.triggeredBy}`);
       if (v.observed != null || v.expected != null) {
-        lines.push(`   Label says: "${v.observed ?? "(empty)"}" — Your records say: "${v.expected ?? "(empty)"}"`);
+        lines.push(`   ${t("correctionList.labelSays", { observed: v.observed ?? t("correctionList.empty"), expected: v.expected ?? t("correctionList.empty") })}`);
       }
-      lines.push(`   Fix: ${fixLine(v)}`);
-      lines.push(`   Source type: ${WHY_SOURCE_LABEL[v.whySource] || v.whySource || "unknown"}`);
+      lines.push(t("correctionList.fix", { v: fixLine(v) }));
+      lines.push(`   ${t("correctionList.sourceType", { v: WHY_SOURCE_LABEL[v.whySource] || v.whySource || "—" })}`);
       if (v.citation) lines.push(`   Citation: "${v.citation}"`);
       lines.push("");
     });

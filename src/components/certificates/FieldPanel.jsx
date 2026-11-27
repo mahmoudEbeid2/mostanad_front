@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, Check, Sparkles, Trash2, X } from "lucide-react";
 import SourcePicker from "./SourcePicker";
 import { BATCH_DATA_NOTE, DATE_PATTERNS, mappingBadge, slugKey, sourceLabel, sourceType } from "../../utils/certificateFieldSources";
 import { getAiSuggestion } from "../../services/apiCertificateTemplates";
-import { pick, tr } from "../../i18n/lang";
+import { strings, t } from "../../i18n";
 
 // AI plan §5.1 step 5: the origin badge, and the "Why?" behind it — the
 // dictionary entry with its examples, the sample-product check, the rationale.
@@ -31,7 +31,7 @@ function WhyPanel({ field, scope }) {
   return (
     <div className="text-xs">
       <button type="button" onClick={show} className="text-blue-700 underline" aria-expanded={open}>
-        {open ? tr("اخفي السبب", "Hide why") : tr("ليه؟", "Why?")}
+        {open ? t("fieldPanel.hideWhy") : t("fieldPanel.why")}
       </button>
       {open && info && (
         <div className="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 p-2 space-y-1 text-gray-700" data-testid="mapping-why">
@@ -39,13 +39,13 @@ function WhyPanel({ field, scope }) {
           {entry && (
             <p>
               {entry.label}
-              {typeof entry.coverage === "number" ? ` · in ${Math.round(entry.coverage * 100)} % of products` : ""}
-              {entry.examples?.length ? ` · e.g. ${entry.examples.slice(0, 3).join(", ")}` : ""}
+              {typeof entry.coverage === "number" ? t("fieldPanel.inOfProducts", { round: Math.round(entry.coverage * 100) }) : ""}
+              {entry.examples?.length ? t("fieldPanel.eG", { join: entry.examples.slice(0, 3).join(", ") }) : ""}
             </p>
           )}
-          {info.evidence?.type === "sample_product" && <p>Sample product: {info.evidence.text}</p>}
+          {info.evidence?.type === "sample_product" && <p>{t("fieldPanel.sampleProduct")}{" "}{info.evidence.text}</p>}
           {info.note && <p className="text-amber-800">{info.note}</p>}
-          {info.candidates?.length > 0 && <p>Several matches: {info.candidates.join(", ")} — pick one.</p>}
+          {info.candidates?.length > 0 && <p>{t("fieldPanel.severalMatchesPickOne", { join: info.candidates.join(", ") })}</p>}
         </div>
       )}
     </div>
@@ -59,107 +59,9 @@ function WhyPanel({ field, scope }) {
 // cell of a repeating group's sample row (plan §7.8): its value then comes
 // from each row (or fixed text / typed), not from the catalogue.
 
-const STR_EN = {
-  title: "Fields",
-  empty: "Select the text that changes from one certificate to the next (batch number, dates, product name…) in the design, then press “Make field” or Enter. Ctrl/⌘-select several values to make them at once.",
-  label: "Label",
-  key: "Key",
-  source: "Value comes from",
-  format: "Format",
-  date: "Date format",
-  dateAsIs: "As is",
-  case: "Letter case",
-  caseAsIs: "As is",
-  upper: "UPPER",
-  lower: "lower",
-  titleCase: "Title",
-  decimals: "Decimals",
-  thousands: "Thousands separator",
-  prefix: "Prefix",
-  suffix: "Suffix",
-  required: "Required — flag the certificate if empty",
-  align: "Align",
-  alignHint: "Where the value stays fixed when it is longer or shorter than the sample.",
-  left: "Left",
-  center: "Center",
-  right: "Right",
-  sample: "Sample",
-  suggestAlign: (a) => `Suggested: ${a}`,
-  apply: "Apply",
-  unconfirmed: "Unconfirmed",
-  confirm: "Confirm",
-  suggest: "Suggest fields (AI)",
-  suggesting: "Asking AI…",
-  aiChipsTitle: "AI suggestions — accept or reject each",
-  accept: "Accept",
-  reject: "Reject",
-  readOnly: "This version is not a draft, so its fields are read-only.",
-  group: "Row of group",
-  noGroup: "— not part of a group —",
-  groupHint: "A cell of the group's sample row: it is repeated once per row.",
-  labResult: "Lab result (measured per batch)",
-  labResultHint: "Never inferred or looked up: only a supplier COA, an earlier result of the same batch, or a person fills it.",
-  batchFact: "Batch fact (batch / lot number, production or expiry date)",
-  batchFactHint: "Never generated: only the invoice, a supplier COA, a packing list or a person fills it.",
-  notApplicable: "Not applicable",
-  notApplicableHint: "Nothing is looked for and it stays empty. Optional fields without this tick are still filled when possible.",
-  specField: "Its specification",
-  noSpec: "— none —",
-  specFieldHint: "Shown next to the result in the results grid; a value outside it is highlighted.",
-  showSpec: "Print the specification instead of a result",
-  showSpecHint: "The certificate prints the specification here and never asks for a measured value.",
-};
-const STR_AR = {
-  title: "الحقول",
-  empty: "حدّد النص اللي بيتغير من شهادة للتانية (رقم التشغيلة، التواريخ، اسم المنتج…) في التصميم، وبعدين دوس «اعمل حقل» أو Enter. Ctrl/⌘ عشان تحدد كذا قيمة مرة واحدة.",
-  label: "الاسم",
-  key: "المفتاح",
-  source: "القيمة جاية من",
-  format: "الشكل",
-  date: "شكل التاريخ",
-  dateAsIs: "زي ما هو",
-  case: "حالة الحروف",
-  caseAsIs: "زي ما هي",
-  upper: "كبيرة",
-  lower: "صغيرة",
-  titleCase: "أول حرف كبير",
-  decimals: "الكسور العشرية",
-  thousands: "فاصل الآلاف",
-  prefix: "قبلها",
-  suffix: "بعدها",
-  required: "مطلوب — علّم على الشهادة لو فاضي",
-  align: "المحاذاة",
-  alignHint: "المكان اللي القيمة بتفضل ثابتة عنده لما تكون أطول أو أقصر من المثال.",
-  left: "شمال",
-  center: "نص",
-  right: "يمين",
-  sample: "مثال",
-  suggestAlign: (a) => `المقترح: ${a}`,
-  apply: "طبّق",
-  unconfirmed: "مش متأكد",
-  confirm: "أكّد",
-  suggest: "اقترح الحقول (ذكاء اصطناعي)",
-  suggesting: "بنسأل الذكاء الاصطناعي…",
-  aiChipsTitle: "اقتراحات الذكاء الاصطناعي — اقبل أو ارفض كل واحد",
-  accept: "اقبل",
-  reject: "ارفض",
-  readOnly: "النسخة دي مش مسودة، فحقولها للقراية بس.",
-  group: "صف في مجموعة",
-  noGroup: "— مش جزء من مجموعة —",
-  groupHint: "خانة في صف المثال بتاع المجموعة: بتتكرر مرة لكل صف.",
-  labResult: "نتيجة تحليل (بتتقاس لكل تشغيلة)",
-  labResultHint: "عمرها ما بتتستنتج ولا بتتدوّر عليها: شهادة تحليل المورد، أو نتيجة سابقة لنفس التشغيلة، أو شخص بيكتبها.",
-  batchFact: "بيان تشغيلة (رقم التشغيلة، تاريخ الإنتاج أو الانتهاء)",
-  batchFactHint: "عمره ما بيتولّد: الفاتورة، أو شهادة تحليل المورد، أو قايمة التعبئة، أو شخص بيكتبه.",
-  notApplicable: "مش مطلوب هنا",
-  notApplicableHint: "مفيش حاجة بتتدوّر عليها وبتفضل فاضية. الحقول الاختيارية من غير العلامة دي بتتملى لو ينفع.",
-  specField: "المواصفة بتاعته",
-  noSpec: "— مفيش —",
-  specFieldHint: "بتظهر جنب النتيجة في جدول النتايج؛ القيمة اللي برّاها بتتعلّم.",
-  showSpec: "اطبع المواصفة بدل النتيجة",
-  showSpecHint: "الشهادة بتطبع المواصفة هنا ومش بتطلب قيمة مقاسة أبداً.",
-};
-const STR = pick({ en: STR_EN, ar: STR_AR });
+
+
+const STR = strings("fieldPanel");
 
 // the server's pre-set for a field the owner hasn't ticked yet (backend policy.defaultIsLabResult)
 const LAB_RESULT_LABEL = /\b(results?|assay|complies|conforms?)\b/i;
@@ -317,12 +219,10 @@ function FieldEditor({ field, siblings = [], options, groups, cellOptionsFor, su
         {field.dataCategory === "batch_data" && field.source?.kind === "manual" && <p className="text-xs font-normal text-amber-800 bg-amber-50 rounded-md p-2">{BATCH_DATA_NOTE}</p>}
         {/* A5 (backend plan.md §14.1): only product facts may be inferred or looked up; a person may only tighten */}
         {!field.groupKey && (field.dataCategory === "product_data" || (!field.dataCategory && ["product", "brand"].includes(field.source?.kind))) && (
-          <label className="flex items-center gap-2 text-xs font-normal text-gray-600" title="When this value is missing for a product, may the AI fill it from the product's own data or the web? A person always confirms.">
-            When missing
-            <select value={field.inferencePolicy || "product_facts_and_web"} onChange={(e) => onChange({ inferencePolicy: e.target.value })} className="border border-gray-300 rounded-md px-1.5 py-0.5 text-xs bg-white">
-              <option value="product_facts_and_web">infer from product data, then the web</option>
-              <option value="product_facts">infer from product data only</option>
-              <option value="never">ask a person</option>
+          <label className="flex items-center gap-2 text-xs font-normal text-gray-600" title={t("fieldPanel.whenThisValueIsMissing")}>{t("fieldPanel.whenMissing")}<select value={field.inferencePolicy || "product_facts_and_web"} onChange={(e) => onChange({ inferencePolicy: e.target.value })} className="border border-gray-300 rounded-md px-1.5 py-0.5 text-xs bg-white">
+              <option value="product_facts_and_web">{t("fieldPanel.inferFromProductDataThen")}</option>
+              <option value="product_facts">{t("fieldPanel.inferFromProductDataOnly")}</option>
+              <option value="never">{t("fieldPanel.askAPerson")}</option>
             </select>
           </label>
         )}
@@ -331,8 +231,7 @@ function FieldEditor({ field, siblings = [], options, groups, cellOptionsFor, su
         {STR.format}
         <FormatEditor field={field} type={type} onChange={(format) => onChange({ format })} />
         {field.mapping?.ambiguousDate && !field.format?.date && (
-          <p className="text-xs font-normal text-amber-800">
-            Is “{field.sampleValue}” day/month or month/day? Choose: {field.mapping.ambiguousDate.join(" or ")}.
+          <p className="text-xs font-normal text-amber-800">{t("fieldPanel.isDayMonthOrMonth", { sampleValue: field.sampleValue })}{" "}{field.mapping.ambiguousDate.join(" or ")}.
           </p>
         )}
       </div>
@@ -345,7 +244,7 @@ function FieldEditor({ field, siblings = [], options, groups, cellOptionsFor, su
               type="button"
               aria-pressed={field.align === a}
               onClick={() => onChange({ align: a })}
-              className={`flex-1 text-[13px] ${i ? "border-l border-gray-300" : ""} ${field.align === a ? "bg-blue-600 text-white font-semibold" : "bg-white text-gray-700 font-medium hover:bg-gray-50"}`}
+              className={`flex-1 text-[13px] ${i ? "border-s border-gray-300" : ""} ${field.align === a ? "bg-blue-600 text-white font-semibold" : "bg-white text-gray-700 font-medium hover:bg-gray-50"}`}
             >
               {STR[a]}
             </button>
@@ -467,7 +366,7 @@ export default function FieldPanel({
               className={`rounded-[10px] ${open && !readOnly ? "border-2 border-blue-600 bg-blue-50/40 p-3.5" : badge?.pending ? "border border-amber-300 bg-amber-50/40 px-3 py-2.5" : "border border-gray-200 px-3 py-2.5"}`}
             >
               <div className="flex items-center gap-2.5">
-                <button type="button" onClick={() => onActivate(open ? null : f.uid)} className="flex-1 min-w-0 text-left flex items-center gap-2.5">
+                <button type="button" onClick={() => onActivate(open ? null : f.uid)} className="flex-1 min-w-0 text-start flex items-center gap-2.5">
                   <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
                   <span className="min-w-0">
                     <span className="block font-mono text-[13px] font-semibold text-gray-900 truncate">{f.key}</span>
@@ -499,13 +398,13 @@ export default function FieldPanel({
                 )}
                 {!readOnly && (
                   <span className="flex items-center">
-                    <button type="button" disabled={i === 0} onClick={() => onMove(i, -1)} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30" aria-label="Move up">
+                    <button type="button" disabled={i === 0} onClick={() => onMove(i, -1)} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30" aria-label={t("fieldPanel.moveUp")}>
                       <ArrowUp className="w-3.5 h-3.5" />
                     </button>
-                    <button type="button" disabled={i === fields.length - 1} onClick={() => onMove(i, 1)} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30" aria-label="Move down">
+                    <button type="button" disabled={i === fields.length - 1} onClick={() => onMove(i, 1)} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30" aria-label={t("fieldPanel.moveDown")}>
                       <ArrowDown className="w-3.5 h-3.5" />
                     </button>
-                    <button type="button" onClick={() => onRemove(f.uid)} className="p-1 text-gray-400 hover:text-red-600" aria-label="Delete field">
+                    <button type="button" onClick={() => onRemove(f.uid)} className="p-1 text-gray-400 hover:text-red-600" aria-label={t("fieldPanel.deleteField")}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </span>

@@ -5,7 +5,7 @@ import { approveAction, cancelAction, getActionProgress } from "../../services/a
 import SourceBadge from "./SourceBadge";
 import { downloadLayoutPdf, layoutFileUrl } from "../../services/apiLabelLayout";
 import CertificatesResult from "./CertificatesResult";
-import { isAr, tr } from "../../i18n/lang";
+import { fmtTime, isAr, t } from "../../i18n";
 
 // Design E2: a change the assistant proposed. Nothing happens until the person
 // presses Run; then "Approved by you · time" and — for a long job — a progress
@@ -13,14 +13,14 @@ import { isAr, tr } from "../../i18n/lang";
 // the assistant continue (onFinished).
 
 const POLL_MS = 1500;
-const time = (d) => (d ? new Date(d).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
+const time = (d) => fmtTime(d);
 const BADGE = {
-  pending: [tr("محتاج موافقتك", "Needs your OK"), "bg-amber-50 text-amber-800"],
-  running: [tr("شغّال", "Running"), "bg-blue-50 text-blue-700"],
-  done: [tr("خلص", "Done"), "bg-green-50 text-green-700"],
-  failed: [tr("فشل", "Failed"), "bg-red-50 text-red-700"],
-  cancelled: [tr("اتلغى", "Cancelled"), "bg-gray-100 text-gray-600"],
-  expired: [tr("انتهى", "Expired"), "bg-gray-100 text-gray-600"],
+  pending: [t("actionCard.needsYourOk"), "bg-amber-50 text-amber-800"],
+  running: [t("actionCard.running"), "bg-blue-50 text-blue-700"],
+  done: [t("actionCard.done"), "bg-green-50 text-green-700"],
+  failed: [t("actionCard.failed"), "bg-red-50 text-red-700"],
+  cancelled: [t("actionCard.cancelled"), "bg-gray-100 text-gray-600"],
+  expired: [t("actionCard.expired"), "bg-gray-100 text-gray-600"],
 };
 // the card's own texts in the page's language (the backend sends both)
 const L = (x, key) => (isAr && x?.[`${key}Ar`]) || x?.[key];
@@ -38,13 +38,13 @@ function LayoutResult({ layout }) {
   }, [layout?.previewUrl]);
   const fit = layout.fit || {};
   const lines = [
-    fit.scalePct != null ? `Scaled to ${fit.scalePct} %` : null,
-    fit.fits === false ? "Doesn't fit — no PDF" : fit.fontPt ? `Fits · ${fit.fontPt} pt${fit.columns > 1 ? ` · ${fit.columns} columns` : ""}` : null,
-    fit.smallestTextPt != null ? `Smallest text ${fit.smallestTextPt} pt` : fit.textMeasurable === false ? "Smallest text can't be measured" : null,
+    fit.scalePct != null ? t("actionCard.scaledTo", { scalePct: fit.scalePct }) : null,
+    fit.fits === false ? t("actionCard.doesntFitNoPdf") : fit.fontPt ? t("actionCard.fits", { pt: fit.fontPt }) + (fit.columns > 1 ? t("actionCard.columns", { n: fit.columns }) : "") : null,
+    fit.smallestTextPt != null ? t("actionCard.smallestTextPt", { smallestTextPt: fit.smallestTextPt }) : fit.textMeasurable === false ? t("actionCard.smallestTextCantBeMeasured") : null,
   ].filter(Boolean);
   return (
     <div className="flex gap-3 rounded-xl border border-gray-200 bg-white p-3" data-testid="layout-result">
-      {img && <img src={img} alt={`Label at ${layout.size}`} className="w-28 self-start ring-1 ring-gray-200" />}
+      {img && <img src={img} alt={t("actionCard.labelAt", { size: layout.size })} className="w-28 self-start ring-1 ring-gray-200" />}
       <div className="min-w-0 space-y-1 text-[13px]">
         <div className="font-semibold text-gray-900">{layout.size}</div>
         {lines.map((l) => (
@@ -54,9 +54,7 @@ function LayoutResult({ layout }) {
           <div key={w} className="text-amber-800">⚠ {w}</div>
         ))}
         {layout.hasPdf && (
-          <button type="button" onClick={() => downloadLayoutPdf(layout).catch((e) => toast.error(e.message))} className="font-semibold text-blue-600 hover:underline" data-testid="layout-result-pdf">
-            Download PDF
-          </button>
+          <button type="button" onClick={() => downloadLayoutPdf(layout).catch((e) => toast.error(e.message))} className="font-semibold text-blue-600 hover:underline" data-testid="layout-result-pdf">{t("actionCard.downloadPdf")}</button>
         )}
       </div>
     </div>
@@ -69,7 +67,7 @@ function ProgressCard({ task, status }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3" data-testid="progress-card" role="status">
       <div className="flex items-center justify-between text-sm font-semibold">
-        <span>{finished ? "✓ Finished" : status === "failed" ? "✕ Failed" : `${task?.message || task?.stage || "Working"}…`}</span>
+        <span>{finished ? t("actionCard.finished") : status === "failed" ? t("actionCard.failed2") : `${task?.message || task?.stage || "Working"}…`}</span>
         <span className="tabular-nums text-gray-500">{pct}%</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-gray-200">
@@ -125,7 +123,7 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
     try {
       const a = run ? await approveAction(action.id) : await cancelAction(action.id);
       setAction(a);
-      if (a.status === "failed") toast.error(a.error || "The action failed");
+      if (a.status === "failed") toast.error(a.error || t("actionCard.theActionFailed"));
       finished(a);
     } catch (e) {
       toast.error(e.response?.data?.message || e.message);
@@ -138,7 +136,7 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
 
   return (
     <>
-      <div role="group" aria-label="Action to confirm" data-testid="action-card" data-status={action.status} className={`flex flex-col gap-2.5 rounded-xl border bg-white px-4 py-3.5 ${action.status === "pending" ? "border-2 border-amber-300" : "border-gray-200"}`}>
+      <div role="group" aria-label={t("actionCard.actionToConfirm")} data-testid="action-card" data-status={action.status} className={`flex flex-col gap-2.5 rounded-xl border bg-white px-4 py-3.5 ${action.status === "pending" ? "border-2 border-amber-300" : "border-gray-200"}`}>
         <div className="flex items-center gap-2">
           <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${badgeClass}`}>{label}</span>
           <span className="text-sm font-bold" dir="auto">{L(p, "title") || action.tool}</span>
@@ -166,14 +164,14 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
           ))}
           {p.aiCalls && (
             <>
-              <dt className="text-gray-500">{tr("استخدام الذكاء الاصطناعي", "AI use")}</dt>
+              <dt className="text-gray-500">{t("actionCard.aiUse")}</dt>
               <dd className="m-0">{p.aiCalls}</dd>
             </>
           )}
           {(p.missing || []).length > 0 && (
             <>
-              <dt className="text-gray-500">{tr("ناقص", "Missing")}</dt>
-              <dd className="m-0">{(isAr && p.missingAr ? p.missingAr : p.missing).join(" · ")}</dd>
+              <dt className="text-gray-500">{t("actionCard.missing")}</dt>
+              <dd className="m-0">{((isAr && p.missingAr) || p.missing).join(" · ")}</dd>
             </>
           )}
         </dl>
@@ -188,15 +186,15 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
         {action.status === "pending" ? (
           <div className="flex gap-2">
             <button type="button" disabled={busy} onClick={() => decide(true)} data-testid="action-run" className="min-h-11 rounded-xl border border-blue-600 bg-blue-600 px-4 text-sm font-semibold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 disabled:opacity-50">
-              {L(p, "runLabel") || tr("نفّذ", "Run")}
+              {L(p, "runLabel") || t("actionCard.run")}
             </button>
             <button type="button" disabled={busy} onClick={() => decide(false)} data-testid="action-cancel" className="min-h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-              {tr("إلغاء", "Cancel")}
+              {t("actionCard.cancel")}
             </button>
           </div>
         ) : (
           <div className="text-[13px] font-medium text-gray-600" data-testid="action-decision">
-            {action.status === "cancelled" ? `${tr("اتلغى", "Cancelled")} · ${time(action.decidedAt)}` : action.status === "expired" ? tr("انتهى — اطلبه تاني", "Expired — ask again for a new one") : `✓ ${tr("وافقت عليه", "Approved by you")} · ${time(action.decidedAt)}`}
+            {action.status === "cancelled" ? `${t("actionCard.cancelled")} · ${time(action.decidedAt)}` : action.status === "expired" ? t("actionCard.expiredAskAgainForA") : `✓ ${t("actionCard.approvedByYou")} · ${time(action.decidedAt)}`}
           </div>
         )}
         {action.status === "failed" && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">{action.error}</div>}
@@ -207,7 +205,7 @@ export default function ActionCard({ action: initial, onFinished, onDecided }) {
           action.status === "done" &&
           action.result?.link && (
             <Link to={action.result.link} className="text-[13px] font-semibold text-blue-600 hover:underline">
-              {tr("افتح ←", "Open →")}
+              {t("actionCard.open")}
             </Link>
           )
         )}

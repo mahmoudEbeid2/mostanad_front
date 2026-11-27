@@ -7,6 +7,7 @@ import { useAiStatus } from "../../context/AiStatusContext";
 import useTaskProgress from "../../hooks/useTaskProgress";
 import { deleteSupplierCoa, getLabResults, saveLabResults, uploadSupplierCoas } from "../../services/apiInvoices";
 import { inSpec } from "../../utils/specCheck";
+import { strings, t } from "../../i18n";
 
 // The results grid (backend item 4): ONE grid per invoice. Rows = batches (every
 // line of the same product + batch number) or a line without a batch number;
@@ -17,26 +18,13 @@ import { inSpec } from "../../utils/specCheck";
 // Supplier COAs / lab reports are read in the background; the server keeps only
 // values it found verbatim in the document for the line's batch.
 const STR = {
-  title: "Lab results",
-  hint: "One row per batch. A result typed once is used on every line and every later invoice of the same product and batch.",
-  batch: "Batch",
-  lines: (r) => `line${r.lines.length > 1 ? "s" : ""} ${r.lines.map((l) => l.lineNo).join(", ")}`,
-  askBatch: "Batch number",
-  askBatchHint: "Type the line's batch number first, so its results can be reused.",
-  noBatch: "This line has no batch number",
-  noBatchWarn: "No batch number — results can't be reused",
-  spec: "Spec",
-  outOfSpec: "Outside the specification",
-  save: (n) => `Save ${n} change${n === 1 ? "" : "s"}`,
-  saved: "Saved — every certificate of those batches is filled.",
-  nothing: "No certificate of this invoice asks for a lab result.",
-  upload: "Upload supplier COA / lab report",
-  uploadHint: "PDF or images, several at once. Only values printed in the document for the line's batch number are taken.",
-  reading: "Reading the supplier COAs…",
-  coa: (c) => `${c.fileName || "Supplier COA"} — ${c.status === "done" ? `${c.accepted.length} taken, ${c.rejected.length} refused` : c.status === "failed" ? "couldn't be read" : "reading…"}`,
-  scan: "a scan: confirm its values in the data check",
-  removeCoa: "Delete this file",
-  status: { missing: "missing", needs_confirmation: "confirm", provided: "typed", reused: "reused" },
+  ...strings("resultsGrid"),
+  lines: (r) => t("resultsGrid.lines", { count: r.lines.length, list: r.lines.map((l) => l.lineNo).join(", ") }),
+  save: (n) => t("resultsGrid.save", { count: n }),
+  coa: (c) =>
+    `${c.fileName || t("resultsGrid.supplierCoa")} — ${
+      c.status === "done" ? t("resultsGrid.coaDone", { taken: c.accepted.length, refused: c.rejected.length }) : c.status === "failed" ? t("resultsGrid.coaFailed") : t("resultsGrid.coaReading")
+    }`,
 };
 
 const cellId = (r, c) => `rg-${r}-${c}`;
@@ -51,7 +39,7 @@ function CoaList({ coas, editable, onDelete }) {
             <span className={`font-medium ${c.status === "failed" ? "text-red-700" : "text-gray-800"}`}>{STR.coa(c)}</span>
             {c.textSource === "transcription" && c.accepted.length > 0 && <span className="text-amber-700">· {STR.scan}</span>}
             {editable && c.status !== "extracting" && (
-              <button type="button" onClick={() => onDelete(c)} className="ml-auto p-1 text-gray-400 hover:text-red-600" aria-label={STR.removeCoa} title={STR.removeCoa}>
+              <button type="button" onClick={() => onDelete(c)} className="ms-auto p-1 text-gray-400 hover:text-red-600" aria-label={STR.removeCoa} title={STR.removeCoa}>
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
@@ -59,8 +47,8 @@ function CoaList({ coas, editable, onDelete }) {
           {c.error && <p className="mt-1 text-red-700">{c.error}</p>}
           {c.rejected.length > 0 && (
             <details className="mt-1">
-              <summary className="cursor-pointer text-gray-600">Refused</summary>
-              <ul className="mt-1 ml-4 list-disc space-y-0.5 text-gray-600">
+              <summary className="cursor-pointer text-gray-600">{t("resultsGrid.refused")}</summary>
+              <ul className="mt-1 ms-4 list-disc space-y-0.5 text-gray-600">
                 {c.rejected.map((x, i) => (
                   <li key={i}>
                     {[x.batchNo && `batch ${x.batchNo}`, x.label || x.labelKey, x.value && `“${x.value}”`].filter(Boolean).join(" · ")}: {x.reason}
@@ -102,9 +90,9 @@ export default function ResultsGrid({ scope, invoiceId, editable, refreshKey, on
   }, [load, refreshKey]);
 
   const task = useTaskProgress(taskId, {
-    onDone: async (t) => {
+    onDone: async (it) => {
       setTaskId(null);
-      if (t.status === "failed") toast.error(t.error || "The supplier COA couldn't be read");
+      if (it.status === "failed") toast.error(it.error || t("resultsGrid.theSupplierCoaCouldntBe"));
       await load();
       onSaved?.();
     },
@@ -231,7 +219,7 @@ export default function ResultsGrid({ scope, invoiceId, editable, refreshKey, on
                 <input ref={fileRef} type="file" multiple disabled={uploadOff} accept="application/pdf,image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => upload(e.target.files)} data-testid="coa-file" />
               </label>
             </AiAction>
-            <span className="text-[11px] text-gray-500 max-w-xs text-right">{STR.uploadHint}</span>
+            <span className="text-[11px] text-gray-500 max-w-xs text-end">{STR.uploadHint}</span>
           </div>
         )}
       </div>
@@ -245,8 +233,8 @@ export default function ResultsGrid({ scope, invoiceId, editable, refreshKey, on
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm border-separate border-spacing-0">
             <thead>
-              <tr className="text-left text-xs text-gray-600">
-                <th className="sticky left-0 bg-white px-2 py-2 border-b border-gray-200 min-w-48">{STR.batch}</th>
+              <tr className="text-start text-xs text-gray-600">
+                <th className="sticky start-0 bg-white px-2 py-2 border-b border-gray-200 min-w-48">{STR.batch}</th>
                 {cols.map((c) => (
                   <th key={c.labelKey} className="px-2 py-2 border-b border-gray-200 min-w-36">
                     {c.label}
@@ -258,7 +246,7 @@ export default function ResultsGrid({ scope, invoiceId, editable, refreshKey, on
             <tbody>
               {rows.map((row, r) => (
                 <tr key={row.rowKey} className="align-top" data-testid="results-row">
-                  <td className="sticky left-0 bg-white px-2 py-2 border-b border-gray-100">
+                  <td className="sticky start-0 bg-white px-2 py-2 border-b border-gray-100">
                     <div className="font-medium text-gray-900">{row.productName || "—"}</div>
                     <div className="text-xs text-gray-500">{STR.lines(row)}</div>
                     {row.noBatch ? (

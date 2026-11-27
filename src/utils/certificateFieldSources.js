@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 // Labels and grouping for the field source picker (plan §8.2, §10.3). The
 // catalogue itself always comes from GET /certificate-field-sources, so the
 // picker can never offer a source the backend doesn't resolve.
@@ -22,10 +23,10 @@ export function coverageText(p) {
   if (typeof p?.coverage !== "number") return undefined;
   const pct = Math.round(p.coverage * 100);
   const eg = (p.examples || []).slice(0, 3).join(", ");
-  return `${pct === 0 && p.coverage > 0 ? "<1" : pct} % of products${eg ? ` · e.g. ${eg}` : ""}`;
+  return t("certificateFieldSources.coverage", { pct: pct === 0 && p.coverage > 0 ? "<1" : pct }) + (eg ? t("certificateFieldSources.eg", { eg }) : "");
 }
 
-const PRODUCT_DETAILS = "Product details";
+const PRODUCT_DETAILS = t("certificateFieldSources.productDetails");
 
 /** react-select grouped options from the catalogue. Paths found inside the
  *  company's product JSON get their own group, "Product details". */
@@ -41,7 +42,7 @@ export function sourceOptions(catalogue) {
       return details.length ? [own, { label: PRODUCT_DETAILS, options: details.map((p) => option(k, p, PRODUCT_DETAILS)) }] : [own];
     }),
     {
-      label: "Other",
+      label: t("certificateFieldSources.other"),
       options: other.map((k) => ({ value: k.kind, label: k.label, source: { kind: k.kind }, type: k.type || "string", group: "Other", description: k.description })),
     },
   ];
@@ -59,8 +60,8 @@ export function findOption(options, source) {
 /** Short chip text: "Invoice line · Batch number" */
 export function sourceLabel(options, source) {
   if (!source) return "—";
-  if (source.kind === "static") return `Fixed · “${source.text || ""}”`;
-  if (source.kind === "template") return `Combination · ${source.template || ""}`;
+  if (source.kind === "static") return t("certificateFieldSources.fixed", { v: source.text || "" });
+  if (source.kind === "template") return t("certificateFieldSources.combination", { v: source.template || "" });
   const o = findOption(options, source);
   return o ? (o.group === "Other" ? o.label : `${o.group} · ${o.label}`) : `${source.kind}${source.path ? ` · ${source.path}` : ""}`;
 }
@@ -85,12 +86,12 @@ export function rowPathsFor(catalogue, groupSource) {
 export function cellOptions(catalogue, groupSource) {
   const paths = rowPathsFor(catalogue, groupSource) || [];
   return [
-    ...(paths.length ? [{ label: "From the row", options: paths.map((p) => ({ value: `row:${p.path}`, label: p.label, source: { kind: "row", path: p.path }, type: p.type, group: "Row" })) }] : []),
+    ...(paths.length ? [{ label: t("certificateFieldSources.fromTheRow"), options: paths.map((p) => ({ value: `row:${p.path}`, label: p.label, source: { kind: "row", path: p.path }, type: p.type, group: "Row" })) }] : []),
     {
-      label: "Other",
+      label: t("certificateFieldSources.other"),
       options: [
-        { value: "static", label: "Fixed text", source: { kind: "static" }, type: "string", group: "Other", description: "The same text in every row" },
-        { value: "manual", label: "Typed in the editor", source: { kind: "manual" }, type: "string", group: "Other", description: "Filled per certificate" },
+        { value: "static", label: t("certificateFieldSources.fixedText"), source: { kind: "static" }, type: "string", group: "Other", description: t("certificateFieldSources.theSameTextInEvery") },
+        { value: "manual", label: t("certificateFieldSources.typedInTheEditor"), source: { kind: "manual" }, type: "string", group: "Other", description: t("certificateFieldSources.filledPerCertificate") },
       ],
     },
   ];
@@ -99,23 +100,23 @@ export function cellOptions(catalogue, groupSource) {
 export const DATE_PATTERNS = ["MM/YYYY", "DD/MM/YYYY", "MM/DD/YYYY", "DD.MM.YYYY", "YYYY-MM-DD", "DD MMM YYYY", "MMM YYYY", "MM/YY"];
 
 // ── AI plan §5 (A1): where a field's source came from ───────────────────────
-export const BATCH_DATA_NOTE = "This value changes per batch and isn't in your data. It will be asked during invoice review.";
+export const BATCH_DATA_NOTE = t("certificateFieldSources.thisValueChangesPerBatch");
 
 /** Badge for a field's mapping origin: Memory ✓ · Dictionary ✓ · AI 0.94 ✓ · AI 0.71 — confirm. null for a hand-picked source. */
 export function mappingBadge(f) {
   const m = f.mapping || {};
   const origin = m.origin && m.origin !== "none" ? m.origin : f.mappingOrigin || "manual";
   const conf = typeof m.confidence === "number" ? ` ${m.confidence.toFixed(2)}` : "";
-  if (origin === "memory") return { text: "Memory ✓", tone: "green", title: "You mapped this label the same way before" };
+  if (origin === "memory") return { text: t("certificateFieldSources.memory"), tone: "green", title: t("certificateFieldSources.youMappedThisLabelThe") };
   // the dictionary decided this value is NOT in your data (typed per batch, or by hand):
   // "Dictionary ✓ — matched in your product data" would say the opposite
   if (origin === "dictionary" && f.source?.kind === "manual") {
-    return f.dataCategory === "batch_data" ? { text: "Per batch", tone: "gray", title: BATCH_DATA_NOTE } : null;
+    return f.dataCategory === "batch_data" ? { text: t("certificateFieldSources.perBatch"), tone: "gray", title: BATCH_DATA_NOTE } : null;
   }
-  if (origin === "dictionary") return { text: "Dictionary ✓", tone: "green", title: "Matched in your product data" };
+  if (origin === "dictionary") return { text: t("certificateFieldSources.dictionary"), tone: "green", title: t("certificateFieldSources.matchedInYourProductData") };
   if (origin === "ai") {
     const pending = m.status ? m.status === "pending" : f.mappingConfirmed === false;
-    return pending ? { text: `AI${conf} — confirm`, tone: "amber", pending: true, title: "Suggested by AI — check and confirm" } : { text: `AI${conf} ✓`, tone: "green", title: "Suggested by AI" };
+    return pending ? { text: t("certificateFieldSources.aiConfirm", { conf }), tone: "amber", pending: true, title: t("certificateFieldSources.suggestedByAiCheckAnd") } : { text: t("certificateFieldSources.ai", { conf }), tone: "green", title: t("certificateFieldSources.suggestedByAi") };
   }
   return null;
 }

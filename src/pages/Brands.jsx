@@ -4,6 +4,7 @@ import { getCompanies } from "../services/apiCompanies";
 import { Search, Plus, Edit2, Trash2, Tag } from "lucide-react";
 import Button from "../ui/Button";
 import toast from "react-hot-toast";
+import { t } from "../i18n";
 
 export default function Brands() {
   const [brands, setBrands] = useState([]);
@@ -43,7 +44,7 @@ export default function Brands() {
         setBrands(brandRes.data.brands || []);
       }
     } catch (error) {
-      toast.error("Failed to load data");
+      toast.error(t("brands.failedToLoadData"));
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +94,7 @@ export default function Brands() {
         setCurrentBrand(freshBrand);
       }
     } catch (error) {
-      toast.error("Failed to fetch latest brand details");
+      toast.error(t("brands.failedToFetchLatestBrand"));
     }
   };
 
@@ -104,7 +105,7 @@ export default function Brands() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.companyId) {
-      toast.error("Name and Company are required");
+      toast.error(t("brands.nameAndCompanyAreRequired"));
       return;
     }
 
@@ -112,30 +113,30 @@ export default function Brands() {
       setIsSubmitting(true);
       if (modalMode === "add") {
         await createBrand(formData);
-        toast.success("Brand created successfully");
+        toast.success(t("brands.brandCreatedSuccessfully"));
       } else {
         await updateBrand(currentBrand.id, formData);
-        toast.success("Brand updated successfully");
+        toast.success(t("brands.brandUpdatedSuccessfully"));
       }
       closeModal();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Operation failed");
+      toast.error(error.response?.data?.message || t("brands.operationFailed"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this brand? Products associated with it may be affected.")) return;
+    if (!window.confirm(t("brands.areYouSureYouWant"))) return;
 
     try {
       setIsLoading(true);
       await deleteBrand(id);
-      toast.success("Brand deleted successfully");
+      toast.success(t("brands.brandDeletedSuccessfully"));
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete brand");
+      toast.error(error.response?.data?.message || t("brands.failedToDeleteBrand"));
       setIsLoading(false); 
     }
   };
@@ -146,28 +147,24 @@ export default function Brands() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Tag className="w-8 h-8 text-indigo-600" />
-            Brands Management
-          </h1>
-          <p className="text-gray-500 mt-1">Manage tenant brands and sub-brands.</p>
+            <Tag className="w-8 h-8 text-indigo-600" />{t("brands.brandsManagement")}</h1>
+          <p className="text-gray-500 mt-1">{t("brands.manageTenantBrandsAndSub")}</p>
         </div>
         <Button className="shrink-0" onClick={openAddModal}>
-          <Plus className="w-5 h-5 mr-2" />
-          Add Brand
-        </Button>
+          <Plus className="w-5 h-5 me-2" />{t("brands.addBrand")}</Button>
       </div>
 
       {/* Search & Filter Bar */}
       <div className="bg-white p-4 rounded-t-2xl border-x border-t border-gray-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
         <div className="relative w-full sm:w-96 flex gap-4">
           <div className="relative w-full">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-5 h-5 absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by brand name..."
+              placeholder={t("brands.searchByBrandName")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              className="w-full ps-10 pe-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
             />
           </div>
         </div>
@@ -177,7 +174,7 @@ export default function Brands() {
             onChange={(e) => setSelectedCompanyFilter(e.target.value)}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
           >
-            <option value="">All Companies</option>
+            <option value="">{t("brands.allCompanies")}</option>
             {companies.map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
@@ -188,13 +185,13 @@ export default function Brands() {
       {/* Table */}
       <div className="bg-white rounded-b-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
+          <table className="w-full text-start text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase text-xs tracking-wider">
               <tr>
-                <th className="px-6 py-4">Brand Name</th>
-                <th className="px-6 py-4">Parent Company</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">{t("brands.brandName")}</th>
+                <th className="px-6 py-4">{t("brands.parentCompany")}</th>
+                <th className="px-6 py-4">{t("brands.status")}</th>
+                <th className="px-6 py-4 text-end">{t("brands.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -211,8 +208,8 @@ export default function Brands() {
                   <td colSpan="4" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center text-gray-400">
                       <Tag className="w-12 h-12 mb-3 text-gray-300" />
-                      <p className="text-lg font-medium text-gray-500">No brands found</p>
-                      <p className="text-sm mt-1">Try adjusting your filters or add a new brand.</p>
+                      <p className="text-lg font-medium text-gray-500">{t("brands.noBrandsFound")}</p>
+                      <p className="text-sm mt-1">{t("brands.tryAdjustingYourFiltersOr")}</p>
                     </div>
                   </td>
                 </tr>
@@ -221,10 +218,10 @@ export default function Brands() {
                   <tr key={brand.id} onClick={() => openViewModal(brand)} className="hover:bg-gray-50/50 transition-colors cursor-pointer group">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">{brand.name}</div>
-                      <div className="text-xs text-gray-500 font-mono mt-1">ID: {brand.id.split('-')[0]}...</div>
+                      <div className="text-xs text-gray-500 font-mono mt-1">{t("brands.id", { v: brand.id.split('-')[0] })}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-gray-900 text-sm font-medium">{brand.company?.name || "Unknown"}</div>
+                      <div className="text-gray-900 text-sm font-medium">{brand.company?.name || t("brands.unknown")}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
@@ -232,10 +229,10 @@ export default function Brands() {
                           ? "bg-green-50 text-green-700 border-green-200" 
                           : "bg-red-50 text-red-700 border-red-200"
                       }`}>
-                        {brand.isActive ? "Active" : "Inactive"}
+                        {brand.isActive ? t("brands.active") : t("brands.inactive")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-6 py-4 text-end" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={(e) => {
@@ -243,7 +240,7 @@ export default function Brands() {
                             openEditModal(brand);
                           }}
                           className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="Edit"
+                          title={t("brands.edit")}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -253,7 +250,7 @@ export default function Brands() {
                             handleDelete(brand.id);
                           }}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
+                          title={t("brands.delete")}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -274,7 +271,7 @@ export default function Brands() {
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <Tag className="w-5 h-5 text-indigo-600" />
-                {modalMode === "add" ? "Add New Brand" : modalMode === "edit" ? "Edit Brand" : "View Brand Details"}
+                {modalMode === "add" ? t("brands.addNewBrand") : modalMode === "edit" ? t("brands.editBrand") : t("brands.viewBrandDetails")}
               </h2>
               <button
                 onClick={closeModal}
@@ -289,25 +286,25 @@ export default function Brands() {
                 {modalMode === "view" ? (
                   <div className="bg-gray-50 p-6 rounded-lg border border-gray-100 space-y-6">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Brand Name</label>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("brands.brandName")}</label>
                       <div className="text-gray-900 font-bold text-xl">{formData.name}</div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Company</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("brands.company")}</label>
                         <div className="text-gray-900 font-medium text-base">
                           {companies.find(c => c.id === formData.companyId)?.name || "—"}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("brands.status")}</label>
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${
                           formData.isActive 
                             ? "bg-green-50 text-green-700 border-green-200" 
                             : "bg-red-50 text-red-700 border-red-200"
                         }`}>
-                          {formData.isActive ? "Active" : "Inactive"}
+                          {formData.isActive ? t("brands.active") : t("brands.inactive")}
                         </span>
                       </div>
                     </div>
@@ -315,26 +312,26 @@ export default function Brands() {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Brand Name *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">{t("brands.brandName2")}</label>
                       <input
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                        placeholder="Enter brand name"
+                        placeholder={t("brands.enterBrandName")}
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Parent Company *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">{t("brands.parentCompany2")}</label>
                       <select
                         value={formData.companyId}
                         onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
                         required
                       >
-                        <option value="" disabled>Select a company</option>
+                        <option value="" disabled>{t("brands.selectACompany")}</option>
                         {companies.map(c => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
@@ -343,8 +340,8 @@ export default function Brands() {
 
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 mt-2">
                       <div>
-                        <div className="text-sm font-semibold text-gray-700">Brand Status</div>
-                        <div className="text-xs text-gray-500">Is this brand active?</div>
+                        <div className="text-sm font-semibold text-gray-700">{t("brands.brandStatus")}</div>
+                        <div className="text-xs text-gray-500">{t("brands.isThisBrandActive")}</div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input 
@@ -353,7 +350,7 @@ export default function Brands() {
                           onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} 
                           className="sr-only peer" 
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                       </label>
                     </div>
                   </>
@@ -369,9 +366,7 @@ export default function Brands() {
                       type="button"
                       className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300"
                     >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit Brand
-                    </Button>
+                      <Edit2 className="w-4 h-4 me-2" />{t("brands.editBrand")}</Button>
                     <Button 
                       variant="secondary" 
                       onClick={() => {
@@ -381,9 +376,7 @@ export default function Brands() {
                       type="button"
                       className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
+                      <Trash2 className="w-4 h-4 me-2" />{t("brands.delete")}</Button>
                   </div>
                 ) : (
                   <div></div>
@@ -391,16 +384,12 @@ export default function Brands() {
                 
                 <div className="flex gap-3">
                   {modalMode === "view" ? (
-                    <Button variant="secondary" onClick={closeModal} type="button">
-                      Close
-                    </Button>
+                    <Button variant="secondary" onClick={closeModal} type="button">{t("brands.close")}</Button>
                   ) : (
                     <>
-                      <Button variant="secondary" onClick={closeModal} type="button">
-                        Cancel
-                      </Button>
+                      <Button variant="secondary" onClick={closeModal} type="button">{t("brands.cancel")}</Button>
                       <Button type="submit" isLoading={isSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                        {modalMode === "add" ? "Create Brand" : "Save Changes"}
+                        {modalMode === "add" ? t("brands.createBrand") : t("brands.saveChanges")}
                       </Button>
                     </>
                   )}

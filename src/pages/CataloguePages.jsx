@@ -15,64 +15,22 @@ import { hasPermission } from "../utils/permissions";
 import { parseRange, formatRange } from "../utils/pageRange";
 import { createImageLoader } from "../utils/imageLoader";
 import { getCataloguePages, saveCataloguePageSelection, getCataloguePageImage, extractCatalogueVersion, uploadCatalogueVersion } from "../services/apiCatalogues";
+import { strings, t } from "../i18n";
 
 // /catalogues/versions/:id/pages (design C1): step 2 of a catalogue upload. The
 // upload only counted the pages. A person chooses the ones with products — nothing is
 // pre-selected — and only those are read and sent to the AI. The choice is saved per
 // catalogue, and the next version can start from it with one click.
 const STR = {
-  back: "Catalogues",
-  title: "Choose the pages to read",
-  subtitle: "Click the pages that have products — only those are sent to the AI. Covers, contents and blank pages cost tokens and add nothing.",
-  fileMeta: (n, size) => `${n} pages${size ? ` · ${size}` : ""} · nothing goes to the AI until you click Extract`,
-  replace: "Replace file",
-  replacing: "Uploading the new file…",
-  quick: "Quick select",
-  samePages: "Same pages as last version",
-  all: "All",
-  none: "None",
-  invert: "Invert",
-  show: { all: "All", kept: "Kept", skipped: "Not chosen" },
-  pagesLabel: "Pages",
-  rangeHint: "e.g. 4–15, 17–20 · click a page to keep or skip it",
-  rangeInvalid: (parts) => `Not a page of this file: ${parts.join(", ")}`,
-  nothingYet: "No pages chosen yet. Click each page that has products, or type them in “Pages” — e.g. 4–15, 17–20.",
-  pageOf: (n, m) => `Page ${n} of ${m}`,
-  keep: "Keep this page",
-  kept: "Kept",
-  thumbLabel: (n, kept) => `Page ${n}, ${kept ? "kept — click to skip" : "not chosen — click to keep"}`,
-  preview: (n) => `Preview page ${n}`,
-  keptWhy: "Kept — it will be read.",
-  skippedWhy: "Not chosen — click the page or Keep if it has products.",
-  willRead: (n, m) => `${n} of ${m} pages will be read`,
-  tokens: "AI tokens (estimate)",
-  cost: "Cost (estimate)",
-  allPages: (t) => `all pages: ${t}`,
-  less: (p) => (p > 0 ? `${p}% less than reading every page` : "the same as reading every page"),
-  chooseFirst: "choose pages to see the estimate",
-  noPrice: "no model price set yet",
-  basisLedger: (calls) => `from ${calls} earlier catalogue AI call${calls === 1 ? "" : "s"}`,
-  basisConstant: "no catalogue extraction yet — a fixed per-page guess",
-  notes: [
-    "The PDF is split on the server; only the kept pages go to the AI, a few pages at a time.",
-    'Every product keeps its page number, so each value shows "Catalogue p.7" as evidence.',
-    "Your choice is saved — the next version of this catalogue can start from the same pages.",
-  ],
-  removed: (pages, n) => `${n === 1 ? `Page ${pages} was` : `Pages ${pages} were`} read before and ${n === 1 ? "is" : "are"} out now: products on ${n === 1 ? "it" : "them"} that nobody reviewed will be dropped. Products already reviewed or linked stay.`,
-  extract: (n) => `Extract ${n} page${n === 1 ? "" : "s"} →`,
-  chooseToExtract: "Choose pages to extract",
-  later: "Save and extract later",
-  byHand: "Read the pages, type the products by hand",
-  saved: "Pages saved — extract them from the catalogue when you are ready.",
-  extracting: "Reading the products…",
-  extracted: "Products read — opening the review.",
-  extractFailed: "The products weren't read",
-  loading: "Loading the pages…",
-  failed: "The pages couldn't be loaded",
-  retry: "Try again",
-  empty: "This file has no pages to choose from.",
-  readOnly: "Only a catalogue manager can change the pages or start the extraction.",
-  extractedBefore: (pages) => `Last extraction read pages ${pages}.`,
+  ...strings("cataloguePages"),
+  fileMeta: (n, size) => t("cataloguePages.fileMeta", { n, size: size ? ` · ${size}` : "" }),
+  rangeInvalid: (parts) => t("cataloguePages.rangeInvalid", { list: parts.join(", ") }),
+  thumbLabel: (n, kept) => t(kept ? "cataloguePages.thumbKept" : "cataloguePages.thumbSkipped", { n }),
+  less: (p) => (p > 0 ? t("cataloguePages.less", { p }) : t("cataloguePages.same")),
+  basisLedger: (calls) => t("cataloguePages.basisLedger", { count: calls }),
+  notes: [1, 2, 3].map((i) => t(`cataloguePages.note${i}`)),
+  removed: (pages, n) => t("cataloguePages.removed", { count: n, pages }),
+  extract: (n) => t("cataloguePages.extract", { count: n }),
 };
 
 const fmtTokens = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : String(Math.round(n)));
@@ -109,13 +67,13 @@ function Thumb({ page, kept, active, onToggle, onPreview, loader }) {
         style={{ aspectRatio: page.width && page.height ? `${page.width} / ${page.height}` : "3 / 4" }}
       >
         <PageImage url={page.thumbnailUrl} loader={loader} lazy className="h-full w-full" />
-        <span aria-hidden="true" className={`absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-white ${kept ? "bg-blue-600" : "bg-transparent"}`}>
+        <span aria-hidden="true" className={`absolute end-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-white ${kept ? "bg-blue-600" : "bg-transparent"}`}>
           {kept && <Check className="h-3.5 w-3.5" />}
         </span>
       </button>
       <div className="flex items-center gap-1.5 text-xs">
-        <span className="font-semibold text-gray-700">p.{page.number}</span>
-        <button type="button" onClick={onPreview} aria-label={STR.preview(page.number)} className="ml-auto rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+        <span className="font-semibold text-gray-700">{t("cataloguePages.p")}{page.number}</span>
+        <button type="button" onClick={onPreview} aria-label={STR.preview(page.number)} className="ms-auto rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
           <Eye className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -372,7 +330,7 @@ export default function CataloguePages() {
         </p>
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <section aria-label="Pages" className="rounded-xl border border-gray-200 bg-white">
+          <section aria-label={t("cataloguePages.pages")} className="rounded-xl border border-gray-200 bg-white">
             <div className="space-y-3 border-b border-gray-100 p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">{STR.quick}</span>
@@ -393,7 +351,7 @@ export default function CataloguePages() {
                     {label}
                   </button>
                 ))}
-                <div role="group" aria-label="Show" className="ml-auto inline-flex overflow-hidden rounded-lg border border-gray-300 text-sm">
+                <div role="group" aria-label={t("cataloguePages.showLabel")} className="ms-auto inline-flex overflow-hidden rounded-lg border border-gray-300 text-sm">
                   {[
                     ["all", STR.show.all, pageCount],
                     ["kept", STR.show.kept, keptCount],
@@ -453,15 +411,15 @@ export default function CataloguePages() {
 
           <aside className="space-y-5 lg:sticky lg:top-4">
             {page && (
-              <section aria-label="Page preview" className="rounded-xl border border-gray-200 bg-white p-4" data-testid="page-preview">
+              <section aria-label={t("cataloguePages.pagePreview")} className="rounded-xl border border-gray-200 bg-white p-4" data-testid="page-preview">
                 <div className="flex flex-wrap items-center gap-2">
-                  <button type="button" onClick={() => move(-1)} disabled={current <= 1} aria-label="Previous page" className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-30">
+                  <button type="button" onClick={() => move(-1)} disabled={current <= 1} aria-label={t("cataloguePages.previousPage")} className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-30">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <span className="text-sm font-semibold text-gray-800" data-testid="preview-page">
                     {STR.pageOf(page.number, pageCount)}
                   </span>
-                  <button type="button" onClick={() => move(1)} disabled={current >= pageCount} aria-label="Next page" className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-30">
+                  <button type="button" onClick={() => move(1)} disabled={current >= pageCount} aria-label={t("cataloguePages.nextPage")} className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-30">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                   <button
@@ -470,7 +428,7 @@ export default function CataloguePages() {
                     onClick={() => toggle(page.number)}
                     disabled={locked}
                     data-testid="preview-toggle"
-                    className={`ml-auto inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold disabled:opacity-40 ${isKept ? "bg-blue-600 text-white" : "border border-gray-300 bg-white text-gray-700"}`}
+                    className={`ms-auto inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold disabled:opacity-40 ${isKept ? "bg-blue-600 text-white" : "border border-gray-300 bg-white text-gray-700"}`}
                   >
                     {isKept && <Check className="h-3.5 w-3.5" />} {isKept ? STR.kept : STR.keep}
                   </button>
@@ -488,7 +446,7 @@ export default function CataloguePages() {
               <h2 id="sum" className="text-lg font-semibold text-gray-900">
                 {STR.willRead(keptCount, pageCount)}
               </h2>
-              <div role="progressbar" aria-label="Pages kept" aria-valuenow={keptCount} aria-valuemin={0} aria-valuemax={pageCount} className="h-2 overflow-hidden rounded-full bg-gray-100">
+              <div role="progressbar" aria-label={t("cataloguePages.pagesKept")} aria-valuenow={keptCount} aria-valuemin={0} aria-valuemax={pageCount} className="h-2 overflow-hidden rounded-full bg-gray-100">
                 <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${pageCount ? (100 * keptCount) / pageCount : 0}%` }} />
               </div>
               {removed.length > 0 && (
@@ -517,7 +475,7 @@ export default function CataloguePages() {
                   <p className="col-span-2 text-xs text-gray-500">{data.estimate.basis === "ledger" ? STR.basisLedger(data.estimate.sample?.calls || 0) : STR.basisConstant}</p>
                 </div>
               )}
-              <ul className="list-disc space-y-1 pl-5 text-xs text-gray-600">
+              <ul className="list-disc space-y-1 ps-5 text-xs text-gray-600">
                 {STR.notes.map((n) => (
                   <li key={n}>{n}</li>
                 ))}

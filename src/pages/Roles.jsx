@@ -3,114 +3,115 @@ import { getRoles, createRole, updateRole, deleteRole, getRoleById } from "../se
 import { Search, Plus, Edit2, Trash2, ShieldAlert, Check } from "lucide-react";
 import Button from "../ui/Button";
 import toast from "react-hot-toast";
+import { t } from "../i18n";
 
 // Predefined static permissions to build the UI
 const PERMISSIONS_MODULES = [
   {
     module: "users",
-    label: "Users",
+    label: t("roles.users"),
     permissions: [
-      { slug: "create_users", label: "Create" },
-      { slug: "read_users", label: "Read" },
-      { slug: "update_users", label: "Update" },
-      { slug: "delete_users", label: "Delete" },
+      { slug: "create_users", label: t("roles.create") },
+      { slug: "read_users", label: t("roles.read") },
+      { slug: "update_users", label: t("roles.update") },
+      { slug: "delete_users", label: t("roles.delete") },
     ]
   },
   {
     module: "roles",
-    label: "Roles",
+    label: t("roles.roles"),
     permissions: [
-      { slug: "create_roles", label: "Create" },
-      { slug: "read_roles", label: "Read" },
-      { slug: "update_roles", label: "Update" },
-      { slug: "delete_roles", label: "Delete" },
+      { slug: "create_roles", label: t("roles.create") },
+      { slug: "read_roles", label: t("roles.read") },
+      { slug: "update_roles", label: t("roles.update") },
+      { slug: "delete_roles", label: t("roles.delete") },
     ]
   },
   {
     module: "companies",
-    label: "Companies",
+    label: t("roles.companies"),
     permissions: [
-      { slug: "create_companies", label: "Create" },
-      { slug: "read_companies", label: "Read" },
-      { slug: "update_companies", label: "Update" },
-      { slug: "delete_companies", label: "Delete" },
+      { slug: "create_companies", label: t("roles.create") },
+      { slug: "read_companies", label: t("roles.read") },
+      { slug: "update_companies", label: t("roles.update") },
+      { slug: "delete_companies", label: t("roles.delete") },
     ]
   },
   {
     module: "plans",
-    label: "Plans",
+    label: t("roles.plans"),
     permissions: [
-      { slug: "create_plans", label: "Create" },
-      { slug: "read_plans", label: "Read" },
-      { slug: "update_plans", label: "Update" },
-      { slug: "delete_plans", label: "Delete" },
+      { slug: "create_plans", label: t("roles.create") },
+      { slug: "read_plans", label: t("roles.read") },
+      { slug: "update_plans", label: t("roles.update") },
+      { slug: "delete_plans", label: t("roles.delete") },
     ]
   },
   {
     module: "subscriptions",
-    label: "Subscriptions",
+    label: t("roles.subscriptions"),
     permissions: [
-      { slug: "create_subscriptions", label: "Create" },
-      { slug: "read_subscriptions", label: "Read" },
-      { slug: "update_subscriptions", label: "Update" },
-      { slug: "delete_subscriptions", label: "Delete" },
+      { slug: "create_subscriptions", label: t("roles.create") },
+      { slug: "read_subscriptions", label: t("roles.read") },
+      { slug: "update_subscriptions", label: t("roles.update") },
+      { slug: "delete_subscriptions", label: t("roles.delete") },
     ]
   },
   {
     module: "products",
-    label: "Products",
+    label: t("roles.products"),
     permissions: [
-      { slug: "create_products", label: "Create" },
-      { slug: "read_products", label: "Read" },
-      { slug: "update_products", label: "Update" },
-      { slug: "delete_products", label: "Delete" },
+      { slug: "create_products", label: t("roles.create") },
+      { slug: "read_products", label: t("roles.read") },
+      { slug: "update_products", label: t("roles.update") },
+      { slug: "delete_products", label: t("roles.delete") },
     ]
   },
   {
     module: "categories",
-    label: "Categories",
+    label: t("roles.categories"),
     permissions: [
-      { slug: "create_categories", label: "Create" },
-      { slug: "read_categories", label: "Read" },
-      { slug: "update_categories", label: "Update" },
-      { slug: "delete_categories", label: "Delete" },
+      { slug: "create_categories", label: t("roles.create") },
+      { slug: "read_categories", label: t("roles.read") },
+      { slug: "update_categories", label: t("roles.update") },
+      { slug: "delete_categories", label: t("roles.delete") },
     ]
   },
   {
     module: "templates",
-    label: "Templates",
+    label: t("roles.templates"),
     permissions: [
-      { slug: "create_templates", label: "Create" },
-      { slug: "read_templates", label: "Read" },
-      { slug: "update_templates", label: "Update" },
-      { slug: "delete_templates", label: "Delete" },
+      { slug: "create_templates", label: t("roles.create") },
+      { slug: "read_templates", label: t("roles.read") },
+      { slug: "update_templates", label: t("roles.update") },
+      { slug: "delete_templates", label: t("roles.delete") },
     ]
   },
   {
     module: "certificates",
-    label: "Certificates",
+    label: t("roles.certificates"),
     permissions: [
-      { slug: "create_certificates", label: "Create" },
-      { slug: "read_certificates", label: "Read" },
-      { slug: "update_certificates", label: "Update" },
-      { slug: "delete_certificates", label: "Delete" },
+      { slug: "create_certificates", label: t("roles.create") },
+      { slug: "read_certificates", label: t("roles.read") },
+      { slug: "update_certificates", label: t("roles.update") },
+      { slug: "delete_certificates", label: t("roles.delete") },
     ]
   },
   {
     module: "dashboard",
-    label: "Dashboard",
+    label: t("roles.dashboard"),
     permissions: [
-      { slug: "read_dashboard", label: "Read" },
+      { slug: "read_dashboard", label: t("roles.read") },
     ]
   },
   {
     module: "eda_requirements",
-    label: "EDA Requirements",
+    label: t("roles.edaRequirements"),
     permissions: [
-      { slug: "create_eda_requirements", label: "Create" },
-      { slug: "read_eda_requirements", label: "Read" },
-      { slug: "update_eda_requirements", label: "Update" },
-      { slug: "delete_eda_requirements", label: "Delete" },
+      { slug: "create_eda_requirements", label: t("roles.create") },
+      { slug: "read_eda_requirements", label: t("roles.read") },
+      { slug: "update_eda_requirements", label: t("roles.update") },
+      { slug: "delete_eda_requirements", label: t("roles.delete") },
     ]
   }
 ];
@@ -147,7 +148,7 @@ export default function Roles() {
         setRoles(res.data.roles || []);
       }
     } catch (error) {
-      toast.error("Failed to load roles");
+      toast.error(t("roles.failedToLoadRoles"));
     } finally {
       setIsLoading(false);
     }
@@ -202,7 +203,7 @@ export default function Roles() {
         setCurrentRole(freshRole);
       }
     } catch (error) {
-      toast.error("Failed to fetch latest role details");
+      toast.error(t("roles.failedToFetchLatestRole"));
     }
   };
 
@@ -253,7 +254,7 @@ export default function Roles() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      toast.error("Role Name is required");
+      toast.error(t("roles.roleNameIsRequired"));
       return;
     }
 
@@ -261,30 +262,30 @@ export default function Roles() {
       setIsSubmitting(true);
       if (modalMode === "add") {
         await createRole(formData);
-        toast.success("Role created successfully");
+        toast.success(t("roles.roleCreatedSuccessfully"));
       } else {
         await updateRole(currentRole.id, formData);
-        toast.success("Role updated successfully");
+        toast.success(t("roles.roleUpdatedSuccessfully"));
       }
       closeModal();
       fetchRoles();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Operation failed");
+      toast.error(error.response?.data?.message || t("roles.operationFailed"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this role? Any users assigned to it will lose these permissions!")) return;
+    if (!window.confirm(t("roles.areYouSureYouWant"))) return;
 
     try {
       setIsLoading(true);
       await deleteRole(id);
-      toast.success("Role deleted successfully");
+      toast.success(t("roles.roleDeletedSuccessfully"));
       fetchRoles();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete role");
+      toast.error(error.response?.data?.message || t("roles.failedToDeleteRole"));
       setIsLoading(false); 
     }
   };
@@ -295,27 +296,23 @@ export default function Roles() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <ShieldAlert className="w-8 h-8 text-orange-600" />
-            Roles & Permissions
-          </h1>
-          <p className="text-gray-500 mt-1">Manage system roles and their access levels.</p>
+            <ShieldAlert className="w-8 h-8 text-orange-600" />{t("roles.rolesPermissions")}</h1>
+          <p className="text-gray-500 mt-1">{t("roles.manageSystemRolesAndTheir")}</p>
         </div>
         <Button className="shrink-0 bg-orange-600 hover:bg-orange-700" onClick={openAddModal}>
-          <Plus className="w-5 h-5 mr-2" />
-          Add Role
-        </Button>
+          <Plus className="w-5 h-5 me-2" />{t("roles.addRole")}</Button>
       </div>
 
       {/* Search Bar */}
       <div className="bg-white p-4 rounded-t-2xl border-x border-t border-gray-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
         <div className="relative w-full sm:w-96">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search className="w-5 h-5 absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search roles..."
+            placeholder={t("roles.searchRoles")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+            className="w-full ps-10 pe-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all"
           />
         </div>
       </div>
@@ -323,13 +320,13 @@ export default function Roles() {
       {/* Table */}
       <div className="bg-white rounded-b-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
+          <table className="w-full text-start text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase text-xs tracking-wider">
               <tr>
-                <th className="px-6 py-4">Role Name</th>
-                <th className="px-6 py-4">Description</th>
-                <th className="px-6 py-4 text-center">Permissions Count</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">{t("roles.roleName")}</th>
+                <th className="px-6 py-4">{t("roles.description")}</th>
+                <th className="px-6 py-4 text-center">{t("roles.permissionsCount")}</th>
+                <th className="px-6 py-4 text-end">{t("roles.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -346,8 +343,8 @@ export default function Roles() {
                   <td colSpan="4" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center text-gray-400">
                       <ShieldAlert className="w-12 h-12 mb-3 text-gray-300" />
-                      <p className="text-lg font-medium text-gray-500">No roles found</p>
-                      <p className="text-sm mt-1">Try adjusting your search or add a new role.</p>
+                      <p className="text-lg font-medium text-gray-500">{t("roles.noRolesFound")}</p>
+                      <p className="text-sm mt-1">{t("roles.tryAdjustingYourSearchOr")}</p>
                     </div>
                   </td>
                 </tr>
@@ -362,29 +359,28 @@ export default function Roles() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                        {role.permissions?.length || 0} Permissions
-                      </span>
+                        {role.permissions?.length || 0}{" "}{t("roles.permissions")}</span>
                     </td>
-                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-6 py-4 text-end" onClick={(e) => e.stopPropagation()}>
                       {role.name !== "Admin" ? (
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditModal(role)}
                             className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                            title="Edit"
+                            title={t("roles.edit")}
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(role.id)}
                             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
+                            title={t("roles.delete2")}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400 font-medium italic">System Role</span>
+                        <span className="text-xs text-gray-400 font-medium italic">{t("roles.systemRole")}</span>
                       )}
                     </td>
                   </tr>
@@ -402,7 +398,7 @@ export default function Roles() {
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-orange-600" />
-                {modalMode === "add" ? "Create New Role" : modalMode === "edit" ? "Edit Role" : "View Role Details"}
+                {modalMode === "add" ? t("roles.createNewRole") : modalMode === "edit" ? t("roles.editRole") : t("roles.viewRoleDetails")}
               </h2>
               <button
                 onClick={closeModal}
@@ -418,24 +414,24 @@ export default function Roles() {
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Role Name *</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">{t("roles.roleName2")}</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
-                      placeholder="e.g. Editor, Manager, Support"
+                      placeholder={t("roles.eGEditorManagerSupport")}
                       required
                       disabled={modalMode === "view"}
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">{t("roles.description")}</label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none resize-none h-20 disabled:bg-gray-50 disabled:text-gray-500"
-                      placeholder="What does this role do?"
+                      placeholder={t("roles.whatDoesThisRoleDo")}
                       disabled={modalMode === "view"}
                     />
                   </div>
@@ -446,7 +442,7 @@ export default function Roles() {
                 {/* Permissions Grid */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">Permissions</h3>
+                    <h3 className="text-lg font-bold text-gray-900">{t("roles.permissions")}</h3>
                     {modalMode !== "view" && (
                       <button
                         type="button"
@@ -454,7 +450,7 @@ export default function Roles() {
                         className="text-sm font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200 transition-colors"
                       >
                         <Check className="w-4 h-4" />
-                        {formData.permissionSlugs.length === ALL_SLUGS.length ? "Deselect All" : "Select All"}
+                        {formData.permissionSlugs.length === ALL_SLUGS.length ? t("roles.deselectAll") : t("roles.selectAll")}
                       </button>
                     )}
                   </div>
@@ -475,9 +471,7 @@ export default function Roles() {
                                 onChange={() => handleToggleModule(moduleSlugs)}
                                 className="rounded text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                                 disabled={modalMode === "view"}
-                              />
-                              All
-                            </label>
+                              />{t("roles.all")}</label>
                           </div>
                           <div className="space-y-2">
                             {group.permissions.map(perm => (
@@ -518,9 +512,7 @@ export default function Roles() {
                       type="button"
                       className="text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
                     >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit Role
-                    </Button>
+                      <Edit2 className="w-4 h-4 me-2" />{t("roles.editRole")}</Button>
                     <Button 
                       variant="secondary" 
                       onClick={() => {
@@ -530,9 +522,7 @@ export default function Roles() {
                       type="button"
                       className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
+                      <Trash2 className="w-4 h-4 me-2" />{t("roles.delete2")}</Button>
                   </div>
                 ) : (
                   <div></div>
@@ -540,16 +530,12 @@ export default function Roles() {
                 
                 <div className="flex gap-3">
                   {modalMode === "view" ? (
-                    <Button variant="secondary" onClick={closeModal} type="button">
-                      Close
-                    </Button>
+                    <Button variant="secondary" onClick={closeModal} type="button">{t("roles.close")}</Button>
                   ) : (
                     <>
-                      <Button variant="secondary" onClick={closeModal} type="button">
-                        Cancel
-                      </Button>
+                      <Button variant="secondary" onClick={closeModal} type="button">{t("roles.cancel")}</Button>
                       <Button type="submit" isLoading={isSubmitting} className="bg-orange-600 hover:bg-orange-700 text-white border-none">
-                        {modalMode === "add" ? "Create Role" : "Save Changes"}
+                        {modalMode === "add" ? t("roles.createRole") : t("roles.saveChanges")}
                       </Button>
                     </>
                   )}

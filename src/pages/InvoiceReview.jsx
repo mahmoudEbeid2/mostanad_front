@@ -27,81 +27,38 @@ import { generateCertificates, getGenerationPlan } from "../services/apiCertific
 import { addInvoiceItem, confirmInvoice, deleteInvoiceItem, enterInvoiceByHand, getInvoice, prepareCertificates, rematchInvoice, retryInvoice, updateInvoice, updateInvoiceItem } from "../services/apiInvoices";
 import { withNextStep } from "../utils/aiReason";
 import AiAction from "../ui/AiAction";
+import { fmtDateTime, has, localizeCountries, strings, t } from "../i18n";
 
 // /invoices/:id (plan §13.5; mockups B2 = reading, B3 = review & match).
 const STR = {
-  back: "← Invoices",
-  title: (n) => `Invoice ${n}`,
-  subtitle: "Check what was read from the invoice, match every line to a product, then generate.",
-  subtitleManual: "Type the invoice details and each line from the original on the left, match every line to a product, then generate.",
-  // B2 — reading
-  reading: "Reading the invoice",
-  readingHint: "About 20–40 seconds. Nothing is guessed — anything we can’t read stays empty for you to fill.",
-  stages: ["Invoice uploaded", "AI is reading header and lines", "Matching products with your catalogue"],
-  canLeave: "You can leave — this page picks up where it is when you come back.",
-  stageState: { done: "done", active: "in progress", pending: "not started" },
-  progress: "Reading progress",
-  skeleton: "Review screen loading…",
-  failedTitle: "Couldn’t read this invoice:",
-  failedTail: "No certificates were created.",
-  tryAgain: "Try again",
-  confirmNeedsLine: "Match at least one line to a product first",
-  byHand: "Enter it by hand",
-  byHandHint: "Type the invoice number and each line from the original on the left — nothing is filled in for you.",
-  // B3 — review
-  rematch: "Re-run matching",
+  ...strings("invoiceReview"),
+  stages: [t("invoiceReview.stage1"), t("invoiceReview.stage2"), t("invoiceReview.stage3")],
   rematched: (r) =>
-    `Matching done: ${r.matched} matched, ${r.needsMatch} need a product` +
-    (r.ai?.suggested ? ` · AI suggests a product for ${r.ai.suggested} — confirm them` : "") +
-    (r.ai?.unavailable ? ` · AI matching didn't run` : ""),
-  confirm: "Confirm & continue",
-  confirmed: "Invoice confirmed — check the plan, then generate",
-  generate: (n) => (n ? `Generate ${n} certificate${n === 1 ? "" : "s"}` : "Generate certificates"),
-  generateAgain: "Generate again",
-  prepare: "Prepare certificates",
-  confirmAndGenerate: (n) => `Confirm invoice and generate ${n} certificate${n === 1 ? "" : "s"}`,
-  generateAnyway: "Generate anyway",
-  generateAnywayConfirm: (n) => `${n} required value${n === 1 ? " is" : "s are"} still missing or unconfirmed. Generate anyway? They stay empty and are flagged on the certificates.`,
-  blockedHint: (n) => `Complete the certificate data check first (${n} open value${n === 1 ? "" : "s"})`,
-  confirmAgain: "Generate a new set of certificates? The existing ones stay as they are.",
-  batchesTitle: (n) => `Certificates for ${n}`,
-  batch: (b, i) => `Run ${i} · ${new Date(b.createdAt).toLocaleString()}`,
-  showLines: "Show invoice & lines",
-  hideLines: "Hide invoice & lines",
+    t("invoiceReview.rematched", { matched: r.matched, needsMatch: r.needsMatch }) +
+    (r.ai?.suggested ? t("invoiceReview.aiSuggestsFor", { n: r.ai.suggested }) : "") +
+    (r.ai?.unavailable ? t("invoiceReview.aiDidntRun") : ""),
+  generate: (n) => (n ? t("invoiceReview.generateN", { count: n }) : t("invoiceReview.generateCertificates")),
+  confirmAndGenerate: (n) => t("invoiceReview.confirmAndGenerate", { count: n }),
+  generateAnywayConfirm: (n) => t("invoiceReview.generateAnywayConfirm", { count: n }),
+  blockedHint: (n) => t("invoiceReview.blockedHint", { count: n }),
+  batch: (b, i) => t("invoiceReview.batch", { i, date: fmtDateTime(b.createdAt) }),
   needsMatch: (n) => (
     <>
-      <b>
-        {n} line{n === 1 ? "" : "s"} need{n === 1 ? "s" : ""} a product match
-      </b>{" "}
-      before you can confirm. Pick one of the suggestions or search the catalogue.
+      <b>{t("invoiceReview.needsMatch", { count: n })}</b> {t("invoiceReview.beforeYouCanConfirmPick")}
     </>
   ),
   matchSummary: (m) =>
-    `${m.by === "rematch" ? "Matching re-run" : "Matched automatically when the invoice was read"}: ${m.matched} line${m.matched === 1 ? "" : "s"} matched, ${m.needsMatch} need${m.needsMatch === 1 ? "s" : ""} a product` +
-    (m.ai?.autoAccepted ? ` · AI matched ${m.ai.autoAccepted}` : "") +
-    (m.ai?.suggested ? ` · AI suggests a product for ${m.ai.suggested} — confirm them in the lines below` : ""),
-  matchAiOff: (reason) => withNextStep(reason, "Pick the products from the suggestions or the catalogue."),
-  ambiguousDates: "Some dates are ambiguous (amber). Write them unambiguously so they can be formatted on the certificates.",
-  ambiguousQuantities: "Some quantities are ambiguous (amber): \"1.250\" could be 1250 or 1.25. Type the number without the separator (1250) or with a decimal part (1.25).",
-  readyNote: "Confirmed — editing anything sends it back to review.",
-  notEditable: (s) => `This invoice is ${s.replace("_", " ")} and can no longer be edited.`,
-  details: "Invoice details",
-  detailsHint: "Read by AI · edited fields are marked",
-  detailsHintManual: "Typed by you — nothing was read automatically",
-  edited: "edited",
-  destination: "Destination country",
-  readFromInvoice: "Read from invoice",
-  brand: "Brand hint",
-  noBrand: "Detect from products",
-  warnings: "Notes from the extraction",
-  pickCompany: "Pick a company first.",
-  productCreated: "Product created and matched",
+    t(m.by === "rematch" ? "invoiceReview.matchRerun" : "invoiceReview.matchAuto", { matched: m.matched, needsMatch: m.needsMatch }) +
+    (m.ai?.autoAccepted ? t("invoiceReview.aiMatched", { n: m.ai.autoAccepted }) : "") +
+    (m.ai?.suggested ? t("invoiceReview.aiSuggestsBelow", { n: m.ai.suggested }) : ""),
+  matchAiOff: (reason) => withNextStep(reason, t("invoiceReview.matchAiOffNext")),
+  notEditable: (s) => t("invoiceReview.notEditable", { status: has(`invoiceReview.status.${s}`) ? t(`invoiceReview.status.${s}`) : s.replace("_", " ") }),
 };
 
 const HEADER_FIELDS = [
-  { key: "invoiceNumber", label: "Invoice number" },
-  { key: "invoiceDate", label: "Invoice date", date: true },
-  { key: "customerName", label: "Customer" },
+  { key: "invoiceNumber", label: t("invoiceReview.invoiceNumber") },
+  { key: "invoiceDate", label: t("invoiceReview.invoiceDate"), date: true },
+  { key: "customerName", label: t("invoiceReview.customer") },
 ];
 const EDITABLE = new Set(["review", "ready"]);
 const BATCH_STATES = new Set(["generating", "generated", "partially_failed"]);
@@ -130,7 +87,7 @@ function HeaderField({ field, invoice, editable, onSave }) {
       <span className="flex items-center gap-2 text-gray-700 font-medium">
         {field.label}
         {edited && (
-          <span className="rounded-full bg-blue-50 text-blue-700 px-2 py-0.5 text-xs font-semibold" title={`Read from the invoice as "${extracted}"`}>
+          <span className="rounded-full bg-blue-50 text-blue-700 px-2 py-0.5 text-xs font-semibold" title={t("invoiceReview.readFromTheInvoiceAs", { extracted })}>
             {STR.edited}
           </span>
         )}
@@ -188,11 +145,10 @@ function ReadingCard({ task, source }) {
                 <span className="sr-only"> — {done ? STR.stageState.done : active ? STR.stageState.active : STR.stageState.pending}</span>
               </span>
               {i === 0 && source && (
-                <span className="ml-auto text-xs text-gray-500">
-                  {kind} · {(source.sizeBytes / 1024 / 1024).toFixed(1)} MB
-                </span>
+                <span className="ms-auto text-xs text-gray-500">
+                  {kind} · {(source.sizeBytes / 1024 / 1024).toFixed(1)}{" "}MB</span>
               )}
-              {active && task.message && <span className="ml-auto text-xs text-gray-500">{task.message}</span>}
+              {active && task.message && <span className="ms-auto text-xs text-gray-500">{task.message}</span>}
             </li>
           );
         })}
@@ -240,7 +196,7 @@ export default function InvoiceReview() {
   const [newProductFor, setNewProductFor] = useState(null); // the line the "+ New product" modal is open for
   const [newProductIds, setNewProductIds] = useState(() => new Set()); // lines matched to a product made here
   const [busy, setBusy] = useState(null); // "rematch" | "confirm" | "retry" | "types"
-  const countries = useMemo(() => countryList().getData(), []);
+  const countries = useMemo(() => localizeCountries(countryList().getData()), []);
 
   const load = useCallback(async () => {
     if (!scope) return;
@@ -330,7 +286,7 @@ export default function InvoiceReview() {
   const match = (item, productId, extra = {}) => run(() => updateInvoiceItem(scope, id, item.id, { productId, ...extra }));
   const ignore = (item, ignored) => run(() => updateInvoiceItem(scope, id, item.id, { ignored }));
   // an explicit "remember this name" — the only way a line name is learned (backend 2026-10-27)
-  const remember = (item) => run(() => updateInvoiceItem(scope, id, item.id, { rememberAlias: true }), `“${item.data?.name}” will be matched to ${item.product?.name} on later invoices`);
+  const remember = (item) => run(() => updateInvoiceItem(scope, id, item.id, { rememberAlias: true }), t("invoiceReview.willBeMatchedToOn", { name: item.data?.name, name2: item.product?.name }));
   const remove = (item) => run(() => deleteInvoiceItem(scope, id, item.id));
   const add = () => run(() => addInvoiceItem(scope, id, { data: {} }));
   const rematch = withBusy("rematch", () => run(() => rematchInvoice(scope, id), STR.rematched));
@@ -344,8 +300,8 @@ export default function InvoiceReview() {
   };
   const blocking = check?.summary?.blocking || 0;
   const startGenerate = (force) => async () => {
-    if (force && !(await ask({ title: "Generate anyway?", message: STR.generateAnywayConfirm(blocking), confirmLabel: "Generate anyway", tone: "danger" }))) return;
-    if (!force && BATCH_STATES.has(invoice.status) && !(await ask({ title: "Generate again?", message: STR.confirmAgain, confirmLabel: "Generate" }))) return;
+    if (force && !(await ask({ title: t("invoiceReview.generateAnywayQ"), message: STR.generateAnywayConfirm(blocking), confirmLabel: t("invoiceReview.generateAnyway2"), tone: "danger" }))) return;
+    if (!force && BATCH_STATES.has(invoice.status) && !(await ask({ title: t("invoiceReview.generateAgainQ"), message: STR.confirmAgain, confirmLabel: t("invoiceReview.generate") }))) return;
     try {
       const out = await generateCertificates(scope, id, { force });
       navigate(`/invoices/${id}?batch=${out.batchId}&task=${out.taskId}`, { replace: true });
@@ -606,7 +562,7 @@ export default function InvoiceReview() {
               {warnings.length > 0 && (
                 <div className="text-xs text-amber-800 bg-amber-50 rounded-lg p-3">
                   <p className="font-semibold mb-1">{STR.warnings}</p>
-                  <ul className="list-disc ml-4 space-y-0.5">
+                  <ul className="list-disc ms-4 space-y-0.5">
                     {warnings.map((w, i) => (
                       <li key={i}>{w}</li>
                     ))}

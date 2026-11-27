@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import ProductFieldSource from "../components/ProductFieldSource";
 import CatalogueSearch from "../components/catalogues/CatalogueSearch";
 import { categoryOptions } from "../utils/categoryOptions";
+import { fmtDate, t } from "../i18n";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -94,7 +95,7 @@ export default function Products() {
       if (catRes.status === "success") setCategories(catRes.data.categories || []);
       fetchProducts();
     } catch (error) {
-      toast.error("Failed to load initial data");
+      toast.error(t("products.failedToLoadInitialData"));
     }
   };
 
@@ -112,7 +113,7 @@ export default function Products() {
         setProducts(res.data.products || []);
       }
     } catch (error) {
-      toast.error("Failed to load products");
+      toast.error(t("products.failedToLoadProducts"));
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +185,7 @@ export default function Products() {
     if (!editId) return;
     getProductById(editId)
       .then((res) => res?.data?.product && openEditModal(res.data.product))
-      .catch(() => toast.error("Product not found"))
+      .catch(() => toast.error(t("products.productNotFound")))
       .finally(() => setSearchParams({}, { replace: true }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId]);
@@ -237,7 +238,7 @@ export default function Products() {
         setCurrentProduct(res.data.product);
       }
     } catch (error) {
-      toast.error("Failed to fetch latest product details");
+      toast.error(t("products.failedToFetchLatestProduct"));
     }
   };
 
@@ -253,7 +254,7 @@ export default function Products() {
 
     if (modalMode === "add" && extractionMode === "ai") {
       if (!formData.rawText.trim() || !formData.companyId) {
-        toast.error("Raw Text and Company are required for AI Extraction");
+        toast.error(t("products.rawTextAndCompanyAre"));
         return;
       }
       try {
@@ -266,7 +267,7 @@ export default function Products() {
         };
         const res = await extractProductAi(payload);
         const taskId = res.data.taskId;
-        toast.success("AI Extraction started! Please wait...");
+        toast.success(t("products.aiExtractionStartedPleaseWait"));
         
         // Poll for status
         const interval = setInterval(async () => {
@@ -276,27 +277,27 @@ export default function Products() {
             if (status === "completed") {
               clearInterval(interval);
               setIsExtractingAi(false);
-              toast.success("AI successfully extracted and saved the product!");
+              toast.success(t("products.aiSuccessfullyExtractedAndSaved"));
               fetchProducts();
               closeModal();
             } else if (status === "failed") {
               clearInterval(interval);
               setIsExtractingAi(false);
-              toast.error("AI extraction failed.");
+              toast.error(t("products.aiExtractionFailed"));
             }
           } catch (err) {
             console.error("Polling error", err);
           }
         }, 3000);
       } catch (err) {
-        toast.error(err.response?.data?.message || "Failed to start AI extraction");
+        toast.error(err.response?.data?.message || t("products.failedToStartAiExtraction"));
         setIsExtractingAi(false);
       }
       return;
     }
 
     if (!formData.name.trim() || !formData.companyId) {
-      toast.error("Name and Company are required");
+      toast.error(t("products.nameAndCompanyAreRequired"));
       return;
     }
 
@@ -323,30 +324,30 @@ export default function Products() {
 
       if (modalMode === "add") {
         await createProduct(payload);
-        toast.success("Product created successfully");
+        toast.success(t("products.productCreatedSuccessfully"));
       } else {
         await updateProduct(currentProduct.id, payload);
-        toast.success("Product updated successfully");
+        toast.success(t("products.productUpdatedSuccessfully"));
       }
       closeModal();
       fetchProducts();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Operation failed");
+      toast.error(error.response?.data?.message || t("products.operationFailed"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    if (!window.confirm(t("products.areYouSureYouWant"))) return;
 
     try {
       setIsLoading(true);
       await deleteProduct(id);
-      toast.success("Product deleted successfully");
+      toast.success(t("products.productDeletedSuccessfully"));
       fetchProducts();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete product");
+      toast.error(error.response?.data?.message || t("products.failedToDeleteProduct"));
       setIsLoading(false);
     }
   };
@@ -356,20 +357,16 @@ export default function Products() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-500 mt-1">Manage your products database.</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("products.products")}</h1>
+          <p className="text-gray-500 mt-1">{t("products.manageYourProductsDatabase")}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {/* a company account: its stored files read again, its products filled (system users: on the companies page) */}
           {!isSystem && <ReharvestButton companyId={user?.companyId || user?.id} />}
           <Button variant="secondary" onClick={() => navigate("/products/import")} data-testid="products-from-files">
-            <Files className="w-5 h-5 mr-2" />
-            Add products from files
-          </Button>
+            <Files className="w-5 h-5 me-2" />{t("products.addProductsFromFiles")}</Button>
           <Button className="shrink-0" onClick={openAddModal}>
-            <Plus className="w-5 h-5 mr-2" />
-            Add Product
-          </Button>
+            <Plus className="w-5 h-5 me-2" />{t("products.addProduct")}</Button>
         </div>
       </div>
 
@@ -381,13 +378,13 @@ export default function Products() {
       {/* Filters & Search */}
       <div className="bg-white p-4 rounded-t-2xl border-x border-t border-gray-200 flex flex-col md:flex-row gap-4 justify-between items-center">
         <div className="relative w-full md:w-96 shrink-0">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search className="w-5 h-5 absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search by name..." 
+            placeholder={t("products.searchByName")} 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            className="w-full ps-10 pe-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           />
         </div>
         
@@ -397,7 +394,7 @@ export default function Products() {
             onChange={(e) => setFilterCompany(e.target.value)}
             className="w-full md:w-48 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700"
           >
-            <option value="">All Companies</option>
+            <option value="">{t("products.allCompanies")}</option>
             {companies.map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
@@ -409,7 +406,7 @@ export default function Products() {
             disabled={!filterCompany || brands.length === 0}
             className="w-full md:w-48 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700 disabled:opacity-50"
           >
-            <option value="">All Brands</option>
+            <option value="">{t("products.allBrands")}</option>
             {brands.map(b => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}
@@ -419,17 +416,13 @@ export default function Products() {
 
       {selected.size > 0 && (
         <div className="flex items-center justify-between gap-3 border-x border-gray-200 bg-teal-50 px-6 py-2 text-sm" data-testid="products-selection">
-          <span className="text-teal-800">{selected.size} selected</span>
+          <span className="text-teal-800">{selected.size}{" "}{t("products.selected")}</span>
           <div className="flex gap-2">
-            <button type="button" onClick={() => setSelected(new Set())} className="px-3 py-1.5 text-gray-600 hover:text-gray-900">
-              Clear
-            </button>
+            <button type="button" onClick={() => setSelected(new Set())} className="px-3 py-1.5 text-gray-600 hover:text-gray-900">{t("products.clear")}</button>
             <button type="button" onClick={() => setCertsFor(products.filter((p) => selected.has(p.id)))} className="inline-flex items-center gap-1.5 rounded-lg border border-teal-600 bg-white px-3 py-1.5 font-medium text-teal-700 hover:bg-teal-50" data-testid="make-certificates-selected">
-              <FileCheck2 className="w-4 h-4" /> Make certificates…
-            </button>
+              <FileCheck2 className="w-4 h-4" />{" "}{t("products.makeCertificates")}</button>
             <button type="button" onClick={() => setCopyFor(products.filter((p) => selected.has(p.id)))} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 font-medium text-white hover:bg-teal-700">
-              <Copy className="w-4 h-4" /> Copy to brand…
-            </button>
+              <Copy className="w-4 h-4" />{" "}{t("products.copyToBrand")}</button>
           </div>
         </div>
       )}
@@ -437,17 +430,17 @@ export default function Products() {
       {/* Table */}
       <div className="bg-white rounded-b-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
+          <table className="w-full text-start text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase text-xs tracking-wider">
               <tr>
-                <th className="pl-6 pr-0 py-4 w-8">
-                  <input type="checkbox" aria-label="Select all" checked={products.length > 0 && products.every((p) => selected.has(p.id))} onChange={(e) => setSelected(e.target.checked ? new Set(products.map((p) => p.id)) : new Set())} />
+                <th className="ps-6 pe-0 py-4 w-8">
+                  <input type="checkbox" aria-label={t("products.selectAll")} checked={products.length > 0 && products.every((p) => selected.has(p.id))} onChange={(e) => setSelected(e.target.checked ? new Set(products.map((p) => p.id)) : new Set())} />
                 </th>
-                <th className="px-6 py-4">Product Info</th>
-                <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4">Company & Brand</th>
-                <th className="px-6 py-4 text-center">Added Date</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">{t("products.productInfo")}</th>
+                <th className="px-6 py-4">{t("products.category")}</th>
+                <th className="px-6 py-4">{t("products.companyBrand")}</th>
+                <th className="px-6 py-4 text-center">{t("products.addedDate")}</th>
+                <th className="px-6 py-4 text-end">{t("products.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -464,29 +457,27 @@ export default function Products() {
                   <td colSpan="6" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center text-gray-400">
                       <Package className="w-16 h-16 mb-4 opacity-50" />
-                      <p className="text-lg font-medium text-gray-900">No products found</p>
+                      <p className="text-lg font-medium text-gray-900">{t("products.noProductsFound")}</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 products.map((product) => (
                   <tr key={product.id} onClick={() => openViewModal(product)} className="hover:bg-gray-50/50 transition-colors cursor-pointer group">
-                    <td className="pl-6 pr-0 py-4" onClick={(e) => e.stopPropagation()}>
-                      <input type="checkbox" aria-label={`Select ${product.name}`} checked={selected.has(product.id)} onChange={() => toggleSelected(product.id)} />
+                    <td className="ps-6 pe-0 py-4" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" aria-label={t("products.select", { name: product.name })} checked={selected.has(product.id)} onChange={() => toggleSelected(product.id)} />
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-900 group-hover:text-teal-600 transition-colors">
                         {product.name}
                         {product.sourceProductId && (
-                          <span className="ml-2 inline-flex items-center gap-1 rounded bg-teal-50 px-1.5 py-0.5 text-[11px] font-medium text-teal-700 align-middle" title="Copied from another product">
-                            <Link2 className="w-3 h-3" />
-                            copy
-                          </span>
+                          <span className="ms-2 inline-flex items-center gap-1 rounded bg-teal-50 px-1.5 py-0.5 text-[11px] font-medium text-teal-700 align-middle" title={t("products.copiedFromAnotherProduct")}>
+                            <Link2 className="w-3 h-3" />{t("products.copy")}</span>
                         )}
                       </div>
                       <div className="text-xs text-gray-500 font-mono mt-1 flex items-center gap-1">
                         <Package className="w-3 h-3" />
-                        {product.gtin || "No GTIN"}
+                        {product.gtin || t("products.noGtin")}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -501,9 +492,9 @@ export default function Products() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-center text-sm text-gray-500">
-                      {new Date(product.createdAt).toLocaleDateString()}
+                      {fmtDate(product.createdAt)}
                     </td>
-                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-6 py-4 text-end" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={(e) => {
@@ -511,7 +502,7 @@ export default function Products() {
                             openEditModal(product);
                           }}
                           className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                          title="Edit"
+                          title={t("products.edit")}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -521,8 +512,8 @@ export default function Products() {
                             setCopyFor([product]);
                           }}
                           className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                          title="Copy to another brand"
-                          aria-label={`Copy ${product.name} to another brand`}
+                          title={t("products.copyToAnotherBrand")}
+                          aria-label={t("products.copyToAnotherBrand2", { name: product.name })}
                         >
                           <Copy className="w-4 h-4" />
                         </button>
@@ -532,7 +523,7 @@ export default function Products() {
                             handleDelete(product.id);
                           }}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
+                          title={t("products.delete")}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -553,7 +544,7 @@ export default function Products() {
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <Package className="w-5 h-5 text-teal-600" />
-                {modalMode === "add" ? "Add New Product" : modalMode === "edit" ? "Edit Product" : "View Product Details"}
+                {modalMode === "add" ? t("products.addNewProduct") : modalMode === "edit" ? t("products.editProduct") : t("products.viewProductDetails")}
               </h2>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -565,30 +556,25 @@ export default function Products() {
                 {modalMode === "view" && currentProduct ? (
                   <div className="bg-gray-50 p-6 rounded-lg border border-gray-100 space-y-6">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Product Name</label>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.productName")}</label>
                       <div className="text-gray-900 font-bold text-xl">{currentProduct.name}</div>
                       {currentProduct.copyInfo?.source && (
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs" data-testid="copied-from">
                           <span className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-1 font-medium text-teal-800 border border-teal-100">
-                            <Link2 className="w-3 h-3" /> Copied from {currentProduct.copyInfo.source.name}
-                            {currentProduct.copyInfo.source.brand?.name ? ` · ${currentProduct.copyInfo.source.brand.name}` : ""}
+                            <Link2 className="w-3 h-3" />{" "}{t("products.copiedFrom", { name: currentProduct.copyInfo.source.name })}{currentProduct.copyInfo.source.brand?.name ? ` · ${currentProduct.copyInfo.source.brand.name}` : ""}
                             {currentProduct.copyInfo.source.company?.name ? ` (${currentProduct.copyInfo.source.company.name})` : ""}
                           </span>
                           <button type="button" onClick={() => setDiffFor(currentProduct.id)} className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 font-medium text-gray-700 hover:bg-gray-50">
-                            <RefreshCw className="w-3 h-3" /> Update from source
-                          </button>
+                            <RefreshCw className="w-3 h-3" />{" "}{t("products.updateFromSource")}</button>
                         </div>
                       )}
-                      {currentProduct.copyInfo?.sourceInOtherCompany && <div className="mt-2 text-xs text-gray-500">Copied from a product in another company.</div>}
+                      {currentProduct.copyInfo?.sourceInOtherCompany && <div className="mt-2 text-xs text-gray-500">{t("products.copiedFromAProductIn")}</div>}
                       {currentProduct.copyInfo?.needsRegistrationNumber && (
                         <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 border border-amber-200" data-testid="needs-registration">
-                          <AlertTriangle className="w-3 h-3" /> Needs its own registration number
-                        </div>
+                          <AlertTriangle className="w-3 h-3" />{" "}{t("products.needsItsOwnRegistrationNumber")}</div>
                       )}
                       {currentProduct.copyInfo?.copies?.length > 0 && (
-                        <div className="mt-2 text-xs text-gray-600" data-testid="used-by">
-                          Used by:{" "}
-                          {currentProduct.copyInfo.copies.map((c, i) => (
+                        <div className="mt-2 text-xs text-gray-600" data-testid="used-by">{t("products.usedBy")}{currentProduct.copyInfo.copies.map((c, i) => (
                             <span key={c.id}>
                               {i ? ", " : ""}
                               <button type="button" className="text-teal-700 hover:underline" onClick={() => openViewModal(c)}>
@@ -606,13 +592,13 @@ export default function Products() {
                     
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">GTIN (Barcode) / Code<ProductFieldSource product={currentProduct} field="productCode" /></label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.gtinBarcodeCode")}<ProductFieldSource product={currentProduct} field="productCode" /></label>
                         <div className="text-gray-900 font-mono text-sm bg-white border border-gray-200 px-3 py-2 rounded-md inline-block">
                           {currentProduct.gtin || currentProduct.productCode || "—"}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Category</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.category")}</label>
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-teal-50 text-teal-700 border border-teal-100">
                           {currentProduct.category?.name || categories.find(c => c.id === currentProduct.categoryId)?.name || "—"}
                         </span>
@@ -621,13 +607,13 @@ export default function Products() {
 
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Company</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.company")}</label>
                         <div className="text-gray-900 font-medium text-base">
                           {currentProduct.company?.name || companies.find(c => c.id === currentProduct.companyId)?.name || "—"}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Brand</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.brand")}</label>
                         <div className="text-gray-900 font-medium text-base">
                           {currentProduct.brand?.name || modalBrands.find(b => b.id === currentProduct.brandId)?.name || "—"}
                         </div>
@@ -636,25 +622,25 @@ export default function Products() {
 
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Physical Form<ProductFieldSource product={currentProduct} field="physicalForm" /></label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.physicalForm")}<ProductFieldSource product={currentProduct} field="physicalForm" /></label>
                         <div className="text-gray-900 text-sm">{currentProduct.physicalForm || "—"}</div>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Packaging<ProductFieldSource product={currentProduct} field="packaging" /></label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.packaging")}<ProductFieldSource product={currentProduct} field="packaging" /></label>
                         <div className="text-gray-900 text-sm">{currentProduct.packaging || "—"}</div>
                       </div>
                     </div>
 
                     {currentProduct.appearance && (
                       <div className="pt-4 border-t border-gray-200">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Appearance<ProductFieldSource product={currentProduct} field="appearance" /></label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.appearance")}<ProductFieldSource product={currentProduct} field="appearance" /></label>
                         <div className="text-gray-900 text-sm">{currentProduct.appearance}</div>
                       </div>
                     )}
 
                     {currentProduct.targetSpecies && currentProduct.targetSpecies.length > 0 && (
                       <div className="pt-4 border-t border-gray-200">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Target Species<ProductFieldSource product={currentProduct} field="targetSpecies" /></label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t("products.targetSpecies")}<ProductFieldSource product={currentProduct} field="targetSpecies" /></label>
                         <div className="flex flex-wrap gap-2">
                           {currentProduct.targetSpecies.map((species, i) => (
                             <span key={i} className="bg-white border border-gray-200 px-2.5 py-1 rounded-md text-sm text-gray-700">
@@ -669,13 +655,13 @@ export default function Products() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                         {currentProduct.indications && (
                           <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Indications<ProductFieldSource product={currentProduct} field="indications" /></label>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.indications")}<ProductFieldSource product={currentProduct} field="indications" /></label>
                             <p className="text-gray-800 text-sm">{currentProduct.indications}</p>
                           </div>
                         )}
                         {currentProduct.dosage && (
                           <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dosage<ProductFieldSource product={currentProduct} field="dosage" /></label>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.dosage")}<ProductFieldSource product={currentProduct} field="dosage" /></label>
                             <p className="text-gray-800 text-sm">{currentProduct.dosage}</p>
                           </div>
                         )}
@@ -686,13 +672,13 @@ export default function Products() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                         {currentProduct.withdrawalPeriod && (
                           <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Withdrawal Period<ProductFieldSource product={currentProduct} field="withdrawalPeriod" /></label>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.withdrawalPeriod")}<ProductFieldSource product={currentProduct} field="withdrawalPeriod" /></label>
                             <p className="text-gray-800 text-sm">{currentProduct.withdrawalPeriod}</p>
                           </div>
                         )}
                         {currentProduct.storage && (
                           <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Storage<ProductFieldSource product={currentProduct} field="storage" /></label>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t("products.storage")}<ProductFieldSource product={currentProduct} field="storage" /></label>
                             <p className="text-gray-800 text-sm">{currentProduct.storage}</p>
                           </div>
                         )}
@@ -701,7 +687,7 @@ export default function Products() {
 
                     {currentProduct.activeIngredients && (
                       <div className="pt-4 border-t border-gray-200">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Active Ingredients<ProductFieldSource product={currentProduct} field="activeIngredients" /></label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t("products.activeIngredients")}<ProductFieldSource product={currentProduct} field="activeIngredients" /></label>
                         <pre className="bg-white p-3 rounded-md border border-gray-200 text-sm overflow-x-auto text-gray-800 font-mono">
                           {JSON.stringify(currentProduct.activeIngredients, null, 2)}
                         </pre>
@@ -710,12 +696,12 @@ export default function Products() {
 
                     <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-200 text-xs">
                       <div>
-                        <span className="text-gray-500 font-semibold uppercase tracking-wider">Origin:</span> 
-                        <span className="ml-2 text-gray-900">{currentProduct.origin || "—"}</span>
+                        <span className="text-gray-500 font-semibold uppercase tracking-wider">{t("products.origin")}</span> 
+                        <span className="ms-2 text-gray-900">{currentProduct.origin || "—"}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500 font-semibold uppercase tracking-wider">Reg #:</span> 
-                        <span className="ml-2 text-gray-900">{currentProduct.registrationNumber || "—"}</span>
+                        <span className="text-gray-500 font-semibold uppercase tracking-wider">{t("products.reg")}</span> 
+                        <span className="ms-2 text-gray-900">{currentProduct.registrationNumber || "—"}</span>
                       </div>
                     </div>
 
@@ -726,12 +712,9 @@ export default function Products() {
                     {modalMode === "add" && (
                       <div className="flex justify-center mb-6">
                         <div className="bg-gray-100 p-1 rounded-lg inline-flex">
-                          <button type="button" onClick={() => setExtractionMode("manual")} className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${extractionMode === "manual" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                            Manual Setup
-                          </button>
+                          <button type="button" onClick={() => setExtractionMode("manual")} className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${extractionMode === "manual" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>{t("products.manualSetup")}</button>
                           <AiAction><button type="button" onClick={() => setExtractionMode("ai")} className={`px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${extractionMode === "ai" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                            <Sparkles className="w-4 h-4" /> AI Extract
-                          </button></AiAction>
+                            <Sparkles className="w-4 h-4" />{" "}{t("products.aiExtract")}</button></AiAction>
                         </div>
                       </div>
                     )}
@@ -751,33 +734,33 @@ export default function Products() {
 
                         {currentStep === 1 && (
                           <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                            <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 1: Basic Information</h3>
+                            <h3 className="text-lg font-bold text-gray-800 border-b pb-2">{t("products.step1BasicInformation")}</h3>
                             <div>
-                              <label className="block text-sm font-semibold text-gray-700 mb-1">Product Name *</label>
+                              <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.productName2")}</label>
                               <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" required />
                             </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">GTIN (Barcode)</label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.gtinBarcode")}</label>
                           <input type="text" value={formData.gtin} onChange={(e) => setFormData({ ...formData, gtin: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Company *</label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.company2")}</label>
                           <select value={formData.companyId} onChange={(e) => setFormData({ ...formData, companyId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white" required>
-                            <option value="">Select Company...</option>
+                            <option value="">{t("products.selectCompany")}</option>
                             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Brand (Optional)</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">{t("products.brandOptional")}</label>
                           <select value={formData.brandId} onChange={(e) => setFormData({ ...formData, brandId: e.target.value })} disabled={!formData.companyId || modalBrands.length === 0} className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 disabled:opacity-50">
-                            <option value="">No Brand</option>
+                            <option value="">{t("products.noBrand")}</option>
                             {modalBrands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.category")}</label>
                           <select value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                            <option value="">No Category</option>
+                            <option value="">{t("products.noCategory")}</option>
                             {categoryOptions(categories).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                           </select>
                         </div>
@@ -786,39 +769,39 @@ export default function Products() {
 
                     {currentStep === 2 && (
                       <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 2: Characteristics</h3>
+                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">{t("products.step2Characteristics")}</h3>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Physical Form</label>
-                            <input type="text" value={formData.physicalForm} onChange={(e) => setFormData({ ...formData, physicalForm: e.target.value })} placeholder="e.g. Powder, Liquid" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.physicalForm")}</label>
+                            <input type="text" value={formData.physicalForm} onChange={(e) => setFormData({ ...formData, physicalForm: e.target.value })} placeholder={t("products.eGPowderLiquid")} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                           </div>
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Appearance</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.appearance")}</label>
                             <input type="text" value={formData.appearance} onChange={(e) => setFormData({ ...formData, appearance: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Packaging</label>
-                            <input type="text" value={formData.packaging} onChange={(e) => setFormData({ ...formData, packaging: e.target.value })} placeholder="e.g. 25KG Bag" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.packaging")}</label>
+                            <input type="text" value={formData.packaging} onChange={(e) => setFormData({ ...formData, packaging: e.target.value })} placeholder={t("products.eG25kgBag")} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                           </div>
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Reg Number</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.regNumber")}</label>
                             <input type="text" value={formData.registrationNumber} onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Origin (Country)</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.originCountry")}</label>
                             <input type="text" value={formData.origin} onChange={(e) => setFormData({ ...formData, origin: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                           </div>
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Producer</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.producer")}</label>
                             <input type="text" value={formData.producer} onChange={(e) => setFormData({ ...formData, producer: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                           </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.description")}</label>
                           <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="3"></textarea>
                         </div>
                       </div>
@@ -826,30 +809,30 @@ export default function Products() {
 
                     {currentStep === 3 && (
                       <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 3: Medical & Usage</h3>
+                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">{t("products.step3MedicalUsage")}</h3>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Indications</label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.indications")}</label>
                           <textarea value={formData.indications} onChange={(e) => setFormData({ ...formData, indications: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="2"></textarea>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Dosage</label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.dosage")}</label>
                           <textarea value={formData.dosage} onChange={(e) => setFormData({ ...formData, dosage: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="2"></textarea>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Mixing Instructions</label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.mixingInstructions")}</label>
                           <textarea value={formData.mixingInstructions} onChange={(e) => setFormData({ ...formData, mixingInstructions: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="2"></textarea>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Contraindications</label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.contraindications")}</label>
                           <textarea value={formData.contraindications} onChange={(e) => setFormData({ ...formData, contraindications: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" rows="2"></textarea>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Withdrawal Period</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.withdrawalPeriod")}</label>
                             <input type="text" value={formData.withdrawalPeriod} onChange={(e) => setFormData({ ...formData, withdrawalPeriod: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                           </div>
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Storage</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.storage")}</label>
                             <input type="text" value={formData.storage} onChange={(e) => setFormData({ ...formData, storage: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                           </div>
                         </div>
@@ -858,34 +841,33 @@ export default function Products() {
 
                     {currentStep === 4 && (
                       <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">Step 4: Composition & Safety</h3>
+                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">{t("products.step4CompositionSafety")}</h3>
                         
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Target Species (Comma separated)</label>
-                          <input type="text" value={formData.targetSpecies.join(", ")} onChange={(e) => setFormData({ ...formData, targetSpecies: e.target.value.split(",").map(s => s.trim()) })} placeholder="e.g. Poultry, Cattle, Sheep" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.targetSpeciesCommaSeparated")}</label>
+                          <input type="text" value={formData.targetSpecies.join(", ")} onChange={(e) => setFormData({ ...formData, targetSpecies: e.target.value.split(",").map(s => s.trim()) })} placeholder={t("products.eGPoultryCattleSheep")} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">User Safety (Comma separated)</label>
-                          <input type="text" value={formData.userSafety.join(", ")} onChange={(e) => setFormData({ ...formData, userSafety: e.target.value.split(",").map(s => s.trim()) })} placeholder="e.g. Wear gloves, Avoid eye contact" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.userSafetyCommaSeparated")}</label>
+                          <input type="text" value={formData.userSafety.join(", ")} onChange={(e) => setFormData({ ...formData, userSafety: e.target.value.split(",").map(s => s.trim()) })} placeholder={t("products.eGWearGlovesAvoid")} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
                         </div>
 
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2 flex justify-between items-center">
-                            <span>Active Ingredients</span>
+                            <span>{t("products.activeIngredients")}</span>
                             <button type="button" onClick={() => setFormData({ ...formData, activeIngredients: [...formData.activeIngredients, { name: "", concentration: "" }] })} className="text-teal-600 hover:text-teal-700 text-xs flex items-center gap-1 font-bold bg-teal-50 px-2 py-1 rounded">
-                              <Plus className="w-3 h-3" /> Add Ingredient
-                            </button>
+                              <Plus className="w-3 h-3" />{" "}{t("products.addIngredient")}</button>
                           </label>
                           <div className="space-y-2">
                             {formData.activeIngredients.map((ing, i) => (
                               <div key={i} className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg border border-gray-200">
-                                <input type="text" placeholder="Name (e.g. Vitamin A)" value={ing.name} onChange={(e) => {
+                                <input type="text" placeholder={t("products.nameEGVitaminA")} value={ing.name} onChange={(e) => {
                                   const arr = [...formData.activeIngredients];
                                   arr[i].name = e.target.value;
                                   setFormData({ ...formData, activeIngredients: arr });
                                 }} className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-teal-500" />
-                                <input type="text" placeholder="Conc. (e.g. 50%)" value={ing.concentration} onChange={(e) => {
+                                <input type="text" placeholder={t("products.concEG50")} value={ing.concentration} onChange={(e) => {
                                   const arr = [...formData.activeIngredients];
                                   arr[i].concentration = e.target.value;
                                   setFormData({ ...formData, activeIngredients: arr });
@@ -899,7 +881,7 @@ export default function Products() {
                               </div>
                             ))}
                             {formData.activeIngredients.length === 0 && (
-                              <p className="text-xs text-gray-400 text-center py-2 bg-gray-50 rounded-lg border border-gray-200 border-dashed">No active ingredients added.</p>
+                              <p className="text-xs text-gray-400 text-center py-2 bg-gray-50 rounded-lg border border-gray-200 border-dashed">{t("products.noActiveIngredientsAdded")}</p>
                             )}
                           </div>
                         </div>
@@ -915,43 +897,43 @@ export default function Products() {
                 ) : (
                   <div className="space-y-4 animate-in fade-in zoom-in-95">
                     <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-4">
-                      <h4 className="text-blue-800 font-bold flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4" /> AI Powered Extraction</h4>
-                      <p className="text-blue-600 text-sm">Paste any raw text from an email, document, or label. The AI will read it and automatically structure all the product details for you.</p>
+                      <h4 className="text-blue-800 font-bold flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4" />{" "}{t("products.aiPoweredExtraction")}</h4>
+                      <p className="text-blue-600 text-sm">{t("products.pasteAnyRawTextFrom")}</p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Raw Text *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.rawText")}</label>
                       <textarea 
                         value={formData.rawText} 
                         onChange={(e) => setFormData({ ...formData, rawText: e.target.value })} 
                         className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
                         rows="6" 
-                        placeholder="Paste product details here..." 
+                        placeholder={t("products.pasteProductDetailsHere")} 
                         required 
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Company *</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.company2")}</label>
                         <select value={formData.companyId} onChange={(e) => setFormData({ ...formData, companyId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
-                          <option value="">Select Company...</option>
+                          <option value="">{t("products.selectCompany")}</option>
                           {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Brand (Optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t("products.brandOptional")}</label>
                         <select value={formData.brandId} onChange={(e) => setFormData({ ...formData, brandId: e.target.value })} disabled={!formData.companyId || modalBrands.length === 0} className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 disabled:opacity-50">
-                          <option value="">No Brand</option>
+                          <option value="">{t("products.noBrand")}</option>
                           {modalBrands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                         </select>
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Category (Optional)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">{t("products.categoryOptional")}</label>
                       <select value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                        <option value="">No Category</option>
+                        <option value="">{t("products.noCategory")}</option>
                         {categoryOptions(categories).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                       </select>
                     </div>
@@ -971,13 +953,9 @@ export default function Products() {
                     type="button"
                     className="text-teal-600 border-teal-200 hover:bg-teal-50 hover:border-teal-300"
                   >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Edit Product
-                  </Button>
+                    <Edit2 className="w-4 h-4 me-2" />{t("products.editProduct")}</Button>
                   <Button variant="secondary" onClick={() => setCopyFor([currentProduct])} type="button" className="text-teal-600 border-teal-200 hover:bg-teal-50 hover:border-teal-300">
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy to another brand
-                  </Button>
+                    <Copy className="w-4 h-4 me-2" />{t("products.copyToAnotherBrand")}</Button>
                   <Button 
                     variant="secondary" 
                     onClick={() => {
@@ -987,9 +965,7 @@ export default function Products() {
                     type="button"
                     className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
+                    <Trash2 className="w-4 h-4 me-2" />{t("products.delete")}</Button>
                 </div>
               ) : (
                 <div></div>
@@ -997,34 +973,28 @@ export default function Products() {
               
               <div className="flex gap-3">
                 {modalMode === "view" ? (
-                  <Button variant="secondary" onClick={closeModal} type="button">Close</Button>
+                  <Button variant="secondary" onClick={closeModal} type="button">{t("products.close")}</Button>
                 ) : (
                 <>
-                  <Button variant="secondary" onClick={closeModal} type="button" disabled={isExtractingAi || isSubmitting}>
-                    Cancel
-                  </Button>
+                  <Button variant="secondary" onClick={closeModal} type="button" disabled={isExtractingAi || isSubmitting}>{t("products.cancel")}</Button>
                   
                   {extractionMode === "manual" ? (
                     <>
                       {currentStep > 1 && (
-                        <Button variant="secondary" onClick={() => setCurrentStep(currentStep - 1)} type="button">
-                          Previous
-                        </Button>
+                        <Button variant="secondary" onClick={() => setCurrentStep(currentStep - 1)} type="button">{t("products.previous")}</Button>
                       )}
                       {currentStep < 4 ? (
                         // distinct keys: reusing one <button> node turned the click on "Next" (step 3) into a submit of the new type="submit" button
-                        <Button key="next" type="button" onClick={() => setCurrentStep(currentStep + 1)} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                          Next
-                        </Button>
+                        <Button key="next" type="button" onClick={() => setCurrentStep(currentStep + 1)} className="bg-teal-600 hover:bg-teal-700 text-white border-none">{t("products.next")}</Button>
                       ) : (
                         <Button key="save" type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                          {modalMode === "add" ? "Create Product" : "Save Changes"}
+                          {modalMode === "add" ? t("products.createProduct") : t("products.saveChanges")}
                         </Button>
                       )}
                     </>
                   ) : (
                     <Button type="submit" isLoading={isExtractingAi} className="bg-blue-600 hover:bg-blue-700 text-white border-none flex items-center gap-2">
-                      {isExtractingAi ? "Extracting..." : "Extract & Save"}
+                      {isExtractingAi ? t("products.extracting") : t("products.extractSave")}
                     </Button>
                   )}
                 </>

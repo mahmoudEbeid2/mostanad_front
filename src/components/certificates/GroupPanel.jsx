@@ -1,6 +1,7 @@
 import { AlertTriangle, Layers, Plus, RotateCcw, Trash2 } from "lucide-react";
 import Button from "../../ui/Button";
 import { slugKey } from "../../utils/certificateFieldSources";
+import { strings, t } from "../../i18n";
 
 // Repeating groups on the field-marking screen (plan §7.8, §13.4). A group is
 // one sample row whose cells are ordinary fields (character ranges) with
@@ -9,35 +10,10 @@ import { slugKey } from "../../utils/certificateFieldSources";
 // measured in the browser (D11): every number comes from PUT …/fields.
 
 const STR = {
-  title: "Repeating groups",
-  needsSvg: "A list that grows with the data — ingredients, invoice lines — needs this design converted with its lines as separate shapes. That makes a new draft version of the same design (fields copied) with its own prepare check. Versions without groups are not affected.",
-  enable: "Enable repeating groups",
-  enabling: "Creating the version…",
-  empty: "Mark the text of ONE row (e.g. an ingredient and its amount) as fields, then add a group and pick it under “Row of group” in each field.",
-  add: "Add group",
-  label: "Label",
-  key: "Key",
-  source: "Rows come from",
-  list: "List",
-  mode: "When the list is longer than the design",
-  whenEmpty: "When the list is empty",
-  required: "Required — flag the certificate if the list is empty",
-  footer: "Footer line",
-  footerHint: "Everything below this line stays where it is; content between the group and the line moves down as rows are added. Drag the dashed line on the design.",
-  footerProposed: (y) => `Proposed by the engine at ${y} px`,
-  footerYours: (y, p) => `Yours at ${y} px (proposal ${p} px)`,
-  useProposal: "Use the proposal",
-  detected: "Detected",
-  shape: { cell_list: "a list inside one table cell", table_rows: "full table rows" },
-  sampleRows: (n) => `${n} sample row${n === 1 ? "" : "s"}`,
-  capacity: (full, min) => (full === min ? `up to ${full} rows fit` : `up to ${full} rows fit, ${min} when rows are packed to 85 %`),
-  notDetected: "Can't add rows to this design",
-  useFixed: "Use fixed rows instead",
-  fixedHelp: "Fixed rows: the designer draws the maximum number of rows; unused rows are hidden and the gap is closed.",
-  cells: (n) => `${n} cell${n === 1 ? "" : "s"}`,
-  noCells: "No cells yet — pick this group under “Row of group” in the fields that make up the sample row.",
-  remove: "Delete group",
-  pending: "Checking the design…",
+  ...strings("groupPanel"),
+  sampleRows: (n) => t("groupPanel.sampleRows", { count: n }),
+  capacity: (full, min) => (full === min ? t("groupPanel.capacity", { full }) : t("groupPanel.capacityPacked", { full, min })),
+  cells: (n) => t("groupPanel.cells", { count: n }),
 };
 
 const input = "w-full min-h-10 border border-gray-300 rounded-lg px-3 bg-white text-sm font-normal text-gray-900";
@@ -54,7 +30,7 @@ function newGroup(groups, fieldKeys, templateScope) {
   const n = groups.length + 1;
   return {
     key: uniqueGroupKey(n === 1 ? "rows" : `rows_${n}`, taken),
-    label: n === 1 ? "Rows" : `Rows ${n}`,
+    label: n === 1 ? t("groupPanel.rows") : t("groupPanel.rows2", { n }),
     mode: "repeat",
     source: templateScope === "per_invoice" ? { kind: "invoice_lines" } : { kind: "manual" },
     whenEmpty: "dash",

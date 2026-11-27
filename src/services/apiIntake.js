@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { t } from "../i18n";
 
 // Auto-intake ("ارفع ملفاتك"): drop any files → recognised → one review card → "نفّذ الكل".
 const data = (p) => p.then((r) => r.data.data);
@@ -22,12 +23,12 @@ export async function uploadIntakeFile(batchId, file, { relPath = null, chunkByt
   try {
     item = (await data(apiClient.post(`/intake/batches/${batchId}/files`, { name: file.name, size: file.size, relPath }))).item;
   } catch (err) {
-    throw new Error(message(err, `${file.name} couldn't be added`));
+    throw new Error(message(err, t("errors.couldntBeAdded", { name: file.name })));
   }
   let offset = 0;
   let failures = 0;
   while (offset < file.size) {
-    if (signal?.aborted) throw new Error("Stopped");
+    if (signal?.aborted) throw new Error(t("apiIntake.stopped"));
     const blob = file.slice(offset, offset + chunkBytes);
     try {
       const out = await data(
@@ -47,7 +48,7 @@ export async function uploadIntakeFile(batchId, file, { relPath = null, chunkByt
         offset = res.receivedBytes; // the server has a different amount: continue from there
         continue;
       }
-      if (++failures > 4 || err?.response?.status < 500) throw new Error(message(err, `${file.name} didn't finish uploading`));
+      if (++failures > 4 || err?.response?.status < 500) throw new Error(message(err, t("errors.didntFinishUploading", { name: file.name })));
       await sleep(800 * failures); // a dropped connection: try the same chunk again
     }
   }

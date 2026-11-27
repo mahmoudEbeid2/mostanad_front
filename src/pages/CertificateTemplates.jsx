@@ -14,90 +14,17 @@ import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { archiveTemplate, getVersionThumbnail, listTemplates } from "../services/apiCertificateTemplates";
 import { getBrands } from "../services/apiBrands";
 import { describeCertificateError } from "../utils/certificateErrors";
-import { pick } from "../i18n/lang";
+import { fmtNum, strings, t } from "../i18n";
 
 // /certificates/templates (plan §13.1; mockup A1): filter card, status pills,
 // one card per template with a status-specific next action.
-const STR_EN = {
-  title: "Certificate templates",
-  subtitle: "Upload a design once, mark what changes, and every invoice fills it automatically.",
-  upload: "Upload template",
-  types: "Certificate types",
-  type: "Type",
-  allTypes: "All types",
-  brand: "Brand",
-  allBrands: "All brands",
-  all: "All",
-  statuses: { active: "Active", ready: "Ready", draft: "Draft", failed: "Failed", converting: "Converting" },
-  showArchived: "Show archived",
-  noTypes: "Create a certificate type first — every template belongs to one.",
-  goTypes: "Go to certificate types",
-  empty: "No templates yet. Upload your first certificate design (.ai, .pdf or .html).",
-  pickCompany: "Pick a company to see its templates.",
-  tileTitle: "Upload a design",
-  tileHint: ".ai (PDF compatible), .pdf or .html — up to 60 MB",
-  archive: "Archive",
-  archived: "Template archived",
-  confirmArchive: (n) => ({ title: `Archive “${n}”?`, message: "It will no longer be used for new certificates. Certificates already made keep their design.", confirmLabel: "Archive", tone: "danger" }),
-  perProduct: "Per product",
-  perInvoice: "Per invoice",
-  anyBrand: "Any brand",
-  anyCountry: "All countries",
-  prev: "Previous",
-  next: "Next",
-  // per latest-version status: the card's hint line and its next action
-  hint: {
-    converting: "Converting the design…",
-    uploaded: "Converting the design…",
-    draft: "Mark the fields that change, then prepare.",
-    preparing: "Checking the fields…",
-    ready: "Passed the gate — not active yet",
-    active: "Used for every new certificate of this type.",
-  },
-  action: { converting: "View progress", uploaded: "View progress", draft: "Continue marking", ready: "Activate", failed: "Upload new version" },
-  open: "Open",
-  // fieldCount / pixelDiffPct of the version that passed the gate (active, else latest ready)
-  gate: (n, pct) => [n !== null ? `${n} field${n === 1 ? "" : "s"}` : null, pct !== null ? `round-trip ${pct < 0.001 ? "< 0.001" : pct.toFixed(3)} %` : null].filter(Boolean).join(" · "),
+
+const STR = {
+  ...strings("certificateTemplates"),
+  confirmArchive: (n) => ({ title: t("certificateTemplates.confirmArchiveTitle", { name: n }), message: t("certificateTemplates.confirmArchiveMessage"), confirmLabel: t("certificateTemplates.confirmArchiveLabel"), tone: "danger" }),
+  gate: (n, pct) =>
+    [n !== null ? t("certificateTemplates.gateFields", { count: n }) : null, pct !== null ? t("certificateTemplates.gateRoundTrip", { pct: pct < 0.001 ? "< 0.001" : pct.toFixed(3) }) : null].filter(Boolean).join(" · "),
 };
-const STR = pick({ en: STR_EN, ar: {
-  title: "قوالب الشهادات",
-  subtitle: "ارفع التصميم مرة، حدد الأماكن اللي بتتغير، وكل شهادة بتتملى لوحدها.",
-  upload: "ارفع قالب",
-  types: "أنواع الشهادات",
-  type: "النوع",
-  allTypes: "كل الأنواع",
-  brand: "البراند",
-  allBrands: "كل البراندات",
-  all: "الكل",
-  statuses: { active: "شغّال", ready: "جاهز", draft: "مسودة", failed: "فشل", converting: "بيتحوّل" },
-  showArchived: "اعرض المؤرشف",
-  noTypes: "اعمل نوع شهادة الأول — كل قالب بيتبع نوع.",
-  goTypes: "روح لأنواع الشهادات",
-  empty: "لسه مفيش قوالب. ارفع أول تصميم شهادة (.ai أو .pdf أو .html).",
-  pickCompany: "اختار شركة عشان تشوف قوالبها.",
-  tileTitle: "ارفع تصميم",
-  tileHint: ".ai (متوافق مع PDF) أو .pdf أو .html — لحد 60 ميجا",
-  archive: "أرشف",
-  archived: "القالب اتأرشف",
-  confirmArchive: (n) => ({ title: `تأرشف «${n}»؟`, message: "مش هيستخدم في شهادات جديدة. الشهادات اللي اتعملت بيه بتفضل زي ما هي.", confirmLabel: "أرشف", tone: "danger" }),
-  perProduct: "لكل منتج",
-  perInvoice: "للفاتورة كلها",
-  anyBrand: "أي براند",
-  anyCountry: "كل الدول",
-  prev: "السابق",
-  next: "التالي",
-  hint: {
-    converting: "بنحوّل التصميم…",
-    uploaded: "بنحوّل التصميم…",
-    draft: "حدد الأماكن اللي بتتغير، وبعدين جهّزه.",
-    preparing: "بنراجع الحقول…",
-    ready: "عدّى الاختبار — لسه مش شغّال",
-    active: "بيستخدم في كل شهادة جديدة من النوع ده.",
-  },
-  action: { converting: "شوف التقدم", uploaded: "شوف التقدم", draft: "كمّل تحديد الحقول", ready: "شغّله", failed: "ارفع نسخة جديدة" },
-  open: "افتح",
-  gate: (n, pct) => [n !== null ? `${n} حقل` : null, pct !== null ? `فرق الطباعة ${pct < 0.001 ? "< 0.001" : pct.toFixed(3)} %` : null].filter(Boolean).join(" · "),
-} });
 
 const HINT_TONE = { draft: "text-amber-800", ready: "text-emerald-700", failed: "text-red-700" };
 const PAGE_SIZE = 20;
@@ -284,7 +211,7 @@ export default function CertificateTemplates() {
                 ))}
               </select>
             </label>
-            <div className="ml-auto flex flex-wrap items-center gap-2">
+            <div className="ms-auto flex flex-wrap items-center gap-2">
               {["", ...Object.keys(STR.statuses)].map((s) => {
                 const on = s === status;
                 return (
@@ -296,11 +223,11 @@ export default function CertificateTemplates() {
                     className={`min-h-8 rounded-full border px-3 text-xs font-semibold ${on ? "border-blue-600 bg-blue-50 text-blue-700" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
                   >
                     {s ? STR.statuses[s] : STR.all}
-                    {on && !loading ? ` · ${data.total}` : ""}
+                    {on && !loading && data.total != null ? ` · ${fmtNum(data.total)}` : ""}
                   </button>
                 );
               })}
-              <label className="flex items-center gap-2 text-xs text-gray-600 ml-2">
+              <label className="flex items-center gap-2 text-xs text-gray-600 ms-2">
                 <input type="checkbox" checked={includeArchived} onChange={(e) => setParam("archived", e.target.checked ? "1" : "")} /> {STR.showArchived}
               </label>
             </div>

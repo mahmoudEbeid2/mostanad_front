@@ -1,7 +1,8 @@
 import { cloneElement } from "react";
 import { useAiStatus } from "../context/AiStatusContext";
+import { t } from "../i18n";
 
-export const AI_OFF_TOOLTIP = (message) => (message ? `AI unavailable. ${message}` : "AI unavailable right now — do this by hand.");
+export const AI_OFF_TOOLTIP = (message) => (message ? t("aiAction.aiUnavailable", { message }) : t("aiAction.aiUnavailableRightNowDo"));
 
 /**
  * P8 — wraps one AI-triggering control. While AI is unavailable the control is

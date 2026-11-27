@@ -11,6 +11,7 @@ import { CheckCircle, AlertCircle, Image as ImageIcon, ShieldCheck, CloudUpload,
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
 import CheckLabelReport from "../components/label-verify/CheckLabelReport";
+import { localizeCountries, t } from "../i18n";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
@@ -19,8 +20,8 @@ export default function Labels() {
   const [selectedCompany, setSelectedCompany] = useState("");
   
   const countryOptions = useMemo(() => [
-    { label: "Global", value: "Global" },
-    ...countryList().getData()
+    { label: t("labels.global"), value: "Global" },
+    ...localizeCountries(countryList().getData())
   ], []);
   const [selectedCountry, setSelectedCountry] = useState(countryOptions[0]);
   
@@ -44,7 +45,7 @@ export default function Labels() {
           setCompanies(res.data.companies || []);
         }
       } catch (error) {
-        toast.error("Failed to load companies");
+        toast.error(t("labels.failedToLoadCompanies"));
       }
     };
     fetchCompanies();
@@ -85,8 +86,8 @@ export default function Labels() {
              if (res.data.result) setJobResults(res.data.result);
              if (res.data.error) setJobMessage(res.data.error);
              
-             if (currentStatus === "completed") toast.success("Label verified successfully!");
-             else toast.error("Label verification failed.");
+             if (currentStatus === "completed") toast.success(t("labels.labelVerifiedSuccessfully"));
+             else toast.error(t("labels.labelVerificationFailed"));
              
              socket.disconnect();
           }
@@ -104,10 +105,10 @@ export default function Labels() {
       if (data.result) setJobResults(data.result);
 
       if (data.status === "completed") {
-        toast.success("Label verified successfully!");
+        toast.success(t("labels.labelVerifiedSuccessfully"));
         socket.disconnect();
       } else if (data.status === "failed") {
-        toast.error("Label verification failed.");
+        toast.error(t("labels.labelVerificationFailed"));
         socket.disconnect();
       }
     });
@@ -126,7 +127,7 @@ export default function Labels() {
     const selected = e.target.files[0];
     if (selected) {
       if (!selected.type.startsWith("image/") && selected.type !== "application/pdf") {
-        toast.error("Please select a valid Image or PDF file");
+        toast.error(t("labels.pleaseSelectAValidImage"));
         e.target.value = null;
         setFile(null);
         return;
@@ -137,8 +138,8 @@ export default function Labels() {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!file) return toast.error("Please select a label image or PDF");
-    if (!selectedCountry) return toast.error("Please select a target country");
+    if (!file) return toast.error(t("labels.pleaseSelectALabelImage"));
+    if (!selectedCountry) return toast.error(t("labels.pleaseSelectATargetCountry"));
 
     try {
       setIsUploading(true);
@@ -157,12 +158,12 @@ export default function Labels() {
 
       const res = await verifyLabel(formData);
       if (res.status === "accepted" || res.status === "success") {
-        toast.success("Label uploaded! AI Verification started...");
+        toast.success(t("labels.labelUploadedAiVerificationStarted"));
         setJobId(res.data.jobId || res.data.task?.id);
         setJobStatus("pending");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to verify label");
+      toast.error(error.response?.data?.message || t("labels.failedToVerifyLabel"));
     } finally {
       setIsUploading(false);
     }
@@ -178,9 +179,8 @@ export default function Labels() {
     <div className="max-w-5xl mx-auto pb-12">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <ShieldCheck className="w-8 h-8 text-blue-600" /> Check a Label
-        </h1>
-        <p className="text-gray-500 mt-2">Upload an existing label and see whether it is ready, what must be fixed, and what could not be checked.</p>
+          <ShieldCheck className="w-8 h-8 text-blue-600" />{" "}{t("labels.checkALabel")}</h1>
+        <p className="text-gray-500 mt-2">{t("labels.uploadAnExistingLabelAnd")}</p>
       </div>
 
       {!jobId ? (
@@ -190,7 +190,7 @@ export default function Labels() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Country Selection */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Food and Drug Authority (Country)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t("labels.foodAndDrugAuthorityCountry")}</label>
                 <Select
                   options={countryOptions}
                   value={selectedCountry}
@@ -198,18 +198,18 @@ export default function Labels() {
                   className="react-select-container text-sm"
                   classNamePrefix="react-select"
                 />
-                <p className="text-[10px] text-gray-500 mt-2 leading-tight">AI will check compliance against the selected country's FDA regulations.</p>
+                <p className="text-[10px] text-gray-500 mt-2 leading-tight">{t("labels.aiWillCheckComplianceAgainst")}</p>
               </div>
 
               {/* Company Selection */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Company (Optional)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t("labels.companyOptional")}</label>
                 <select
                   value={selectedCompany}
                   onChange={(e) => setSelectedCompany(e.target.value)}
                   className="w-full px-4 py-[9px] bg-gray-50 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700"
                 >
-                  <option value="">Global Verification</option>
+                  <option value="">{t("labels.globalVerification")}</option>
                   {companies.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -218,14 +218,14 @@ export default function Labels() {
 
               {/* Brand Selection */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Brand (Optional)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t("labels.brandOptional")}</label>
                 <select
                   value={selectedBrand}
                   onChange={(e) => setSelectedBrand(e.target.value)}
                   disabled={!selectedCompany || brands.length === 0}
                   className="w-full px-4 py-[9px] bg-gray-50 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700 disabled:opacity-50"
                 >
-                  <option value="">Global Verification</option>
+                  <option value="">{t("labels.globalVerification2")}</option>
                   {brands.map(b => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
@@ -235,7 +235,7 @@ export default function Labels() {
 
             {/* File Upload Area */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Label Design (Image or PDF)</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">{t("labels.labelDesignImageOrPdf")}</label>
               
               {!file ? (
                 <label 
@@ -245,36 +245,30 @@ export default function Labels() {
                   <div className="space-y-3 text-center">
                     <ImageIcon className="mx-auto h-16 w-16 text-gray-400" />
                     <div className="flex text-base text-gray-600 justify-center">
-                      <span className="font-bold text-blue-600 hover:text-blue-500 px-1">
-                        Upload a file
-                      </span>
+                      <span className="font-bold text-blue-600 hover:text-blue-500 px-1">{t("labels.uploadAFile")}</span>
                       <input id="file-upload" name="file-upload" type="file" accept="image/*,.pdf" className="sr-only" onChange={handleFileChange} />
-                      <p className="pl-1">or drag and drop</p>
+                      <p className="ps-1">{t("labels.orDragAndDrop")}</p>
                     </div>
-                    <p className="text-sm text-gray-500">PNG, JPG, or PDF up to 20MB</p>
+                    <p className="text-sm text-gray-500">{t("labels.pngJpgOrPdfUp")}</p>
                   </div>
                 </label>
               ) : (
                 <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start bg-blue-50 p-6 rounded-2xl border border-blue-100">
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-3 text-blue-900 font-bold text-lg">
-                      <CheckCircle className="w-6 h-6 text-green-500" /> 
-                      File Selected
-                    </div>
+                      <CheckCircle className="w-6 h-6 text-green-500" />{t("labels.fileSelected")}</div>
                     <p className="text-blue-800 text-sm font-mono truncate max-w-sm">{file.name}</p>
                     
                     <div className="mt-auto pt-4">
-                      <button type="button" onClick={() => setFile(null)} className="text-sm text-red-600 font-semibold hover:underline">
-                        Remove and select another
-                      </button>
+                      <button type="button" onClick={() => setFile(null)} className="text-sm text-red-600 font-semibold hover:underline">{t("labels.removeAndSelectAnother")}</button>
                     </div>
                   </div>
 
                   <div className="bg-white rounded-xl overflow-hidden border border-gray-200 h-64 flex items-center justify-center relative shadow-sm">
                     {file.type.startsWith("image/") ? (
-                      <img src={previewUrl} alt="Label Preview" className="w-full h-full object-contain p-2" />
+                      <img src={previewUrl} alt={t("labels.labelPreview")} className="w-full h-full object-contain p-2" />
                     ) : (
-                      <iframe src={`${previewUrl}#toolbar=0`} className="w-full h-full" title="PDF Preview" />
+                      <iframe src={`${previewUrl}#toolbar=0`} className="w-full h-full" title={t("labels.pdfPreview")} />
                     )}
                   </div>
                 </div>
@@ -283,8 +277,7 @@ export default function Labels() {
 
             <div className="pt-6 border-t border-gray-100 flex justify-end">
               <AiAction><Button type="submit" isLoading={isUploading} className="w-full md:w-auto px-10 py-3 text-lg" disabled={!file}>
-                <ShieldCheck className="w-6 h-6 mr-2" /> Verify Compliance
-              </Button></AiAction>
+                <ShieldCheck className="w-6 h-6 me-2" />{" "}{t("labels.verifyCompliance")}</Button></AiAction>
             </div>
           </form>
         </div>
@@ -293,11 +286,11 @@ export default function Labels() {
           {jobStatus !== "completed" && (
             <div className="flex items-center justify-center gap-4 mb-8">
               {previewUrl && file?.type.startsWith("image/") && (
-                <img src={previewUrl} alt="Uploaded label" className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm flex-shrink-0" />
+                <img src={previewUrl} alt={t("labels.uploadedLabel")} className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm flex-shrink-0" />
               )}
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Label</h2>
-                <p className="text-gray-500">Job ID: <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{jobId}</span></p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("labels.verifyingLabel")}</h2>
+                <p className="text-gray-500">{t("labels.jobId")}{" "}<span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{jobId}</span></p>
               </div>
             </div>
           )}
@@ -310,14 +303,14 @@ export default function Labels() {
               {jobStatus === "pending" || jobStatus === "processing" ? (
                 <div className="flex flex-col w-full max-w-2xl mx-auto bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
                   {/* Decorative Background */}
-                  <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-blue-50 rounded-full blur-3xl opacity-60"></div>
-                  <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-indigo-50 rounded-full blur-3xl opacity-60"></div>
+                  <div className="absolute top-0 end-0 -me-16 -mt-16 w-48 h-48 bg-blue-50 rounded-full blur-3xl opacity-60"></div>
+                  <div className="absolute bottom-0 start-0 -ms-16 -mb-16 w-48 h-48 bg-indigo-50 rounded-full blur-3xl opacity-60"></div>
 
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-8">
                       <div>
-                        <h3 className="font-extrabold text-2xl text-gray-900 tracking-tight">AI Analysis in Progress</h3>
-                        <p className="text-sm text-gray-500 mt-1.5 font-medium">Please wait while the AI verifies compliance.</p>
+                        <h3 className="font-extrabold text-2xl text-gray-900 tracking-tight">{t("labels.aiAnalysisInProgress")}</h3>
+                        <p className="text-sm text-gray-500 mt-1.5 font-medium">{t("labels.pleaseWaitWhileTheAi")}</p>
                       </div>
                       <div className="bg-blue-600 text-white px-4 py-1.5 rounded-full font-black text-sm shadow-sm">
                         {jobProgress}%
@@ -337,9 +330,9 @@ export default function Labels() {
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-1.5">Current Stage</h4>
+                        <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-1.5">{t("labels.currentStage")}</h4>
                         <p className="text-gray-800 font-bold text-base leading-snug break-words">
-                          {jobMessage || "Initializing AI processors..."}
+                          {jobMessage || t("labels.initializingAiProcessors")}
                         </p>
                       </div>
                     </div>
@@ -350,7 +343,7 @@ export default function Labels() {
                         className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-700 ease-out relative"
                         style={{ width: `${Math.max(jobProgress, 5)}%` }}
                       >
-                        <div className="absolute top-0 right-0 bottom-0 left-0 bg-white/20 w-full overflow-hidden animate-[shimmer_2s_infinite]"></div>
+                        <div className="absolute top-0 end-0 bottom-0 start-0 bg-white/20 w-full overflow-hidden animate-[shimmer_2s_infinite]"></div>
                       </div>
                     </div>
                   </div>
@@ -358,7 +351,7 @@ export default function Labels() {
               ) : (
                 <div className="flex flex-col items-center text-red-600">
                   <AlertCircle className="w-16 h-16 mb-4" />
-                  <span className="font-bold text-xl">Verification Failed</span>
+                  <span className="font-bold text-xl">{t("labels.verificationFailed")}</span>
                   <span className="text-sm text-red-500 mt-2 bg-red-50 p-3 rounded-lg border border-red-100">{jobMessage}</span>
                 </div>
               )}
@@ -379,16 +372,14 @@ export default function Labels() {
             {jobStatus === "completed" && (!jobResults || !jobResults.validation) && (
               <div className="flex flex-col items-center text-green-600">
                 <ShieldCheck className="w-16 h-16 mb-4" />
-                <span className="font-bold text-xl text-gray-900">Verification complete, but no report was returned.</span>
+                <span className="font-bold text-xl text-gray-900">{t("labels.verificationCompleteButNoReport")}</span>
               </div>
             )}
 
             {/* Actions */}
             {(jobStatus === "completed" || jobStatus === "failed") && (
               <div className="flex justify-center mt-12 pt-6 border-t border-gray-100">
-                <Button onClick={resetUpload} variant="secondary" className="px-8 py-3">
-                  Verify Another Label
-                </Button>
+                <Button onClick={resetUpload} variant="secondary" className="px-8 py-3">{t("labels.verifyAnotherLabel")}</Button>
               </div>
             )}
 

@@ -10,39 +10,11 @@ import CertificateCard from "../components/certificates/CertificateCard";
 import useCompanyScope from "../hooks/useCompanyScope";
 import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { listCertificates } from "../services/apiCertificatesV2";
-import { pick } from "../i18n/lang";
+import { strings, t } from "../i18n";
 
 // /certificates (plan §13.1): every generated certificate of the company, filterable.
-const STR_EN = {
-  title: "Generated certificates",
-  subtitle: "Every certificate, from an invoice or made for a product. Open one to fix issues, export or finalize it.",
-  search: "Search product, batch or invoice no.",
-  allTypes: "All types",
-  anyStatus: "Any status",
-  statuses: { draft: "Draft", final: "Final", failed: "Failed", pending: "Rendering" },
-  flagged: "Only with issues",
-  empty: "No certificates yet. Upload an invoice to generate them.",
-  goInvoices: "Go to invoices",
-  noMatch: "No certificate matches these filters.",
-  pickCompany: "Pick a company to see its certificates.",
-  prev: "Previous",
-  next: "Next",
-};
-const STR = pick({ en: STR_EN, ar: {
-  title: "الشهادات المتعملة",
-  subtitle: "كل شهادة، من فاتورة أو لمنتج من غير فاتورة. افتح أي واحدة عشان تصلح الناقص أو تصدّرها أو تعتمدها.",
-  search: "دوّر بالمنتج أو التشغيلة أو رقم الفاتورة",
-  allTypes: "كل الأنواع",
-  anyStatus: "أي حالة",
-  statuses: { draft: "مسودة", final: "معتمدة", failed: "فشلت", pending: "بتتعمل" },
-  flagged: "اللي فيها مشاكل بس",
-  empty: "لسه مفيش شهادات. ارفع فاتورة، أو اعمل طلب شهادات من أسماء المنتجات.",
-  goInvoices: "روح للفواتير",
-  noMatch: "مفيش شهادة بالفلاتر دي.",
-  pickCompany: "اختار شركة عشان تشوف شهاداتها.",
-  prev: "السابق",
-  next: "التالي",
-} });
+
+const STR = strings("certificatesList");
 const PAGE_SIZE = 20;
 
 export default function CertificatesList() {
@@ -117,9 +89,7 @@ export default function CertificatesList() {
         </div>
         <div className="flex items-start gap-2">
           {/* the client's workflow: a request from names / products, its matrix of certificates */}
-          <Link to={`/certificates/requests/new${scopeState?.companyId ? `?companyId=${scopeState.companyId}` : ""}`} className="inline-flex items-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700" data-testid="new-request">
-            طلب شهادات جديد
-          </Link>
+          <Link to={`/certificates/requests/new${scopeState?.companyId ? `?companyId=${scopeState.companyId}` : ""}`} className="inline-flex items-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700" data-testid="new-request">{t("certificatesList.newCertificateRequest")}</Link>
           <CompanyPicker scope={scopeState} />
         </div>
       </div>

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import Spinner from "../../ui/Spinner";
 import { getInvoiceSource } from "../../services/apiInvoices";
+import { strings, t } from "../../i18n";
 
 // The original invoice, shown next to what was read from it (plan §13.5;
 // mockups B2/B3). Fetched with the auth token → blob URL; a PDF opens in the
 // browser's own PDF viewer, an image as <img>. Nothing is injected into the app DOM.
-const STR = { title: "Original invoice", full: "Open full size", missing: "The original file was not found.", failed: "Couldn't load the original invoice." };
+const STR = strings("invoiceSourceViewer");
 
 export default function InvoiceSourceViewer({ scope, invoiceId, mimeType, heightClass = "h-[34rem]" }) {
   const [url, setUrl] = useState(null);
@@ -47,10 +48,10 @@ export default function InvoiceSourceViewer({ scope, invoiceId, mimeType, height
             <Spinner />
           </div>
         ) : mimeType === "application/pdf" ? (
-          <iframe title="Original invoice" src={url} className="w-full h-full bg-white" />
+          <iframe title={t("invoiceSourceViewer.originalInvoice")} src={url} className="w-full h-full bg-white" />
         ) : (
           <div className="h-full overflow-auto">
-            <img src={url} alt="Original invoice" className="max-w-full mx-auto" />
+            <img src={url} alt={t("invoiceSourceViewer.originalInvoice")} className="max-w-full mx-auto" />
           </div>
         )}
       </div>

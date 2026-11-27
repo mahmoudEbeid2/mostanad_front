@@ -1,18 +1,19 @@
 import apiClient from "./apiClient";
 import { unwrap } from "./apiCertificateTypes";
+import { t } from "../i18n";
 
 // Certificates V2 — templates, versions, fields, prepare, preview, field sources
 // (backend CERTIFICATES_V2_PLAN.md §8, §12). The frontend never measures or saves
 // geometry (plan D11): every layout number shown here comes from the server.
 
 export const listTemplates = (scope = {}, filters = {}) =>
-  unwrap(apiClient.get("/certificate-templates", { params: { ...scope, ...filters } }), "Failed to load templates").then((d) => ({
+  unwrap(apiClient.get("/certificate-templates", { params: { ...scope, ...filters } }), t("errors.failedToLoadTemplates")).then((d) => ({
     templates: d.data.templates,
     total: d.total,
   }));
 
 export const getTemplate = (scope = {}, id) =>
-  unwrap(apiClient.get(`/certificate-templates/${id}`, { params: scope }), "Failed to load the template").then((d) => d.data.template);
+  unwrap(apiClient.get(`/certificate-templates/${id}`, { params: scope }), t("errors.failedToLoadTheTemplate")).then((d) => d.data.template);
 
 /** multipart: file + name, certificateTypeId, brandId?, country?, scope → { templateId, versionId, taskId } */
 export const uploadTemplate = (scope = {}, { file, name, certificateTypeId, brandId, country, scope: templateScope }) => {
@@ -23,7 +24,7 @@ export const uploadTemplate = (scope = {}, { file, name, certificateTypeId, bran
   if (brandId) fd.append("brandId", brandId);
   if (country) fd.append("country", country);
   fd.append("scope", templateScope || "per_product");
-  return unwrap(apiClient.post("/certificate-templates", fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Upload failed").then(
+  return unwrap(apiClient.post("/certificate-templates", fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), t("errors.uploadFailed")).then(
     (d) => d.data
   );
 };
@@ -33,33 +34,33 @@ export const uploadTemplateVersion = (scope = {}, templateId, file) => {
   fd.append("file", file);
   return unwrap(
     apiClient.post(`/certificate-templates/${templateId}/versions`, fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }),
-    "Upload failed"
+    t("errors.uploadFailed")
   ).then((d) => d.data);
 };
 
 export const updateTemplateSettings = (scope = {}, id, body) =>
-  unwrap(apiClient.patch(`/certificate-templates/${id}`, body, { params: scope }), "Failed to save the settings").then((d) => d.data.template);
+  unwrap(apiClient.patch(`/certificate-templates/${id}`, body, { params: scope }), t("errors.failedToSaveTheSettings")).then((d) => d.data.template);
 
 export const archiveTemplate = (scope = {}, id) =>
-  unwrap(apiClient.post(`/certificate-templates/${id}/archive`, {}, { params: scope }), "Failed to archive the template").then((d) => d.data.template);
+  unwrap(apiClient.post(`/certificate-templates/${id}/archive`, {}, { params: scope }), t("errors.failedToArchiveTheTemplate")).then((d) => d.data.template);
 
 export const getVersion = (scope = {}, versionId) =>
-  unwrap(apiClient.get(`/template-versions/${versionId}`, { params: scope }), "Failed to load the template version").then((d) => d.data.version);
+  unwrap(apiClient.get(`/template-versions/${versionId}`, { params: scope }), t("errors.failedToLoadTheTemplate2")).then((d) => d.data.version);
 
 /** Raw HTML of a version (sanitized | prepared | sample) — only ever shown inside DocumentFrame. */
 export const getVersionHtml = (scope = {}, versionId, variant = "sanitized") =>
-  unwrap(apiClient.get(`/template-versions/${versionId}/html`, { params: { ...scope, variant }, responseType: "text", transformResponse: (x) => x }), "Failed to load the document");
+  unwrap(apiClient.get(`/template-versions/${versionId}/html`, { params: { ...scope, variant }, responseType: "text", transformResponse: (x) => x }), t("errors.failedToLoadTheDocument"));
 
 export const getVersionThumbnail = (scope = {}, versionId) =>
   apiClient.get(`/template-versions/${versionId}/thumbnail`, { params: scope, responseType: "blob" }).then((r) => r.data);
 
 // ── Phase 2: fields, prepare, preview, activate ─────────────────────────────
 export const getFieldSources = (scope = {}) =>
-  unwrap(apiClient.get("/certificate-field-sources", { params: scope }), "Failed to load the field sources").then((d) => d.data);
+  unwrap(apiClient.get("/certificate-field-sources", { params: scope }), t("errors.failedToLoadTheField")).then((d) => d.data);
 
 /** Re-reads the company's products into its data dictionary (AI plan §3.2) → { dictionary } */
 export const rebuildDataDictionary = (scope = {}) =>
-  unwrap(apiClient.post("/certificate-data-dictionary/rebuild", {}, { params: scope }), "Failed to refresh the product data").then((d) => d.data);
+  unwrap(apiClient.post("/certificate-data-dictionary/rebuild", {}, { params: scope }), t("errors.failedToRefreshTheProduct")).then((d) => d.data);
 
 /**
  * Replaces the full field list (draft only); `groups` (repeating groups, plan
@@ -67,11 +68,11 @@ export const rebuildDataDictionary = (scope = {}) =>
  * → { fields, groups, groupDetection: { key: { ok, shape, band, footerY, footerProposal, capacity… } | { ok: false, error, message } }, suggestions, fieldsHash, boxes }
  */
 export const saveFields = (scope = {}, versionId, fields, groups) =>
-  unwrap(apiClient.put(`/template-versions/${versionId}/fields`, groups === undefined ? { fields } : { fields, groups }, { params: scope }), "Failed to save the fields").then((d) => d.data);
+  unwrap(apiClient.put(`/template-versions/${versionId}/fields`, groups === undefined ? { fields } : { fields, groups }, { params: scope }), t("errors.failedToSaveTheFields")).then((d) => d.data);
 
 /** Repeating groups need a vector background: a NEW draft version of the same design, fields copied → { templateId, versionId, versionNumber, taskId } */
 export const enableGroups = (scope = {}, versionId) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/enable-groups`, {}, { params: scope }), "Couldn't create the version for repeating groups").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/enable-groups`, {}, { params: scope }), t("errors.couldntCreateTheVersionFor")).then((d) => d.data);
 
 // ── AI plan §5 (A1): template field mapping ─────────────────────────────────
 /** Label proposals, code only: fields [{ lineId, charStart, charEnd, sampleValue }] → [{ label, from, key, category, context }] */
@@ -80,71 +81,71 @@ export const proposeLabels = (scope = {}, versionId, fields) =>
 
 /** Memory → dictionary → one AI call. body: { fields, groups?, keys?, sampleProductId? } → { mappings, groups, ai: { used, calls, unavailable?, reason? } } */
 export const mapFields = (scope = {}, versionId, body) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/map-fields`, body, { params: scope }), "Couldn't map the fields").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/map-fields`, body, { params: scope }), t("errors.couldntMapTheFields")).then((d) => d.data);
 
 /** The stored AI suggestion behind a mapping (the "Why?") */
 export const getAiSuggestion = (scope = {}, id) =>
-  unwrap(apiClient.get(`/ai-suggestions/${id}`, { params: scope }), "Couldn't load the suggestion").then((d) => d.data.suggestion);
+  unwrap(apiClient.get(`/ai-suggestions/${id}`, { params: scope }), t("errors.couldntLoadTheSuggestion")).then((d) => d.data.suggestion);
 
 export const confirmFields = (scope = {}, versionId, keys) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/fields/confirm`, { keys }, { params: scope }), "Failed to confirm the fields").then((d) => d.data.fields);
+  unwrap(apiClient.post(`/template-versions/${versionId}/fields/confirm`, { keys }, { params: scope }), t("errors.failedToConfirmTheFields")).then((d) => d.data.fields);
 
 export const suggestFields = (scope = {}, versionId) =>
   unwrap(apiClient.post(`/template-versions/${versionId}/suggest`, {}, { params: scope }), "Couldn't get suggestions").then((d) => d.data);
 
 /** → { fontMatches } */
 export const setFontFallback = (scope = {}, versionId, body) =>
-  unwrap(apiClient.patch(`/template-versions/${versionId}/font-fallbacks`, body, { params: scope }), "Couldn't change the font").then((d) => d.data);
+  unwrap(apiClient.patch(`/template-versions/${versionId}/font-fallbacks`, body, { params: scope }), t("errors.couldntChangeTheFont")).then((d) => d.data);
 
 /** A company font for its templates (.ttf / .otf / .woff2) → { font, appliedTo } */
 export const uploadCompanyFont = (scope = {}, file) => {
   const fd = new FormData();
   fd.append("file", file);
-  return unwrap(apiClient.post("/certificate-fonts", fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), "Couldn't upload the font").then((d) => d.data);
+  return unwrap(apiClient.post("/certificate-fonts", fd, { params: scope, headers: { "Content-Type": "multipart/form-data" } }), t("errors.couldntUploadTheFont")).then((d) => d.data);
 };
 
 /** → { versionId, taskId } */
 export const prepareVersion = (scope = {}, versionId) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/prepare`, {}, { params: scope }), "Failed to start prepare").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/prepare`, {}, { params: scope }), t("errors.failedToStartPrepare")).then((d) => d.data);
 
 export const getPrepareDiff = (scope = {}, versionId, page = 1) =>
   apiClient.get(`/template-versions/${versionId}/prepare-diff`, { params: { ...scope, page }, responseType: "blob" }).then((r) => r.data);
 
 /** body: { values?, productId?, invoiceItemId? } → { html, values, flags } — rendered on the server, never stored */
 export const previewVersion = (scope = {}, versionId, body) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/preview`, body, { params: scope }), "Preview failed").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/preview`, body, { params: scope }), t("errors.previewFailed")).then((d) => d.data);
 
 export const activateVersion = (scope = {}, versionId) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/activate`, {}, { params: scope }), "Activation failed").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/activate`, {}, { params: scope }), t("errors.activationFailed")).then((d) => d.data);
 
 /** Clone as a new draft (same design, same fields) → { templateId, versionId, versionNumber } */
 export const newVersionFrom = (scope = {}, versionId) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/new-version`, {}, { params: scope }), "Failed to create a new version").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/new-version`, {}, { params: scope }), t("errors.failedToCreateANew")).then((d) => d.data);
 
 /** Tenant-forced product search for certificate screens → [{ id, name, productCode, packaging, brand }] */
 export const searchCertificateProducts = (scope = {}, q = "", limit = 20) =>
-  unwrap(apiClient.get("/certificate-products", { params: { ...scope, q, limit } }), "Failed to search products").then((d) => d.data.products);
+  unwrap(apiClient.get("/certificate-products", { params: { ...scope, q, limit } }), t("errors.failedToSearchProducts")).then((d) => d.data.products);
 
 // ── "Fix this template" (backend item 2) ──────────────────────────────────
 /** → { versionId, versionNumber, status, templateName, needsSvg, summary, table, items } */
 export const getRepairPlan = (scope = {}, versionId) =>
-  unwrap(apiClient.get(`/template-versions/${versionId}/repair`, { params: scope }), "Failed to scan the template").then((d) => d.data.plan);
+  unwrap(apiClient.get(`/template-versions/${versionId}/repair`, { params: scope }), t("errors.failedToScanTheTemplate")).then((d) => d.data.plan);
 
 /** decisions: [{ id, apply?, choice? }] → { templateId, versionId, versionNumber, taskId, applied, reconverted } */
 export const startRepair = (scope = {}, versionId, decisions) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/repair`, { decisions }, { params: scope }), "Failed to apply the changes").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/repair`, { decisions }, { params: scope }), t("errors.failedToApplyTheChanges")).then((d) => d.data);
 
 /** Readiness: the design's variable-looking places not marked → { ready, areas[], open, message, link } */
 export const getReadiness = (scope = {}, versionId) =>
-  unwrap(apiClient.get(`/template-versions/${versionId}/readiness`, { params: scope }), "Failed to check the template").then((d) => d.data);
+  unwrap(apiClient.get(`/template-versions/${versionId}/readiness`, { params: scope }), t("errors.failedToCheckTheTemplate")).then((d) => d.data);
 
 /** Confirm places as "static on purpose" (or take it back) → the readiness after */
 export const setStaticAreas = (scope = {}, versionId, ids, isStatic = true) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/static-areas`, { ids, static: isStatic }, { params: scope }), "Failed to save").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/static-areas`, { ids, static: isStatic }, { params: scope }), t("errors.failedToSave")).then((d) => d.data);
 
 /** «أكّد كل الاقتراحات» (Phase 2): every suggestion at once (or minConfidence: only the confident ones) → { confirmed, skipped, fields, readiness } */
 export const confirmAllFields = (scope = {}, versionId, minConfidence = null) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/fields/confirm-all`, minConfidence === null ? {} : { minConfidence }, { params: scope }), "Failed to confirm the suggestions").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/fields/confirm-all`, minConfidence === null ? {} : { minConfidence }, { params: scope }), t("errors.failedToConfirmTheSuggestions")).then((d) => d.data);
 /** The uploaded file's pages compared: same everywhere → static, changing → fields → { pagesCompared, static, extra, readiness } */
 export const comparePages = (scope = {}, versionId, page = 1) =>
-  unwrap(apiClient.post(`/template-versions/${versionId}/page-diff`, { page }, { params: scope }), "Couldn't compare the pages").then((d) => d.data);
+  unwrap(apiClient.post(`/template-versions/${versionId}/page-diff`, { page }, { params: scope }), t("errors.couldntCompareThePages")).then((d) => d.data);

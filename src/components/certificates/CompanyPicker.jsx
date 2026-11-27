@@ -1,6 +1,6 @@
 import { Building2 } from "lucide-react";
-import { pick } from "../../i18n/lang";
 import { useExperimentStatus } from "../ExperimentBanner";
+import { strings, t } from "../../i18n";
 
 // The company every Certificates V2 page works on (plan §13.1; mockups A1/A2/B1).
 // System users pick it (every call adds ?companyId=); a company session sees
@@ -9,10 +9,7 @@ import { useExperimentStatus } from "../ExperimentBanner";
 //  - variant "field":  labelled form/filter field ("Company" + optional hint);
 //    `yours` adds "· your company" to a company session's name (A2, not A1/B1);
 //    `compact` matches the 40px selects of a filter card
-const STR = pick({
-  en: { label: "Company", loading: "Loading companies…", none: "No companies", yours: "your company" },
-  ar: { label: "الشركة", loading: "بنحمّل الشركات…", none: "مفيش شركات", yours: "شركتك" },
-});
+const STR = strings("companyPicker");
 
 export default function CompanyPicker({ scope, variant = "inline", hint, yours = true, compact = false, labelClassName = "text-xs font-semibold text-gray-600", className = "" }) {
   // PART 3: a company in experiment mode is marked in the switcher
@@ -42,7 +39,7 @@ export default function CompanyPicker({ scope, variant = "inline", hint, yours =
       {!companies.length && <option value="">{loading ? STR.loading : STR.none}</option>}
       {companies.map((c) => (
         <option key={c.id} value={c.id}>
-          {c.name}{onIds.has(c.id) ? " (تجربة)" : ""}
+          {c.name}{onIds.has(c.id) ? t("companyPicker.experiment") : ""}
         </option>
       ))}
     </select>

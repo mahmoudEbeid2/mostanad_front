@@ -5,6 +5,7 @@ import Button from "../../ui/Button";
 import Spinner from "../../ui/Spinner";
 import { getBrands } from "../../services/apiBrands";
 import { getCopyFields, copyProduct, copyProductsBulk } from "../../services/apiProducts";
+import { t } from "../../i18n";
 
 // "Copy to another brand" (backend productCopyService): one product, or several
 // from the products list. The checklist is the backend's field groups; the
@@ -20,7 +21,7 @@ const Modal = ({ title, onClose, children, footer, wide }) => (
           <Copy className="w-5 h-5 text-teal-600" />
           {title}
         </h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label={t("copyToBrandModal.close")}>
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -88,12 +89,12 @@ export default function CopyToBrandModal({ products, isSystem, companies = [], o
     try {
       if (!bulk) {
         const out = await copyProduct(first.id, { ...target, name: names[first.id].name.trim(), productCode: names[first.id].productCode.trim() || null });
-        toast.success(`${out.product.name} created — add its own registration number`);
+        toast.success(t("copyToBrandModal.createdAddItsOwnRegistration", { name: out.product.name }));
         onDone?.(out);
       } else {
         const out = await copyProductsBulk({ ...target, productIds: products.map((p) => p.id), names: products.map((p) => ({ productId: p.id, name: names[p.id].name.trim(), productCode: names[p.id].productCode.trim() || null })) });
         setReport(out);
-        if (out.copied) toast.success(`${out.copied} product${out.copied === 1 ? "" : "s"} copied`);
+        if (out.copied) toast.success(t("copyToBrandModal.productsCopied", { count: out.copied }));
       }
     } catch (e) {
       setError(e.message);
@@ -105,10 +106,9 @@ export default function CopyToBrandModal({ products, isSystem, companies = [], o
   if (report) {
     const byId = Object.fromEntries(products.map((p) => [p.id, p]));
     return (
-      <Modal title="Copy to brand — result" onClose={() => onDone?.(report)} wide footer={<Button onClick={() => onDone?.(report)}>Done</Button>}>
+      <Modal title={t("copyToBrandModal.copyToBrandResult")} onClose={() => onDone?.(report)} wide footer={<Button onClick={() => onDone?.(report)}>{t("copyToBrandModal.done")}</Button>}>
         <p className="text-sm text-gray-600">
-          {report.copied} copied, {report.failed} not copied. The new products have no registration number yet.
-        </p>
+          {t("copyToBrandModal.copiedReport", { copied: report.copied, failed: report.failed })}</p>
         <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200" data-testid="copy-bulk-report">
           {report.results.map((r) => (
             <li key={r.productId} className="px-4 py-2 text-sm flex justify-between gap-3">
@@ -123,17 +123,15 @@ export default function CopyToBrandModal({ products, isSystem, companies = [], o
 
   return (
     <Modal
-      title={bulk ? `Copy ${products.length} products to a brand` : "Copy to another brand"}
+      title={bulk ? t("copyToBrandModal.copyProductsToABrand", { length: products.length }) : t("copyToBrandModal.copyToAnotherBrand")}
       onClose={onClose}
       wide={bulk}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} type="button">
-            Cancel
-          </Button>
+          <Button variant="secondary" onClick={onClose} type="button">{t("copyToBrandModal.cancel")}</Button>
           <Button onClick={submit} disabled={!canCopy} isLoading={busy} data-testid="copy-submit">
             <Copy className="w-4 h-4" />
-            {bulk ? `Copy ${products.length}` : "Copy"}
+            {bulk ? t("copyToBrandModal.copy", { length: products.length }) : t("copyToBrandModal.copy2")}
           </Button>
         </>
       }
@@ -142,13 +140,12 @@ export default function CopyToBrandModal({ products, isSystem, companies = [], o
       {groups && (
         <>
           <p className="text-sm text-gray-600">
-            {bulk ? "Each product" : <b>{first.name}</b>} {bulk ? "is" : "is"} copied with its composition and product data under a new name. Labels, certificates, batches and invoices are not copied.
-          </p>
+            {bulk ? t("copyToBrandModal.eachProductIsCopied") : <><b>{first.name}</b> {t("copyToBrandModal.isCopied")}</>}</p>
           <div className="grid gap-4 sm:grid-cols-2">
             {isSystem && (
               <label className="block text-sm">
-                <span className="block font-semibold text-gray-700 mb-1">Target company</span>
-                <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" aria-label="Target company">
+                <span className="block font-semibold text-gray-700 mb-1">{t("copyToBrandModal.targetCompany")}</span>
+                <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" aria-label={t("copyToBrandModal.targetCompany")}>
                   {companies.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -158,28 +155,28 @@ export default function CopyToBrandModal({ products, isSystem, companies = [], o
               </label>
             )}
             <label className="block text-sm">
-              <span className="block font-semibold text-gray-700 mb-1">Target brand</span>
-              <select value={brandId} onChange={(e) => setBrandId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" aria-label="Target brand">
-                <option value="">Choose a brand…</option>
+              <span className="block font-semibold text-gray-700 mb-1">{t("copyToBrandModal.targetBrand")}</span>
+              <select value={brandId} onChange={(e) => setBrandId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" aria-label={t("copyToBrandModal.targetBrand")}>
+                <option value="">{t("copyToBrandModal.chooseABrand")}</option>
                 {brandOptions.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
                   </option>
                 ))}
               </select>
-              {companyId && !brandOptions.length && <span className="block text-xs text-amber-700 mt-1">This company has no other brand. Add one on the Brands page first.</span>}
+              {companyId && !brandOptions.length && <span className="block text-xs text-amber-700 mt-1">{t("copyToBrandModal.thisCompanyHasNoOther")}</span>}
             </label>
           </div>
 
           {!bulk ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm">
-                <span className="block font-semibold text-gray-700 mb-1">New name</span>
-                <input value={names[first.id].name} onChange={(e) => setNames({ ...names, [first.id]: { ...names[first.id], name: e.target.value } })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="New name" />
+                <span className="block font-semibold text-gray-700 mb-1">{t("copyToBrandModal.newName")}</span>
+                <input value={names[first.id].name} onChange={(e) => setNames({ ...names, [first.id]: { ...names[first.id], name: e.target.value } })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label={t("copyToBrandModal.newName")} />
               </label>
               <label className="block text-sm">
-                <span className="block font-semibold text-gray-700 mb-1">Product code (optional)</span>
-                <input value={names[first.id].productCode} onChange={(e) => setNames({ ...names, [first.id]: { ...names[first.id], productCode: e.target.value } })} className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono" aria-label="Product code" />
+                <span className="block font-semibold text-gray-700 mb-1">{t("copyToBrandModal.productCodeOptional")}</span>
+                <input value={names[first.id].productCode} onChange={(e) => setNames({ ...names, [first.id]: { ...names[first.id], productCode: e.target.value } })} className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono" aria-label={t("copyToBrandModal.productCode")} />
               </label>
             </div>
           ) : (
@@ -187,9 +184,9 @@ export default function CopyToBrandModal({ products, isSystem, companies = [], o
               <table className="w-full text-sm" data-testid="copy-bulk-names">
                 <thead className="bg-gray-50 text-xs text-gray-500">
                   <tr>
-                    <th className="px-3 py-2 text-left font-semibold">Original</th>
-                    <th className="px-3 py-2 text-left font-semibold">New name</th>
-                    <th className="px-3 py-2 text-left font-semibold">Product code</th>
+                    <th className="px-3 py-2 text-start font-semibold">{t("copyToBrandModal.original")}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{t("copyToBrandModal.newName")}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{t("copyToBrandModal.productCode")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -200,10 +197,10 @@ export default function CopyToBrandModal({ products, isSystem, companies = [], o
                         {p.brand?.name && <span className="block text-xs text-gray-400">{p.brand.name}</span>}
                       </td>
                       <td className="px-3 py-2">
-                        <input value={names[p.id].name} onChange={(e) => setNames({ ...names, [p.id]: { ...names[p.id], name: e.target.value } })} className="w-full px-2 py-1 border border-gray-300 rounded-md" aria-label={`New name for ${p.name}`} />
+                        <input value={names[p.id].name} onChange={(e) => setNames({ ...names, [p.id]: { ...names[p.id], name: e.target.value } })} className="w-full px-2 py-1 border border-gray-300 rounded-md" aria-label={t("copyToBrandModal.newNameFor", { name: p.name })} />
                       </td>
                       <td className="px-3 py-2">
-                        <input value={names[p.id].productCode} onChange={(e) => setNames({ ...names, [p.id]: { ...names[p.id], productCode: e.target.value } })} className="w-full px-2 py-1 border border-gray-300 rounded-md font-mono" aria-label={`Product code for ${p.name}`} />
+                        <input value={names[p.id].productCode} onChange={(e) => setNames({ ...names, [p.id]: { ...names[p.id], productCode: e.target.value } })} className="w-full px-2 py-1 border border-gray-300 rounded-md font-mono" aria-label={t("copyToBrandModal.productCodeFor", { name: p.name })} />
                       </td>
                     </tr>
                   ))}
@@ -213,7 +210,7 @@ export default function CopyToBrandModal({ products, isSystem, companies = [], o
           )}
 
           <fieldset>
-            <legend className="text-sm font-semibold text-gray-700 mb-2">Data to copy</legend>
+            <legend className="text-sm font-semibold text-gray-700 mb-2">{t("copyToBrandModal.dataToCopy")}</legend>
             <div className="grid gap-2 sm:grid-cols-2" data-testid="copy-groups">
               {groups.map((g) => (
                 <label key={g.key} className="flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm" title={g.fields.map(fieldLabel).join(", ")}>
@@ -227,12 +224,9 @@ export default function CopyToBrandModal({ products, isSystem, companies = [], o
             </div>
           </fieldset>
           <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            The registration number is not copied: each product needs its own. The copy is flagged until you add it.
-          </p>
+            <AlertTriangle className="w-4 h-4 shrink-0" />{t("copyToBrandModal.theRegistrationNumberIsNot")}</p>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={keepLinked} onChange={(e) => setKeepLinked(e.target.checked)} />
-            Keep linked to the original <span className="text-xs text-gray-500">(shows where it came from and lets you update it from the original later — never automatically)</span>
+            <input type="checkbox" checked={keepLinked} onChange={(e) => setKeepLinked(e.target.checked)} />{t("copyToBrandModal.keepLinkedToTheOriginal")}{" "}<span className="text-xs text-gray-500">{t("copyToBrandModal.showsWhereItCameFrom")}</span>
           </label>
         </>
       )}

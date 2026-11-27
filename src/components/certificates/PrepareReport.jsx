@@ -1,74 +1,18 @@
 import { Check, AlertTriangle, X } from "lucide-react";
 import AuthImage from "./AuthImage";
-import { pick } from "../../i18n/lang";
+import { strings, t } from "../../i18n";
 
 // The prepare gate report (plan §7.6, §13.4 step 4; mockup A5): a status band,
 // one card per gate check (measured value vs limit), the pixel comparison and
 // per-field round-trip deltas. Every number was measured on the server (D11);
 // the cards only pick maxima/counts out of the stored report.
 
-const STR_EN = {
-  passedReady: "Prepare passed — ready to activate",
-  passed: "Prepare passed",
-  passedHint: "The cleared template refilled with the original values matches the uploaded design.",
-  failed: "Prepare failed",
-  failedHint: "Fix the fields listed below, then run it again.",
-  stale: "The fields changed since this report — prepare again to re-check them.",
-  pass: "pass",
-  fail: "fail",
-  limit: "limit",
-  checks: {
-    has_fields: "Fields defined",
-    offsets: "Fields found at their offsets",
-    calibration: "Width calibration (max)",
-    round_trip: "Round-trip per field (max)",
-    pixel_diff: "Page pixel difference",
-    transparent: "Fields in hidden spans",
-    overlap: "Overlapping fields",
-  },
-  failures: "failures",
-  pixelTitle: "Pixel comparison",
-  original: "Original upload",
-  difference: (pct, page, many) => `Difference${many ? ` · page ${page}` : ""} · ${pct} %`,
-  field: "Field",
-  align: "Align",
-  position: "Position Δ",
-  width: "Width Δ",
-  result: "Result",
-  ok: "ok",
-  errors: { OFFSET_MISMATCH: "the text at the saved position changed", LINE_NOT_FOUND: "line not found", NOT_PROCESSED: "not processed" },
-  overlaps: (k) => `overlaps ${k}`,
-  transparent: "inside invisible text",
-  calibrationOff: (d) => `calibration Δ ${d} px`,
-  ms: (ms) => `${(ms / 1000).toFixed(1)} s`,
+
+const STR = {
+  ...strings("prepareReport"),
+  difference: (pct, page, many) => (many ? t("prepareReport.differencePage", { pct, page }) : t("prepareReport.difference", { pct })),
+  ms: (ms) => t("prepareReport.seconds", { s: (ms / 1000).toFixed(1) }),
 };
-const STR = pick({ en: STR_EN, ar: {
-  passedReady: "التجهيز عدّى — جاهز للتشغيل",
-  passed: "التجهيز عدّى",
-  passedHint: "القالب بعد ما اتفضّى واتملى بالقيم الأصلية مطابق للتصميم المرفوع.",
-  failed: "التجهيز ماعدّاش",
-  failedHint: "صلّح الحقول اللي تحت، وبعدين جهّز تاني.",
-  stale: "الحقول اتغيرت بعد التقرير ده — جهّز تاني عشان تتراجع.",
-  pass: "عدّى",
-  fail: "ماعدّاش",
-  limit: "الحد",
-  checks: { has_fields: "فيه حقول متحددة", offsets: "الحقول في أماكنها", calibration: "معايرة العرض (أقصى)", round_trip: "الملى تاني لكل حقل (أقصى)", pixel_diff: "فرق البكسلات في الصفحة", transparent: "حقول في نص مخفي", overlap: "حقول فوق بعض" },
-  failures: "مشاكل",
-  pixelTitle: "مقارنة البكسلات",
-  original: "الملف الأصلي",
-  difference: (pct, page, many) => `الفرق${many ? ` · صفحة ${page}` : ""} · ${pct} %`,
-  field: "الحقل",
-  align: "المحاذاة",
-  position: "فرق المكان",
-  width: "فرق العرض",
-  result: "النتيجة",
-  ok: "تمام",
-  errors: { OFFSET_MISMATCH: "النص في المكان المحفوظ اتغير", LINE_NOT_FOUND: "السطر مش موجود", NOT_PROCESSED: "ماتعملش" },
-  overlaps: (k) => `فوق ${k}`,
-  transparent: "جوه نص مخفي",
-  calibrationOff: (d) => `فرق المعايرة ${d} px`,
-  ms: (ms) => `${(ms / 1000).toFixed(1)} ث`,
-} });
 
 const px = (n) => (typeof n === "number" ? `${n.toFixed(2)} px` : "—");
 const maxOf = (list) => (list.length ? Math.max(...list) : 0);
@@ -170,12 +114,12 @@ export default function PrepareReport({ report, stale, ready, fields = [], loadD
 
       <div className="px-5 pb-5 overflow-x-auto">
         <table className="w-full min-w-[460px] text-sm">
-          <thead className="text-xs text-gray-500 text-left">
+          <thead className="text-xs text-gray-500 text-start">
             <tr className="border-b border-gray-200">
-              <th className="py-2 pr-3 font-semibold">{STR.field}</th>
-              <th className="py-2 pr-3 font-semibold">{STR.align}</th>
-              <th className="py-2 pr-3 font-semibold">{STR.position}</th>
-              <th className="py-2 pr-3 font-semibold">{STR.width}</th>
+              <th className="py-2 pe-3 font-semibold">{STR.field}</th>
+              <th className="py-2 pe-3 font-semibold">{STR.align}</th>
+              <th className="py-2 pe-3 font-semibold">{STR.position}</th>
+              <th className="py-2 pe-3 font-semibold">{STR.width}</th>
               <th className="py-2 font-semibold">{STR.result}</th>
             </tr>
           </thead>
@@ -189,10 +133,10 @@ export default function PrepareReport({ report, stale, ready, fields = [], loadD
               const rtBad = e.roundTrip && (e.roundTrip.dx > rtLimit || e.roundTrip.dw > rtLimit);
               return (
                 <tr key={key} className="border-b border-gray-100 last:border-0">
-                  <td className="py-2 pr-3 font-mono text-xs">{key}</td>
-                  <td className="py-2 pr-3 text-gray-700">{alignOf[key] || "—"}</td>
-                  <td className={`py-2 pr-3 tabular-nums ${rtBad ? "text-red-700" : ""}`}>{px(e.roundTrip?.dx)}</td>
-                  <td className={`py-2 pr-3 tabular-nums ${rtBad ? "text-red-700" : ""}`}>{px(e.roundTrip?.dw)}</td>
+                  <td className="py-2 pe-3 font-mono text-xs">{key}</td>
+                  <td className="py-2 pe-3 text-gray-700">{alignOf[key] || "—"}</td>
+                  <td className={`py-2 pe-3 tabular-nums ${rtBad ? "text-red-700" : ""}`}>{px(e.roundTrip?.dx)}</td>
+                  <td className={`py-2 pe-3 tabular-nums ${rtBad ? "text-red-700" : ""}`}>{px(e.roundTrip?.dw)}</td>
                   <td className="py-2">
                     {problems.length || rtBad ? (
                       <span className="text-xs text-red-700">{problems.join("; ") || STR.fail}</span>

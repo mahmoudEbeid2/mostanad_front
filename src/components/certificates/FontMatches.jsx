@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { setFontFallback, uploadCompanyFont } from "../../services/apiCertificateTemplates";
 import { describeCertificateError } from "../../utils/certificateErrors";
+import { strings, t } from "../../i18n";
 
 // Template "Prepare & test": each font embedded in the design with the font matched
 // to it. A character the design's subset font lacks is drawn from that match; the
@@ -9,15 +10,8 @@ import { describeCertificateError } from "../../utils/certificateErrors";
 // (uploaded here: .ttf, .otf, .woff2) are offered first and are matched to the
 // design fonts of the same family when uploaded.
 const STR = {
-  title: "Design fonts",
-  hint: "A character the design font lacks is drawn from its match. Upload the real font to keep the design's look.",
-  unknown: "Name unreadable",
-  change: (name) => `Fallback font for ${name}`,
-  upload: "Upload a font",
-  uploading: "Uploading…",
-  yours: "Your fonts",
-  shipped: "Built-in fonts",
-  uploaded: (font, n) => `${font.name} added${n ? ` — now used for ${n} draft version${n === 1 ? "" : "s"}` : ""}`,
+  ...strings("fontMatches"),
+  uploaded: (font, n) => t("fontMatches.added", { name: font.name }) + (n ? t("fontMatches.usedFor", { count: n }) : ""),
 };
 const COMPANY = "company:";
 
@@ -66,7 +60,7 @@ export default function FontMatches({ scope, version, onChanged }) {
         </div>
         <label className={`inline-flex cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 ${uploading ? "opacity-60" : ""}`}>
           {uploading ? STR.uploading : STR.upload}
-          <input ref={fileRef} type="file" accept=".ttf,.otf,.woff2,font/ttf,font/otf,font/woff2" className="sr-only" disabled={uploading} onChange={(e) => upload(e.target.files?.[0])} aria-label="Font file" data-testid="font-upload" />
+          <input ref={fileRef} type="file" accept=".ttf,.otf,.woff2,font/ttf,font/otf,font/woff2" className="sr-only" disabled={uploading} onChange={(e) => upload(e.target.files?.[0])} aria-label={t("fontMatches.fontFile")} data-testid="font-upload" />
         </label>
       </div>
       <ul className="mt-2 space-y-1.5">
@@ -104,7 +98,7 @@ export default function FontMatches({ scope, version, onChanged }) {
               <span className="font-medium">{m.fallbackName}</span>
             )}
             {editable && !m.companyFontId && m.fallbackName !== m.fallbackFamily && <span className="text-xs text-gray-500">{m.fallbackName.slice(m.fallbackFamily.length + 1)}</span>}
-            {m.source === "company_auto" && <span className="rounded bg-green-50 px-1.5 py-0.5 text-[11px] font-medium text-green-700">your font, same family</span>}
+            {m.source === "company_auto" && <span className="rounded bg-green-50 px-1.5 py-0.5 text-[11px] font-medium text-green-700">{t("fontMatches.yourFontSameFamily")}</span>}
           </li>
         ))}
       </ul>

@@ -4,49 +4,43 @@ import { Download, ChevronDown, FileUp, MessageCircleQuestion, Database, Package
 import FindingCard from "./FindingCard";
 import { localizedText } from "../../utils/localizedText";
 import { buildCorrectionListText, downloadCorrectionList } from "../../utils/correctionList";
+import { t } from "../../i18n";
 
 const FINDING_GROUPS = [
-  { key: "mustFix", title: "Must fix", statuses: ["FAIL"], collapsible: false },
-  { key: "confirm", title: "Confirm this", statuses: ["NEEDS_CONFIRMATION"], collapsible: false },
-  { key: "look", title: "Worth a look", statuses: ["WARN", "NEEDS_REVIEW"], collapsible: true },
+  { key: "mustFix", title: t("checkLabelReport.mustFix"), statuses: ["FAIL"], collapsible: false },
+  { key: "confirm", title: t("checkLabelReport.confirmThis"), statuses: ["NEEDS_CONFIRMATION"], collapsible: false },
+  { key: "look", title: t("checkLabelReport.worthALook"), statuses: ["WARN", "NEEDS_REVIEW"], collapsible: true },
 ];
 
-function numberWord(n) {
-  return n === 1 ? "One" : String(n);
-}
-
-function pluralThing(n) {
-  return n === 1 ? "thing" : "things";
-}
 
 function headline(counts) {
   if (counts.FAIL > 0) {
-    return `${numberWord(counts.FAIL)} ${pluralThing(counts.FAIL)} to fix before you print this.`;
+    return t("checkLabelReport.toFix", { count: counts.FAIL });
   }
   if (counts.NEEDS_CONFIRMATION > 0) {
-    return `${numberWord(counts.NEEDS_CONFIRMATION)} ${pluralThing(counts.NEEDS_CONFIRMATION)} to confirm before you print this.`;
+    return t("checkLabelReport.toConfirm", { count: counts.NEEDS_CONFIRMATION });
   }
   const look = (counts.WARN || 0) + (counts.NEEDS_REVIEW || 0);
   if (look > 0) {
-    return `Ready to print — ${numberWord(look).toLowerCase()} ${pluralThing(look)} worth a look.`;
+    return t("checkLabelReport.worthALook", { count: look });
   }
-  return "Ready to print.";
+  return t("checkLabelReport.readyToPrint");
 }
 
 const MATCH_LINE = {
   matched: (candidate) => ({
-    text: candidate ? `Compared against "${candidate.name}" in your catalogue.` : "Compared against a matching product in your catalogue.",
-    action: { label: "View catalogue", to: "/products" },
+    text: candidate ? t("checkLabelReport.comparedAgainstInYourCatalogue", { name: candidate.name }) : t("checkLabelReport.comparedAgainstAMatchingProduct"),
+    action: { label: t("checkLabelReport.viewCatalogue"), to: "/products" },
     Icon: PackageCheck,
   }),
   similar: (candidate, message) => ({
-    text: message || (candidate ? `The closest match was "${candidate.name}", but it wasn't compared against your label — that would treat a different product as this one.` : "A similar product was found, but not compared against this label."),
-    action: { label: "Check the match", to: "/products" },
+    text: message || (candidate ? t("checkLabelReport.theClosestMatchWasBut", { name: candidate.name }) : t("checkLabelReport.aSimilarProductWasFound")),
+    action: { label: t("checkLabelReport.checkTheMatch"), to: "/products" },
     Icon: PackageSearch,
   }),
   none: () => ({
-    text: "This product is not in your catalogue, so nothing was compared against a product record.",
-    action: { label: "Browse catalogue", to: "/products" },
+    text: t("checkLabelReport.thisProductIsNotIn"),
+    action: { label: t("checkLabelReport.browseCatalogue"), to: "/products" },
     Icon: PackageSearch,
   }),
 };
@@ -58,7 +52,7 @@ export default function CheckLabelReport({ jobResults, previewUrl, fileIsImage, 
   const [expandedTasks, setExpandedTasks] = useState(new Set());
 
   const verdicts = jobResults?.validation?.verdicts || [];
-  const productName = localizedText(jobResults?.product?.extractedDetails?.productName) || "This label";
+  const productName = localizedText(jobResults?.product?.extractedDetails?.productName) || t("checkLabelReport.thisLabel");
   const form = localizedText(jobResults?.product?.extractedDetails?.pharmaceuticalForm);
 
   const grouped = useMemo(() => {
@@ -123,7 +117,7 @@ export default function CheckLabelReport({ jobResults, previewUrl, fileIsImage, 
         <div className="min-w-0">
           <h2 className="text-xl font-black text-gray-900 truncate">{productName}</h2>
           <p className="text-sm text-gray-500">
-            {[form, country].filter(Boolean).join(" · ") || "No form or country recorded"}
+            {[form, country].filter(Boolean).join(" · ") || t("checkLabelReport.noFormOrCountryRecorded")}
           </p>
         </div>
       </div>
@@ -178,17 +172,15 @@ export default function CheckLabelReport({ jobResults, previewUrl, fileIsImage, 
           onClick={handleDownload}
           className="inline-flex items-center gap-2 rounded-xl bg-gray-900 hover:bg-black text-white px-5 py-3 text-sm font-bold shadow-sm"
         >
-          <Download className="w-4 h-4" /> Download the correction list
-        </button>
-        <p className="text-xs text-gray-500 mt-2">A print-ready file for whoever makes the artwork — not an in-app edit.</p>
+          <Download className="w-4 h-4" />{" "}{t("checkLabelReport.downloadTheCorrectionList")}</button>
+        <p className="text-xs text-gray-500 mt-2">{t("checkLabelReport.aPrintReadyFileFor")}</p>
       </div>
 
       {/* Things we could not check — tasks, each with one resolving action */}
       {grouped.unverifiable.length > 0 && (
         <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-5">
           <h3 className="font-black text-gray-900 text-sm uppercase tracking-wide mb-3 flex items-center gap-2">
-            <MessageCircleQuestion className="w-4 h-4 text-indigo-600" /> Things we could not check
-          </h3>
+            <MessageCircleQuestion className="w-4 h-4 text-indigo-600" />{" "}{t("checkLabelReport.thingsWeCouldNotCheck")}</h3>
           <div className="space-y-2">
             {grouped.unverifiable.map((v, idx) => {
               const isRulesetGap = v.ruleKey === "NO_AUTHORITATIVE_REQUIREMENTS";
@@ -202,16 +194,14 @@ export default function CheckLabelReport({ jobResults, previewUrl, fileIsImage, 
                         to="/regulatory-documents"
                         className="inline-flex items-center gap-1.5 flex-shrink-0 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-100"
                       >
-                        {country ? `Upload ${country}'s rules` : "Upload rules"}
+                        {country ? t("checkLabelReport.uploadSRules", { country }) : t("checkLabelReport.uploadRules")}
                       </Link>
                     ) : (
                       <button
                         type="button"
                         onClick={() => toggleTask(key)}
                         className="flex-shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
-                      >
-                        Details
-                      </button>
+                      >{t("checkLabelReport.details")}</button>
                     )}
                   </div>
                   {!isRulesetGap && expandedTasks.has(key) && v.citation && (
@@ -221,9 +211,7 @@ export default function CheckLabelReport({ jobResults, previewUrl, fileIsImage, 
               );
             })}
           </div>
-          <p className="text-xs text-indigo-900 mt-3">
-            Until {grouped.unverifiable.length === 1 ? "this is" : "both are"} answered, "{headline(grouped.counts).replace(/\.$/, "")}" is not the whole picture.
-          </p>
+          <p className="text-xs text-indigo-900 mt-3">{t("checkLabelReport.untilAnswered", { count: grouped.unverifiable.length, headline: headline(grouped.counts).replace(/\.$/, "") })}</p>
         </div>
       )}
 
@@ -234,9 +222,8 @@ export default function CheckLabelReport({ jobResults, previewUrl, fileIsImage, 
           onClick={() => setPassedOpen((o) => !o)}
           className="text-sm text-gray-500 flex items-center gap-1.5 hover:text-gray-700"
         >
-          {grouped.passed.length} check{grouped.passed.length === 1 ? "" : "s"} passed
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${passedOpen ? "rotate-180" : ""}`} />
-          <span className="underline font-semibold">See every check</span>
+          {t("checkLabelReport.checksPassed", { count: grouped.passed.length })}{" "}<ChevronDown className={`w-3.5 h-3.5 transition-transform ${passedOpen ? "rotate-180" : ""}`} />
+          <span className="underline font-semibold">{t("checkLabelReport.seeEveryCheck")}</span>
         </button>
         {passedOpen && (
           <ul className="mt-3 space-y-1.5 text-xs text-gray-500">
@@ -263,7 +250,7 @@ export default function CheckLabelReport({ jobResults, previewUrl, fileIsImage, 
       {!matchLine && (
         <div className="flex items-center gap-2 text-xs text-gray-400 pt-2">
           <Database className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>No product-match information was reported for this check.</span>
+          <span>{t("checkLabelReport.noProductMatchInformationWas")}</span>
         </div>
       )}
     </div>

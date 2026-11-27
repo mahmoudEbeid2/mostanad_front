@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { t } from "../i18n";
 
 export const getProducts = async (params = {}) => {
   const response = await apiClient.get("/products", { params });
@@ -52,15 +53,15 @@ const msg = (e, fallback) => {
   return err;
 };
 /** → { groups: [{ key, label, fields }], neverCopied } */
-export const getCopyFields = () => apiClient.get("/products/copy-fields").then((r) => r.data.data, (e) => Promise.reject(msg(e, "Couldn't load the copy options")));
+export const getCopyFields = () => apiClient.get("/products/copy-fields").then((r) => r.data.data, (e) => Promise.reject(msg(e, t("errors.couldntLoadTheCopyOptions"))));
 /** body: { targetCompanyId?, targetBrandId, name, productCode?, fieldsToCopy?, keepLinked } → { product, copied, needsRegistrationNumber } */
-export const copyProduct = (id, body) => apiClient.post(`/products/${id}/copy`, body).then((r) => r.data.data, (e) => Promise.reject(msg(e, "Couldn't copy the product")));
+export const copyProduct = (id, body) => apiClient.post(`/products/${id}/copy`, body).then((r) => r.data.data, (e) => Promise.reject(msg(e, t("errors.couldntCopyTheProduct"))));
 /** body: { productIds, targetCompanyId?, targetBrandId, names: [{ productId, name, productCode }], fieldsToCopy?, keepLinked } → { results, copied, failed } */
 export const copyProductsBulk = (body) =>
   apiClient.post("/products/copy-bulk", body).then(
     (r) => r.data.data,
-    (e) => (e?.response?.data?.data?.results ? e.response.data.data : Promise.reject(msg(e, "Couldn't copy the products")))
+    (e) => (e?.response?.data?.data?.results ? e.response.data.data : Promise.reject(msg(e, t("errors.couldntCopyTheProducts"))))
   );
 /** → { source, copy, fields: [{ field, group, source, copy, same }], changed } */
-export const getSourceDiff = (id) => apiClient.get(`/products/${id}/source-diff`).then((r) => r.data.data, (e) => Promise.reject(msg(e, "Couldn't compare with the original")));
-export const updateFromSource = (id, fields) => apiClient.post(`/products/${id}/update-from-source`, { fields }).then((r) => r.data.data, (e) => Promise.reject(msg(e, "Couldn't update from the original")));
+export const getSourceDiff = (id) => apiClient.get(`/products/${id}/source-diff`).then((r) => r.data.data, (e) => Promise.reject(msg(e, t("errors.couldntCompareWithTheOriginal"))));
+export const updateFromSource = (id, fields) => apiClient.post(`/products/${id}/update-from-source`, { fields }).then((r) => r.data.data, (e) => Promise.reject(msg(e, t("errors.couldntUpdateFromTheOriginal"))));

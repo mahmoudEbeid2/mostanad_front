@@ -12,50 +12,13 @@ import useConfirm from "../hooks/useConfirm";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { createCertificateType, deleteCertificateType, listCertificateTypes, updateCertificateType } from "../services/apiCertificateTypes";
-import { pick } from "../i18n/lang";
+import { strings, t } from "../i18n";
 
-const STR_EN = {
-  title: "Certificate types",
-  subtitle: "The kinds of certificates your company issues. Every template belongs to one type.",
-  add: "New type",
-  name: "Name",
-  code: "Code",
-  description: "Description",
-  templates: "Templates",
-  active: "Active",
-  empty: "No certificate types yet. Create one first — for example “Certificate of Analysis” with code COA — then upload its template.",
-  pickCompany: "Pick a company to manage its certificate types.",
-  created: "Certificate type created",
-  saved: "Certificate type saved",
-  deleted: "Certificate type deleted",
-  confirmDelete: (n) => ({ title: `Delete “${n}”?`, message: "This cannot be undone.", confirmLabel: "Delete", tone: "danger" }),
-  save: "Save",
-  cancel: "Cancel",
-  inUse: "Used by templates — deactivate it instead",
-  uploadTemplate: "Upload a template",
-  codeHint: "Short, unique per company — letters, digits, - and _",
+
+const STR = {
+  ...strings("certificateTypes"),
+  confirmDelete: (n) => ({ title: t("certificateTypes.confirmDeleteTitle", { name: n }), message: t("certificateTypes.confirmDeleteMessage"), confirmLabel: t("certificateTypes.confirmDeleteLabel"), tone: "danger" }),
 };
-const STR = pick({ en: STR_EN, ar: {
-  title: "أنواع الشهادات",
-  subtitle: "أنواع الشهادات اللي شركتك بتطلعها. كل قالب بيتبع نوع.",
-  add: "نوع جديد",
-  name: "الاسم",
-  code: "الكود",
-  description: "الوصف",
-  templates: "القوالب",
-  active: "شغّال",
-  empty: "لسه مفيش أنواع شهادات. اعمل واحد الأول — مثلاً «شهادة تحليل» بكود COA — وبعدين ارفع قالبه.",
-  pickCompany: "اختار شركة عشان تدير أنواع شهاداتها.",
-  created: "اتعمل نوع الشهادة",
-  saved: "اتحفظ نوع الشهادة",
-  deleted: "اتمسح نوع الشهادة",
-  confirmDelete: (n) => ({ title: `تمسح «${n}»؟`, message: "مش هينفع ترجّعه.", confirmLabel: "امسح", tone: "danger" }),
-  save: "احفظ",
-  cancel: "إلغاء",
-  inUse: "عليه قوالب — وقّفه بدل ما تمسحه",
-  uploadTemplate: "ارفع قالب",
-  codeHint: "قصير ومش متكرر في الشركة — حروف وأرقام و - و _",
-} });
 
 const EMPTY = { name: "", code: "", description: "" };
 
@@ -164,7 +127,7 @@ export default function CertificateTypes() {
         <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-5 grid gap-4 md:grid-cols-[1fr_180px] shadow-sm">
           <label className="text-sm">
             <span className="font-medium text-gray-700">{STR.name}</span>
-            <input required minLength={2} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Certificate of Analysis" />
+            <input required minLength={2} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder={t("certificateTypes.certificateOfAnalysis")} />
           </label>
           <label className="text-sm">
             <span className="font-medium text-gray-700">{STR.code}</span>
@@ -201,50 +164,50 @@ export default function CertificateTypes() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
               <tr>
-                <th className="text-left px-4 py-3">{STR.name}</th>
-                <th className="text-left px-4 py-3">{STR.code}</th>
-                <th className="text-left px-4 py-3">{STR.templates}</th>
-                <th className="text-left px-4 py-3">{STR.active}</th>
+                <th className="text-start px-4 py-3">{STR.name}</th>
+                <th className="text-start px-4 py-3">{STR.code}</th>
+                <th className="text-start px-4 py-3">{STR.templates}</th>
+                <th className="text-start px-4 py-3">{STR.active}</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {types.map((t) => (
-                <tr key={t.id} className={t.isActive ? "" : "text-gray-400"}>
+              {types.map((it) => (
+                <tr key={it.id} className={it.isActive ? "" : "text-gray-400"}>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">{t.name}</div>
-                    {t.description && <div className="text-xs text-gray-500">{t.description}</div>}
+                    <div className="font-medium text-gray-900">{it.name}</div>
+                    {it.description && <div className="text-xs text-gray-500">{it.description}</div>}
                   </td>
-                  <td className="px-4 py-3 font-mono">{t.code}</td>
+                  <td className="px-4 py-3 font-mono">{it.code}</td>
                   <td className="px-4 py-3">
-                    {t._count?.templates ? (
-                      <Link className="text-blue-600 hover:underline" to={`/certificates/templates?certificateTypeId=${t.id}`}>
-                        {t._count.templates}
+                    {it._count?.templates ? (
+                      <Link className="text-blue-600 hover:underline" to={`/certificates/templates?certificateTypeId=${it.id}`}>
+                        {it._count.templates}
                       </Link>
                     ) : (
-                      <Link className="text-blue-600 hover:underline text-xs" to={`/certificates/templates/new?certificateTypeId=${t.id}`}>
+                      <Link className="text-blue-600 hover:underline text-xs" to={`/certificates/templates/new?certificateTypeId=${it.id}`}>
                         {STR.uploadTemplate}
                       </Link>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <input type="checkbox" checked={t.isActive} disabled={!canUpdate} onChange={() => toggleActive(t)} aria-label={STR.active} />
+                    <input type="checkbox" checked={it.isActive} disabled={!canUpdate} onChange={() => toggleActive(it)} aria-label={STR.active} />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
                       {canUpdate && (
-                        <button type="button" onClick={() => openEdit(t)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500" aria-label="Edit">
+                        <button type="button" onClick={() => openEdit(it)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500" aria-label={t("certificateTypes.edit")}>
                           <Edit2 className="w-4 h-4" />
                         </button>
                       )}
                       {canDelete && (
                         <button
                           type="button"
-                          onClick={() => remove(t)}
-                          disabled={t._count?.templates > 0}
-                          title={t._count?.templates > 0 ? STR.inUse : undefined}
+                          onClick={() => remove(it)}
+                          disabled={it._count?.templates > 0}
+                          title={it._count?.templates > 0 ? STR.inUse : undefined}
                           className="p-2 rounded-lg hover:bg-red-50 text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
-                          aria-label="Delete"
+                          aria-label={t("certificateTypes.confirmDeleteLabel")}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

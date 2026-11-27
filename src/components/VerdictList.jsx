@@ -3,6 +3,7 @@ import VerdictStatusBadge from "./VerdictStatusBadge";
 import { Link } from "react-router-dom";
 import { FileText, MapPin, Wrench, ShieldOff, ChevronDown, Pencil, MessageSquareText, BookPlus } from "lucide-react";
 import { LABEL_FIELD_CATALOG } from "../utils/labelFieldCatalog";
+import { t } from "../i18n";
 
 const SEVERITY_ORDER = {
   FAIL: 0,
@@ -16,25 +17,25 @@ const SEVERITY_ORDER = {
 const unknownRank = 0.5;
 
 const ACTION_GROUPS = [
-  { key: "mustFix", title: "Must fix", statuses: ["FAIL"], defaultOpen: true, classes: "border-red-200 bg-red-50/50", countClasses: "bg-red-100 text-red-800 border-red-200" },
-  { key: "confirm", title: "Confirm this", statuses: ["NEEDS_CONFIRMATION"], defaultOpen: true, classes: "border-orange-200 bg-orange-50/50", countClasses: "bg-orange-100 text-orange-800 border-orange-200" },
-  { key: "look", title: "Worth a look", statuses: ["WARN", "NEEDS_REVIEW"], defaultOpen: false, classes: "border-amber-200 bg-amber-50/40", countClasses: "bg-amber-100 text-amber-900 border-amber-200" },
-  { key: "unchecked", title: "Could not check", statuses: ["UNVERIFIABLE"], defaultOpen: false, classes: "border-indigo-200 bg-indigo-50/40", countClasses: "bg-indigo-100 text-indigo-900 border-indigo-200" },
-  { key: "fine", title: "Fine", statuses: ["PASS", "NOT_APPLICABLE"], defaultOpen: false, classes: "border-gray-200 bg-gray-50/50", countClasses: "bg-white text-gray-600 border-gray-200" },
+  { key: "mustFix", title: t("verdictList.mustFix"), statuses: ["FAIL"], defaultOpen: true, classes: "border-red-200 bg-red-50/50", countClasses: "bg-red-100 text-red-800 border-red-200" },
+  { key: "confirm", title: t("verdictList.confirmThis"), statuses: ["NEEDS_CONFIRMATION"], defaultOpen: true, classes: "border-orange-200 bg-orange-50/50", countClasses: "bg-orange-100 text-orange-800 border-orange-200" },
+  { key: "look", title: t("verdictList.worthALook"), statuses: ["WARN", "NEEDS_REVIEW"], defaultOpen: false, classes: "border-amber-200 bg-amber-50/40", countClasses: "bg-amber-100 text-amber-900 border-amber-200" },
+  { key: "unchecked", title: t("verdictList.couldNotCheck"), statuses: ["UNVERIFIABLE"], defaultOpen: false, classes: "border-indigo-200 bg-indigo-50/40", countClasses: "bg-indigo-100 text-indigo-900 border-indigo-200" },
+  { key: "fine", title: t("verdictList.fine"), statuses: ["PASS", "NOT_APPLICABLE"], defaultOpen: false, classes: "border-gray-200 bg-gray-50/50", countClasses: "bg-white text-gray-600 border-gray-200" },
 ];
 
 const COMPARISON_CONFIG = {
-  data_mismatch: { label: "Data mismatch", classes: "bg-rose-50 text-rose-700 border-rose-200" },
-  regulatory: { label: "Regulatory", classes: "bg-red-50 text-red-700 border-red-200" },
-  coherence: { label: "Internal inconsistency", classes: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-  plausibility: { label: "Plausibility flag", classes: "bg-purple-50 text-purple-700 border-purple-200" },
+  data_mismatch: { label: t("verdictList.dataMismatch"), classes: "bg-rose-50 text-rose-700 border-rose-200" },
+  regulatory: { label: t("verdictList.regulatory"), classes: "bg-red-50 text-red-700 border-red-200" },
+  coherence: { label: t("verdictList.internalInconsistency"), classes: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  plausibility: { label: t("verdictList.plausibilityFlag"), classes: "bg-purple-50 text-purple-700 border-purple-200" },
 };
 
 const REMEDIATION_SOURCE_LABEL = {
-  rule: "from the regulatory rule",
-  product_row: "from this product's own data",
-  reference: "from an approved reference label",
-  none: "no sourced fix available",
+  rule: t("verdictList.fromTheRegulatoryRule"),
+  product_row: t("verdictList.fromThisProductsOwnData"),
+  reference: t("verdictList.fromAnApprovedReferenceLabel"),
+  none: t("verdictList.noSourcedFixAvailable"),
 };
 
 const FIELD_BY_PATH = Object.fromEntries(LABEL_FIELD_CATALOG.map((field) => [field.path, field]));
@@ -49,29 +50,29 @@ function fieldForVerdict(v) {
 function plainStatusCopy(v) {
   switch (v.status) {
     case "FAIL":
-      return "This must be fixed before the label is ready.";
+      return t("verdictList.thisMustBeFixedBefore");
     case "NEEDS_CONFIRMATION":
-      return "We could not read this confidently. Please confirm the value.";
+      return t("verdictList.weCouldNotReadThis");
     case "NEEDS_REVIEW":
-      return "This is unusual and worth checking. Treat it as unsourced until a reviewer confirms it.";
+      return t("verdictList.thisIsUnusualAndWorth");
     case "UNVERIFIABLE":
-      return v.reason || "We could not check this with the approved rules currently on file.";
+      return v.reason || t("verdictList.weCouldNotCheckThis");
     case "NOT_APPLICABLE":
-      return v.reason || "This rule does not apply to this label.";
+      return v.reason || t("verdictList.thisRuleDoesNotApply");
     case "WARN":
-      return "This is not blocking, but it deserves a look.";
+      return t("verdictList.thisIsNotBlockingBut");
     case "PASS":
-      return "This check is fine.";
+      return t("verdictList.thisCheckIsFine");
     default:
-      return "This status is not recognized by the UI. Check it manually.";
+      return t("verdictList.thisStatusIsNotRecognized");
   }
 }
 
 function suggestedAction(v) {
   if (v.remediation?.action) return v.remediation.action;
-  if (v.remediation?.suggested) return "Use the suggested value";
-  if (v.status === "FAIL") return "Fix this value";
-  if (v.status === "NEEDS_CONFIRMATION") return "Confirm the value";
+  if (v.remediation?.suggested) return t("verdictList.useTheSuggestedValue");
+  if (v.status === "FAIL") return t("verdictList.fixThisValue");
+  if (v.status === "NEEDS_CONFIRMATION") return t("verdictList.confirmTheValue");
   return null;
 }
 
@@ -83,11 +84,11 @@ function RemediationBlock({ remediation }) {
       {sourceIsNone ? <ShieldOff className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" /> : <Wrench className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />}
       <div>
         {sourceIsNone ? (
-          <p className="italic">There is a violation here, but no sourced fix is available. Nothing was invented to fill this gap.</p>
+          <p className="italic">{t("verdictList.thereIsAViolationHere")}</p>
         ) : (
           <>
             <p>
-              {remediation.action ? `Suggested ${remediation.action}` : "Suggested fix"}
+              {remediation.action ? t("verdictList.suggested", { action: remediation.action }) : t("verdictList.suggestedFix")}
               {remediation.suggested ? `: "${remediation.suggested}"` : ""}
             </p>
             <p className="mt-0.5 text-blue-700">
@@ -104,9 +105,9 @@ function RemediationBlock({ remediation }) {
 function assistantPrompt(v, field) {
   const isVirtualPath = v.path?.startsWith("_");
   const fieldName = field?.label || v.label?.en || (isVirtualPath ? "the label" : v.path) || "this field";
-  if (v.path === "_localized_text") return `Fix ${fieldName} by ensuring that for each listed field, the language code specified in the "primary" property is also present as a key in the "translations" object with the corresponding text. Do not remove any existing translation keys. ${v.message}`;
-  if (v.remediation?.suggested) return `Fix ${fieldName} by using "${v.remediation.suggested}".`;
-  return `Fix ${fieldName}: ${v.message || plainStatusCopy(v)}`;
+  if (v.path === "_localized_text") return t("verdictList.fixByEnsuringThatFor", { fieldName, message: v.message });
+  if (v.remediation?.suggested) return t("verdictList.fixByUsing", { fieldName, suggested: v.remediation.suggested });
+  return t("verdictList.fix", { fieldName, v: v.message || plainStatusCopy(v) });
 }
 
 // the label's regulatory scope: Regulatory & EDA documents are matched by country and product scope
@@ -131,7 +132,7 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant, scope }) {
   const canEditInline = Boolean(onEditField && field && ["FAIL", "NEEDS_CONFIRMATION", "WARN", "NEEDS_REVIEW"].includes(v.status));
 
   // Determine a friendly name for the field
-  const friendlyName = v.label?.en || field?.label || (detailedView ? v.path : "This field");
+  const friendlyName = v.label?.en || field?.label || (detailedView ? v.path : t("verdictList.thisField"));
 
   return (
     <div className={`bg-white rounded-xl border p-4 flex flex-col gap-3 ${known ? "border-gray-200" : "border-fuchsia-300 ring-1 ring-fuchsia-200"}`}>
@@ -150,7 +151,7 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant, scope }) {
         </div>
       </div>
 
-      <p className="text-sm text-gray-800">{noRules ? `No approved rules for ${scope?.country || "this country"}${scope?.productType ? ` (${scope.productType.replace(/_/g, " ")})` : ""} yet, so the regulatory checks couldn't run.` : v.message || plainStatusCopy(v)}</p>
+      <p className={"text-sm text-gray-800"}>{noRules ? t("verdictList.noRules", { country: (scope?.country || t("verdictList.thisCountry")) + (scope?.productType ? ` (${scope.productType.replace(/_/g, " ")})` : "") }) : v.message || plainStatusCopy(v)}</p>
       
       {/* Only show duplicate plain status copy if detailedView is true to avoid clutter */}
       {detailedView && v.message && <p className="text-xs text-gray-500">{plainStatusCopy(v)}</p>}
@@ -158,7 +159,7 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant, scope }) {
       {/* Hide the raw "-> add" transition text in normal view, show suggested value plainly */}
       {v.remediation?.suggested && (
         <div className="bg-gray-50 border rounded-lg p-2 text-sm text-gray-800">
-          <span className="font-semibold text-gray-600 mr-2">Suggestion:</span>
+          <span className="font-semibold text-gray-600 me-2">{t("verdictList.suggestion")}</span>
           {v.remediation.suggested}
         </div>
       )}
@@ -173,41 +174,38 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant, scope }) {
             onClick={() => onEditField(field)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800 hover:bg-blue-100 transition-colors shadow-sm"
           >
-            <Pencil className="w-3.5 h-3.5" /> Edit {field.label || "Field"}
+            <Pencil className="w-3.5 h-3.5" />{" "}{t("verdictList.edit")}{" "}{field.label || t("verdictList.field")}
           </button>
         )}
         {noRules && (
           <Link to={rulesLink(scope)} data-testid="add-rules-link" className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-100 transition-colors shadow-sm">
-            <BookPlus className="w-3.5 h-3.5" /> Add them in Regulatory &amp; EDA
-          </Link>
+            <BookPlus className="w-3.5 h-3.5" />{" "}{t("verdictList.addThemInRegulatoryEda")}</Link>
         )}
         {Boolean(onAskAssistant) && chatCanFix(v, field) && (
           <button
             type="button"
             onClick={() => onAskAssistant?.(assistantPrompt(v, field))}
             className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-800 hover:bg-purple-100 transition-colors shadow-sm"
-            title="Ask the AI Assistant to resolve this issue"
+            title={t("verdictList.askTheAiAssistantTo")}
           >
-            <MessageSquareText className="w-3.5 h-3.5" /> 💬 Ask Assistant to fix
-          </button>
+            <MessageSquareText className="w-3.5 h-3.5" />{" "}{t("verdictList.askAssistantToFix")}</button>
         )}
       </div>
 
       {detailedView && v.status === "FAIL" && !v.citation && (
-        <p className="text-xs text-gray-400 italic mt-2">No citation available for this failure (schema-layer check, not a cited rule).</p>
+        <p className="text-xs text-gray-400 italic mt-2">{t("verdictList.noCitationAvailableForThis")}</p>
       )}
 
       {(v.citation || v.sourceDocumentId) && (
         <details className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mt-1">
-          <summary className="cursor-pointer font-bold text-gray-700">Show rule</summary>
+          <summary className="cursor-pointer font-bold text-gray-700">{t("verdictList.showRule")}</summary>
           <div className="flex items-start gap-2 mt-2">
             <FileText className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
             <div>
               {v.citation && <p className="italic">"{v.citation}"</p>}
               {v.sourceDocumentId && (
                 <p className="mt-1 flex items-center gap-1 text-gray-500">
-                  <MapPin className="w-3 h-3" /> Source document: {v.sourceDocumentId}
-                </p>
+                  <MapPin className="w-3 h-3" />{" "}{t("verdictList.sourceDocument", { sourceDocumentId: v.sourceDocumentId })}</p>
               )}
               {v.ruleKey && <p className="mt-1 font-mono text-gray-400">{v.ruleKey}</p>}
             </div>
@@ -221,7 +219,7 @@ function VerdictCard({ v, detailedView, onEditField, onAskAssistant, scope }) {
         <div className="flex items-center gap-3 text-[10px] text-gray-400 font-mono uppercase tracking-wide mt-2">
           <span>{v.path}</span>
           {v.ruleKey && <span>- {v.ruleKey}</span>}
-          {v.autoFixable && <span className="text-blue-500 font-bold">- auto-fixable</span>}
+          {v.autoFixable && <span className="text-blue-500 font-bold">{t("verdictList.autoFixable")}</span>}
         </div>
       )}
     </div>
@@ -236,7 +234,7 @@ function ActionGroup({ group, verdicts, detailedView, onEditField, onAskAssistan
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-start"
       >
         <span className="font-black text-gray-900">{group.title}</span>
         <span className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-bold ${group.countClasses}`}>
@@ -258,7 +256,7 @@ function ActionGroup({ group, verdicts, detailedView, onEditField, onAskAssistan
               />
             ))
           ) : (
-            <p className="text-sm text-gray-500 italic">Nothing in this group.</p>
+            <p className="text-sm text-gray-500 italic">{t("verdictList.nothingInThisGroup")}</p>
           )}
         </div>
       )}
@@ -268,7 +266,7 @@ function ActionGroup({ group, verdicts, detailedView, onEditField, onAskAssistan
 
 export default function VerdictList({ verdicts, detailedView = false, onEditField, onAskAssistant, scope = null }) {
   if (!verdicts || verdicts.length === 0) {
-    return <p className="text-sm text-gray-500 italic">No verdicts to show.</p>;
+    return <p className="text-sm text-gray-500 italic">{t("verdictList.noVerdictsToShow")}</p>;
   }
 
   const groups = new Map();
@@ -308,7 +306,7 @@ export default function VerdictList({ verdicts, detailedView = false, onEditFiel
         <ActionGroup scope={scope}
           group={{
             key: "unknown",
-            title: "Needs manual check",
+            title: t("verdictList.needsManualCheck"),
             defaultOpen: true,
             classes: "border-fuchsia-200 bg-fuchsia-50/50",
             countClasses: "bg-fuchsia-100 text-fuchsia-900 border-fuchsia-200",

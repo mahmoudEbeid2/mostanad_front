@@ -7,7 +7,7 @@ import Spinner from "../../ui/Spinner";
 import { addDictionarySynonym, decideDataNeeds, getDataCheck, runDataCheck, webLookup } from "../../services/apiInvoices";
 import { withNextStep } from "../../utils/aiReason";
 import ResultsGrid from "./ResultsGrid";
-import { pick } from "../../i18n/lang";
+import { strings, t } from "../../i18n";
 
 // "Certificate data check" (backend plan.md §6.2, A2): every value the
 // certificates about to be generated need, what code read, what the AI found
@@ -15,107 +15,30 @@ import { pick } from "../../i18n/lang";
 // results (batch data) are typed once per line, whatever the number of
 // certificate types that print them. Generation is blocked by the parent while
 // `summary.blocking` > 0.
-const STR_EN = {
-  title: "Certificate data check",
-  checking: "Checking what the certificates need…",
-  failed: "The data check failed:",
-  retry: "Try again",
-  summary: (s) => `${s.certificates} certificate${s.certificates === 1 ? "" : "s"} · ${s.values} values · ${s.ready} ready · ${s.needsConfirmation} need confirmation · ${s.missing} missing${s.missingOptional ? ` · ${s.missingOptional} missing (optional)` : ""}`,
-  allSet: "Every required value is ready.",
-  skip: "Skip",
-  nothingYet: "Nothing to check yet — no line is matched to a product with an active template.",
-  aiFound: (a) => `AI looked for ${a.asked} missing value${a.asked === 1 ? "" : "s"} in the invoice and your product data and found ${a.filled}, each with evidence the server checked word for word.`,
-  aiRefused: (n) => `${n} AI answer${n === 1 ? " was" : "s were"} refused because the evidence didn't check out.`,
-  aiOff: (reason) => withNextStep(reason, "Fill the missing values by hand."),
-  showAll: "Show all values",
-  showOpen: "Only what needs attention",
-  certHeader: (c) => `${c.typeCode || c.typeName || "Certificate"} · ${c.scope === "per_invoice" ? `whole invoice (lines ${c.lineNos.join(", ")})` : `line ${c.lineNos[0]} · ${c.productName || ""}${c.batchNo ? ` · ${c.batchNo}` : ""}`}`,
-  open: (n) => `${n} open`,
-  accept: "Accept",
-  reject: "Reject",
-  edit: "Edit",
-  override: "Override",
-  reset: "Reset",
-  save: "Save",
-  cancel: "Cancel",
-  forLine: "Use for all certificates of this line",
-  synonym: "Add as synonym for all products",
-  synonymDone: "Synonym added — this key is read for every product from now on.",
-  unassigned: (u) => `Line ${u.lineNo}${u.name ? ` (${u.name})` : ""} gets no certificate, so nothing is checked for it.`,
-  status: { resolved: "ready", resolved_ai: "AI ✓", provided: "typed", needs_confirmation: "confirm", missing: "missing", missingOptional: "missing (optional)", not_applicable: "not applicable", inferred: "inferred — confirm", web_found: "from web — confirm", catalogue_found: "from catalogue — confirm", reused: "from the product's profile" },
-  // A6 (backend plan.md §15.5): the product's own catalogue page, and estimated product values
-  catalogueBadge: (p) => `Catalogue p.${p.page}${p.section ? ` · ${p.section.toLowerCase()}` : ""}`,
-  catalogueOpen: "Open the page",
-  estimatedBadge: "Estimated",
-  estimatedHint: "This product value was estimated, not printed in a source — confirm it before it goes on a certificate.",
-  confirmOnProduct: "Confirm on the product",
-  confirmHint: "Sign for this estimate on the product, so the next invoice uses it without asking",
-  // A5 (backend plan.md §14)
-  inferredBadge: "Inferred from product data",
-  webBadge: "From web",
-  derivation: { quoted: "written in the product", unit_conversion: "unit conversion", select_from_list: "picked from a list", join_list: "joined from a list", normalize_case: "letter case" },
-  saveToProduct: "Save to product",
-  saveHint: "Write the confirmed value into the product, so the next invoice doesn't need to look it up",
-  webLookup: (n) => `Look up ${n} missing product fact${n === 1 ? "" : "s"} on the web`,
-  webHint: "Only product facts (never lab results, batches, dates or quantities). Every value comes with a link and a quote the server checked on the page.",
-  webDone: (w) => (w.unavailable ? withNextStep(w.reason, "Type the missing values by hand.") : `Web lookup: ${w.found} found${w.fromCache ? ` (${w.fromCache} from earlier lookups)` : ""}${w.rejected ? `, ${w.rejected} refused (the cited page didn't check out)` : ""}`),
-  inferNote: (i) => `${i.inferred} value${i.inferred === 1 ? "" : "s"} inferred from your product data${i.rejected ? ` (${i.rejected} refused — not provable from the product)` : ""}.`,
-  source: {
-    manual: "Typed by you",
-    static: "Fixed text",
-    today: "Issue date",
-    template: "Combination",
-  },
-  aiValue: (c) => `AI ${Math.round((c ?? 0) * 100)}%`,
-  placeholder: "Type the value",
+
+const K = (k, p) => t(`dataCheckPanel.${k}`, p);
+const STR = {
+  ...strings("dataCheckPanel"),
+  summary: (s) => K("summary", { count: s.certificates, values: s.values, ready: s.ready, needsConfirmation: s.needsConfirmation, missing: s.missing }) + (s.missingOptional ? K("summaryOptional", { n: s.missingOptional }) : ""),
+  aiFound: (a) => K("aiFound", { count: a.asked, filled: a.filled }),
+  aiRefused: (n) => K("aiRefused", { count: n }),
+  aiOff: (reason) => withNextStep(reason, K("aiOffNext")),
+  certHeader: (c) =>
+    `${c.typeCode || c.typeName || K("certificate")} · ${
+      c.scope === "per_invoice"
+        ? K("wholeInvoiceLines", { lines: c.lineNos.join(K("listSep")) })
+        : `${K("lineN", { n: c.lineNos[0] })} · ${c.productName || ""}${c.batchNo ? ` · ${c.batchNo}` : ""}`
+    }`,
+  unassigned: (u) => K("unassigned", { lineNo: u.lineNo, name: u.name ? ` (${u.name})` : "" }),
+  catalogueBadge: (p) => K("catalogueBadge", { page: p.page }) + (p.section ? ` · ${p.section.toLowerCase()}` : ""),
+  webLookup: (n) => K("webLookup", { count: n }),
+  webDone: (w) =>
+    w.unavailable
+      ? withNextStep(w.reason, K("webNext"))
+      : K("webDone", { found: w.found }) + (w.fromCache ? K("webCache", { n: w.fromCache }) : "") + (w.rejected ? K("webRejected", { n: w.rejected }) : ""),
+  inferNote: (i) => K("inferNote", { count: i.inferred }) + (i.rejected ? K("inferRejected", { n: i.rejected }) : "") + ".",
+  aiValue: (c) => K("aiValue", { pct: Math.round((c ?? 0) * 100) }),
 };
-const STR = pick({ en: STR_EN, ar: {
-  title: "مراجعة بيانات الشهادات",
-  checking: "بنشوف الشهادات محتاجة إيه…",
-  failed: "مراجعة البيانات فشلت:",
-  retry: "جرّب تاني",
-  summary: (s) => `${s.certificates} شهادة · ${s.values} قيمة · ${s.ready} جاهزة · ${s.needsConfirmation} محتاجة تأكيد · ${s.missing} ناقصة${s.missingOptional ? ` · ${s.missingOptional} ناقصة (اختيارية)` : ""}`,
-  allSet: "كل القيم المطلوبة جاهزة.",
-  skip: "تخطّي",
-  nothingYet: "مفيش حاجة تتراجع لسه — مفيش سطر متطابق مع منتج عليه قالب شغّال.",
-  aiFound: (a) => `الذكاء الاصطناعي دوّر على ${a.asked} قيمة ناقصة في الفاتورة وبيانات منتجاتك ولقى ${a.filled}، كل واحدة بإثبات السيرفر راجعه كلمة بكلمة.`,
-  aiRefused: (n) => `${n} إجابة من الذكاء الاصطناعي اترفضت لأن الإثبات ماطابقش.`,
-  aiOff: (reason) => withNextStep(reason, "املى القيم الناقصة بالإيد."),
-  showAll: "اعرض كل القيم",
-  showOpen: "اللي محتاج نظرة بس",
-  certHeader: (c) => `${c.typeCode || c.typeName || "شهادة"} · ${c.scope === "per_invoice" ? `الفاتورة كلها (السطور ${c.lineNos.join("، ")})` : `سطر ${c.lineNos[0]} · ${c.productName || ""}${c.batchNo ? ` · ${c.batchNo}` : ""}`}`,
-  open: (n) => `${n} مفتوحة`,
-  accept: "اقبل",
-  reject: "ارفض",
-  edit: "عدّل",
-  override: "غيّر",
-  reset: "رجّع",
-  save: "احفظ",
-  cancel: "إلغاء",
-  forLine: "استخدمها لكل شهادات السطر ده",
-  synonym: "ضيفها كاسم تاني لكل المنتجات",
-  synonymDone: "اتضاف الاسم التاني — المفتاح ده بيتقرا لكل منتج من دلوقتي.",
-  unassigned: (u) => `السطر ${u.lineNo}${u.name ? ` (${u.name})` : ""} مالوش شهادة، فمفيش حاجة بتتراجع له.`,
-  status: { resolved: "جاهزة", resolved_ai: "ذكاء اصطناعي ✓", provided: "اتكتبت", needs_confirmation: "أكّد", missing: "ناقصة", missingOptional: "ناقصة (اختيارية)", not_applicable: "مش مطلوبة", inferred: "مستنتجة — أكّد", web_found: "من النت — أكّد", catalogue_found: "من الكتالوج — أكّد", reused: "من ملف المنتج" },
-  catalogueBadge: (p) => `الكتالوج ص ${p.page}${p.section ? ` · ${p.section.toLowerCase()}` : ""}`,
-  catalogueOpen: "افتح الصفحة",
-  estimatedBadge: "تقدير",
-  estimatedHint: "القيمة دي متقدّرة، مش مكتوبة في مصدر — أكّدها قبل ما تتحط على شهادة.",
-  confirmOnProduct: "أكّدها على المنتج",
-  confirmHint: "امضي على التقدير ده في المنتج، عشان الفاتورة الجاية تستخدمه من غير ما تسأل",
-  inferredBadge: "مستنتجة من بيانات المنتج",
-  webBadge: "من النت",
-  derivation: { quoted: "مكتوبة في المنتج", unit_conversion: "تحويل وحدات", select_from_list: "مختارة من قائمة", join_list: "متجمّعة من قائمة", normalize_case: "حالة الحروف" },
-  saveToProduct: "احفظها في المنتج",
-  saveHint: "اكتب القيمة المأكدة في المنتج، عشان الفاتورة الجاية مش محتاجة تدوّر عليها",
-  webLookup: (n) => `دوّر على النت عن ${n} معلومة منتج ناقصة`,
-  webHint: "معلومات المنتج بس (أبدًا نتايج تحليل أو تشغيلات أو تواريخ أو كميات). كل قيمة بلينك واقتباس السيرفر راجعه في الصفحة.",
-  webDone: (w) => (w.unavailable ? withNextStep(w.reason, "اكتب القيم الناقصة بالإيد.") : `البحث على النت: لقينا ${w.found}${w.fromCache ? ` (${w.fromCache} من بحث قبل كده)` : ""}${w.rejected ? `، ${w.rejected} اترفضت (الصفحة ماطابقتش)` : ""}`),
-  inferNote: (i) => `${i.inferred} قيمة اتستنتجت من بيانات منتجاتك${i.rejected ? ` (${i.rejected} اترفضت — مش متثبتة من المنتج)` : ""}.`,
-  source: { manual: "كتبتها إنت", static: "نص ثابت", today: "تاريخ الإصدار", template: "تركيبة" },
-  aiValue: (c) => `ذكاء اصطناعي ${Math.round((c ?? 0) * 100)}%`,
-  placeholder: "اكتب القيمة",
-} });
 const OPEN = new Set(["missing", "needs_confirmation", "inferred", "web_found", "catalogue_found"]);
 const AWAITING = new Set(["needs_confirmation", "inferred", "web_found", "catalogue_found"]);
 // "reused" names where code took it from (item 3 profile, item 4 batch result, the specification)
@@ -123,8 +46,8 @@ const statusLabel = (need) => {
   if (need.status === "missing" && !need.required) return STR.status.missingOptional;
   if (need.status !== "reused") return STR.status[need.status] || need.status;
   const p = need.provenance || {};
-  if (p.kind === "batch_result") return p.source === "supplier_coa" ? `supplier COA p.${p.page ?? "?"} · batch ${p.batchNo}` : `from batch ${p.batchNo}${p.fromInvoiceNumber ? ` (invoice ${p.fromInvoiceNumber})` : ""}`;
-  if (p.kind === "spec_instead") return "prints the specification";
+  if (p.kind === "batch_result") return p.source === "supplier_coa" ? t("dataCheckPanel.supplierCoaPBatch", { v: p.page ?? "?", batchNo: p.batchNo }) : t("dataCheckPanel.fromBatch", { batchNo: p.batchNo }) + (p.fromInvoiceNumber ? t("dataCheckPanel.fromInvoice", { n: p.fromInvoiceNumber }) : "");
+  if (p.kind === "spec_instead") return t("dataCheckPanel.printsTheSpecification");
   return STR.status.reused;
 };
 
@@ -141,7 +64,7 @@ const STATUS_STYLE = {
   not_applicable: "bg-gray-100 text-gray-500",
 };
 
-const ROOTS = { product: "Product", item: "Invoice line", invoice: "Invoice", company: "Company", brand: "Brand" };
+const ROOTS = { product: t("dataCheckPanel.product"), item: t("dataCheckPanel.invoiceLine"), invoice: t("dataCheckPanel.invoice"), company: t("dataCheckPanel.company"), brand: t("dataCheckPanel.brand") };
 /** product.specifications.values["pH"] → "Product › Specifications › pH" */
 function pathLabel(path) {
   if (!path) return "";
@@ -163,8 +86,8 @@ function SourceChip({ need, textContent }) {
   if (p.kind === "profile") {
     return (
       <span className="block space-y-0.5" data-testid="from-profile">
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 px-2 py-0.5 text-xs font-medium" title="Proven or confirmed on an earlier invoice — no AI was asked">
-          <Check className="w-3 h-3" /> Product profile{p.confirmedByUserId ? " · confirmed" : ""}{p.estimated ? " · was an estimate" : ""}
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 px-2 py-0.5 text-xs font-medium" title={t("dataCheckPanel.provenOrConfirmedOnAn")}>
+          <Check className="w-3 h-3" />{" "}{t("dataCheckPanel.productProfile")}{p.confirmedByUserId ? t("dataCheckPanel.confirmed") : ""}{p.estimated ? t("dataCheckPanel.wasAnEstimate") : ""}
         </span>
         {p.from && <SourceChip need={{ provenance: p.from }} textContent={null} />}
       </span>
@@ -174,10 +97,10 @@ function SourceChip({ need, textContent }) {
     <span className="block space-y-0.5">
       {p.estimated && (
         <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 px-2 py-0.5 text-xs font-semibold" data-testid="estimate" title={p.estimateBasis || ""}>
-          <AlertTriangle className="w-3 h-3" /> Estimated{p.estimateBasis ? `: ${p.estimateBasis}` : ""}
+          <AlertTriangle className="w-3 h-3" />{" "}{t("dataCheckPanel.estimated")}{p.estimateBasis ? `: ${p.estimateBasis}` : ""}
         </span>
       )}
-      {p.filled === "direct" && <span className="text-[11px] text-emerald-700">filled directly — quoted verbatim</span>}
+      {p.filled === "direct" && <span className="text-[11px] text-emerald-700">{t("dataCheckPanel.filledDirectlyQuotedVerbatim")}</span>}
       <EvidenceChip need={need} textContent={textContent} />
     </span>
   );
@@ -189,7 +112,7 @@ function EvidenceChip({ need, textContent }) {
   if (p.tier === "C") {
     return (
       <span className="block space-y-0.5" data-testid="tier-c">
-        <button type="button" onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-teal-50 text-teal-800 px-2 py-0.5 text-xs font-medium hover:bg-teal-100 text-left">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-teal-50 text-teal-800 px-2 py-0.5 text-xs font-medium hover:bg-teal-100 text-start">
           <BookOpen className="w-3 h-3" /> {STR.catalogueBadge(p)}: “{String(p.quote || "").replace(/\s+/g, " ").slice(0, 80)}{String(p.quote || "").length > 80 ? "…" : ""}”
         </button>
         {open && (
@@ -257,9 +180,7 @@ function EvidenceChip({ need, textContent }) {
     const ctx = textContent && Number.isInteger(p.start) ? { before: textContent.slice(Math.max(0, p.start - 160), p.start), hit: textContent.slice(p.start, p.end), after: textContent.slice(p.end, p.end + 160) } : null;
     return (
       <span className="block">
-        <button type="button" onClick={() => setOpen((v) => !v)} className="rounded-full bg-violet-50 text-violet-800 px-2 py-0.5 text-xs hover:bg-violet-100 text-left" title="Show it in the invoice text">
-          Invoice p.{p.page}: “{p.quote}”
-        </button>
+        <button type="button" onClick={() => setOpen((v) => !v)} className="rounded-full bg-violet-50 text-violet-800 px-2 py-0.5 text-xs hover:bg-violet-100 text-start" title={t("dataCheckPanel.showItInTheInvoice")}>{t("dataCheckPanel.invoiceP", { page: p.page, quote: p.quote })}</button>
         {open && ctx && (
           <span className="mt-1 block whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 p-2 font-mono text-[11px] text-gray-600" data-testid="evidence-context">
             …{ctx.before}
@@ -296,7 +217,7 @@ function NeedRow({ need, editable, canSynonym, textContent, onDecide, onSynonym 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium text-gray-800 min-w-36">
           {need.label}
-          {!need.required && <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>}
+          {!need.required && <span className="ms-1 text-xs font-normal text-gray-400">{t("dataCheckPanel.optional")}</span>}
         </span>
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${need.status === "missing" && !need.required ? "bg-amber-50 text-amber-800" : STATUS_STYLE[need.status] || ""}`}>{statusLabel(need)}</span>
         {ai && <span className="text-[11px] text-violet-700 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {STR.aiValue(need.provenance.confidence)}</span>}
@@ -384,10 +305,10 @@ function CertificateGroup({ cert, showAll, ...rowProps }) {
   if (!showAll && !rows.length) return null;
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden" data-cert={cert.planKey}>
-      <button type="button" onClick={() => setExpanded((v) => !v)} className="w-full flex items-center gap-2 px-3 py-2 bg-gray-50 text-left text-sm">
+      <button type="button" onClick={() => setExpanded((v) => !v)} className="w-full flex items-center gap-2 px-3 py-2 bg-gray-50 text-start text-sm">
         {expanded ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
         <span className="font-medium text-gray-800">{STR.certHeader(cert)}</span>
-        {open > 0 && <span className="ml-auto rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-semibold">{STR.open(open)}</span>}
+        {open > 0 && <span className="ms-auto rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-semibold">{STR.open(open)}</span>}
       </button>
       {expanded && (
         <div className="divide-y divide-gray-100">
@@ -504,20 +425,17 @@ export default function DataCheckPanel({ scope, invoiceId, refreshKey, editable,
           ) : (
             <div className={`rounded-lg px-3 py-2 text-sm ${s.blocking ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-800"}`} data-testid="data-check-summary">
               {STR.summary(s)}
-              {!s.blocking && <span className="ml-2 font-semibold">{STR.allSet}</span>}
+              {!s.blocking && <span className="ms-2 font-semibold">{STR.allSet}</span>}
             </div>
           )}
           {editable && s.needsConfirmation > 0 && (
             <div className="flex flex-wrap items-center gap-3 rounded-lg border border-orange-100 bg-orange-50/50 px-3 py-2" data-testid="confirm-all-bar">
               <span className="text-xs text-orange-900">
-                {s.needsConfirmation} value{s.needsConfirmation === 1 ? "" : "s"} wait{s.needsConfirmation === 1 ? "s" : ""} for you{s.estimated ? ` (${s.estimated} estimated)` : ""}. Confirmed values are kept on the product — the next invoice won't ask again.
-              </span>
-              <button type="button" onClick={() => decide([{ action: "confirm_all" }])} className="ml-auto rounded-lg bg-orange-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-orange-700" data-testid="confirm-all">
-                Confirm all {s.needsConfirmation}
-              </button>
+                {t("dataCheckPanel.waitForYou", { count: s.needsConfirmation })}{s.estimated ? t("dataCheckPanel.estimated2", { estimated: s.estimated }) : ""}{t("dataCheckPanel.confirmedValuesAreKeptOn")}</span>
+              <button type="button" onClick={() => decide([{ action: "confirm_all" }])} className="ms-auto rounded-lg bg-orange-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-orange-700" data-testid="confirm-all">{t("dataCheckPanel.confirmAll", { needsConfirmation: s.needsConfirmation })}</button>
             </div>
           )}
-          {s.reused > 0 && <p className="text-xs text-emerald-700">{s.reused} value{s.reused === 1 ? "" : "s"} from the products' profiles (no AI asked).</p>}
+          {s.reused > 0 && <p className="text-xs text-emerald-700">{t("dataCheckPanel.reused", { count: s.reused })}</p>}
           {ai?.unavailable && <p className="text-xs text-amber-800 bg-amber-50 rounded-lg px-3 py-2">{STR.aiOff(ai.reason)}</p>}
           {ai?.used && (
             <p className="text-xs text-gray-600 flex items-start gap-1.5">

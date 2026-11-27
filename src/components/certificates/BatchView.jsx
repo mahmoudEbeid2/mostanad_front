@@ -8,62 +8,25 @@ import Spinner from "../../ui/Spinner";
 import CertificateCard from "./CertificateCard";
 import useTaskProgress from "../../hooks/useTaskProgress";
 import { downloadBatchZip, exportBatchZip, getBatch, waitForTask } from "../../services/apiCertificatesV2";
-import { pick } from "../../i18n/lang";
+import { strings, t } from "../../i18n";
 
 // One generation run (plan §10.2, §13.5; mockup B4): progress, counts, the
 // certificate cards and the lines/types no active template covered.
-const STR_EN = {
-  running: "Filling and rendering certificates…",
-  queued: "Waiting for the renderer…",
-  done: "All certificates are rendered",
-  partial: "Finished — some certificates failed",
-  failed: "Generation failed",
-  of: (d, n) => `${d} of ${n}`,
-  ready: "ready",
-  attention: "needs attention",
-  rendering: "rendering",
-  failedCount: "failed",
+
+const STR = {
+  ...strings("batchView"),
   gap: (g, country) => (
     <>
       <b>
-        Line {g.lineNo}
+        {t("batchView.gapLine", { lineNo: g.lineNo })}
         {g.name ? ` (${g.name})` : ""}
       </b>{" "}
-      got no {g.typeCode} certificate — there’s no active {g.typeCode} template
-      {g.brandName ? ` for ${g.brandName}` : ""}
-      {country ? ` in ${country}` : ""}.
+      {t("batchView.gapText", { type: g.typeCode })}
+      {g.brandName ? t("batchView.gapForBrand", { brand: g.brandName }) : ""}
+      {country ? t("batchView.gapInCountry", { country }) : ""}.
     </>
   ),
-  create: "Create the template",
-  zip: "Download all (ZIP)",
-  progress: "Certificates rendered",
 };
-const STR = pick({ en: STR_EN, ar: {
-  running: "بنملى ونطلّع الشهادات…",
-  queued: "مستنيين الطابعة…",
-  done: "كل الشهادات خلصت",
-  partial: "خلصت — بس فيه شهادات فشلت",
-  failed: "معرفناش نطلّع الشهادات",
-  of: (d, n) => `${d} من ${n}`,
-  ready: "جاهزة",
-  attention: "محتاجة نظرة",
-  rendering: "بتتعمل",
-  failedCount: "فشلت",
-  gap: (g, country) => (
-    <>
-      <b>
-        السطر {g.lineNo}
-        {g.name ? ` (${g.name})` : ""}
-      </b>{" "}
-      ماطلعلوش شهادة {g.typeCode} — مفيش قالب {g.typeCode} شغّال
-      {g.brandName ? ` لـ ${g.brandName}` : ""}
-      {country ? ` في ${country}` : ""}.
-    </>
-  ),
-  create: "اعمل القالب",
-  zip: "نزّل الكل (ZIP)",
-  progress: "الشهادات اللي خلصت",
-} });
 const RUNNING = new Set(["queued", "running"]);
 
 export default function BatchView({ scope, batchId, taskId, onFinished, canExport = false }) {
@@ -72,7 +35,7 @@ export default function BatchView({ scope, batchId, taskId, onFinished, canExpor
   const [error, setError] = useState(null);
   const countryName = useMemo(() => {
     const list = countryList();
-    return (code) => (code ? list.getLabel(code) || code : null);
+    return (code) => (code ? countryName(code, list.getLabel(code)) : null);
   }, []);
 
   const load = useCallback(async () => {
@@ -137,7 +100,7 @@ export default function BatchView({ scope, batchId, taskId, onFinished, canExpor
           <h2 className="font-semibold text-gray-900" aria-live="polite">
             {heading}
           </h2>
-          <span className="ml-auto font-semibold text-gray-900">{STR.of(done, live.planned)}</span>
+          <span className="ms-auto font-semibold text-gray-900">{STR.of(done, live.planned)}</span>
           {canExport && !running && live.rendered > 0 && (
             <Button variant="secondary" className="!py-2 text-sm" isLoading={zipping} onClick={downloadZip}>
               <Download className="w-4 h-4" /> {STR.zip}
@@ -181,7 +144,7 @@ export default function BatchView({ scope, batchId, taskId, onFinished, canExpor
       {gaps.map((g) => (
         <div key={`${g.invoiceItemId}:${g.certificateTypeId}:${g.scope}`} className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <span>{STR.gap(g, countryName(g.country))}</span>
-          <Link to={`/certificates/templates/new?certificateTypeId=${g.certificateTypeId}`} className="ml-auto rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-800 hover:bg-gray-50">
+          <Link to={`/certificates/templates/new?certificateTypeId=${g.certificateTypeId}`} className="ms-auto rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-800 hover:bg-gray-50">
             {STR.create}
           </Link>
         </div>

@@ -9,6 +9,7 @@ import { AssistantStatusProvider } from "../context/AssistantStatusContext";
 import { SidebarProvider } from "../context/SidebarContext";
 import { useSidebar, SIDEBAR_ID, shortcutLabel } from "../context/sidebarState";
 import AssistantFab from "../components/assistant/AssistantFab";
+import { t } from "../i18n";
 
 export default function AppLayout() {
   return (
@@ -29,7 +30,7 @@ function Shell() {
   const { visible, isMobile, toggle, closeMobile, openerRef } = useSidebar();
   // the assistant (design E1) is a full-bleed page: its own columns, no padding
   const fullBleed = useLocation().pathname.startsWith("/assistant");
-  const offset = !isMobile && visible ? "ml-64" : "ml-14";
+  const offset = !isMobile && visible ? "ms-64" : "ms-14";
   return (
     <div className="flex bg-gray-50 min-h-screen text-gray-900 font-sans">
       <NotificationManager />
@@ -40,12 +41,12 @@ function Shell() {
           ref={openerRef}
           type="button"
           onClick={toggle}
-          aria-label="Show sidebar"
+          aria-label={t("appLayout.showSidebar")}
           aria-expanded={false}
           aria-controls={SIDEBAR_ID}
-          title={`Show sidebar (${shortcutLabel()})`}
+          title={t("appLayout.showSidebar2", { shortcutLabel: shortcutLabel() })}
           data-testid="sidebar-show"
-          className="fixed left-2.5 top-3 z-40 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="fixed start-2.5 top-3 z-40 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         >
           <PanelLeftOpen className="h-4.5 w-4.5" aria-hidden="true" />
         </button>

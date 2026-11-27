@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
+import { strings } from "../../i18n";
 
 // Field marking on the sanitized design (plan §13.4 step 2). Runs against the
 // sandboxed DocumentFrame document (read-only: nothing is written into it
@@ -13,7 +14,7 @@ import { Plus } from "lucide-react";
 // Offsets are character offsets in each line's textContent — the same string
 // the backend validates against (§8.2). No geometry is computed or saved here (D11).
 
-const STR = { make: "Make field", makeN: (n) => `Make fields (${n})`, enter: "Enter" };
+const STR = strings("fieldMarker");
 // mockup A4: marked fields light blue + underline, the open one stronger, the pending selection solid light blue
 const HL_STYLE = `::highlight(cert-field){background-color:rgba(37,99,235,.14);text-decoration:underline 1.5px #2563eb}
 ::highlight(cert-field-active){background-color:rgba(37,99,235,.32);text-decoration:underline 2px #1d4ed8}

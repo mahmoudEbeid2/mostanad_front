@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import io from "socket.io-client";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
+import { t } from "../i18n";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
@@ -26,12 +27,12 @@ export default function NotificationManager() {
       if (window.location.pathname === '/processing-bulk') return;
       
       if (data.status === "completed") {
-        toast.success(`Background Task Finished: ${data.message || 'Processing complete'}`, {
+        toast.success(t("notificationManager.finished", { message: data.message || t("notificationManager.processingComplete") }), {
           duration: 6000,
           position: "bottom-right",
         });
       } else if (data.status === "failed") {
-        toast.error(`Background Task Failed: ${data.error || 'AI extraction failed'}`, {
+        toast.error(t("notificationManager.failed", { message: data.error || t("notificationManager.extractionFailed") }), {
           duration: 8000,
           position: "bottom-right",
         });

@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { Plus, X } from "lucide-react";
 import ActionCard from "./ActionCard";
 import SourceBadge from "./SourceBadge";
-import { isAr } from "../../i18n/lang";
+import { isAr, t } from "../../i18n";
 
 const L = (x, key) => (isAr && x?.[`${key}Ar`]) || x?.[key];
 
@@ -13,12 +13,12 @@ const L = (x, key) => (isAr && x?.[`${key}Ar`]) || x?.[key];
 // until Run is pressed.
 
 const STATUS = {
-  collecting: ["Collecting", "bg-amber-50 text-amber-800"],
-  ready: ["Ready for your OK", "bg-blue-50 text-blue-700"],
-  confirmed: ["Running", "bg-blue-50 text-blue-700"],
-  executed: ["Done", "bg-green-50 text-green-700"],
-  cancelled: ["Cancelled", "bg-gray-100 text-gray-600"],
-  expired: ["Expired", "bg-gray-100 text-gray-600"],
+  collecting: [t("draftCard.collecting"), "bg-amber-50 text-amber-800"],
+  ready: [t("draftCard.readyForYourOk"), "bg-blue-50 text-blue-700"],
+  confirmed: [t("draftCard.running"), "bg-blue-50 text-blue-700"],
+  executed: [t("draftCard.done"), "bg-green-50 text-green-700"],
+  cancelled: [t("draftCard.cancelled"), "bg-gray-100 text-gray-600"],
+  expired: [t("draftCard.expired"), "bg-gray-100 text-gray-600"],
 };
 
 const input = "w-full rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-200";
@@ -53,12 +53,12 @@ function FieldInput({ field, value, onChange }) {
             {o.label}
           </button>
         ))}
-        {!(field.options || []).length && <span className="text-xs text-gray-500">Tell the assistant in the chat.</span>}
+        {!(field.options || []).length && <span className="text-xs text-gray-500">{t("draftCard.tellTheAssistantInThe")}</span>}
       </div>
     );
   }
   if (field.type === "ingredients" || field.type === "changes") {
-    const [a, b, la, lb] = field.type === "ingredients" ? ["name", "concentration", "Ingredient", "Concentration"] : ["field", "value", "Field", "New value"];
+    const [a, b, la, lb] = field.type === "ingredients" ? ["name", "concentration", t("draftCard.ingredient"), t("draftCard.concentration2")] : ["field", "value", t("draftCard.field2"), t("draftCard.newValue")];
     const rows = value?.length ? value : [{ [a]: "", [b]: "" }];
     const set = (i, k, v) => onChange(rows.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
     return (
@@ -80,22 +80,21 @@ function FieldInput({ field, value, onChange }) {
             )}
             <input aria-label={`${lb} ${i + 1}`} placeholder={lb} value={r[b] || ""} onChange={(e) => set(i, b, e.target.value)} dir="auto" className={input} />
             {rows.length > 1 && (
-              <button type="button" aria-label={`Remove row ${i + 1}`} onClick={() => onChange(rows.filter((_, j) => j !== i))} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100">
+              <button type="button" aria-label={t("draftCard.removeRow", { v: i + 1 })} onClick={() => onChange(rows.filter((_, j) => j !== i))} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100">
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
         ))}
         <button type="button" onClick={() => onChange([...rows, { [a]: "", [b]: "" }])} className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
-          <Plus className="h-3 w-3" /> Add a row
-        </button>
+          <Plus className="h-3 w-3" />{" "}{t("draftCard.addARow")}</button>
       </div>
     );
   }
-  if (field.type === "list") return <textarea aria-label={field.label} rows={3} placeholder={isAr ? "واحد في كل سطر" : "One per line"} value={(value || []).join("\n")} onChange={(e) => onChange(e.target.value.split("\n"))} dir="auto" className={input} />;
+  if (field.type === "list") return <textarea aria-label={field.label} rows={3} placeholder={isAr ? t("draftCard.onePerLine") : t("draftCard.onePerLine")} value={(value || []).join("\n")} onChange={(e) => onChange(e.target.value.split("\n"))} dir="auto" className={input} />;
   if (field.type === "boolean") return <input type="checkbox" aria-label={field.label} checked={!!value} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4" />;
   if (field.type === "text" || field.type === "number") return <input aria-label={field.label} type={field.type === "number" ? "number" : "text"} value={value ?? ""} onChange={(e) => onChange(field.type === "number" ? (e.target.value === "" ? undefined : Number(e.target.value)) : e.target.value)} dir="auto" className={input} />;
-  return <span className="text-xs text-gray-500">Tell the assistant in the chat.</span>;
+  return <span className="text-xs text-gray-500">{t("draftCard.tellTheAssistantInThe")}</span>;
 }
 
 /** What the form sends: empty rows and blank text left out. */
@@ -113,9 +112,9 @@ function cleaned(field, v) {
 }
 
 const LINE_ACTIONS = [
-  ["match", "ربط بالمنتج / Match"],
-  ["create", "منتج جديد / New product"],
-  ["ignore", "تجاهل / Ignore"],
+  ["match", t("draftCard.match")],
+  ["create", t("draftCard.newProduct")],
+  ["ignore", t("draftCard.ignore")],
 ];
 
 /** match_invoice_lines: change what happens to each line before pressing the one button. */
@@ -134,12 +133,12 @@ function LinesEditor({ draft, onSubmit }) {
   };
   return (
     <details className="rounded-lg border border-gray-200 px-3 py-2 text-[13px]" data-testid="lines-editor">
-      <summary className="cursor-pointer font-semibold text-gray-700">تعديل السطور / Change lines</summary>
+      <summary className="cursor-pointer font-semibold text-gray-700">{t("draftCard.changeLines")}</summary>
       <div className="mt-2 flex flex-col gap-1.5">
         {cur.map((r, i) => (
           <label key={r.lineNo} className="flex items-center gap-2">
             <span className="w-16 flex-none text-gray-500">#{r.lineNo}</span>
-            <select value={r.action} onChange={(e) => setRows(cur.map((x, j) => (j === i ? { ...x, action: e.target.value } : x)))} className={input} aria-label={`Line ${r.lineNo}`}>
+            <select value={r.action} onChange={(e) => setRows(cur.map((x, j) => (j === i ? { ...x, action: e.target.value } : x)))} className={input} aria-label={t("draftCard.line", { lineNo: r.lineNo })}>
               {LINE_ACTIONS.filter(([k]) => k !== "match" || r.productId).map(([k, l]) => (
                 <option key={k} value={k}>
                   {l}
@@ -149,9 +148,7 @@ function LinesEditor({ draft, onSubmit }) {
           </label>
         ))}
         {rows && (
-          <button type="button" onClick={save} className="min-h-8 w-fit rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white">
-            حفظ / Save
-          </button>
+          <button type="button" onClick={save} className="min-h-8 w-fit rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white">{t("draftCard.save")}</button>
         )}
       </div>
     </details>
@@ -172,8 +169,8 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
     const out = Object.fromEntries(ask.map((f) => [f.name, cleaned(f, values[f.name])]).filter(([, v]) => v !== undefined));
     // a row with a value but no field (or a field the operation doesn't have) is said, never dropped silently
     const halfRow = ask.find((f) => f.type === "changes" && (values[f.name] || []).some((r) => String(r.value || "").trim() && (!r.field || (f.fieldOptions && !f.fieldOptions.some((o) => o.value === r.field)))));
-    if (halfRow) return toast.error("اختر الحقل لكل قيمة / Pick the field for each value");
-    if (!Object.keys(out).length) return toast.error("املأ حقلاً واحداً على الأقل / Fill in at least one field");
+    if (halfRow) return toast.error(t("draftCard.pickTheFieldForEach"));
+    if (!Object.keys(out).length) return toast.error(t("draftCard.fillInAtLeastOne"));
     setBusy(true);
     try {
       await onSubmit(draft.id, out);
@@ -186,15 +183,13 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
   };
 
   return (
-    <div role="group" aria-label={`Operation: ${draft.title}`} data-testid="draft-card" data-status={draft.status} className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3.5">
+    <div role="group" aria-label={t("draftCard.operation", { title: draft.title })} data-testid="draft-card" data-status={draft.status} className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3.5">
       <div className="flex items-center gap-2">
         <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${statusClass}`}>{statusLabel}</span>
         <span className="min-w-0 flex-1 truncate text-sm font-bold" dir="auto">{L(draft, "title")}</span>
         {draft.companyName && <span className="truncate text-xs text-gray-500">{draft.companyName}</span>}
         {open && (
-          <button type="button" onClick={() => onCancel(draft.id)} data-testid="draft-cancel" className="text-xs font-semibold text-gray-500 hover:text-gray-900 hover:underline">
-            Cancel
-          </button>
+          <button type="button" onClick={() => onCancel(draft.id)} data-testid="draft-cancel" className="text-xs font-semibold text-gray-500 hover:text-gray-900 hover:underline">{t("draftCard.cancel")}</button>
         )}
       </div>
 
@@ -218,7 +213,7 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
 
       {(draft.blockedBy || []).length > 0 && draft.status === "collecting" && (
         <div className="flex flex-col gap-1.5" data-testid="draft-blocked">
-          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">First</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t("draftCard.first")}</div>
           {draft.blockedBy.map((b) => (
             <div key={b.key} className="flex items-start justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
               <div className="min-w-0 text-[13px]">
@@ -226,22 +221,20 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
                 <div className="text-amber-800" dir="auto">{b.detail}</div>
               </div>
               {b.fix?.length > 0 ? (
-                <button type="button" onClick={() => onStep(draft.id, b.key)} data-testid="draft-step" className="min-h-8 flex-none rounded-xl border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-900 hover:bg-amber-100">
-                  Do this step
-                </button>
+                <button type="button" onClick={() => onStep(draft.id, b.key)} data-testid="draft-step" className="min-h-8 flex-none rounded-xl border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-900 hover:bg-amber-100">{t("draftCard.doThisStep")}</button>
               ) : (
-                <span className="flex-none text-xs text-amber-800">On its page</span>
+                <span className="flex-none text-xs text-amber-800">{t("draftCard.onItsPage")}</span>
               )}
             </div>
           ))}
         </div>
       )}
 
-      {toFind.length > 0 && <div className="text-xs text-gray-500">The assistant is looking up: {toFind.map((f) => f.label).join(", ")}</div>}
+      {toFind.length > 0 && <div className="text-xs text-gray-500">{t("draftCard.theAssistantIsLookingUp")}{" "}{toFind.map((f) => f.label).join(", ")}</div>}
 
       {ask.length > 0 && (
         <form onSubmit={submit} className="flex flex-col gap-2.5 rounded-lg border border-blue-200 bg-blue-50/40 px-3 py-3" data-testid="draft-form">
-          <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">Needed from you</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">{t("draftCard.neededFromYou")}</div>
           {ask.map((f) => (
             <div key={f.name} role="group" aria-labelledby={`draft-${draft.id}-${f.name}`} className="flex flex-col gap-1 text-[13px]">
               <span id={`draft-${draft.id}-${f.name}`} className="font-semibold text-gray-800">{L(f, "label")}</span>
@@ -250,7 +243,7 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
             </div>
           ))}
           <button type="submit" disabled={busy} data-testid="draft-submit" className="min-h-9 w-fit rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
-            {busy ? "Saving…" : "Continue"}
+            {busy ? t("draftCard.saving") : t("draftCard.continue")}
           </button>
         </form>
       )}
@@ -262,11 +255,9 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
       )}
       {draft.status === "expired" && (
         <div className="flex items-center justify-between gap-3 text-[13px] text-gray-600" data-testid="draft-expired">
-          <span dir="auto">{draft.error || "Expired"}</span>
+          <span dir="auto">{draft.error || t("draftCard.expired")}</span>
           {onRefresh && (
-            <button type="button" onClick={() => onRefresh(draft.id)} data-testid="draft-refresh" className="min-h-8 flex-none rounded-xl border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-800 hover:bg-gray-50">
-              تحديث / Refresh
-            </button>
+            <button type="button" onClick={() => onRefresh(draft.id)} data-testid="draft-refresh" className="min-h-8 flex-none rounded-xl border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-800 hover:bg-gray-50">{t("draftCard.refresh")}</button>
           )}
         </div>
       )}
@@ -276,7 +267,7 @@ export default function DraftCard({ draft, onSubmit, onCancel, onStep, onRefresh
       {draft.tool === "match_invoice_lines" && draft.status === "ready" && draft.action?.status === "pending" && <LinesEditor draft={draft} onSubmit={onSubmit} />}
       {draft.costUsd !== null && draft.costUsd !== undefined && draft.aiCalls > 0 && (
         <div className="text-[11px] text-gray-500">
-          {draft.aiCalls} AI call{draft.aiCalls === 1 ? "" : "s"} · ${draft.costUsd.toFixed(4)}
+          {t("draftCard.aiCalls", { count: draft.aiCalls })} · ${draft.costUsd.toFixed(4)}
         </div>
       )}
     </div>

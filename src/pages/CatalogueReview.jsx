@@ -31,6 +31,7 @@ import {
   applyCatalogueBlockDiff,
   applyCatalogueVersionDiff,
 } from "../services/apiCatalogues";
+import { fmtNum, strings, t } from "../i18n";
 
 // /catalogues/versions/:id/review (backend plan.md §15.3 steps 6–7, A6.4): the PDF
 // page beside the extracted record; picking a field highlights its quote on the
@@ -38,77 +39,33 @@ import {
 // apart as "Estimated", typed values "manual"); a block matching an existing
 // product is left for the re-upload diff. Bulk accept takes only unflagged blocks.
 const STR = {
-  back: "Catalogue",
-  title: "Review",
-  counts: (c) => `${c.products} products · ${c.unflagged} ready · ${c.flagged} to check · ${c.existing} already exist · ${c.applied || 0} created · ${c.rejected || 0} rejected`,
-  bulk: (n) => `Accept ${n} unflagged`,
-  bulkDone: (r) => `${r.created} products created · skipped ${r.skipped.flagged} flagged, ${r.skipped.existing} existing`,
-  convention: "This catalogue prints numbers like “200.000”. How should “.” + three digits be read?",
-  thousands: "Thousands (200.000 = 200 000)",
-  decimal: "Decimal (200.000 = 200)",
-  conventionSet: (c) => `“.” + three digits read as ${c.dotGroup3} (confirmed)`,
-  filters: { todo: "To review", ready: "Ready", flagged: "Flagged", existing: "Existing", done: "Decided", all: "All" },
-  noExtraction: (n) => `${n} block(s) not extracted yet`,
-  extract: "Extract them",
-  extracting: "Reading the blocks…",
-  page: (n) => `Page ${n}`,
-  pickBlock: "Pick a block on the left.",
-  notExtracted: "Not extracted yet — extract it (top of the list) to see its record.",
-  manualEntry: "Not read by AI — type what the page prints (left). Nothing is filled in for you; every value is saved as typed by you.",
-  extractionFailed: (e) => `Products weren't read automatically. ${e}`,
-  extractionFailedHint: "Enter the products by hand — open a block, type its name and the printed values, then accept — or extract again once AI is available.",
-  needName: "Type the product name first",
-  compositionManual: "Amounts are only taken from the catalogue as printed, read with their quotes — they can't be typed here. Accept the product, then add its ingredients under Products → Edit → Composition.",
-  compositionNone: "No composition was found on this page.",
-  accept: "Accept → create product",
-  reject: "Reject",
-  existing: (m) => (m.productId ? `“${m.name}” already exists (same ${m.by}) — its changes go through the re-upload diff, not here.` : `Several existing products match by ${m.by} — resolve it in the re-upload diff.`),
-  catalogue: (p) => `Catalogue · p.${p}`,
-  estimated: "Estimated",
-  manual: "Typed",
-  basis: "Basis",
-  empty: "—",
-  category: "Category",
-  noCategory: "No category",
-  proposal: (p) => `Proposed: “${p}”`,
-  newCategory: "New category…",
-  newCategoryPrompt: "Name of the new category",
-  createCategory: "Create",
-  split: "Split…",
-  splitHint: "Click the first line of the second product.",
-  mergeNext: "Merge with next block",
-  save: "Save",
-  cancel: "Cancel",
-  ingredients: "Composition",
-  specifications: "Specifications",
-  flags: "To check",
-  diffBulk: "Apply all changes without conflicts",
-  diffSummary: (s) => `Against existing products: ${s.changed} changed (${s.changedFields} fields, ${s.conflicts} conflicts) · ${s.unchanged} unchanged · ${s.new} new · ${s.ambiguous} ambiguous`,
-  diffDone: (r) => `${r.applied} products updated/linked · ${r.changedFields} fields written · waiting: ${r.skipped.conflicts} with conflicts, ${r.skipped.flagged} flagged, ${r.skipped.ambiguous} ambiguous`,
-  removed: (n) => `${n} product(s) linked to this catalogue are not in this edition — they are kept, never deleted:`,
-  applied: "Applied",
-  created: "Product created",
-  viewProduct: "Open products",
+  ...strings("catalogueReview"),
+  counts: (c) => t("catalogueReview.counts", { products: c.products, ready: c.unflagged, flagged: c.flagged, existing: c.existing, created: c.applied || 0, rejected: c.rejected || 0 }),
+  bulkDone: (r) => t("catalogueReview.bulkDone", { created: r.created, flagged: r.skipped.flagged, existing: r.skipped.existing }),
+  conventionSet: (c) => t("catalogueReview.conventionSet", { value: c.dotGroup3 }),
+  existing: (m) => (m.productId ? t("catalogueReview.existsSame", { name: m.name, by: m.by }) : t("catalogueReview.existsSeveral", { by: m.by })),
+  diffSummary: (s) => t("catalogueReview.diffSummary", { changed: s.changed, fields: s.changedFields, conflicts: s.conflicts, unchanged: s.unchanged, new: s.new, ambiguous: s.ambiguous }),
+  diffDone: (r) => t("catalogueReview.diffDone", { applied: r.applied, fields: r.changedFields, conflicts: r.skipped.conflicts, flagged: r.skipped.flagged, ambiguous: r.skipped.ambiguous }),
 };
 
 const FIELDS = [
-  ["name", "Name"],
-  ["productCode", "Code"],
-  ["physicalForm", "Form"],
-  ["packaging", "Packaging"],
-  ["description", "Description"],
-  ["indications", "Indications"],
-  ["targetSpecies", "Target species", true],
-  ["dosage", "Dosage"],
-  ["mixingInstructions", "Mixing"],
-  ["withdrawalPeriod", "Withdrawal period"],
-  ["contraindications", "Contraindications"],
-  ["userSafety", "User safety", true],
-  ["storage", "Storage"],
-  ["appearance", "Appearance"],
-  ["registrationNumber", "Registration no."],
-  ["origin", "Origin"],
-  ["producer", "Producer"],
+  ["name", t("catalogueReview.name")],
+  ["productCode", t("catalogueReview.code")],
+  ["physicalForm", t("catalogueReview.form")],
+  ["packaging", t("catalogueReview.packaging")],
+  ["description", t("catalogueReview.description")],
+  ["indications", t("catalogueReview.indications")],
+  ["targetSpecies", t("catalogueReview.targetSpecies"), true],
+  ["dosage", t("catalogueReview.dosage")],
+  ["mixingInstructions", t("catalogueReview.mixing")],
+  ["withdrawalPeriod", t("catalogueReview.withdrawalPeriod")],
+  ["contraindications", t("catalogueReview.contraindications")],
+  ["userSafety", t("catalogueReview.userSafety"), true],
+  ["storage", t("catalogueReview.storage")],
+  ["appearance", t("catalogueReview.appearance")],
+  ["registrationNumber", t("catalogueReview.registrationNo")],
+  ["origin", t("catalogueReview.origin")],
+  ["producer", t("catalogueReview.producer")],
 ];
 
 const asText = (v) => (Array.isArray(v) ? v.join("\n") : v == null ? "" : String(v));
@@ -158,7 +115,7 @@ function FieldRow({ field, label, list, ex, block, active, onPick, onSave, edita
             <button
               type="button"
               className="text-gray-400 hover:text-gray-700"
-              title="Edit"
+              title={t("catalogueReview.edit")}
               onClick={(e) => {
                 e.stopPropagation();
                 setDraft(asText(v?.value));
@@ -172,7 +129,7 @@ function FieldRow({ field, label, list, ex, block, active, onPick, onSave, edita
       </div>
       {editing ? (
         <div className="mt-1 space-y-1" onClick={(e) => e.stopPropagation()}>
-          <textarea className="w-full text-sm border border-gray-300 rounded-md p-2" rows={list ? 3 : 2} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={list ? "One per line" : ""} />
+          <textarea className="w-full text-sm border border-gray-300 rounded-md p-2" rows={list ? 3 : 2} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={list ? t("catalogueReview.onePerLine") : ""} />
           <div className="flex gap-2">
             <button type="button" className="text-xs font-semibold text-blue-600" onClick={() => onSave(field, list ? draft.split("\n").map((s) => s.trim()).filter(Boolean) : draft.trim() || null).then(() => setEditing(false))}>
               {STR.save}
@@ -221,8 +178,8 @@ export default function CatalogueReview() {
     load();
   }, [load]);
   const task = useTaskProgress(jobId, {
-    onDone: (t) => {
-      if (t.status === "failed") toast.error(t.error || "Extraction failed");
+    onDone: (it) => {
+      if (it.status === "failed") toast.error(it.error || t("catalogueReview.extractionFailedShort"));
       setJobId(null);
       load();
     },
@@ -239,7 +196,7 @@ export default function CatalogueReview() {
         if (alive) setPdf(d);
         else d.destroy();
       })
-      .catch((err) => toast.error(`The catalogue PDF could not be opened: ${err.message}`));
+      .catch((err) => toast.error(t("catalogueReview.theCataloguePdfCouldNot", { message: err.message })));
     return () => {
       alive = false;
       doc?.destroy();
@@ -368,7 +325,7 @@ export default function CatalogueReview() {
       {diff?.removed?.length > 0 && (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-700">
           <p>{STR.removed(diff.removed.length)}</p>
-          <ul className="list-disc pl-5 mt-1">
+          <ul className="list-disc ps-5 mt-1">
             {diff.removed.map((p) => (
               <li key={p.productId}>
                 {p.name}
@@ -405,14 +362,14 @@ export default function CatalogueReview() {
               const dot = { ready: "bg-emerald-500", flagged: "bg-orange-500", existing: "bg-gray-400", done: b.status === "applied" ? "bg-blue-500" : "bg-red-400" }[k];
               return (
                 <li key={b.id}>
-                  <button type="button" onClick={() => setSelected(b.id)} className={`w-full text-left px-3 py-2 border-b border-gray-50 flex items-center gap-2 ${b.id === selected ? "bg-blue-50" : "hover:bg-gray-50"}`}>
+                  <button type="button" onClick={() => setSelected(b.id)} className={`w-full text-start px-3 py-2 border-b border-gray-50 flex items-center gap-2 ${b.id === selected ? "bg-blue-50" : "hover:bg-gray-50"}`}>
                     <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm font-medium text-gray-900 truncate">{b.extracted?.manual?.name?.value || b.extracted?.record?.name || b.title || STR.page(b.page)}</span>
                       <span className="block text-[11px] text-gray-500">
                         {STR.page(b.page)}
                         {b.extracted?.record?.productCode ? ` · ${b.extracted.record.productCode}` : ""}
-                        {b.extracted?.flags?.length ? ` · ${b.extracted.flags.length} to check` : ""}
+                        {b.extracted?.flags?.length ? t("catalogueReview.toCheck", { length: b.extracted.flags.length }) : ""}
                       </span>
                     </span>
                   </button>
@@ -469,7 +426,7 @@ export default function CatalogueReview() {
                   <ol className="max-h-64 overflow-y-auto text-xs">
                     {(block.lines || []).map((t, i) => (
                       <li key={i}>
-                        <button type="button" disabled={i === 0 || busy} onClick={() => run(() => splitCatalogueBlock(scope, block.id, i)).then(() => setSplitting(false))} className="w-full text-left px-2 py-1 hover:bg-blue-50 disabled:opacity-40 font-mono truncate">
+                        <button type="button" disabled={i === 0 || busy} onClick={() => run(() => splitCatalogueBlock(scope, block.id, i)).then(() => setSplitting(false))} className="w-full text-start px-2 py-1 hover:bg-blue-50 disabled:opacity-40 font-mono truncate">
                           {i}. {t.replace(/\t/g, "  ")}
                         </button>
                       </li>
@@ -486,7 +443,7 @@ export default function CatalogueReview() {
                   {(ex.flags || []).filter((f) => !f.field || !FIELDS.some(([k]) => k === f.field)).length > 0 && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
                       <p className="text-xs font-semibold text-orange-800 mb-1">{STR.flags}</p>
-                      <ul className="text-xs text-orange-800 list-disc pl-4 space-y-0.5">
+                      <ul className="text-xs text-orange-800 list-disc ps-4 space-y-0.5">
                         {ex.flags
                           .filter((f) => !f.field || !FIELDS.some(([k]) => k === f.field))
                           .map((f, i) => (
@@ -498,7 +455,7 @@ export default function CatalogueReview() {
 
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{STR.category}</label>
-                    {ex.category?.proposal && <span className="text-xs text-gray-500 ml-2">{STR.proposal(ex.category.proposal)}</span>}
+                    {ex.category?.proposal && <span className="text-xs text-gray-500 ms-2">{STR.proposal(ex.category.proposal)}</span>}
                     <div className="flex gap-2 mt-1">
                       <select
                         disabled={!editable || busy}
@@ -529,7 +486,7 @@ export default function CatalogueReview() {
                             run(async () => {
                               const res = await createCategory({ name: newCat.trim() });
                               const cat = res?.data?.category || res?.data || res;
-                              if (!cat?.id) throw new Error("The category was not created");
+                              if (!cat?.id) throw new Error(t("catalogueReview.theCategoryWasNotCreated"));
                               setNewCat(null);
                               return editCatalogueBlock(scope, block.id, { categoryId: cat.id });
                             })
@@ -557,9 +514,9 @@ export default function CatalogueReview() {
                       <tbody>
                         {(ex.record?.activeIngredients || []).map((i, k) => (
                           <tr key={k} className="border-t border-gray-100">
-                            <td className="py-1 pr-2 text-gray-900">{i.name}</td>
-                            <td className="py-1 pr-2 font-mono text-gray-900 whitespace-nowrap">{i.amountRaw || <span className="text-gray-400">{STR.empty}</span>}</td>
-                            <td className="py-1 text-xs text-gray-500 whitespace-nowrap">{i.amount != null ? `${i.amount.toLocaleString()} ${i.unit || ""}` : ""}</td>
+                            <td className="py-1 pe-2 text-gray-900">{i.name}</td>
+                            <td className="py-1 pe-2 font-mono text-gray-900 whitespace-nowrap">{i.amountRaw || <span className="text-gray-400">{STR.empty}</span>}</td>
+                            <td className="py-1 text-xs text-gray-500 whitespace-nowrap">{i.amount != null ? `${fmtNum(i.amount)} ${i.unit || ""}` : ""}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -588,7 +545,7 @@ export default function CatalogueReview() {
                         <tbody>
                           {ex.record.specifications.map((s, k) => (
                             <tr key={k} className="border-t border-gray-100">
-                              <td className="py-1 pr-2">{s.item}</td>
+                              <td className="py-1 pe-2">{s.item}</td>
                               <td className="py-1 font-mono">{s.specRaw}</td>
                             </tr>
                           ))}

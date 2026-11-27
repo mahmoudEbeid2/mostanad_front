@@ -36,3 +36,20 @@ body {
   outline: 2px solid #2563eb !important;
   outline-offset: 2px;
 }
+
+/* RTL (UI plan, Phase A §5): direction icons point the reading way */
+[dir="rtl"] svg.lucide-chevron-right,
+[dir="rtl"] svg.lucide-chevron-left,
+[dir="rtl"] svg.lucide-arrow-right,
+[dir="rtl"] svg.lucide-arrow-left,
+[dir="rtl"] svg.lucide-chevrons-right,
+[dir="rtl"] svg.lucide-chevrons-left,
+[dir="rtl"] svg.lucide-panel-left-close,
+[dir="rtl"] svg.lucide-panel-left-open {
+  transform: scaleX(-1);
+}
+
+/* Arabic UI: the Arabic font first; Latin data keeps Inter */
+html[lang="ar"] body {
+  font-family: "Noto Sans Arabic", Inter, system-ui, sans-serif;
+}

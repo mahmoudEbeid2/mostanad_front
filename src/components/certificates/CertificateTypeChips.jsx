@@ -1,13 +1,10 @@
+import { strings, t } from "../../i18n";
 // "Certificates to make" on the review page (mockup D2): a chip per usable type with what it
 // would make for this invoice, on or off. Once certificates exist the choice is only shown.
 const STR = {
-  title: "Certificates to make",
-  certificates: (n) => `${n} certificate${n === 1 ? "" : "s"}`,
-  forInvoice: (n) => `${n} for the invoice`,
-  allTypes: "All types",
-  hint: "Chosen at upload · change it any time before Generate",
-  lastOne: "Pick at least one certificate",
-  locked: (codes) => (codes ? codes.join(" + ") : "All types"),
+  ...strings("certificateTypeChips"),
+  certificates: (n) => t("certificateTypeChips.certificates", { count: n }),
+  locked: (codes) => (codes ? codes.join(" + ") : t("certificateTypeChips.allTypes")),
 };
 
 const countText = (t) => (t.scopes.length === 1 && t.scopes[0] === "per_invoice" ? STR.forInvoice(t.count) : STR.certificates(t.count));
@@ -21,8 +18,8 @@ export default function CertificateTypeChips({ planTypes, disabled, onChange, fl
   const on = planTypes.filter((t) => t.selected);
   const toggle = (t) => onChange(planTypes.filter((x) => (x.certificateTypeId === t.certificateTypeId ? !x.selected : x.selected)).map((x) => x.certificateTypeId));
   return (
-    <section aria-labelledby="types-bar" className={`bg-white border border-gray-200 rounded-xl px-4 py-3.5 flex flex-wrap items-center gap-2.5 ${floating ? "fixed top-4 left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-2rem)] shadow-xl" : ""}`} data-testid="type-chips">
-      <h2 id="types-bar" className="text-sm font-semibold text-gray-900 mr-1.5">
+    <section aria-labelledby="types-bar" className={`bg-white border border-gray-200 rounded-xl px-4 py-3.5 flex flex-wrap items-center gap-2.5 ${floating ? "fixed top-4 start-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-2rem)] shadow-xl" : ""}`} data-testid="type-chips">
+      <h2 id="types-bar" className="text-sm font-semibold text-gray-900 me-1.5">
         {STR.title}
       </h2>
       {planTypes.map((t) => {
@@ -44,10 +41,10 @@ export default function CertificateTypeChips({ planTypes, disabled, onChange, fl
           </button>
         );
       })}
-      <button type="button" disabled={disabled} onClick={() => onChange(null)} className="text-sm font-semibold text-blue-600 hover:underline ml-1 disabled:opacity-50 disabled:no-underline" data-testid="all-types">
+      <button type="button" disabled={disabled} onClick={() => onChange(null)} className="text-sm font-semibold text-blue-600 hover:underline ms-1 disabled:opacity-50 disabled:no-underline" data-testid="all-types">
         {STR.allTypes}
       </button>
-      <span className="text-xs text-gray-500 ml-auto">{STR.hint}</span>
+      <span className="text-xs text-gray-500 ms-auto">{STR.hint}</span>
     </section>
   );
 }
@@ -56,7 +53,7 @@ export default function CertificateTypeChips({ planTypes, disabled, onChange, fl
 export function CertificateTypesLocked({ codes }) {
   return (
     <section className="bg-white border border-gray-200 rounded-xl px-4 py-3.5 flex flex-wrap items-center gap-2.5 text-sm" data-testid="type-chips-locked">
-      <h2 className="font-semibold text-gray-900 mr-1.5">{STR.title}</h2>
+      <h2 className="font-semibold text-gray-900 me-1.5">{STR.title}</h2>
       <span className="text-gray-700">{STR.locked(codes)}</span>
     </section>
   );

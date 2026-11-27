@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FlaskConical } from "lucide-react";
 import apiClient from "../services/apiClient";
+import { t } from "../i18n";
 
 const selectedCompany = () => {
   try {
@@ -40,9 +41,9 @@ export function useExperimentStatus() {
 export default function ExperimentBanner({ compact = false }) {
   const s = useExperimentStatus();
   if (!s?.banner) return null;
-  const who = s.global?.on ? `لكل الشركات${s.global.byName ? ` — شغّله ${s.global.byName}` : ""}` : s.company?.on ? `لشركة ${s.company.name}${s.company.byName ? ` — شغّله ${s.company.byName}` : ""}` : "";
+  const who = s.global?.on ? `${t("experimentBanner.allCompanies")}${s.global.byName ? t("experimentBanner.switchedOnBy", { byName: s.global.byName }) : ""}` : s.company?.on ? `${t("experimentBanner.forCompany", { name: s.company.name })}${s.company.byName ? t("experimentBanner.switchedOnBy", { byName: s.company.byName }) : ""}` : "";
   return (
-    <div dir="rtl" role="alert" data-testid="experiment-banner" className={`flex items-center gap-2 rounded-xl border-2 border-red-500 bg-red-600 font-bold text-white ${compact ? "px-3 py-1.5 text-xs" : "mb-4 px-4 py-2.5 text-sm"}`}>
+    <div role="alert" data-testid="experiment-banner" className={`flex items-center gap-2 rounded-xl border-2 border-red-500 bg-red-600 font-bold text-white ${compact ? "px-3 py-1.5 text-xs" : "mb-4 px-4 py-2.5 text-sm"}`}>
       <FlaskConical className="h-4 w-4 shrink-0" />
       <span>{s.banner}</span>
       {who && <span className="font-normal opacity-90">({who})</span>}

@@ -1,5 +1,6 @@
 import useTaskProgress from "../../hooks/useTaskProgress";
 import { catalogueVersionStatus } from "../../utils/catalogueStatus";
+import { t } from "../../i18n";
 
 // One version's status in the catalogue list (design C0). A running extraction
 // shows its % and a small bar; the row reloads the list when the job ends.
@@ -11,12 +12,12 @@ const LOOK = {
   gray: "bg-gray-100 text-gray-700",
 };
 const PILLS = {
-  pages_ready: ["Choose pages", "amber"],
-  segmented: ["Choose pages", "amber"], // read before this flow, not extracted yet
-  review: ["Review", "amber"],
-  applied: ["Applied", "green"],
-  failed: ["Failed", "red"],
-  extraction_failed: ["Extraction failed", "red"],
+  pages_ready: [t("catalogueStatusPill.choosePages"), "amber"],
+  segmented: [t("catalogueStatusPill.choosePages"), "amber"], // read before this flow, not extracted yet
+  review: [t("catalogueStatusPill.review"), "amber"],
+  applied: [t("catalogueStatusPill.applied"), "green"],
+  failed: [t("catalogueStatusPill.failed"), "red"],
+  extraction_failed: [t("catalogueStatusPill.extractionFailed"), "red"],
 };
 
 export function Pill({ label, tone, percent }) {
@@ -37,7 +38,7 @@ export function Pill({ label, tone, percent }) {
 function Extracting({ version, onDone }) {
   const task = useTaskProgress(version.task?.id || null, { onDone });
   const percent = Math.max(task.progress || 0, version.task?.progress || 0);
-  return <Pill label={`Extracting ${percent}%`} tone="blue" percent={percent} />;
+  return <Pill label={t("catalogueStatusPill.extracting", { percent })} tone="blue" percent={percent} />;
 }
 
 export default function CatalogueStatusPill({ version, onDone }) {

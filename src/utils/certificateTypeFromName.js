@@ -2,11 +2,11 @@
 // Composition and COO the Certificate of Origin — two different types.
 
 export const KNOWN = [
-  ["COA", "Certificate of Analysis", "شهادة تحليل"],
-  ["COC", "Certificate of Composition", "شهادة تركيب"],
-  ["HC", "Health Certificate", "شهادة صحية"],
-  ["FSC", "Free Sale Certificate", "شهادة بيع حر"],
-  ["COO", "Certificate of Origin", "شهادة منشأ"],
+  ["COA", "Certificate of Analysis"],
+  ["COC", "Certificate of Composition"],
+  ["HC", "Health Certificate"],
+  ["FSC", "Free Sale Certificate"],
+  ["COO", "Certificate of Origin"],
 ];
 /** "ADDVET OMAN COA 10-26.pdf" → "COA"; a name that says two types or none → null */
 export function codeFromFileName(name) {

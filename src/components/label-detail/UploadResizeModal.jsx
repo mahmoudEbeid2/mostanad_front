@@ -9,6 +9,7 @@ import FitList from "./FitList";
 import DesignResize from "./DesignResize";
 import { sizeAr } from "./resizeText";
 import { getLayoutSizes, uploadLabelToResize, getLabelUpload, confirmLabelUpload, downloadLayoutPdf, layoutFileUrl } from "../../services/apiLabelLayout";
+import { t } from "../../i18n";
 
 // Labels list (or a label's page) → "غيّر المقاس": a label the client has as a
 // file (PDF, Illustrator .ai, PNG, JPEG), at other sizes. Two ways, per upload:
@@ -50,13 +51,13 @@ function PdfPreview({ url, widthPx = 260 }) {
       c.style.width = `${widthPx}px`;
       await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
       if (alive) c.dataset.rendered = "true";
-    })().catch((e) => alive && setFailed(e.message || "The preview couldn't be drawn"));
+    })().catch((e) => alive && setFailed(e.message || t("uploadResizeModal.thePreviewCouldntBeDrawn")));
     return () => {
       alive = false;
     };
   }, [url, widthPx]);
-  if (failed) return <p className="w-64 text-xs text-gray-500">لا معاينة ({failed}). يمكن تنزيل ملف PDF.</p>;
-  return <canvas ref={ref} className="bg-white shadow ring-1 ring-gray-300" aria-label="PDF preview" data-testid="pdf-preview" />;
+  if (failed) return <p className="w-64 text-xs text-gray-500">{t("uploadResizeModal.noPreviewThePdfCan", { failed })}</p>;
+  return <canvas ref={ref} className="bg-white shadow ring-1 ring-gray-300" aria-label={t("uploadResizeModal.pdfPreview")} data-testid="pdf-preview" />;
 }
 
 // designOnly (a label's page): the label's design file is added to that label — the
@@ -117,8 +118,8 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
   const pick = (f) => {
     if (!f) return;
     const ok = ["application/pdf", "image/png", "image/jpeg"].includes(f.type) || /\.ai$/i.test(f.name);
-    if (!ok) return setError("ارفع ملف PDF أو Illustrator (.ai) أو صورة PNG/JPEG");
-    if (f.size > 40 * 1024 * 1024) return setError("الملف أكبر من 40 ميجا");
+    if (!ok) return setError(t("uploadResizeModal.uploadAPdfAnIllustrator"));
+    if (f.size > 40 * 1024 * 1024) return setError(t("uploadResizeModal.theFileIsBiggerThan"));
     setError(null);
     setFile(f);
   };
@@ -150,7 +151,7 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
     try {
       const out = await confirmLabelUpload(upload.upload.id, { fields: edits, layout: size });
       setLayout(out.layout);
-      toast.success("رُتّب الليبل على المقاس الجديد");
+      toast.success(t("uploadResizeModal.theLabelWasArrangedFor"));
       setUpload(await getLabelUpload(upload.upload.id, params));
     } catch (e) {
       setError(e.message);
@@ -164,13 +165,13 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
   const editing = upload && upload.upload.mode === "smart" && upload.upload.mimeType === "application/pdf";
   const name = labelName || file?.name?.replace(/\.[^.]+$/, "") || "label";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="غيّر المقاس">
-      <div dir="rtl" className={`bg-white rounded-2xl shadow-xl w-full ${editing ? "max-w-6xl" : "max-w-3xl"} flex flex-col max-h-[94vh]`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={t("uploadResizeModal.resize")}>
+      <div className={`bg-white rounded-2xl shadow-xl w-full ${editing ? "max-w-6xl" : "max-w-3xl"} flex flex-col max-h-[94vh]`}>
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Ruler className="w-5 h-5 text-blue-600" /> غيّر المقاس{labelName ? ` · ${labelName}` : ""}
+            <Ruler className="w-5 h-5 text-blue-600" />{" "}{t("uploadResizeModal.resize")}{labelName ? ` · ${labelName}` : ""}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="إغلاق">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label={t("uploadResizeModal.close")}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -190,53 +191,48 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
               >
                 {file ? (
                   <p className="flex items-center justify-center gap-2 text-sm text-gray-800">
-                    <FileText className="w-4 h-4" /> {file.name} · {(file.size / 1024 / 1024).toFixed(1)} ميجا
-                  </p>
+                    <FileText className="w-4 h-4" /> {file.name} · {(file.size / 1024 / 1024).toFixed(1)}{" "}MB</p>
                 ) : (
-                  <p className="text-sm text-gray-500">اسحب ملف الليبل هنا (PDF أو Illustrator ‎.ai أو صورة)، أو</p>
+                  <p className="text-sm text-gray-500">{t("uploadResizeModal.dragTheLabelFileHere")}</p>
                 )}
                 <label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                  <Upload className="w-4 h-4" /> اختر ملفًا
-                  <input type="file" accept="application/pdf,.ai,image/png,image/jpeg" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} aria-label="ملف الليبل" />
+                  <Upload className="w-4 h-4" />{" "}{t("uploadResizeModal.chooseAFile")}<input type="file" accept="application/pdf,.ai,image/png,image/jpeg" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} aria-label={t("uploadResizeModal.labelFile")} />
                 </label>
               </div>
 
               {!designOnly && (
               <fieldset className="grid gap-2 sm:grid-cols-2">
-                <legend className="mb-2 text-sm font-semibold text-gray-700">الطريقة</legend>
+                <legend className="mb-2 text-sm font-semibold text-gray-700">{t("uploadResizeModal.method")}</legend>
                 <label className={`rounded-xl border px-3 py-2 text-sm ${mode === "smart" ? "border-blue-600 bg-blue-50" : "border-gray-200"}`}>
-                  <input type="radio" name="mode" className="ml-2" checked={mode === "smart"} onChange={() => setMode("smart")} data-testid="mode-smart" />
-                  <b>غيّر المقاس مع الحفاظ على التصميم</b> <span className="text-xs text-blue-700">الأساسي</span>
-                  <span className="block text-xs text-gray-500 mt-1">نفس الرسومات والألوان والخطوط والكلمات. تشوف النتيجة جنب الأصل قبل الحفظ، وتقدر تعدّل مكان أي جزء.</span>
-                  {isImage && <span className="mt-1 block text-xs text-amber-800">هذه صورة: تُكبَّر أو تُصغَّر كلها بنفس نسبها.</span>}
+                  <input type="radio" name="mode" className="ms-2" checked={mode === "smart"} onChange={() => setMode("smart")} data-testid="mode-smart" />
+                  <b>{t("uploadResizeModal.resizeKeepingTheDesign")}</b> <span className="text-xs text-blue-700">{t("uploadResizeModal.recommended")}</span>
+                  <span className="block text-xs text-gray-500 mt-1">{t("uploadResizeModal.theSameGraphicsColoursFonts")}</span>
+                  {isImage && <span className="mt-1 block text-xs text-amber-800">{t("uploadResizeModal.thisIsAnImageIt")}</span>}
                 </label>
                 <label className={`rounded-xl border px-3 py-2 text-sm ${mode === "rebuild" ? "border-amber-600 bg-amber-50" : "border-gray-200"}`}>
-                  <input type="radio" name="mode" className="ml-2" checked={mode === "rebuild"} onChange={() => setMode("rebuild")} data-testid="mode-rebuild" />
-                  <b>ليبل جديد من النص (بدون التصميم)</b>
-                  <span className="block text-xs text-gray-500 mt-1">يُقرأ النص من الملف، تراجع كل الحقول، ثم يُكتب في ليبل بسيط بالمقاس الجديد.</span>
-                  {mode === "rebuild" && <span className="mt-1 block text-xs font-medium text-amber-800">لا يُحفظ التصميم الأصلي: لا رسومات ولا ألوان ولا شعار — النص فقط.</span>}
+                  <input type="radio" name="mode" className="ms-2" checked={mode === "rebuild"} onChange={() => setMode("rebuild")} data-testid="mode-rebuild" />
+                  <b>{t("uploadResizeModal.aNewLabelFromThe")}</b>
+                  <span className="block text-xs text-gray-500 mt-1">{t("uploadResizeModal.theTextIsReadFrom")}</span>
+                  {mode === "rebuild" && <span className="mt-1 block text-xs font-medium text-amber-800">{t("uploadResizeModal.theOriginalDesignIsNot")}</span>}
                 </label>
               </fieldset>
               )}
-              {designOnly && isImage && <p className="text-xs text-amber-800">هذه صورة: تُكبَّر أو تُصغَّر كلها بنفس نسبها. لتغيير النسب ارفع ملف PDF أو ‎.ai.</p>}
+              {designOnly && isImage && <p className="text-xs text-amber-800">{t("uploadResizeModal.thisIsAnImageIt2")}</p>}
 
               {needsSize && (
                 <div>
-                  <p className="mb-2 text-sm font-semibold text-gray-700">المقاس الجديد</p>
+                  <p className="mb-2 text-sm font-semibold text-gray-700">{t("uploadResizeModal.newSize")}</p>
                   <div className="flex flex-wrap gap-2">
                     {sizes.presets.map((p) => (
                       <button key={p.key} type="button" onClick={() => setPreset(p.key)} aria-pressed={preset === p.key} className={`rounded-lg border px-3 py-1.5 text-sm ${preset === p.key ? "border-blue-600 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
                         {sizeAr(p.widthMm, p.heightMm)}
                       </button>
                     ))}
-                    <button type="button" onClick={() => setPreset("custom")} aria-pressed={preset === "custom"} className={`rounded-lg border px-3 py-1.5 text-sm ${preset === "custom" ? "border-blue-600 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
-                      مقاس آخر
-                    </button>
+                    <button type="button" onClick={() => setPreset("custom")} aria-pressed={preset === "custom"} className={`rounded-lg border px-3 py-1.5 text-sm ${preset === "custom" ? "border-blue-600 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>{t("uploadResizeModal.anotherSize")}</button>
                     {preset === "custom" && (
                       <span className="flex items-center gap-1 text-sm">
-                        <input type="number" min={2} step={0.1} value={custom.w} onChange={(e) => setCustom({ ...custom, w: e.target.value })} className="w-20 rounded-lg border border-gray-300 px-2 py-1" aria-label="العرض بالسنتيمتر" /> ×
-                        <input type="number" min={2} step={0.1} value={custom.h} onChange={(e) => setCustom({ ...custom, h: e.target.value })} className="w-20 rounded-lg border border-gray-300 px-2 py-1" aria-label="الطول بالسنتيمتر" /> سم
-                      </span>
+                        <input type="number" min={2} step={0.1} value={custom.w} onChange={(e) => setCustom({ ...custom, w: e.target.value })} className="w-20 rounded-lg border border-gray-300 px-2 py-1" aria-label={t("uploadResizeModal.widthInCentimetres")} /> ×
+                        <input type="number" min={2} step={0.1} value={custom.h} onChange={(e) => setCustom({ ...custom, h: e.target.value })} className="w-20 rounded-lg border border-gray-300 px-2 py-1" aria-label={t("uploadResizeModal.heightInCentimetres")} />{" "}{t("uploadResizeModal.cm")}</span>
                     )}
                   </div>
                 </div>
@@ -245,8 +241,8 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
               <div className="grid gap-3 sm:grid-cols-2 text-sm">
                 {isSystem && !designOnly && (
                   <label className="block">
-                    <span className="block text-xs font-semibold text-gray-600 mb-1">الشركة</span>
-                    <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full rounded-lg border border-gray-300 px-2 py-1.5 bg-white" aria-label="الشركة">
+                    <span className="block text-xs font-semibold text-gray-600 mb-1">{t("uploadResizeModal.company")}</span>
+                    <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full rounded-lg border border-gray-300 px-2 py-1.5 bg-white" aria-label={t("uploadResizeModal.company")}>
                       {companies.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name}
@@ -256,8 +252,8 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
                   </label>
                 )}
                 <label className="block">
-                  <span className="block text-xs font-semibold text-gray-600 mb-1">البلد (اختياري، لأصغر حجم نص تسمح به قواعده)</span>
-                  <input value={country} maxLength={2} onChange={(e) => setCountry(e.target.value.toUpperCase())} placeholder="مثال: EG" className="w-full rounded-lg border border-gray-300 px-2 py-1.5" aria-label="البلد" dir="ltr" />
+                  <span className="block text-xs font-semibold text-gray-600 mb-1">{t("uploadResizeModal.countryOptionalForTheSmallest")}</span>
+                  <input value={country} maxLength={2} onChange={(e) => setCountry(e.target.value.toUpperCase())} placeholder={t("uploadResizeModal.eGEg")} className="w-full rounded-lg border border-gray-300 px-2 py-1.5" aria-label={t("uploadResizeModal.country")} dir="ltr" />
                 </label>
               </div>
             </>
@@ -267,14 +263,14 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
 
           {upload && status === "extracting" && (
             <p className="flex items-center gap-2 text-sm text-gray-700" role="status">
-              <Spinner size="sm" /> جارٍ قراءة الليبل… {upload.task?.message || ""}
+              <Spinner size="sm" />{" "}{t("uploadResizeModal.readingTheLabel")}{" "}{upload.task?.message || ""}
             </p>
           )}
           {upload && status === "failed" && <p className="text-sm text-red-600" role="alert">{upload.upload.error}</p>}
 
           {reviewing && upload.label && (
             <div className="space-y-3" data-testid="rebuild-review">
-              <p className="text-sm text-gray-700">راجع ما قُرئ من الملف وصحّح أي خطأ. الحقول الفارغة تبقى فارغة إلا إذا كتبتها — لم يُملأ شيء من عندنا.</p>
+              <p className="text-sm text-gray-700">{t("uploadResizeModal.reviewWhatWasReadFrom")}</p>
               <div className="grid gap-3" dir="ltr">
                 {upload.label.fields.map((f) => {
                   const value = edits[f.field] ?? (f.field === "activeIngredients" ? ingredientsText(f.value) : shown(f.value));
@@ -283,7 +279,7 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
                     <label key={f.field} className="block text-sm">
                       <span className="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-1">
                         {FIELD_LABEL(f.field)}
-                        {!f.read && !edits[f.field] && <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">ليس في الملف</span>}
+                        {!f.read && !edits[f.field] && <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">{t("uploadResizeModal.notInTheFile")}</span>}
                       </span>
                       {multi ? (
                         <textarea rows={Math.min(5, Math.max(2, value.split("\n").length))} value={value} onChange={(e) => setEdits({ ...edits, [f.field]: e.target.value })} className="w-full rounded-lg border border-gray-300 px-2 py-1.5" />
@@ -299,21 +295,20 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
 
           {layout && (
             <div className="flex flex-wrap items-start gap-6" data-testid="resize-result">
-              {layout.hasPdf && pdfUrl ? <PdfPreview url={pdfUrl} /> : pngUrl ? <img src={pngUrl} alt="معاينة" className="w-64 bg-white shadow ring-1 ring-gray-300" /> : <Spinner />}
+              {layout.hasPdf && pdfUrl ? <PdfPreview url={pdfUrl} /> : pngUrl ? <img src={pngUrl} alt={t("uploadResizeModal.preview")} className="w-64 bg-white shadow ring-1 ring-gray-300" /> : <Spinner />}
               <div className="min-w-60 flex-1 space-y-2 text-sm">
                 <p className="font-semibold text-gray-900">{sizeAr(layout.widthMm, layout.heightMm)}</p>
                 {layout.mode === "scale" ? (
                   <>
-                    {layout.fit.scalePct !== null && <p>بنفس النسب: {layout.fit.scalePct}%</p>}
-                    <p>أصغر نص: {layout.fit.textMeasurable ? `${layout.fit.smallestTextPt} نقطة` : "لا يمكن قياسه (صورة)"}</p>
-                    {layout.fit.belowMinimum && <p className="text-amber-800">⚠ أصغر نص أقل من الحد الأدنى {layout.fit.minFontPt} نقطة — مقاس أكبر يبقيه مقروءًا.</p>}
+                    {layout.fit.scalePct !== null && <p>{t("uploadResizeModal.sameProportions", { scalePct: layout.fit.scalePct })}</p>}
+                    <p>{t("uploadResizeModal.smallestText")}{" "}{layout.fit.textMeasurable ? t("uploadResizeModal.pt", { smallestTextPt: layout.fit.smallestTextPt }) : t("uploadResizeModal.cantBeMeasuredImage")}</p>
+                    {layout.fit.belowMinimum && <p className="text-amber-800">{t("uploadResizeModal.theSmallestTextIsBelow", { minFontPt: layout.fit.minFontPt })}</p>}
                   </>
                 ) : layout.fit.fits ? (
                   <p className="flex items-center gap-1.5 font-semibold text-green-700">
-                    <CheckCircle2 className="w-4 h-4" /> يتّسع · خط {layout.fit.fontPt} نقطة · أصغر نص {layout.fit.smallestTextPt} نقطة
-                  </p>
+                    <CheckCircle2 className="w-4 h-4" />{" "}{t("uploadResizeModal.fitsFontPtSmallestText", { fontPt: layout.fit.fontPt, smallestTextPt: layout.fit.smallestTextPt })}</p>
                 ) : (
-                  <p className="font-semibold text-red-700">لا يتّسع — لم يُعمل PDF. اختر مقاسًا أكبر.</p>
+                  <p className="font-semibold text-red-700">{t("uploadResizeModal.doesntFitNoPdfWas")}</p>
                 )}
                 {layout.mode !== "scale" && <FitList fit={layout.fit} />}
               </div>
@@ -328,26 +323,21 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-start gap-3 rounded-b-2xl">
           {!upload && (
             <Button onClick={start} disabled={!file || busy || (isSystem && !companyId)} isLoading={busy} data-testid="resize-start">
-              {mode === "rebuild" ? "اقرأ الليبل" : isImage ? "غيّر المقاس" : "متابعة"}
+              {mode === "rebuild" ? t("uploadResizeModal.readTheLabel") : isImage ? t("uploadResizeModal.resize") : t("uploadResizeModal.continue")}
             </Button>
           )}
           {reviewing && (
-            <Button onClick={confirm} isLoading={busy} data-testid="resize-confirm">
-              تأكيد الحقول وترتيب الليبل
-            </Button>
+            <Button onClick={confirm} isLoading={busy} data-testid="resize-confirm">{t("uploadResizeModal.confirmTheFieldsAndArrange")}</Button>
           )}
           {layout?.hasPdf && (
             <Button onClick={() => downloadLayoutPdf(layout, name).catch((e) => toast.error(e.message))} data-testid="resize-download">
-              <Download className="w-4 h-4" /> تنزيل PDF
-            </Button>
+              <Download className="w-4 h-4" />{" "}{t("uploadResizeModal.downloadPdf")}</Button>
           )}
           {layout?.labelId && (
-            <Button variant="secondary" onClick={() => navigate(`/labels/detail/${layout.labelId}?tab=layout`)}>
-              افتح الليبل
-            </Button>
+            <Button variant="secondary" onClick={() => navigate(`/labels/detail/${layout.labelId}?tab=layout`)}>{t("uploadResizeModal.openTheLabel")}</Button>
           )}
           <Button variant="secondary" onClick={onClose}>
-            {layout || editing ? "إغلاق" : "إلغاء"}
+            {layout || editing ? t("uploadResizeModal.close") : t("uploadResizeModal.cancel")}
           </Button>
         </div>
       </div>

@@ -1,17 +1,13 @@
 import { X } from "lucide-react";
 import useConfirm from "../../hooks/useConfirm";
+import { fmtDateTime, strings, t } from "../../i18n";
 
 // Every version of a certificate (plan §11, §13.6): view any of them in the
 // frame, restore one (forward-only — it becomes a new version).
 const STR = {
-  title: "Versions",
-  current: "current",
-  view: "View",
-  viewing: "Viewing",
-  restore: "Restore",
-  confirmRestore: (n) => ({ title: `Restore version ${n}?`, message: "Its values become a new version; nothing is deleted.", confirmLabel: "Restore" }),
-  sources: { generation: "Generated", user_edit: "Edited", restore: "Restored", regenerate_field: "Reset from source", duplicate: "Duplicated", font_fallback: "Rendered with fallback fonts" },
-  issues: (n) => `${n} issue${n === 1 ? "" : "s"}`,
+  ...strings("versionsDrawer"),
+  confirmRestore: (n) => ({ title: t("versionsDrawer.restoreVersion", { n }), message: t("versionsDrawer.itsValuesBecomeANew"), confirmLabel: t("versionsDrawer.restore") }),
+  issues: (n) => t("versionsDrawer.issues", { count: n }),
 };
 
 export default function VersionsDrawer({ versions, currentVersion, viewing, canRestore, onView, onRestore, onClose }) {
@@ -19,12 +15,12 @@ export default function VersionsDrawer({ versions, currentVersion, viewing, canR
   return (
   <>
     {askDialog}
-    <aside className="fixed inset-y-0 right-0 z-40 w-full max-w-md bg-white border-l border-gray-200 shadow-xl flex flex-col" data-testid="versions-drawer">
+    <aside className="fixed inset-y-0 end-0 z-40 w-full max-w-md bg-white border-s border-gray-200 shadow-xl flex flex-col" data-testid="versions-drawer">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <h2 className="font-semibold text-gray-900">
           {STR.title} ({versions.length})
         </h2>
-        <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label="Close">
+        <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label={t("versionsDrawer.close")}>
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -39,7 +35,7 @@ export default function VersionsDrawer({ versions, currentVersion, viewing, canR
                 <span className="text-gray-700">{STR.sources[v.changeSource] || v.changeSource}</span>
                 {isCurrent && <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[11px] font-semibold">{STR.current}</span>}
                 {v.flagCount > 0 && <span className="rounded-full bg-red-50 text-red-700 px-2 py-0.5 text-[11px] font-semibold">{STR.issues(v.flagCount)}</span>}
-                <span className="ml-auto text-xs text-gray-400">{new Date(v.createdAt).toLocaleString()}</span>
+                <span className="ms-auto text-xs text-gray-400">{fmtDateTime(v.createdAt)}</span>
               </div>
               {(v.changedBy || v.changeSummary) && (
                 <p className="text-xs text-gray-600 break-words">

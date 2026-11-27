@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { t } from "../i18n";
 
 // Printable label layouts and "Upload label to resize" (backend services/label/layout).
 const fail = (fallback) => (e) => {
@@ -9,16 +10,16 @@ const fail = (fallback) => (e) => {
 const data = (r) => r.data.data;
 
 /** → { presets: [{ key, label, widthMm, heightMm }], sections, defaults } */
-export const getLayoutSizes = () => apiClient.get("/labels/layout-sizes").then(data, fail("Couldn't load the label sizes"));
+export const getLayoutSizes = () => apiClient.get("/labels/layout-sizes").then(data, fail(t("errors.couldntLoadTheLabelSizes")));
 /** → { label, current, versions } */
-export const getLabelLayout = (labelId) => apiClient.get(`/labels/${labelId}/layout`).then(data, fail("Couldn't load the label's layout"));
+export const getLabelLayout = (labelId) => apiClient.get(`/labels/${labelId}/layout`).then(data, fail(t("errors.couldntLoadTheLabelsLayout")));
 /** body: layout input → { old, new: { size, fit, warnings, empty, previewDataUrl, pdfAvailable } } */
-export const previewLabelLayout = (labelId, body) => apiClient.post(`/labels/${labelId}/layout/preview`, body).then(data, fail("Couldn't lay the label out"));
+export const previewLabelLayout = (labelId, body) => apiClient.post(`/labels/${labelId}/layout/preview`, body).then(data, fail(t("errors.couldntLayTheLabelOut")));
 /** → { layout } */
-export const saveLabelLayout = (labelId, body) => apiClient.post(`/labels/${labelId}/layout`, body).then(data, fail("Couldn't save the size"));
+export const saveLabelLayout = (labelId, body) => apiClient.post(`/labels/${labelId}/layout`, body).then(data, fail(t("errors.couldntSaveTheSize")));
 
 /** A protected file (PDF / PNG) as a blob URL; the caller revokes it. */
-export const layoutFileUrl = (path) => apiClient.get(path, { responseType: "blob" }).then((r) => URL.createObjectURL(r.data), fail("Couldn't load the file"));
+export const layoutFileUrl = (path) => apiClient.get(path, { responseType: "blob" }).then((r) => URL.createObjectURL(r.data), fail(t("errors.couldntLoadTheFile")));
 /** Downloads a layout's PDF (the API needs the auth header, so not a plain link). */
 export async function downloadLayoutPdf(layout, name = "label") {
   const url = await layoutFileUrl(layout.pdfUrl);
@@ -47,16 +48,16 @@ export function uploadLabelToResize({ file, mode, layout, sizes, resize, stretch
   if (productId) fd.append("productId", productId);
   if (country) fd.append("country", country);
   if (companyId) fd.append("companyId", companyId);
-  return apiClient.post("/label-uploads", fd, { headers: { "Content-Type": "multipart/form-data" } }).then(data, fail("Couldn't upload the label"));
+  return apiClient.post("/label-uploads", fd, { headers: { "Content-Type": "multipart/form-data" } }).then(data, fail(t("errors.couldntUploadTheLabel")));
 }
-export const getLabelUpload = (id, params = {}) => apiClient.get(`/label-uploads/${id}`, { params }).then(data, fail("Couldn't load the upload"));
-export const confirmLabelUpload = (id, body) => apiClient.post(`/label-uploads/${id}/confirm`, body).then(data, fail("Couldn't lay the label out"));
-export const rescaleLabelUpload = (id, body) => apiClient.post(`/label-uploads/${id}/scale`, body).then(data, fail("Couldn't scale the label"));
+export const getLabelUpload = (id, params = {}) => apiClient.get(`/label-uploads/${id}`, { params }).then(data, fail(t("errors.couldntLoadTheUpload")));
+export const confirmLabelUpload = (id, body) => apiClient.post(`/label-uploads/${id}/confirm`, body).then(data, fail(t("errors.couldntLayTheLabelOut")));
+export const rescaleLabelUpload = (id, body) => apiClient.post(`/label-uploads/${id}/scale`, body).then(data, fail(t("errors.couldntScaleTheLabel")));
 
 // keep the design: the original's blocks, a preview of sizes (nothing saved), save sizes as versions
 /** → { uploadId, originalName, pageMm, pages, blocks, boxNet, minFontPt, minFontRule, originalDataUrl } */
-export const getUploadDesign = (id, params = {}) => apiClient.get(`/label-uploads/${id}/design`, { params }).then(data, fail("Couldn't read the design"));
+export const getUploadDesign = (id, params = {}) => apiClient.get(`/label-uploads/${id}/design`, { params }).then(data, fail(t("errors.couldntReadTheDesign")));
 /** body: { sizes: [{ widthMm, heightMm }], minFontPt?, bleedMm?, cropMarks?, overrides? } → { results: [{ size, widthMm, heightMm, fit, previewDataUrl, pdfAvailable }] } */
-export const previewUploadResize = (id, body, params = {}) => apiClient.post(`/label-uploads/${id}/preview`, body, { params }).then(data, fail("Couldn't preview the size"));
+export const previewUploadResize = (id, body, params = {}) => apiClient.post(`/label-uploads/${id}/preview`, body, { params }).then(data, fail(t("errors.couldntPreviewTheSize")));
 /** same body → { layouts } (one saved version per size, each with its PDF when it fits) */
-export const saveUploadResize = (id, body, params = {}) => apiClient.post(`/label-uploads/${id}/resize`, body, { params }).then(data, fail("Couldn't save the sizes"));
+export const saveUploadResize = (id, body, params = {}) => apiClient.post(`/label-uploads/${id}/resize`, body, { params }).then(data, fail(t("errors.couldntSaveTheSizes")));

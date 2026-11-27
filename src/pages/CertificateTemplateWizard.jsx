@@ -20,60 +20,17 @@ import useCompanyScope from "../hooks/useCompanyScope";
 import useTaskProgress from "../hooks/useTaskProgress";
 import { listCertificateTypes } from "../services/apiCertificateTypes";
 import { getTemplate, getVersion, getVersionHtml } from "../services/apiCertificateTemplates";
-import { pick } from "../i18n/lang";
 import useFollowEntityCompany from "../hooks/useFollowEntityCompany";
+import { strings, t } from "../i18n";
 
-const STR_EN = {
-  newTitle: "New certificate template",
-  back: "← Templates",
-  steps: { upload: "Upload", fields: "Mark fields", settings: "Settings", prepare: "Prepare & test", activate: "Activate" },
-  convertingStep: "converting…",
-  stageState: { done: "done", active: "in progress", pending: "not started" },
-  // A3 — converting
-  converting: "Converting your design",
-  convertingHint: "Usually under 10 seconds. You can leave — we’ll keep going.",
-  stages: (html) => [
-    "File uploaded",
-    html ? "HTML design read" : "Converted to HTML (pdf2htmlEX)",
-    "Cleaned — scripts and external links removed",
-    "Measuring text lines and fonts",
-    "Creating thumbnail",
-  ],
-  previewTitle: "Preview",
-  previewHint: "The thumbnail appears when conversion finishes.",
-  failedTitle: { NO_PDF_CONTENT: "This file has no PDF content", NO_LIVE_TEXT: "The text was converted to outlines" },
-  convertFailed: "Conversion failed",
-  uploadNew: "Upload a new file",
-  converted: "Converted — this is exactly how the design will print.",
-  next: "Next: mark the fields",
-  pickCompany: "Pick a company first.",
-  lines: (n) => `${n} text lines`,
-  saving: "Saving…",
-  saved: "All changes saved",
-  notSaved: "Not saved",
+
+const STR = {
+  ...strings("certificateTemplateWizardStr"),
+  stages: (html) => {
+    const s = strings("certificateTemplateWizardStr");
+    return [s.stageUploaded, html ? s.stageHtmlRead : s.stageConverted, s.stageCleaned, s.stageMeasuring, s.stageThumb];
+  },
 };
-const STR = pick({ en: STR_EN, ar: {
-  newTitle: "قالب شهادة جديد",
-  back: "→ القوالب",
-  steps: { upload: "الرفع", fields: "حدد الحقول", settings: "الإعدادات", prepare: "جهّز واختبر", activate: "شغّل" },
-  convertingStep: "بيتحوّل…",
-  stageState: { done: "خلص", active: "شغّال دلوقتي", pending: "لسه" },
-  converting: "بنحوّل التصميم بتاعك",
-  convertingHint: "غالبًا أقل من 10 ثواني. تقدر تسيب الصفحة — هنكمّل.",
-  stages: (html) => ["الملف اترفع", html ? "اتقرا تصميم HTML" : "اتحوّل لـ HTML (pdf2htmlEX)", "اتنضّف — اتشالت السكريبتات واللينكات الخارجية", "بنقيس سطور النص والخطوط", "بنعمل الصورة المصغرة"],
-  previewTitle: "معاينة",
-  previewHint: "الصورة المصغرة بتظهر لما التحويل يخلص.",
-  failedTitle: { NO_PDF_CONTENT: "الملف ده مفيهوش محتوى PDF", NO_LIVE_TEXT: "النص اتحوّل لأشكال (outlines)" },
-  convertFailed: "التحويل فشل",
-  uploadNew: "ارفع ملف جديد",
-  converted: "اتحوّل — ده بالظبط شكل الطباعة.",
-  next: "التالي: حدد الحقول",
-  pickCompany: "اختار شركة الأول.",
-  lines: (n) => `${n} سطر نص`,
-  saving: "بنحفظ…",
-  saved: "كل التعديلات اتحفظت",
-  notSaved: "ماتحفظش",
-} });
 
 const STEP_ORDER = ["upload", "fields", "settings", "prepare", "activate"];
 const FILE_INPUT_ID = "template-file";
@@ -318,7 +275,7 @@ export default function CertificateTemplateWizard() {
           </Link>
           <h1 className="mt-1.5 text-[22px] font-bold text-gray-900">
             {template ? template.name : STR.newTitle}
-            {version && <span className="ml-1 text-base font-medium text-gray-500">· v{version.versionNumber}</span>}
+            {version && <span className="ms-1 text-base font-medium text-gray-500">· v{version.versionNumber}</span>}
           </h1>
         </div>
         {version && (
@@ -327,7 +284,7 @@ export default function CertificateTemplateWizard() {
             {fieldsEditable && saveState && <SaveState state={saveState} />}
             {["draft", "ready", "active", "superseded"].includes(version.status) && !template?.archivedAt && (
               <Button variant="secondary" className="!py-2 text-sm" onClick={() => setRepairing(true)} data-testid="fix-template">
-                <Wrench className="w-4 h-4" aria-hidden="true" /> {pick({ en: "Fix this template", ar: "صلّح القالب ده" })}
+                <Wrench className="w-4 h-4" aria-hidden="true" /> {t("certificateTemplateWizard.fixThisTemplate")}
               </Button>
             )}
           </div>
@@ -336,7 +293,7 @@ export default function CertificateTemplateWizard() {
 
       <RoleBanner scope={scopeState} />
 
-      <ol aria-label="Steps" className="flex flex-wrap gap-2">
+      <ol aria-label={t("certificateTemplateWizard.steps")} className="flex flex-wrap gap-2">
         {STEP_ORDER.map((s, i) => {
           const enabled = stepEnabled(s);
           const current = s === step;

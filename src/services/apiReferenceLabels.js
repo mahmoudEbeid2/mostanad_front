@@ -1,11 +1,12 @@
 import apiClient from "./apiClient";
+import { t } from "../i18n";
 
 export const getReferenceLabels = async (params = {}) => {
   try {
     const response = await apiClient.get("/reference-labels", { params });
     return response.data.data.referenceLabels;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch reference labels");
+    throw new Error(error.response?.data?.message || t("errors.failedToFetchReferenceLabels"));
   }
 };
 
@@ -25,12 +26,12 @@ export const uploadReferenceLabelFile = async (file, fields, onProgress) => {
     });
     const d = response.data.data;
     if (d.tasks?.[0]) return { state: "queued", taskId: d.tasks[0].taskId };
-    return { state: "failed", reason: response.data.message || "Not queued" };
+    return { state: "failed", reason: response.data.message || t("apiReferenceLabels.notQueued") };
   } catch (error) {
     const d = error.response?.data?.data;
     if (d?.skipped?.[0]) return { state: "skipped", uploadedAt: d.skipped[0].uploadedAt };
     if (d?.failed?.[0]) return { state: "failed", reason: d.failed[0].reason };
-    return { state: "failed", reason: error.response?.data?.message || error.message || "Upload failed" };
+    return { state: "failed", reason: error.response?.data?.message || error.message || t("apiReferenceLabels.uploadFailed") };
   }
 };
 
@@ -39,7 +40,7 @@ export const createReferenceLabelManual = async (data) => {
     const response = await apiClient.post("/reference-labels/manual", data);
     return response.data.data.referenceLabel;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to create reference label");
+    throw new Error(error.response?.data?.message || t("errors.failedToCreateReferenceLabel"));
   }
 };
 
@@ -47,7 +48,7 @@ export const deleteReferenceLabel = async (id) => {
   try {
     await apiClient.delete(`/reference-labels/${id}`);
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to delete reference label");
+    throw new Error(error.response?.data?.message || t("errors.failedToDeleteReferenceLabel"));
   }
 };
 
@@ -56,7 +57,7 @@ export const retryReferenceLabelTask = async (taskId) => {
     const response = await apiClient.post(`/reference-labels/retry/${taskId}`);
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to retry reference label");
+    throw new Error(error.response?.data?.message || t("errors.failedToRetryReferenceLabel"));
   }
 };
 
@@ -65,7 +66,7 @@ export const generateLabelAi = async (data) => {
     const response = await apiClient.post("/reference-labels/generate-text-ai", data);
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to generate label with AI");
+    throw new Error(error.response?.data?.message || t("errors.failedToGenerateLabelWith"));
   }
 };
 
@@ -75,6 +76,6 @@ export const setReferenceLabelBrand = async (id, brandId) => {
     const response = await apiClient.patch(`/reference-labels/${id}`, { brandId });
     return response.data.data.referenceLabel;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Couldn't change the brand");
+    throw new Error(error.response?.data?.message || t("errors.couldntChangeTheBrand"));
   }
 };

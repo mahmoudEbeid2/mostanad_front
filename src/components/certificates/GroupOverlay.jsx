@@ -1,12 +1,12 @@
 import { useRef, useState } from "react";
-import { pick } from "../../i18n/lang";
+import { strings } from "../../i18n";
 
 // The repeating group on the design (plan §7.8, §13.4): the detected band is
 // tinted, and the footer line — everything below it stays where it is — is a
 // dashed line the user drags. Positions come from the server's detection
 // (page-relative CSS px); this only adds the page's offset in the frame.
 
-const STR = pick({ en: { footer: "Footer line — drag to move", group: (l) => `Group · ${l}` }, ar: { footer: "خط الذيل — اسحبه عشان تحركه", group: (l) => `مجموعة · ${l}` } });
+const STR = strings("groupOverlay");
 const round1 = (n) => Math.round(n * 10) / 10;
 
 function FooterLine({ y, pageTop, minY, maxY, width, left, scale, disabled, onCommit }) {
@@ -51,7 +51,7 @@ function FooterLine({ y, pageTop, minY, maxY, width, left, scale, disabled, onCo
       }}
     >
       <div className="absolute inset-x-0 top-[5px] border-t-2 border-dashed border-rose-500" />
-      <span className="absolute right-1 -top-4 rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white whitespace-nowrap" style={{ transform: `scale(${inv})`, transformOrigin: "100% 100%" }}>
+      <span className="absolute end-1 -top-4 rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white whitespace-nowrap" style={{ transform: `scale(${inv})`, transformOrigin: "100% 100%" }}>
         {STR.footer}
       </span>
     </div>

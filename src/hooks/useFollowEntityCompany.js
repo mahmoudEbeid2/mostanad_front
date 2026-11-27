@@ -4,6 +4,7 @@
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import apiClient from "../services/apiClient";
+import { t } from "../i18n";
 
 export default function useFollowEntityCompany(scopeState, type, id) {
   const asked = useRef(null);
@@ -16,7 +17,7 @@ export default function useFollowEntityCompany(scopeState, type, id) {
         const { companyId, companyName } = r.data.data;
         if (companyId && companyId !== scopeState.companyId) {
           scopeState.setCompanyId(companyId);
-          toast(`اتنقلت لشركة ${companyName}`, { icon: "↪" });
+          toast(t("useFollowEntityCompany.switchedTo", { companyName }), { icon: "↪" });
         }
       })
       .catch(() => {});

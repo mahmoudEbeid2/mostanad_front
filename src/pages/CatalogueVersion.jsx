@@ -8,18 +8,13 @@ import { catalogueVersionStatus } from "../utils/catalogueStatus";
 import { withNextStep } from "../utils/aiReason";
 import useCompanyScope from "../hooks/useCompanyScope";
 import { getCatalogueVersion } from "../services/apiCatalogues";
+import { strings, t } from "../i18n";
 
 // /catalogues/versions/:id (backend plan.md §15.3): the blocks code found in one
 // uploaded catalogue — each with its page and its text, exactly as printed.
 const STR = {
-  back: "Catalogues",
-  blocks: (n) => `${n} product blocks`,
-  extractionFailed: (e) => `Products weren't read automatically. ${withNextStep(e, "Open the review to enter them by hand.")}`,
-  context: "Cover / context",
-  page: (n) => `Page ${n}`,
-  untitled: "Title drawn as artwork",
-  review: "Review extracted products",
-  pages: "Choose the pages to read",
+  ...strings("catalogueVersion"),
+  extractionFailed: (e) => `${t("catalogueVersion.extractionFailed")} ${withNextStep(e, t("catalogueVersion.extractionFailedNext"))}`,
 };
 
 export default function CatalogueVersion() {

@@ -8,7 +8,7 @@ import { listCertificateTypes } from "../../services/apiCertificateTypes";
 import { waitForTask, downloadBatchZip, exportBatchZip } from "../../services/apiCertificatesV2";
 import { certificatesForProducts } from "../../services/apiProductImports";
 import CertificateSetup from "./CertificateSetup";
-import { tr } from "../../i18n/lang";
+import { t } from "../../i18n";
 
 // Products page → select products → "Make certificates": certificates for several
 // products at once, no invoice. Choose the types, optionally the batch facts per product
@@ -16,9 +16,9 @@ import { tr } from "../../i18n/lang";
 // will be made and what has no template, then make them: drafts, reviewed before final.
 
 const FACTS = [
-  ["batchNo", tr("رقم التشغيلة", "Batch no.")],
-  ["productionDate", tr("تاريخ الإنتاج", "Production date")],
-  ["expiryDate", tr("تاريخ الانتهاء", "Expiry date")],
+  ["batchNo", t("certificatesForProductsModal.batchNo")],
+  ["productionDate", t("certificatesForProductsModal.productionDate")],
+  ["expiryDate", t("certificatesForProductsModal.expiryDate")],
 ];
 
 export default function CertificatesForProductsModal({ products, onClose }) {
@@ -56,7 +56,7 @@ export default function CertificatesForProductsModal({ products, onClose }) {
       const out = await certificatesForProducts(body(false));
       await waitForTask(out.taskId, { timeoutMs: 300_000 });
       setDone(out);
-      toast.success(tr("المسودات جاهزة", "Certificate drafts are ready"));
+      toast.success(t("certificatesForProductsModal.certificateDraftsAreReady"));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -79,23 +79,23 @@ export default function CertificatesForProductsModal({ products, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Make certificates">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={t("certificatesForProductsModal.makeCertificates")}>
       <div className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <FileCheck2 className="h-5 w-5 text-teal-600" /> {tr(`شهادات لـ ${products.length} منتج`, `Certificates for ${products.length} product${products.length > 1 ? "s" : ""}`)}
+            <FileCheck2 className="h-5 w-5 text-teal-600" /> {t("certificatesForProductsModal.title", { count: products.length })}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label={t("certificatesForProductsModal.close")}>
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="space-y-5 overflow-y-auto px-6 py-5 text-sm">
-          {!companyId && <p className="text-red-700">{tr("اختار منتجات شركة واحدة.", "Choose products of one company.")}</p>}
+          {!companyId && <p className="text-red-700">{t("certificatesForProductsModal.chooseProductsOfOneCompany")}</p>}
           {companyId && !types && !error && <Spinner />}
           {types && !done && (
             <>
               <div>
-                <p className="mb-2 font-semibold text-gray-800">{tr("الشهادات", "Certificates")}</p>
+                <p className="mb-2 font-semibold text-gray-800">{t("certificatesForProductsModal.certificates")}</p>
                 <div className="flex flex-wrap gap-2">
                   {types.map((t) => {
                     const on = chosen.includes(t.id);
@@ -112,14 +112,14 @@ export default function CertificatesForProductsModal({ products, onClose }) {
                 <CertificateSetup companyId={companyId} types={types} missingTypes={[...new Set((plan?.missing || []).map((m) => m.type))]} onChanged={loadTypes} />
               )}
               <div>
-                <p className="mb-1 font-semibold text-gray-800">{tr("بيانات التشغيلة (اختياري)", "Batch facts (optional)")}</p>
-                <p className="mb-2 text-xs text-gray-500">{tr("اللي بتكتبه بس هو اللي بيستخدم. لو سبته فاضي بيفضل خانة فاضية متعلّم عليها في المسودة — مش بنألّف حاجة.", "Only what you type is used. Left empty, it stays a marked blank on the draft to fill in later — nothing is made up.")}</p>
+                <p className="mb-1 font-semibold text-gray-800">{t("certificatesForProductsModal.batchFactsOptional")}</p>
+                <p className="mb-2 text-xs text-gray-500">{t("certificatesForProductsModal.onlyWhatYouTypeIs")}</p>
                 <table className="w-full text-xs">
                   <thead className="text-gray-500">
                     <tr>
-                      <th className="py-1 text-start font-semibold">{tr("المنتج", "Product")}</th>
+                      <th className="py-1 text-start font-semibold">{t("certificatesForProductsModal.product")}</th>
                       {FACTS.map(([, l]) => (
-                        <th key={l} className="py-1 text-left font-semibold">
+                        <th key={l} className="py-1 text-start font-semibold">
                           {l}
                         </th>
                       ))}
@@ -128,10 +128,10 @@ export default function CertificatesForProductsModal({ products, onClose }) {
                   <tbody>
                     {products.map((p) => (
                       <tr key={p.id}>
-                        <td className="py-1 pr-2 font-medium text-gray-800">{p.name}</td>
+                        <td className="py-1 pe-2 font-medium text-gray-800">{p.name}</td>
                         {FACTS.map(([k, l]) => (
-                          <td key={k} className="py-1 pr-2">
-                            <input value={batch[p.id]?.[k] || ""} onChange={(e) => setBatch({ ...batch, [p.id]: { ...(batch[p.id] || {}), [k]: e.target.value } })} className="w-full rounded border border-gray-300 px-1.5 py-1" aria-label={`${l} of ${p.name}`} />
+                          <td key={k} className="py-1 pe-2">
+                            <input value={batch[p.id]?.[k] || ""} onChange={(e) => setBatch({ ...batch, [p.id]: { ...(batch[p.id] || {}), [k]: e.target.value } })} className="w-full rounded border border-gray-300 px-1.5 py-1" aria-label={t("certificatesForProductsModal.of", { l, name: p.name })} />
                           </td>
                         ))}
                       </tr>
@@ -141,30 +141,28 @@ export default function CertificatesForProductsModal({ products, onClose }) {
               </div>
               {plan && (
                 <div className="space-y-1 rounded-xl border border-gray-200 bg-gray-50 p-3" data-testid="certs-plan">
-                  <p className="font-semibold text-gray-800">Will be made: {plan.planned.length} draft{plan.planned.length === 1 ? "" : "s"}</p>
+                  <p className="font-semibold text-gray-800">{t("certificatesForProductsModal.willBeMade", { count: plan.planned.length })}</p>
                   <ul className="text-xs text-gray-700">
                     {plan.planned.map((e, i) => (
                       <li key={i}>
                         {e.type} — {e.products.join(", ")}
-                        {e.scope === "per_invoice" && e.products.length > 1 ? tr(" (شهادة واحدة للكل)", " (one certificate for all)") : ""}
+                        {e.scope === "per_invoice" && e.products.length > 1 ? t("certificatesForProductsModal.oneCertificateForAll") : ""}
                       </li>
                     ))}
                   </ul>
                   {plan.notReady?.length > 0 && (
-                    <div className="space-y-0.5 text-xs text-red-800" dir="rtl" data-testid="plan-not-ready">
+                    <div className="space-y-0.5 text-xs text-red-800" data-testid="plan-not-ready">
                       {plan.notReady.map((n) => (
                         <p key={n.versionId} className="flex items-start gap-1.5">
                           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {n.type}: {n.message}{" "}
-                          <a href={n.link} className="font-semibold text-blue-700 hover:underline">
-                            حددهم
-                          </a>
+                          <a href={n.link} className="font-semibold text-blue-700 hover:underline">{t("certificatesForProductsModal.markThem")}</a>
                         </p>
                       ))}
                     </div>
                   )}
                   {plan.missing.length > 0 && (
                     <p className="flex items-start gap-1.5 text-xs text-amber-800">
-                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {tr("مفيش قالب شغّال:", "No active template:")} {plan.missing.map((m) => tr(`${m.type} لـ ${m.product}`, `${m.type} for ${m.product}`)).join("، ")}
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {t("certificatesForProductsModal.noActiveTemplate")} {plan.missing.map((m) => t("certificatesForProductsModal.for", { type: m.type, product: m.product })).join(t("common.listSep"))}
                     </p>
                   )}
                 </div>
@@ -173,12 +171,12 @@ export default function CertificatesForProductsModal({ products, onClose }) {
           )}
           {done && (
             <div className="space-y-3" data-testid="certs-done">
-              <p className="font-semibold text-green-800">{tr(`اتعمل ${done.planned.length} مسودة. راجع كل واحدة واعتمدها لما تبقى مظبوطة.`, `${done.planned.length} certificate draft${done.planned.length === 1 ? "" : "s"} made. Review each one and approve it when it's right.`)}</p>
-              {done.missing.length > 0 && <p className="text-xs text-amber-800">{tr("ماتعملتش (مفيش قالب شغّال):", "Not made (no active template):")} {done.missing.map((m) => `${m.type} · ${m.product}`).join("، ")}</p>}
+              <p className="font-semibold text-green-800">{t("certificatesForProductsModal.made", { count: done.planned.length })}</p>
+              {done.missing.length > 0 && <p className="text-xs text-amber-800">{t("certificatesForProductsModal.notMadeNoActiveTemplate")} {done.missing.map((m) => `${m.type} · ${m.product}`).join(t("common.listSep"))}</p>}
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => navigate(`/certificates?batchId=${done.batchId}${companyId ? `&companyId=${companyId}` : ""}`)}>{tr("افتح المسودات", "Open the drafts")}</Button>
+                <Button onClick={() => navigate(`/certificates?batchId=${done.batchId}${companyId ? `&companyId=${companyId}` : ""}`)}>{t("certificatesForProductsModal.openTheDrafts")}</Button>
                 <Button variant="secondary" isLoading={busy === "zip"} disabled={!!busy} onClick={downloadAll}>
-                  <Download className="h-4 w-4" /> {tr("نزّل الكل (ZIP)", "Download all (ZIP)")}
+                  <Download className="h-4 w-4" /> {t("certificatesForProductsModal.downloadAllZip")}
                 </Button>
               </div>
             </div>
@@ -192,10 +190,10 @@ export default function CertificatesForProductsModal({ products, onClose }) {
         {!done && (
           <div className="flex justify-start gap-3 rounded-b-2xl border-t border-gray-100 bg-gray-50 px-6 py-4">
             <Button onClick={make} isLoading={busy === "make"} disabled={!plan?.planned.length || plan?.notReady?.length > 0 || !!busy} data-testid="make-certificates">
-              {tr(`اعمل ${plan?.planned.length || ""} مسودة`, `Make ${plan?.planned.length || ""} draft${plan?.planned.length === 1 ? "" : "s"}`)}
+              {t("certificatesForProductsModal.make", { count: plan?.planned.length || 0 })}
             </Button>
             <Button variant="secondary" onClick={onClose}>
-              {tr("إلغاء", "Cancel")}
+              {t("certificatesForProductsModal.cancel")}
             </Button>
           </div>
         )}

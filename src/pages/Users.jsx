@@ -4,6 +4,7 @@ import { getRoles } from "../services/apiRoles";
 import { Search, Plus, Edit2, Trash2, Users as UsersIcon, Copy, Wand2, Key } from "lucide-react";
 import Button from "../ui/Button";
 import toast from "react-hot-toast";
+import { t } from "../i18n";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -28,7 +29,7 @@ export default function Users() {
 
   const generateUsername = () => {
     if (!formData.email) {
-      toast.error("Please enter an email first to generate a username");
+      toast.error(t("users.pleaseEnterAnEmailFirst"));
       return;
     }
     const base = formData.email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_");
@@ -47,11 +48,11 @@ export default function Users() {
 
   const copyToClipboard = (text, type) => {
     if (!text) {
-      toast.error(`No ${type} to copy`);
+      toast.error(t("users.noToCopy", { type }));
       return;
     }
     navigator.clipboard.writeText(text).catch(() => {});
-    toast.success(`${type} copied to clipboard!`);
+    toast.success(t("users.copiedToClipboard", { type }));
   };
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export default function Users() {
         setRoles(rolesRes.data.roles || []);
       }
     } catch (error) {
-      toast.error("Failed to load data");
+      toast.error(t("users.failedToLoadData"));
     } finally {
       setIsLoading(false);
     }
@@ -140,7 +141,7 @@ export default function Users() {
         setCurrentUser(freshUser);
       }
     } catch (error) {
-      toast.error("Failed to fetch latest user details");
+      toast.error(t("users.failedToFetchLatestUser"));
     }
   };
 
@@ -151,7 +152,7 @@ export default function Users() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.email.trim()) {
-      toast.error("Name and Email are required");
+      toast.error(t("users.nameAndEmailAreRequired"));
       return;
     }
 
@@ -169,30 +170,30 @@ export default function Users() {
         
         // We only show the alert if the system generated them on backend (legacy), 
         // but now the user sees them and can copy them from the UI before saving.
-        toast.success("User created successfully!");
+        toast.success(t("users.userCreatedSuccessfully"));
       } else {
         await updateUser(currentUser.id, payload);
-        toast.success("User updated successfully");
+        toast.success(t("users.userUpdatedSuccessfully"));
       }
       closeModal();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Operation failed");
+      toast.error(error.response?.data?.message || t("users.operationFailed"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm(t("users.areYouSureYouWant"))) return;
 
     try {
       setIsLoading(true);
       await deleteUser(id);
-      toast.success("User deleted successfully");
+      toast.success(t("users.userDeletedSuccessfully"));
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete user");
+      toast.error(error.response?.data?.message || t("users.failedToDeleteUser"));
       setIsLoading(false); 
     }
   };
@@ -204,9 +205,9 @@ export default function Users() {
       
       navigator.clipboard.writeText(newPassword).catch(() => {});
       
-      toast.success("Password reset successfully & copied to clipboard!", { duration: 6000 });
+      toast.success(t("users.passwordResetSuccessfullyCopiedTo"), { duration: 6000 });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to reset password");
+      toast.error(error.response?.data?.message || t("users.failedToResetPassword"));
     }
   };
 
@@ -216,27 +217,23 @@ export default function Users() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <UsersIcon className="w-8 h-8 text-teal-600" />
-            Users Management
-          </h1>
-          <p className="text-gray-500 mt-1">Manage system administrators and operators.</p>
+            <UsersIcon className="w-8 h-8 text-teal-600" />{t("users.usersManagement")}</h1>
+          <p className="text-gray-500 mt-1">{t("users.manageSystemAdministratorsAndOperators")}</p>
         </div>
         <Button className="shrink-0 bg-teal-600 hover:bg-teal-700" onClick={openAddModal}>
-          <Plus className="w-5 h-5 mr-2" />
-          Add User
-        </Button>
+          <Plus className="w-5 h-5 me-2" />{t("users.addUser")}</Button>
       </div>
 
       {/* Search Bar */}
       <div className="bg-white p-4 rounded-t-2xl border-x border-t border-gray-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
         <div className="relative w-full sm:w-96">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search className="w-5 h-5 absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name or username..."
+            placeholder={t("users.searchByNameOrUsername")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
+            className="w-full ps-10 pe-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
           />
         </div>
       </div>
@@ -244,14 +241,14 @@ export default function Users() {
       {/* Table */}
       <div className="bg-white rounded-b-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
+          <table className="w-full text-start text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase text-xs tracking-wider">
               <tr>
-                <th className="px-6 py-4">User</th>
-                <th className="px-6 py-4">Username</th>
-                <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">{t("users.user")}</th>
+                <th className="px-6 py-4">{t("users.username")}</th>
+                <th className="px-6 py-4">{t("users.role")}</th>
+                <th className="px-6 py-4">{t("users.status")}</th>
+                <th className="px-6 py-4 text-end">{t("users.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -268,8 +265,8 @@ export default function Users() {
                   <td colSpan="5" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center text-gray-400">
                       <UsersIcon className="w-12 h-12 mb-3 text-gray-300" />
-                      <p className="text-lg font-medium text-gray-500">No users found</p>
-                      <p className="text-sm mt-1">Try adjusting your search or add a new user.</p>
+                      <p className="text-lg font-medium text-gray-500">{t("users.noUsersFound")}</p>
+                      <p className="text-sm mt-1">{t("users.tryAdjustingYourSearchOr")}</p>
                     </div>
                   </td>
                 </tr>
@@ -291,14 +288,14 @@ export default function Users() {
                             copyToClipboard(user.username, "Username");
                           }}
                           className="text-gray-400 hover:text-teal-600 transition-colors p-1 rounded hover:bg-teal-50"
-                          title="Copy Username"
+                          title={t("users.copyUsername")}
                         >
                           <Copy className="w-3 h-3" />
                         </button>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-gray-900">{user.role?.name || "No Role"}</div>
+                      <div className="text-gray-900">{user.role?.name || t("users.noRole")}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
@@ -306,10 +303,10 @@ export default function Users() {
                           ? "bg-green-50 text-green-700 border-green-200" 
                           : "bg-red-50 text-red-700 border-red-200"
                       }`}>
-                        {user.isActive ? "Active" : "Inactive"}
+                        {user.isActive ? t("users.active") : t("users.inactive")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-6 py-4 text-end" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={(e) => {
@@ -317,7 +314,7 @@ export default function Users() {
                             handleResetPassword(user);
                           }}
                           className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                          title="Reset Password"
+                          title={t("users.resetPassword")}
                         >
                           <Key className="w-4 h-4" />
                         </button>
@@ -327,7 +324,7 @@ export default function Users() {
                             openEditModal(user);
                           }}
                           className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                          title="Edit"
+                          title={t("users.edit")}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -337,7 +334,7 @@ export default function Users() {
                             handleDelete(user.id);
                           }}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
+                          title={t("users.delete")}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -358,7 +355,7 @@ export default function Users() {
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <UsersIcon className="w-5 h-5 text-teal-600" />
-                {modalMode === "add" ? "Add New User" : modalMode === "edit" ? "Edit User" : "View User Details"}
+                {modalMode === "add" ? t("users.addNewUser") : modalMode === "edit" ? t("users.editUser") : t("users.viewUserDetails")}
               </h2>
               <button
                 onClick={closeModal}
@@ -371,40 +368,40 @@ export default function Users() {
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">{t("users.fullName")}</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
-                    placeholder="Enter full name"
+                    placeholder={t("users.enterFullName")}
                     required
                     disabled={modalMode === "view"}
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">{t("users.email")}</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
-                    placeholder="john@example.com"
+                    placeholder={t("users.johnExampleCom")}
                     required
                     disabled={modalMode === "view"}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Role</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">{t("users.role")}</label>
                   <select
                     value={formData.roleId}
                     onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white disabled:bg-gray-50 disabled:text-gray-500"
                     disabled={modalMode === "view"}
                   >
-                    <option value="">No Role</option>
+                    <option value="">{t("users.noRole")}</option>
                     {roles.map(r => (
                       <option key={r.id} value={r.id}>{r.name}</option>
                     ))}
@@ -412,7 +409,7 @@ export default function Users() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">{t("users.phone")}</label>
                   <input
                     type="text"
                     value={formData.phone}
@@ -427,20 +424,19 @@ export default function Users() {
                   <>
                     <div className="md:col-span-2 pt-2 border-t border-gray-100">
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-sm font-semibold text-gray-700">Username</label>
+                        <label className="block text-sm font-semibold text-gray-700">{t("users.username")}</label>
                         <button type="button" onClick={generateUsername} className="text-xs text-teal-600 hover:text-teal-700 flex items-center gap-1 font-medium bg-teal-50 px-2 py-1 rounded transition-colors">
-                          <Wand2 className="w-3 h-3" /> Auto Generate
-                        </button>
+                          <Wand2 className="w-3 h-3" />{" "}{t("users.autoGenerate")}</button>
                       </div>
                       <div className="relative">
                         <input
                           type="text"
                           value={formData.username}
                           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none font-mono text-sm"
-                          placeholder="e.g. admin123 (or leave blank to auto-generate)"
+                          className="w-full px-3 py-2 pe-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none font-mono text-sm"
+                          placeholder={t("users.eGAdmin123OrLeave")}
                         />
-                        <button type="button" onClick={() => copyToClipboard(formData.username, "Username")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title="Copy Username">
+                        <button type="button" onClick={() => copyToClipboard(formData.username, "Username")} className="absolute end-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title={t("users.copyUsername")}>
                           <Copy className="w-4 h-4" />
                         </button>
                       </div>
@@ -448,20 +444,19 @@ export default function Users() {
 
                     <div className="md:col-span-2 pb-2">
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-sm font-semibold text-gray-700">Password</label>
+                        <label className="block text-sm font-semibold text-gray-700">{t("users.password")}</label>
                         <button type="button" onClick={generatePassword} className="text-xs text-teal-600 hover:text-teal-700 flex items-center gap-1 font-medium bg-teal-50 px-2 py-1 rounded transition-colors">
-                          <Wand2 className="w-3 h-3" /> Auto Generate
-                        </button>
+                          <Wand2 className="w-3 h-3" />{" "}{t("users.autoGenerate")}</button>
                       </div>
                       <div className="relative">
                         <input
                           type="text"
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none font-mono text-sm"
-                          placeholder="Leave blank to generate automatically"
+                          className="w-full px-3 py-2 pe-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none font-mono text-sm"
+                          placeholder={t("users.leaveBlankToGenerateAutomatically")}
                         />
-                        <button type="button" onClick={() => copyToClipboard(formData.password, "Password")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title="Copy Password">
+                        <button type="button" onClick={() => copyToClipboard(formData.password, "Password")} className="absolute end-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 bg-white" title={t("users.copyPassword")}>
                           <Copy className="w-4 h-4" />
                         </button>
                       </div>
@@ -472,8 +467,8 @@ export default function Users() {
 
               <div className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 mt-2 ${modalMode === "view" ? "opacity-75" : ""}`}>
                 <div>
-                  <div className="text-sm font-semibold text-gray-700">Account Status</div>
-                  <div className="text-xs text-gray-500">Allow login for this user</div>
+                  <div className="text-sm font-semibold text-gray-700">{t("users.accountStatus")}</div>
+                  <div className="text-xs text-gray-500">{t("users.allowLoginForThisUser")}</div>
                 </div>
                 <label className={`relative inline-flex items-center ${modalMode === "view" ? "cursor-not-allowed" : "cursor-pointer"}`}>
                   <input 
@@ -483,7 +478,7 @@ export default function Users() {
                     className="sr-only peer" 
                     disabled={modalMode === "view"}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                 </label>
               </div>
 
@@ -496,9 +491,7 @@ export default function Users() {
                       type="button"
                       className="text-teal-600 border-teal-200 hover:bg-teal-50 hover:border-teal-300"
                     >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit User
-                    </Button>
+                      <Edit2 className="w-4 h-4 me-2" />{t("users.editUser")}</Button>
                     <Button 
                       variant="secondary" 
                       onClick={() => {
@@ -508,9 +501,7 @@ export default function Users() {
                       type="button"
                       className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
+                      <Trash2 className="w-4 h-4 me-2" />{t("users.delete")}</Button>
                   </div>
                 ) : (
                   <div></div>
@@ -518,16 +509,12 @@ export default function Users() {
                 
                 <div className="flex gap-3">
                   {modalMode === "view" ? (
-                    <Button variant="secondary" onClick={closeModal} type="button">
-                      Close
-                    </Button>
+                    <Button variant="secondary" onClick={closeModal} type="button">{t("users.close")}</Button>
                   ) : (
                     <>
-                      <Button variant="secondary" onClick={closeModal} type="button">
-                        Cancel
-                      </Button>
+                      <Button variant="secondary" onClick={closeModal} type="button">{t("users.cancel")}</Button>
                       <Button type="submit" isLoading={isSubmitting} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                        {modalMode === "add" ? "Create User" : "Save Changes"}
+                        {modalMode === "add" ? t("users.createUser") : t("users.saveChanges")}
                       </Button>
                     </>
                   )}

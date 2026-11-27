@@ -18,7 +18,7 @@ import DraftCard from "../components/assistant/DraftCard";
 import AssistantSettings from "../components/assistant/AssistantSettings";
 import Spinner from "../ui/Spinner";
 import { guessCompanyName, normName } from "../utils/companyGuess";
-import { tr } from "../i18n/lang";
+import { t } from "../i18n";
 
 // The assistant (design E1): a full page. Read-only in this phase — it reads
 // with the signed-in user's own access. Opened from a page (?from=type:id) it
@@ -29,7 +29,7 @@ const MAX_INPUT_PX = 220;
 
 const byId = (list) => Object.fromEntries((list || []).map((d) => [d.id, d]));
 
-const errorOf = (e) => e?.response?.data?.message || e?.message || "Something went wrong";
+const errorOf = (e) => e?.response?.data?.message || e?.message || t("assistant.somethingWentWrong");
 
 /** A short name for the page the assistant was opened from: "invoice ZYIV25001". */
 async function contextLabel({ type, id }) {
@@ -48,14 +48,14 @@ async function contextLabel({ type, id }) {
 }
 
 function suggestionsFor(ctx, { isSystem, canCosts }) {
-  if (ctx?.type === "invoice") return ["What's still missing on this invoice?", "Which certificates of this invoice are flagged?", "Which lines aren't matched to a product?"];
-  if (ctx?.type === "product") return ["What does this product contain?", "Which data is missing on this product?", "Which certificates were made for this product?"];
-  if (ctx?.type === "certificate") return ["Where does each value of this certificate come from?", "Which fields of this certificate are flagged?"];
+  if (ctx?.type === "invoice") return [t("assistant.whatsStillMissingOnThis"), t("assistant.whichCertificatesOfThisInvoice"), t("assistant.whichLinesArentMatchedTo")];
+  if (ctx?.type === "product") return [t("assistant.whatDoesThisProductContain"), t("assistant.whichDataIsMissingOn"), t("assistant.whichCertificatesWereMadeFor")];
+  if (ctx?.type === "certificate") return [t("assistant.whereDoesEachValueOf"), t("assistant.whichFieldsOfThisCertificate")];
   return [
-    "Which products are missing a pH specification?",
+    t("assistant.whichProductsAreMissingA"),
     "What's still missing on my last invoice?",
-    isSystem ? "How many certificates were generated this week per company?" : "How many certificates were generated this week?",
-    ...(canCosts ? ["AI cost this month"] : []),
+    isSystem ? t("assistant.howManyCertificatesWereGenerated") : t("assistant.howManyCertificatesWereGenerated2"),
+    ...(canCosts ? [t("assistant.aiCostThisMonth")] : []),
   ];
 }
 
@@ -217,7 +217,7 @@ export default function Assistant() {
     }
     for (const file of picked) {
       const key = `${file.name}-${file.size}-${Math.random()}`;
-      const bad = !ACCEPT.includes(file.type) ? "Attach a PDF, PNG, JPEG or WebP file" : file.size > MAX_BYTES ? "Files are limited to 60 MB" : null;
+      const bad = !ACCEPT.includes(file.type) ? t("assistant.attachAPdfPngJpeg") : file.size > MAX_BYTES ? t("assistant.filesAreLimitedTo60") : null;
       setFiles((fs) => [...fs, { key, name: file.name, sizeBytes: file.size, mimeType: file.type, progress: 0, file, error: bad, bad: !!bad }]);
       if (bad) continue;
       upload(conv.id, key, file);
@@ -369,7 +369,7 @@ export default function Assistant() {
   const onActionFinished = (action) => {
     loadCompanies(); // a company made by the card shows in the header and the chips right away
     if (!conversation) return;
-    runTurn({ id: `event-${action.id}`, role: "event", text: action.status === "done" ? "[action finished]" : "[action failed]" }, (conv, opts) => continueAfterAction(conv.id, action.id, opts));
+    runTurn({ id: `event-${action.id}`, role: "event", text: action.status === "done" ? t("assistant.actionFinished") : t("assistant.actionFailed") }, (conv, opts) => continueAfterAction(conv.id, action.id, opts));
   };
 
   const runTurn = async (localMessage, start, { replaceFrom = null } = {}) => {
@@ -396,14 +396,14 @@ export default function Assistant() {
           setLive((l) => {
             if (!l) return l;
             if (e.type === "status") return { ...l, status: e.text };
-            if (e.type === "action") return { ...l, status: "Preparing a card for you to confirm…" };
+            if (e.type === "action") return { ...l, status: t("assistant.preparingACardForYou") };
             if (e.type === "tool_start") return { status: `${e.label}…`, steps: [...l.steps, { name: e.tool, label: e.label, args: e.args, running: true }] };
             if (e.type === "tool_end") {
               const steps = [...l.steps];
               const i = steps.findLastIndex((s) => s.name === e.name && s.running);
               if (i >= 0) steps[i] = { ...e, running: false };
               else steps.push(e);
-              return { status: "Reading the results…", steps };
+              return { status: t("assistant.readingTheResults"), steps };
             }
             return l;
           });
@@ -415,7 +415,7 @@ export default function Assistant() {
       refreshList();
       refreshDrafts(conv.id);
     } catch (e) {
-      if (e.name === "AbortError") setMessages((ms) => [...ms, { id: `stop-${Date.now()}`, role: "assistant", text: "", error: "Stopped." }]);
+      if (e.name === "AbortError") setMessages((ms) => [...ms, { id: `stop-${Date.now()}`, role: "assistant", text: "", error: t("assistant.stopped") }]);
       else {
         setError(errorOf(e));
         if (e.status === 429 || /quota/i.test(e.message || "")) ai.refresh?.();
@@ -444,9 +444,7 @@ export default function Assistant() {
   if (!loaded) return <div className="flex h-full items-center justify-center"><Spinner /></div>;
   if (!status?.enabled) {
     return (
-      <div className="mx-auto mt-24 max-w-md rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-600" data-testid="assistant-off">
-        The assistant isn't switched on for your company yet. A system administrator can enable it.
-      </div>
+      <div className="mx-auto mt-24 max-w-md rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-600" data-testid="assistant-off">{t("assistant.theAssistantIsntSwitchedOn")}</div>
     );
   }
 
@@ -456,39 +454,35 @@ export default function Assistant() {
   messages.forEach((m) => (m.toolCalls || []).forEach((c) => c.draftId && (draftHome[c.draftId] = m.id)));
   const draftsOf = (m) => Object.entries(draftHome).filter(([, mid]) => mid === m.id).map(([id]) => drafts[id]).filter(Boolean);
   const openDrafts = Object.values(drafts).filter((d) => d.status === "collecting" || d.status === "ready");
-  const title = conversation?.title || "New conversation";
+  const title = conversation?.title || t("assistant.newConversation");
   return (
     <div className="flex h-full min-h-0" data-testid="assistant-page">
       <ConversationList conversations={conversations} activeId={conversation?.id} isSystem={isSystem} onOpen={openConversation} onNew={newConversation} onDelete={removeConversation} />
 
-      <section aria-label="Conversation" className="flex min-w-0 flex-1 flex-col">
+      <section aria-label={t("assistant.conversation")} className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-15 flex-none items-center gap-3 border-b border-gray-200 bg-white px-6">
           {from && (
             <>
-              <Link to={entityRoute(from.type, from.id)} data-testid="back-link" className="whitespace-nowrap text-[13px] font-medium text-blue-600 hover:text-blue-700 hover:underline">
-                ← Back to {fromLabel || from.type}
+              <Link to={entityRoute(from.type, from.id)} data-testid="back-link" className="whitespace-nowrap text-[13px] font-medium text-blue-600 hover:text-blue-700 hover:underline">{t("assistant.backTo", { name: fromLabel || from.type })}
               </Link>
               <span aria-hidden="true" className="h-5 w-px bg-gray-200" />
             </>
           )}
           <h1 dir="auto" className="m-0 min-w-0 flex-1 truncate text-base font-bold" data-testid="conversation-title">{title}</h1>
           {isSystem ? (
-            <label className="flex items-center gap-1.5 text-[13px] text-gray-600">
-              Company
-              <select data-testid="assistant-scope" value={scope} disabled={busy} onChange={(e) => setScope(e.target.value)} className="min-h-[34px] rounded-lg border border-gray-300 bg-white px-2 text-[13px] font-semibold text-gray-900">
-                <option value="all">All companies</option>
+            <label className="flex items-center gap-1.5 text-[13px] text-gray-600">{t("assistant.company")}<select data-testid="assistant-scope" value={scope} disabled={busy} onChange={(e) => setScope(e.target.value)} className="min-h-[34px] rounded-lg border border-gray-300 bg-white px-2 text-[13px] font-semibold text-gray-900">
+                <option value="all">{t("assistant.allCompanies")}</option>
                 {companies.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </label>
           ) : (
-            <span className="text-[13px] text-gray-600" data-testid="assistant-company">
-              Company: <b className="text-gray-900">{status.company?.name}</b>
+            <span className="text-[13px] text-gray-600" data-testid="assistant-company">{t("assistant.company2")}{" "}<b className="text-gray-900">{status.company?.name}</b>
             </span>
           )}
           {canManage && (
-            <button type="button" title="Assistant settings" aria-label="Assistant settings" onClick={() => setShowSettings((v) => !v)} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 ${showSettings ? "bg-gray-100" : ""}`}>
+            <button type="button" title={t("assistant.assistantSettings")} aria-label={t("assistant.assistantSettings")} onClick={() => setShowSettings((v) => !v)} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 ${showSettings ? "bg-gray-100" : ""}`}>
               <Settings className="h-4 w-4" />
             </button>
           )}
@@ -502,29 +496,21 @@ export default function Assistant() {
               {!ai.available && (
                 <div role="status" className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   <CloudOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span><b>AI unavailable.</b> {ai.message}</span>
+                  <span><b>{t("assistant.aiUnavailable")}</b> {ai.message}</span>
                 </div>
               )}
               {messages.length === 0 && !busy && (
-                <p className="mt-10 text-center text-sm text-gray-500">
-                  Ask about products, invoices, certificates, labels or reports.
-                  <br />
-                  <span className="font-arabic" dir="rtl">اسأل عن المنتجات أو الفواتير أو الشهادات أو التقارير.</span>
-                </p>
+                <p className="mt-10 text-center text-sm text-gray-500">{t("assistant.askAboutProductsInvoicesCertificates")}</p>
               )}
               {openDrafts.length > 0 && (
                 <div className="flex flex-col gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2.5" data-testid="open-drafts">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">In progress</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t("assistant.inProgress")}</div>
                   {openDrafts.map((d) => (
                     <div key={d.id} className="flex items-center gap-2 text-[13px]" data-testid="open-draft">
                       <span className="min-w-0 flex-1 truncate font-medium">{d.title}</span>
-                      <span className="text-xs text-gray-500">{d.status === "ready" ? "waiting for your OK" : d.blockedBy.length ? "a step first" : `${d.missing.length} to fill`}</span>
-                      <button type="button" disabled={busy} onClick={() => send(`Continue: ${d.title}`)} data-testid="draft-resume" className="text-xs font-semibold text-blue-600 hover:underline disabled:opacity-50">
-                        Resume
-                      </button>
-                      <button type="button" onClick={() => onDraftCancel(d.id)} className="text-xs font-semibold text-gray-500 hover:text-gray-900 hover:underline">
-                        Cancel
-                      </button>
+                      <span className="text-xs text-gray-500">{d.status === "ready" ? t("assistant.waitingForYourOk") : d.blockedBy.length ? t("assistant.aStepFirst") : t("assistant.toFill", { length: d.missing.length })}</span>
+                      <button type="button" disabled={busy} onClick={() => send(t("assistant.continue", { title: d.title }))} data-testid="draft-resume" className={"text-xs font-semibold text-blue-600 hover:underline disabled:opacity-50"}>{t("assistant.resume")}</button>
+                      <button type="button" onClick={() => onDraftCancel(d.id)} className="text-xs font-semibold text-gray-500 hover:text-gray-900 hover:underline">{t("assistant.cancel")}</button>
                     </div>
                   ))}
                 </div>
@@ -564,8 +550,8 @@ export default function Assistant() {
               <div className="flex flex-wrap gap-1.5">
                 {context && (
                   <span data-testid="context-chip" className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                    <span aria-hidden="true">📄</span> Opened from: {context.label}
-                    <button type="button" aria-label="Remove page context" onClick={removeContext} className="ms-0.5 cursor-pointer">×</button>
+                    <span aria-hidden="true">📄</span>{" "}{t("assistant.openedFrom")}{" "}{context.label}
+                    <button type="button" aria-label={t("assistant.removePageContext")} onClick={removeContext} className="ms-0.5 cursor-pointer">×</button>
                   </span>
                 )}
                 {messages.length === 0 &&
@@ -583,17 +569,15 @@ export default function Assistant() {
                         <span className="text-red-700" data-testid="file-error">
                           · {f.error}
                           {!f.bad && f.file && (
-                            <button type="button" onClick={() => conversation && upload(conversation.id, f.key, f.file)} className="ms-1 underline">
-                              Retry
-                            </button>
+                            <button type="button" onClick={() => conversation && upload(conversation.id, f.key, f.file)} className="ms-1 underline">{t("assistant.retry")}</button>
                           )}
                         </span>
                       ) : !f.attachment ? (
                         <span className="tabular-nums text-blue-700" data-testid="upload-progress">· {Math.round(f.progress * 100)}%</span>
                       ) : !f.attachment.companyId && isSystem ? (
-                        <span className="text-amber-700" data-testid="file-needs-company">· company asked on send</span>
+                        <span className="text-amber-700" data-testid="file-needs-company">{t("assistant.companyAskedOnSend")}</span>
                       ) : null}
-                      <button type="button" aria-label={`Remove ${f.name}`} onClick={() => setFiles((fs) => fs.filter((x) => x.key !== f.key))} className="ms-0.5 text-gray-500 hover:text-gray-900">
+                      <button type="button" aria-label={t("assistant.remove", { name: f.name })} onClick={() => setFiles((fs) => fs.filter((x) => x.key !== f.key))} className="ms-0.5 text-gray-500 hover:text-gray-900">
                         <X className="h-3 w-3" />
                       </button>
                     </FileChip>
@@ -602,49 +586,41 @@ export default function Assistant() {
               )}
               {held && (
                 <div role="status" dir="auto" data-testid="send-held" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                  {held.kind === "uploading" && <span>Waiting for the files to finish uploading — the message is sent as soon as they are attached.</span>}
+                  {held.kind === "uploading" && <span>{t("assistant.waitingForTheFilesTo")}</span>}
                   {held.kind === "failed" && (
                     <div className="flex flex-wrap items-center gap-2">
                       <span>
-                        {failedFiles.map((f) => f.name).join(", ")} {failedFiles.length === 1 ? "isn't" : "aren't"} attached. Retry or remove {failedFiles.length === 1 ? "it" : "them"}, or send without {failedFiles.length === 1 ? "it" : "them"}.
+                        {t("assistant.notAttached", { count: failedFiles.length, names: failedFiles.map((f) => f.name).join(t("common.listSep")) })}
                       </span>
-                      <button type="button" data-testid="send-without-failed" onClick={() => send(held.text, { skipFailed: true, fromComposer: held.fromComposer })} className="rounded-md border border-amber-300 bg-white px-2 py-0.5 text-xs font-semibold hover:bg-amber-100">
-                        Send without {failedFiles.length === 1 ? "it" : "them"}
+                      <button type="button" data-testid="send-without-failed" onClick={() => send(held.text, { skipFailed: true, fromComposer: held.fromComposer })} className="rounded-md border border-amber-300 bg-white px-2 py-0.5 text-xs font-semibold hover:bg-amber-100">{t("assistant.sendWithoutN", { count: failedFiles.length })}
                       </button>
-                      <button type="button" onClick={() => setHeld(null)} className="text-xs underline">
-                        Cancel
-                      </button>
+                      <button type="button" onClick={() => setHeld(null)} className="text-xs underline">{t("assistant.cancel")}</button>
                     </div>
                   )}
                   {held.kind === "company" && (
                     <div className="flex flex-col gap-2" data-testid="pick-company">
-                      <span dir="rtl">الملفات دي لأنهي شركة؟</span>
-                      <div className="flex flex-wrap gap-1.5" dir="rtl">
+                      <span>{t("assistant.whichCompanyAreTheseFiles")}</span>
+                      <div className="flex flex-wrap gap-1.5">
                         {(() => {
                           const guess = guessCompanyName(files.map((f) => f.name || f.attachment?.name), held.text);
                           const known = guess && companies.find((c) => normName(c.name) === normName(guess));
                           if (known) return (
                             <button type="button" onClick={() => sendForCompany(known.id)} className="rounded-full border border-blue-500 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-800" data-testid="pick-detected">
-                              {known.name} (من الملفات)
-                            </button>
+                              {known.name}{" "}{t("assistant.fromTheFiles")}</button>
                           );
                           return guess ? (
-                            <button type="button" onClick={() => sendUnboundWith(`شركة جديدة: ${guess}`)} className="rounded-full border border-emerald-400 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800" data-testid="pick-new-company">
-                              شركة جديدة: {guess}
-                            </button>
+                            <button type="button" onClick={() => sendUnboundWith(t("assistant.newCompany", { guess }))} className="rounded-full border border-emerald-400 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800" data-testid="pick-new-company">{t("assistant.newCompany", { guess })}</button>
                           ) : null;
                         })()}
-                        <button type="button" onClick={() => sendUnboundWith()} className="rounded-full border border-violet-300 bg-white px-2.5 py-0.5 text-xs font-medium text-violet-800 hover:bg-violet-50" data-testid="pick-let-system">
-                          خلّي السيستم يحدد
-                        </button>
+                        <button type="button" onClick={() => sendUnboundWith()} className="rounded-full border border-violet-300 bg-white px-2.5 py-0.5 text-xs font-medium text-violet-800 hover:bg-violet-50" data-testid="pick-let-system">{t("assistant.letTheSystemDecide")}</button>
                         {companies.slice(0, 12).map((c) => (
                           <button key={c.id} type="button" onClick={() => sendForCompany(c.id)} className="rounded-full border border-blue-300 bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-50">
                             {c.name}
                           </button>
                         ))}
                         {companies.length > 12 && (
-                          <select aria-label="Company for the files" defaultValue="" onChange={(e) => e.target.value && sendForCompany(e.target.value)} className="rounded-full border border-blue-300 bg-white px-2 py-0.5 text-xs">
-                            <option value="">More companies…</option>
+                          <select aria-label={t("assistant.companyForTheFiles")} defaultValue="" onChange={(e) => e.target.value && sendForCompany(e.target.value)} className="rounded-full border border-blue-300 bg-white px-2 py-0.5 text-xs">
+                            <option value="">{t("assistant.moreCompanies")}</option>
                             {companies.slice(12).map((c) => (
                               <option key={c.id} value={c.id}>
                                 {c.name}
@@ -652,9 +628,7 @@ export default function Assistant() {
                             ))}
                           </select>
                         )}
-                        <button type="button" onClick={() => setHeld(null)} className="text-xs underline">
-                          Cancel
-                        </button>
+                        <button type="button" onClick={() => setHeld(null)} className="text-xs underline">{t("assistant.cancel")}</button>
                       </div>
                     </div>
                   )}
@@ -684,13 +658,13 @@ export default function Assistant() {
                   addFiles(e.target.files);
                   e.target.value = "";
                 }} />
-                <button type="button" aria-label="Attach files" title="Attach invoice, catalogue, label, template or lab report" onClick={() => fileInputRef.current?.click()} data-testid="attach" className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-blue-600">
+                <button type="button" aria-label={t("assistant.attachFiles")} title={t("assistant.attachInvoiceCatalogueLabelTemplate")} onClick={() => fileInputRef.current?.click()} data-testid="attach" className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-blue-600">
                   <Paperclip className="h-4 w-4" />
                 </button>
                 <textarea
                   ref={inputRef}
                   data-testid="assistant-input"
-                  aria-label="Message"
+                  aria-label={t("assistant.message")}
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => {
@@ -713,28 +687,27 @@ export default function Assistant() {
                   rows={1}
                   dir="auto"
                   maxLength={MAX_TEXT}
-                  placeholder={tr("اسأل، أو ارمي أو الزق ملف — فاتورة، كتالوج، ليبل، تقرير معمل…", "Ask, or drop or paste a file — invoice, catalogue, label, lab report…")}
+                  placeholder={t("assistant.askOrDropOrPaste")}
                   className={`max-h-[220px] min-h-[40px] flex-1 resize-none border-0 bg-transparent py-2 text-sm leading-relaxed outline-none placeholder:text-gray-400 ${isArabic(text) ? "font-arabic" : ""}`}
                 />
                 {busy ? (
-                  <button type="button" onClick={() => abortRef.current?.abort()} data-testid="assistant-stop" aria-label="Stop" className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-gray-800 text-white hover:bg-gray-700">
+                  <button type="button" onClick={() => abortRef.current?.abort()} data-testid="assistant-stop" aria-label={t("assistant.stop")} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-gray-800 text-white hover:bg-gray-700">
                     <Square className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <button type="submit" data-testid="assistant-send" aria-label="Send" disabled={(!text.trim() && !files.length) || uploading} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                  <button type="submit" data-testid="assistant-send" aria-label={t("assistant.send")} disabled={(!text.trim() && !files.length) || uploading} className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                   </button>
                 )}
               </form>
               <div className="flex items-start justify-between gap-3 text-[11px] text-gray-500">
-                <span>Every change asks you first. PDF, PNG, JPEG, WebP · up to 60 MB. The assistant never fills lab results, batch numbers or dates on its own.</span>
+                <span>{t("assistant.everyChangeAsksYouFirst")}</span>
                 <span className="flex-none whitespace-nowrap" data-testid="composer-hint">
                   {text.length > MAX_TEXT - 500 ? (
                     <b className={text.length >= MAX_TEXT ? "text-red-700" : "text-amber-700"} data-testid="char-count">{text.length} / {MAX_TEXT}</b>
                   ) : (
                     <>
-                      <kbd className="font-sans font-semibold">Enter</kbd> to send · <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
-                    </>
+                      <kbd className="font-sans font-semibold">Enter</kbd>{" "}{t("assistant.toSend")}{" "}<kbd className="font-sans font-semibold">Shift+Enter</kbd>{" "}{t("assistant.newLine")}</>
                   )}
                 </span>
               </div>

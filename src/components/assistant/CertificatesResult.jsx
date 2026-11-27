@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Download, ExternalLink, FileText, Loader2 } from "lucide-react";
 import { getCertificateThumbnail, exportCertificatePdf, downloadCertificatePdf, waitForTask } from "../../services/apiCertificatesV2";
-import { tr } from "../../i18n/lang";
+import { t } from "../../i18n";
 
 // A chat card that made certificates (26 Nov: "الرابط التالي: الشهادات" with no real link, and
 // "Open →" to the hidden internal invoice of a no-invoice certificate): each certificate with its
@@ -57,19 +57,18 @@ export default function CertificatesResult({ certificates = [], link = null, com
             <p className="flex items-center gap-1 font-semibold text-gray-900">
               <FileText className="h-3.5 w-3.5 text-gray-400" /> {c.type}
             </p>
-            <p className="truncate text-gray-600" dir="auto">{c.products.join("، ") || "—"}</p>
+            <p className="truncate text-gray-600" dir="auto">{c.products.join(t("common.listSep")) || "—"}</p>
           </div>
           <button type="button" onClick={() => pdf(c.id)} disabled={busy === c.id} className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-            {busy === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} PDF
-          </button>
+            {busy === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}{" "}PDF</button>
           <Link to={`/certificates/${c.id}${q}`} className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-700" data-testid="certificate-open">
-            <ExternalLink className="h-3.5 w-3.5" /> {tr("افتح", "Open")}
+            <ExternalLink className="h-3.5 w-3.5" /> {t("certificatesResult.open")}
           </Link>
         </div>
       ))}
       {certificates.length > 1 && link && (
         <Link to={`${link}${companyId ? `&companyId=${companyId}` : ""}`} className="text-[13px] font-semibold text-blue-600 hover:underline">
-          {tr(`كل الـ ${certificates.length} شهادات ←`, `All ${certificates.length} certificates →`)}
+          {t("certificatesResult.allCertificates", { length: certificates.length })}
         </Link>
       )}
     </div>

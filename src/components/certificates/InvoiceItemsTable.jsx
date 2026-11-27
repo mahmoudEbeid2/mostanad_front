@@ -2,39 +2,16 @@ import { useRef, useState } from "react";
 import { AlertTriangle, EyeOff, Pencil, Sparkles, Trash2, Undo2 } from "lucide-react";
 import ProductMatchSelect from "./ProductMatchSelect";
 import useConfirm from "../../hooks/useConfirm";
+import { strings, t } from "../../i18n";
 
 // The invoice lines (plan §13.5; mockup B3). Every cell is editable in place
 // (it reads as text until hovered/focused); a dot marks a value that differs
 // from what was read from the invoice. The match column shows how the line was
 // matched (✓ code / ✓ name / ✓ you), or "needs match" with the suggestions.
 const STR = {
-  remember: "Remember for next invoices",
-  rememberHint: (name, product) => `Every later invoice line named “${name}” is matched to ${product} without asking. Only you can teach this.`,
-  title: "Lines",
-  add: "+ Add line",
-  line: "#",
-  edited: "Edited — read from the invoice as",
-  noIso: "Ambiguous date — write it unambiguously (e.g. 2025-04-03 or 04/2025)",
-  ambiguousQty: "Ambiguous quantity — thousands or decimal? Write it without the separator (1250) or with a decimal part (1.25)",
-  match: "Product match",
-  matchedBy: { exact_code: "code", exact_name: "name", user: "you", alias: "remembered", ai_confirmed: "AI" },
-  matchedByHint: { alias: "Matched the way this name was confirmed before", ai_confirmed: "Matched by AI and confirmed" },
-  aiSuggests: (name, c) => `AI suggests ${name} (${Math.round((c ?? 0) * 100)}%)`,
-  confirmAi: "Confirm",
-  needsMatch: "needs match",
-  newProduct: "+ New product",
-  newProductPill: "✓ new product",
-  similar: (name) => `Similar: ${name}`,
-  useIt: "use it",
-  change: "Change product",
-  ignored: "ignored",
-  ignoredHint: "no certificate for this line",
-  ignore: "Ignore this line",
-  unignore: "Use this line again",
-  remove: "Delete this line",
-  confirmRemove: (n) => ({ title: `Delete line ${n}?`, message: "The line and what was typed into it are removed.", confirmLabel: "Delete", tone: "danger" }),
-  empty: "No lines were read from this invoice. Add them by hand.",
-  emptyManual: "No lines yet — add each line from the original.",
+  ...strings("invoiceItemsTable"),
+  aiSuggests: (name, c) => t("invoiceItemsTable.aiSuggests", { name, pct: Math.round((c ?? 0) * 100) }),
+  confirmRemove: (n) => ({ title: t("invoiceItemsTable.deleteLine", { n }), message: t("invoiceItemsTable.theLineAndWhatWas"), confirmLabel: t("invoiceItemsTable.delete"), tone: "danger" }),
 };
 
 // a candidate this close is worth a word on the line itself (mockup D2)
@@ -42,13 +19,13 @@ const SIMILAR_MIN = 0.4;
 
 // One <td> per group; qty/unit share a column (plan §13.5).
 const COLUMNS = [
-  { label: "Name on invoice", w: "min-w-40", cols: [{ key: "name" }] },
-  { label: "Code", w: "w-28", cols: [{ key: "code", mono: true }] },
-  { label: "Batch", w: "w-32", cols: [{ key: "batchNo", mono: true }] },
-  { label: "Production", w: "w-28", cols: [{ key: "productionDate", date: true }] },
-  { label: "Expiry", w: "w-28", cols: [{ key: "expiryDate", date: true }] },
-  { label: "Qty", w: "w-32", cols: [{ key: "quantity", number: true }, { key: "unit" }] },
-  { label: "Packing", w: "w-28", cols: [{ key: "packing" }] },
+  { label: t("invoiceItemsTable.nameOnInvoice"), w: "min-w-40", cols: [{ key: "name" }] },
+  { label: t("invoiceItemsTable.code"), w: "w-28", cols: [{ key: "code", mono: true }] },
+  { label: t("invoiceItemsTable.batch"), w: "w-32", cols: [{ key: "batchNo", mono: true }] },
+  { label: t("invoiceItemsTable.production"), w: "w-28", cols: [{ key: "productionDate", date: true }] },
+  { label: t("invoiceItemsTable.expiry"), w: "w-28", cols: [{ key: "expiryDate", date: true }] },
+  { label: t("invoiceItemsTable.qty"), w: "w-32", cols: [{ key: "quantity", number: true }, { key: "unit" }] },
+  { label: t("invoiceItemsTable.packing"), w: "w-28", cols: [{ key: "packing" }] },
 ];
 
 /** What the user sees and types for a cell: dates are { raw, iso }, quantity keeps its raw text. */
@@ -85,7 +62,7 @@ function CellInput({ item, col, label, editable, onSave }) {
         placeholder={editable ? "—" : ""}
         disabled={!editable}
         data-key={col.key}
-        aria-label={`Line ${item.lineNo} · ${label}`}
+        aria-label={t("invoiceItemsTable.line", { lineNo: item.lineNo, label })}
         onFocus={(e) => {
           setDraft(shown);
           e.currentTarget.select();
@@ -104,7 +81,7 @@ function CellInput({ item, col, label, editable, onSave }) {
           ambiguous ? "border-amber-400 bg-amber-50" : "border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white"
         }`}
       />
-      {edited && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500" aria-label={STR.edited} />}
+      {edited && <span className="absolute top-0.5 end-0.5 w-1.5 h-1.5 rounded-full bg-blue-500" aria-label={STR.edited} />}
     </div>
   );
 }
@@ -154,7 +131,7 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore, onRemember, onNew
         <span className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs ${warned ? "bg-amber-50 text-amber-900" : "bg-violet-50 text-violet-900"}`} title={(aiPick.ai.reasons || []).join(" · ")} data-testid="ai-match">
           {warned ? <AlertTriangle className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
           {STR.aiSuggests(aiPick.name, aiPick.ai.confidence)}
-          <button type="button" onClick={() => onMatch(aiPick.productId, { aiSuggestionId: aiPick.ai.suggestionId })} className="ml-1 rounded bg-violet-600 text-white px-2 py-0.5 font-semibold hover:bg-violet-700">
+          <button type="button" onClick={() => onMatch(aiPick.productId, { aiSuggestionId: aiPick.ai.suggestionId })} className="ms-1 rounded bg-violet-600 text-white px-2 py-0.5 font-semibold hover:bg-violet-700">
             {STR.confirmAi}
           </button>
         </span>
@@ -185,7 +162,7 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore, onRemember, onNew
         </button>
       )}
       {editable && (
-        <button type="button" title={STR.ignore} aria-label={STR.ignore} onClick={() => onIgnore(true)} className="ml-auto text-gray-400 hover:text-gray-700">
+        <button type="button" title={STR.ignore} aria-label={STR.ignore} onClick={() => onIgnore(true)} className="ms-auto text-gray-400 hover:text-gray-700">
           <EyeOff className="w-4 h-4" />
         </button>
       )}
@@ -218,7 +195,7 @@ export default function InvoiceItemsTable({ scope, items, manual = false, editab
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm" data-testid="invoice-items">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+          <thead className="bg-gray-50 text-start text-xs text-gray-500">
             <tr>
               <th className="px-3 py-2 font-semibold w-10">{STR.line}</th>
               {COLUMNS.map((c) => (
@@ -245,7 +222,7 @@ export default function InvoiceItemsTable({ scope, items, manual = false, editab
                   <td key={group.label} className={`px-1 py-1.5 align-middle ${group.w}`}>
                     <div className="flex gap-1">
                       {group.cols.map((col) => (
-                        <CellInput key={col.key} item={item} col={col} label={col.key === "unit" ? "Unit" : group.label} editable={editable} onSave={(key, value) => onSaveCell(item, key, value)} />
+                        <CellInput key={col.key} item={item} col={col} label={col.key === "unit" ? t("invoiceItemsTable.unit") : group.label} editable={editable} onSave={(key, value) => onSaveCell(item, key, value)} />
                       ))}
                     </div>
                   </td>
@@ -255,7 +232,7 @@ export default function InvoiceItemsTable({ scope, items, manual = false, editab
                 </td>
                 <td className="px-2 py-1.5 align-middle">
                   {editable && (
-                    <button type="button" title={STR.remove} aria-label={`${STR.remove} (line ${item.lineNo})`} onClick={async () => (await ask(STR.confirmRemove(item.lineNo))) && onDelete(item)} className="text-gray-300 hover:text-red-600">
+                    <button type="button" title={STR.remove} aria-label={t("invoiceItemsTable.line2", { remove: STR.remove, lineNo: item.lineNo })} onClick={async () => (await ask(STR.confirmRemove(item.lineNo))) && onDelete(item)} className="text-gray-300 hover:text-red-600">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}

@@ -11,6 +11,7 @@ import {
 import { getRules, updateRule, approveRule, rejectRule } from "../services/apiRegulatoryRules";
 import Button from "../ui/Button";
 import { useSearchParams } from "react-router-dom";
+import { t } from "../i18n";
 
 const STATUS_CLASSES = {
   pending_review: "bg-amber-50 text-amber-800 border-amber-200",
@@ -65,7 +66,7 @@ export default function RegulatoryDocuments() {
       setDocuments(res.documents || []);
       setTotal(res.total || 0);
     } catch (err) {
-      toast.error(err.message || "Failed to load regulatory documents");
+      toast.error(err.message || t("regulatoryDocuments.failedToLoadRegulatoryDocuments"));
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +83,7 @@ export default function RegulatoryDocuments() {
       const doc = await getDocument(id);
       setDocDetail(doc);
     } catch (err) {
-      toast.error(err.message || "Failed to load document details");
+      toast.error(err.message || t("regulatoryDocuments.failedToLoadDocumentDetails"));
     } finally {
       setIsDetailLoading(false);
     }
@@ -99,7 +100,7 @@ export default function RegulatoryDocuments() {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadForm.file) {
-      toast.error("Please select a PDF document to upload.");
+      toast.error(t("regulatoryDocuments.pleaseSelectAPdfDocument"));
       return;
     }
 
@@ -115,7 +116,7 @@ export default function RegulatoryDocuments() {
       if (uploadForm.sourceUrl.trim()) formData.append("sourceUrl", uploadForm.sourceUrl.trim());
 
       const result = await uploadDocument(formData);
-      toast.success("Document uploaded successfully.");
+      toast.success(t("regulatoryDocuments.documentUploadedSuccessfully"));
       setIsUploadOpen(false);
       setUploadForm({
         title: "",
@@ -129,7 +130,7 @@ export default function RegulatoryDocuments() {
       await loadDocuments();
       if (result?.document?.id) setSelectedDocId(result.document.id);
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Failed to upload document");
+      toast.error(err.response?.data?.message || err.message || t("regulatoryDocuments.failedToUploadDocument"));
     } finally {
       setIsUploading(false);
     }
@@ -140,11 +141,11 @@ export default function RegulatoryDocuments() {
     try {
       setIsCompiling(true);
       const res = await compileRules(selectedDocId);
-      toast.success(`Rules compiled successfully. Found ${res?.rules?.length || 0} regulatory rule(s).`);
+      toast.success(t("regulatoryDocuments.rulesCompiledSuccessfullyFoundRegulatory", { v: res?.rules?.length || 0 }));
       await loadDocDetail(selectedDocId);
       await loadDocuments();
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Failed to compile rules");
+      toast.error(err.response?.data?.message || err.message || t("regulatoryDocuments.failedToCompileRules"));
     } finally {
       setIsCompiling(false);
     }
@@ -156,10 +157,10 @@ export default function RegulatoryDocuments() {
       setIsAuditing(true);
       const doc = await auditCoverage(selectedDocId);
       setDocDetail(doc);
-      toast.success(`Coverage audit completed: ${doc.coveragePercent?.toFixed(1) || 0}%`);
+      toast.success(t("regulatoryDocuments.coverageAuditCompleted", { v: doc.coveragePercent?.toFixed(1) || 0 }));
       await loadDocuments();
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Failed to audit coverage");
+      toast.error(err.response?.data?.message || err.message || t("regulatoryDocuments.failedToAuditCoverage"));
     } finally {
       setIsAuditing(false);
     }
@@ -171,10 +172,10 @@ export default function RegulatoryDocuments() {
       setClearingClauseRef(ref);
       const doc = await clearClause(selectedDocId, ref);
       setDocDetail(doc);
-      toast.success(`Cleared clause ${ref}. Coverage updated.`);
+      toast.success(t("regulatoryDocuments.clearedClauseCoverageUpdated", { ref }));
       await loadDocuments();
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Failed to clear clause");
+      toast.error(err.response?.data?.message || err.message || t("regulatoryDocuments.failedToClearClause"));
     } finally {
       setClearingClauseRef(null);
     }
@@ -186,10 +187,10 @@ export default function RegulatoryDocuments() {
       setIsApproving(true);
       const doc = await approveDocument(selectedDocId);
       setDocDetail(doc);
-      toast.success("Regulatory Document Approved!");
+      toast.success(t("regulatoryDocuments.regulatoryDocumentApproved"));
       await loadDocuments();
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Approval refused");
+      toast.error(err.response?.data?.message || err.message || t("regulatoryDocuments.approvalRefused"));
     } finally {
       setIsApproving(false);
     }
@@ -198,20 +199,20 @@ export default function RegulatoryDocuments() {
   const handleApproveRule = async (ruleId) => {
     try {
       await approveRule(ruleId);
-      toast.success("Rule approved");
+      toast.success(t("regulatoryDocuments.ruleApproved"));
       await loadDocDetail(selectedDocId);
     } catch (err) {
-      toast.error(err.message || "Failed to approve rule");
+      toast.error(err.message || t("regulatoryDocuments.failedToApproveRule"));
     }
   };
 
   const handleRejectRule = async (ruleId) => {
     try {
       await rejectRule(ruleId);
-      toast("Rule rejected", { icon: "🚫" });
+      toast(t("regulatoryDocuments.ruleRejected"), { icon: "🚫" });
       await loadDocDetail(selectedDocId);
     } catch (err) {
-      toast.error(err.message || "Failed to reject rule");
+      toast.error(err.message || t("regulatoryDocuments.failedToRejectRule"));
     }
   };
 
@@ -226,21 +227,17 @@ export default function RegulatoryDocuments() {
       <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <FileText className="w-8 h-8 text-blue-600" /> Regulatory Ingestion & Rule Review
-          </h1>
-          <p className="text-gray-500 mt-2 text-sm">
-            Ingest official regulations, compile structured ATS rules with quoted citations, and audit clause coverage.
-          </p>
+            <FileText className="w-8 h-8 text-blue-600" />{" "}{t("regulatoryDocuments.regulatoryIngestionRuleReview")}</h1>
+          <p className="text-gray-500 mt-2 text-sm">{t("regulatoryDocuments.ingestOfficialRegulationsCompileStructur")}</p>
         </div>
         <Button onClick={() => setIsUploadOpen(true)}>
-          <Plus className="w-4 h-4" /> Ingest New Regulation (PDF)
-        </Button>
+          <Plus className="w-4 h-4" />{" "}{t("regulatoryDocuments.ingestNewRegulationPdf")}</Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Documents List */}
         <div className="lg:col-span-1 space-y-3">
-          <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide px-1">Authority Documents</h3>
+          <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide px-1">{t("regulatoryDocuments.authorityDocuments")}</h3>
 
           {isLoading ? (
             <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
@@ -249,8 +246,8 @@ export default function RegulatoryDocuments() {
           ) : documents.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-gray-400">
               <FileText className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm font-medium text-gray-600">No regulatory documents</p>
-              <p className="text-xs text-gray-400 mt-1">Upload an authority PDF to begin rule compilation.</p>
+              <p className="text-sm font-medium text-gray-600">{t("regulatoryDocuments.noRegulatoryDocuments")}</p>
+              <p className="text-xs text-gray-400 mt-1">{t("regulatoryDocuments.uploadAnAuthorityPdfTo")}</p>
             </div>
           ) : (
             documents.map((doc) => {
@@ -284,7 +281,7 @@ export default function RegulatoryDocuments() {
                   </div>
 
                   <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-100">
-                    <span className="text-gray-500">Coverage:</span>
+                    <span className="text-gray-500">{t("regulatoryDocuments.coverage")}</span>
                     <span className={`font-bold ${doc.coveragePercent >= 95 ? "text-green-600" : "text-amber-600"}`}>
                       {cov}%
                     </span>
@@ -300,10 +297,8 @@ export default function RegulatoryDocuments() {
           {!selectedDocId ? (
             <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-400 shadow-sm">
               <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <h4 className="text-base font-bold text-gray-700">Select a document to review</h4>
-              <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
-                Select an authority document on the left to compile rules, run clause coverage audits, and review cited rules.
-              </p>
+              <h4 className="text-base font-bold text-gray-700">{t("regulatoryDocuments.selectADocumentToReview")}</h4>
+              <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">{t("regulatoryDocuments.selectAnAuthorityDocumentOn")}</p>
             </div>
           ) : isDetailLoading ? (
             <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
@@ -322,9 +317,9 @@ export default function RegulatoryDocuments() {
                       </span>
                       <span>{docDetail.country}</span>
                       <span>·</span>
-                      <span className="font-mono">Version {docDetail.documentVersion}</span>
+                      <span className="font-mono">{t("regulatoryDocuments.version")}{" "}{docDetail.documentVersion}</span>
                       <span>·</span>
-                      <span>Scope: {(docDetail.productScope || []).join(", ")}</span>
+                      <span>{t("regulatoryDocuments.scope")}{" "}{(docDetail.productScope || []).join(", ")}</span>
                     </div>
                   </div>
 
@@ -338,9 +333,7 @@ export default function RegulatoryDocuments() {
                 {/* Coverage Banner (§7.5 Coverage Gate) */}
                 <div className="mt-5 p-4 rounded-xl bg-gray-50 border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wide text-gray-700">
-                      Clause Coverage Accounting (§7.5)
-                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wide text-gray-700">{t("regulatoryDocuments.clauseCoverageAccounting75")}</span>
                     <span className={`text-lg font-black ${coveragePercent >= 95 ? "text-green-600" : "text-amber-600"}`}>
                       {coveragePercent.toFixed(1)}%
                     </span>
@@ -358,17 +351,15 @@ export default function RegulatoryDocuments() {
 
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>
-                      {docDetail.clauseCoveredCount || 0} covered of {docDetail.clauseTotalCount || 0} total clauses
-                    </span>
-                    <span>Threshold: 95.0%</span>
+                      {docDetail.clauseCoveredCount || 0}{" "}{t("regulatoryDocuments.coveredOf")}{" "}{docDetail.clauseTotalCount || 0}{" "}{t("regulatoryDocuments.totalClauses")}</span>
+                    <span>{t("regulatoryDocuments.threshold950")}</span>
                   </div>
 
                   {isCoverageBelowThreshold && !isApproved && (
                     <div className="mt-3 flex items-center gap-2 text-xs text-amber-800 bg-amber-100/70 p-2.5 rounded-lg border border-amber-200">
                       <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
                       <span>
-                        <strong>Approval Blocked:</strong> Document coverage is below 95%. You must clear all uncovered clauses before this document can be approved.
-                      </span>
+                        <strong>{t("regulatoryDocuments.approvalBlocked")}</strong>{" "}{t("regulatoryDocuments.documentCoverageIsBelow95")}</span>
                     </div>
                   )}
                 </div>
@@ -377,11 +368,9 @@ export default function RegulatoryDocuments() {
                 <div className="mt-5 flex items-center justify-between gap-3 flex-wrap pt-2">
                   <div className="flex items-center gap-2">
                     <AiAction><Button onClick={handleCompileRules} isLoading={isCompiling} variant="secondary" className="text-xs">
-                      <Sparkles className="w-3.5 h-3.5" /> Compile Rules (AI)
-                    </Button></AiAction>
+                      <Sparkles className="w-3.5 h-3.5" />{" "}{t("regulatoryDocuments.compileRulesAi")}</Button></AiAction>
                     <AiAction><Button onClick={handleAuditCoverage} isLoading={isAuditing} variant="secondary" className="text-xs">
-                      <RefreshCw className="w-3.5 h-3.5" /> Audit Coverage
-                    </Button></AiAction>
+                      <RefreshCw className="w-3.5 h-3.5" />{" "}{t("regulatoryDocuments.auditCoverage")}</Button></AiAction>
                   </div>
 
                   {!isApproved && (
@@ -391,8 +380,7 @@ export default function RegulatoryDocuments() {
                       disabled={isCoverageBelowThreshold}
                       className="text-xs px-4 py-2 font-bold"
                     >
-                      <ShieldCheck className="w-4 h-4" /> Formally Approve Document
-                    </Button>
+                      <ShieldCheck className="w-4 h-4" />{" "}{t("regulatoryDocuments.formallyApproveDocument")}</Button>
                   )}
                 </div>
               </div>
@@ -401,13 +389,12 @@ export default function RegulatoryDocuments() {
               {docDetail.uncoveredClauses?.length > 0 && (
                 <div className="bg-amber-50/50 border border-amber-200 rounded-2xl p-5 space-y-3">
                   <h4 className="text-sm font-bold text-amber-900 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600" /> Uncovered Clauses ({docDetail.uncoveredClauses.length})
-                  </h4>
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />{" "}{t("regulatoryDocuments.uncoveredClauses", { length: docDetail.uncoveredClauses.length })}</h4>
                   <div className="space-y-2">
                     {docDetail.uncoveredClauses.map((clause, idx) => (
                       <div key={idx} className="bg-white rounded-xl p-3 border border-amber-200 flex items-center justify-between gap-3">
                         <div className="text-xs">
-                          <p className="font-bold text-gray-900">{clause.reference || `Clause #${idx + 1}`}</p>
+                          <p className="font-bold text-gray-900">{clause.reference || t("regulatoryDocuments.clause", { v: idx + 1 })}</p>
                           <p className="text-gray-600 mt-0.5 italic">&ldquo;{clause.text}&rdquo;</p>
                         </div>
                         <Button
@@ -415,9 +402,7 @@ export default function RegulatoryDocuments() {
                           onClick={() => handleClearClause(clause.reference)}
                           isLoading={clearingClauseRef === clause.reference}
                           className="text-xs px-3 py-1 flex-shrink-0"
-                        >
-                          Clear Clause
-                        </Button>
+                        >{t("regulatoryDocuments.clearClause")}</Button>
                       </div>
                     ))}
                   </div>
@@ -428,15 +413,13 @@ export default function RegulatoryDocuments() {
               <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-blue-600" /> Compiled Rules ({docDetail.rules?.length || 0})
+                    <ShieldCheck className="w-5 h-5 text-blue-600" />{" "}{t("regulatoryDocuments.compiledRules")}{docDetail.rules?.length || 0})
                   </h3>
-                  <span className="text-xs text-gray-500">Every rule must have a quoted citation</span>
+                  <span className="text-xs text-gray-500">{t("regulatoryDocuments.everyRuleMustHaveA")}</span>
                 </div>
 
                 {(!docDetail.rules || docDetail.rules.length === 0) ? (
-                  <p className="text-sm text-gray-400 italic py-4 text-center">
-                    No rules compiled yet. Click &ldquo;Compile Rules (AI)&rdquo; to extract rules from document context.
-                  </p>
+                  <p className="text-sm text-gray-400 italic py-4 text-center">{t("regulatoryDocuments.noRulesCompiledYetClick")}</p>
                 ) : (
                   <div className="space-y-3">
                     {docDetail.rules.map((rule) => (
@@ -466,8 +449,7 @@ export default function RegulatoryDocuments() {
                         )}
 
                         <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
-                          <span className="text-gray-500 font-mono">
-                            Op: {rule.operator} {rule.expectedValue ? `(${JSON.stringify(rule.expectedValue)})` : ""}
+                          <span className="text-gray-500 font-mono">{t("regulatoryDocuments.op", { operator: rule.operator })}{" "}{rule.expectedValue ? `(${JSON.stringify(rule.expectedValue)})` : ""}
                           </span>
 
                           <div className="flex items-center gap-2">
@@ -476,16 +458,14 @@ export default function RegulatoryDocuments() {
                                 onClick={() => handleApproveRule(rule.id)}
                                 className="flex items-center gap-1 text-[11px] font-bold text-green-700 hover:text-green-900 bg-green-50 px-2 py-1 rounded-md border border-green-200"
                               >
-                                <Check className="w-3 h-3" /> Approve
-                              </button>
+                                <Check className="w-3 h-3" />{" "}{t("regulatoryDocuments.approve")}</button>
                             )}
                             {rule.status !== "rejected" && (
                               <button
                                 onClick={() => handleRejectRule(rule.id)}
                                 className="flex items-center gap-1 text-[11px] font-bold text-red-700 hover:text-red-900 bg-red-50 px-2 py-1 rounded-md border border-red-200"
                               >
-                                <Ban className="w-3 h-3" /> Reject
-                              </button>
+                                <Ban className="w-3 h-3" />{" "}{t("regulatoryDocuments.reject")}</button>
                             )}
                           </div>
                         </div>
@@ -505,8 +485,7 @@ export default function RegulatoryDocuments() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 overflow-hidden">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Upload className="w-5 h-5 text-blue-600" /> Ingest Regulatory Document
-              </h3>
+                <Upload className="w-5 h-5 text-blue-600" />{" "}{t("regulatoryDocuments.ingestRegulatoryDocument")}</h3>
               <button onClick={() => setIsUploadOpen(false)} className="p-1 text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
@@ -514,31 +493,31 @@ export default function RegulatoryDocuments() {
 
             <form onSubmit={handleUpload} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Document Title *</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("regulatoryDocuments.documentTitle")}</label>
                 <input
                   type="text"
                   required
                   value={uploadForm.title}
                   onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-                  placeholder="e.g. SFDA Executive Regulations for Veterinary Products"
+                  placeholder={t("regulatoryDocuments.eGSfdaExecutiveRegulations")}
                   className="w-full text-sm rounded-xl border border-gray-300 p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Authority *</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("regulatoryDocuments.authority")}</label>
                   <input
                     type="text"
                     required
                     value={uploadForm.authority}
                     onChange={(e) => setUploadForm({ ...uploadForm, authority: e.target.value })}
-                    placeholder="e.g. SFDA, EDA"
+                    placeholder={t("regulatoryDocuments.eGSfdaEda")}
                     className="w-full text-sm rounded-xl border border-gray-300 p-2.5"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Country *</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("regulatoryDocuments.country")}</label>
                   <input
                     type="text"
                     required
@@ -551,7 +530,7 @@ export default function RegulatoryDocuments() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Document Version</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("regulatoryDocuments.documentVersion")}</label>
                   <input
                     type="text"
                     value={uploadForm.documentVersion}
@@ -560,7 +539,7 @@ export default function RegulatoryDocuments() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Product Scope</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("regulatoryDocuments.productScope")}</label>
                   <input
                     type="text"
                     value={uploadForm.productScope}
@@ -572,7 +551,7 @@ export default function RegulatoryDocuments() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Source URL (Optional)</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("regulatoryDocuments.sourceUrlOptional")}</label>
                 <input
                   type="url"
                   value={uploadForm.sourceUrl}
@@ -583,23 +562,19 @@ export default function RegulatoryDocuments() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Regulatory PDF File *</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("regulatoryDocuments.regulatoryPdfFile")}</label>
                 <input
                   type="file"
                   required
                   accept=".pdf"
                   onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })}
-                  className="w-full text-xs text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="w-full text-xs text-gray-600 file:me-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <Button variant="secondary" onClick={() => setIsUploadOpen(false)} disabled={isUploading}>
-                  Cancel
-                </Button>
-                <Button type="submit" isLoading={isUploading}>
-                  Upload & Ingest
-                </Button>
+                <Button variant="secondary" onClick={() => setIsUploadOpen(false)} disabled={isUploading}>{t("regulatoryDocuments.cancel")}</Button>
+                <Button type="submit" isLoading={isUploading}>{t("regulatoryDocuments.uploadIngest")}</Button>
               </div>
             </form>
           </div>

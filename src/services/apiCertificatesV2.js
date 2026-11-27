@@ -1,28 +1,29 @@
 import apiClient from "./apiClient";
 import { unwrap } from "./apiCertificateTypes";
+import { t } from "../i18n";
 
 // Certificates V2 — generation plan, batches, generated certificates
 // (backend CERTIFICATES_V2_PLAN.md §10–§12). Every call takes `scope`.
 
 /** → { entries[], unassigned[], gaps[], summary[] } — what "Generate" would produce */
 export const getGenerationPlan = (scope = {}, invoiceId) =>
-  unwrap(apiClient.get(`/invoices/${invoiceId}/generation-plan`, { params: scope }), "Failed to load the generation plan").then((d) => d.data.plan);
+  unwrap(apiClient.get(`/invoices/${invoiceId}/generation-plan`, { params: scope }), t("errors.failedToLoadTheGeneration")).then((d) => d.data.plan);
 
 /** → { batchId, taskId, planned, unassigned }. `force` = "Generate anyway" while the data check has open values (update_certificates). */
 export const generateCertificates = (scope = {}, invoiceId, { force = false } = {}) =>
   unwrap(apiClient.post(`/invoices/${invoiceId}/generate`, force ? { force: true } : {}, { params: scope }), "Couldn't start generating").then((d) => d.data);
 
 /** → batch with { status, counts, live, plan, certificates[] } */
-export const getBatch = (scope = {}, batchId) => unwrap(apiClient.get(`/certificate-batches/${batchId}`, { params: scope }), "Failed to load the batch").then((d) => d.data.batch);
+export const getBatch = (scope = {}, batchId) => unwrap(apiClient.get(`/certificate-batches/${batchId}`, { params: scope }), t("errors.failedToLoadTheBatch")).then((d) => d.data.batch);
 
 export const listCertificates = (scope = {}, filters = {}) =>
-  unwrap(apiClient.get("/certificates", { params: { ...scope, ...filters } }), "Failed to load certificates").then((d) => ({ certificates: d.data.certificates, total: d.total }));
+  unwrap(apiClient.get("/certificates", { params: { ...scope, ...filters } }), t("errors.failedToLoadCertificates")).then((d) => ({ certificates: d.data.certificates, total: d.total }));
 
-export const getCertificate = (scope = {}, id) => unwrap(apiClient.get(`/certificates/${id}`, { params: scope }), "Failed to load the certificate").then((d) => d.data.certificate);
+export const getCertificate = (scope = {}, id) => unwrap(apiClient.get(`/certificates/${id}`, { params: scope }), t("errors.failedToLoadTheCertificate")).then((d) => d.data.certificate);
 
 /** Static HTML of a version — only ever shown inside DocumentFrame. */
 export const getCertificateHtml = (scope = {}, id, version) =>
-  unwrap(apiClient.get(`/certificates/${id}/html`, { params: { ...scope, ...(version ? { version } : {}) }, responseType: "text", transformResponse: (x) => x }), "Failed to load the certificate");
+  unwrap(apiClient.get(`/certificates/${id}/html`, { params: { ...scope, ...(version ? { version } : {}) }, responseType: "text", transformResponse: (x) => x }), t("errors.failedToLoadTheCertificate"));
 
 export const getCertificateThumbnail = (scope = {}, id) => apiClient.get(`/certificates/${id}/thumbnail`, { params: scope, responseType: "blob" }).then((r) => r.data);
 
@@ -32,13 +33,13 @@ export const editCertificateValues = (scope = {}, id, expectedVersion, changes) 
   unwrap(apiClient.patch(`/certificates/${id}/values`, { expectedVersion, changes }, { params: scope }), "Couldn't save").then((d) => d.data);
 
 export const resetCertificateField = (scope = {}, id, key, expectedVersion) =>
-  unwrap(apiClient.post(`/certificates/${id}/fields/${key}/reset`, { expectedVersion }, { params: scope }), "Couldn't reset the field").then((d) => d.data);
+  unwrap(apiClient.post(`/certificates/${id}/fields/${key}/reset`, { expectedVersion }, { params: scope }), t("errors.couldntResetTheField")).then((d) => d.data);
 
 export const listCertificateVersions = (scope = {}, id) =>
-  unwrap(apiClient.get(`/certificates/${id}/versions`, { params: scope }), "Failed to load the versions").then((d) => d.data.versions);
+  unwrap(apiClient.get(`/certificates/${id}/versions`, { params: scope }), t("errors.failedToLoadTheVersions")).then((d) => d.data.versions);
 
 export const restoreCertificateVersion = (scope = {}, id, n, expectedVersion) =>
-  unwrap(apiClient.post(`/certificates/${id}/versions/${n}/restore`, { expectedVersion }, { params: scope }), "Couldn't restore the version").then((d) => d.data);
+  unwrap(apiClient.post(`/certificates/${id}/versions/${n}/restore`, { expectedVersion }, { params: scope }), t("errors.couldntRestoreTheVersion")).then((d) => d.data);
 
 /** → { taskId } — poll it, then downloadCertificatePdf */
 export const exportCertificatePdf = (scope = {}, id) =>
@@ -60,7 +61,7 @@ async function saveDownload(request, fallbackName) {
   try {
     res = await request;
   } catch (error) {
-    let message = "Download failed";
+    let message = t("errors.downloadFailed");
     try {
       message = JSON.parse(await error.response?.data?.text())?.message || message;
     } catch {
@@ -89,10 +90,10 @@ export async function waitForTask(taskId, { timeoutMs = 120_000 } = {}) {
   const until = Date.now() + timeoutMs;
   while (Date.now() < until) {
     const { data } = await apiClient.get(`/background-tasks/${taskId}`);
-    const t = data?.data;
-    if (t?.status === "completed") return t;
-    if (t?.status === "failed") throw new Error(t.error || "The export failed");
+    const it = data?.data;
+    if (it?.status === "completed") return it;
+    if (it?.status === "failed") throw new Error(it.error || t("errors.theExportFailed"));
     await new Promise((r) => setTimeout(r, 1000));
   }
-  throw new Error("The export is taking too long — try again in a moment");
+  throw new Error(t("apiCertificatesV2.theExportIsTakingToo"));
 }

@@ -3,22 +3,17 @@ import toast from "react-hot-toast";
 import { Plus, Trash2 } from "lucide-react";
 import Spinner from "../../ui/Spinner";
 import { getProductData, saveProductData } from "../../services/apiCertificateAi";
+import { strings, t } from "../../i18n";
 
 // Structured product data entry (backend plan.md §9, A4): fixed inputs for
 // exactly the values the company's active certificate templates read from a
 // product — a pH spec, the constituents as a list of name + amount — instead
 // of free JSON. Saving writes only these; every other key is kept.
 const STR = {
-  title: "Certificate data",
-  hint: "The values your active certificate templates print for this product.",
-  none: "No active certificate template reads product data yet.",
-  missing: (n) => `${n} value${n === 1 ? "" : "s"} missing`,
-  complete: "Complete",
-  usedBy: (t) => `Used by ${t.join(", ")}`,
-  addRow: "Add row",
-  expected: (v) => `Templates expect: ${v.join(", ")}`,
-  save: "Save certificate data",
-  saved: "Certificate data saved",
+  ...strings("certificateDataFields"),
+  missing: (n) => t("certificateDataFields.missing", { count: n }),
+  usedBy: (list) => t("certificateDataFields.usedBy", { list: list.join(", ") }),
+  expected: (v) => t("certificateDataFields.expected", { list: v.join(", ") }),
 };
 
 export default function CertificateDataFields({ scope, productId, onSaved }) {
@@ -109,7 +104,7 @@ export default function CertificateDataFields({ scope, productId, onSaved }) {
               {l.children.map((c) => (
                 <input key={c} value={row[c] ?? ""} placeholder={c} aria-label={`${l.label} ${i + 1} · ${c}`} onChange={(e) => setRow(l.path, i, c, e.target.value)} className="flex-1 min-w-0 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
               ))}
-              <button type="button" aria-label="Remove row" onClick={() => setLists((x) => ({ ...x, [l.path]: x[l.path].filter((_, j) => j !== i) }))} className="text-gray-400 hover:text-red-600">
+              <button type="button" aria-label={t("certificateDataFields.removeRow")} onClick={() => setLists((x) => ({ ...x, [l.path]: x[l.path].filter((_, j) => j !== i) }))} className="text-gray-400 hover:text-red-600">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>

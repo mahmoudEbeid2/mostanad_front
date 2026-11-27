@@ -11,25 +11,13 @@ import useCompanyScope from "../hooks/useCompanyScope";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { listInvoices } from "../services/apiInvoices";
+import { strings } from "../i18n";
 
 // /invoices and /invoices/new (plan §13.1, §13.5; mockup B1): upload panel on
 // top, the company's recent invoices below.
 const STR = {
-  title: "Invoices",
-  subtitle: "Upload a shipment invoice — we read the products and make the certificates you choose.",
-  systemNote: "You see every company’s invoices. Products are matched only inside the company you pick.",
-  companyNote: (name) => `${name} — only your invoices, products and templates are used.`,
-  anyCompany: "you can upload for any company",
-  pickCompany: "Pick a company to upload and see its invoices.",
-  recent: "Recent invoices",
-  search: "Search invoice no. or customer",
-  empty: "No invoices yet. Upload one above to generate its certificates.",
-  noMatch: "No invoice matches this search.",
+  ...strings("invoices"),
   cols: ["Invoice", "Customer", "Country", "Lines", "Certificates", "Status", ""],
-  action: { uploaded: "View progress", extracting: "View progress", review: "Review", ready: "Review", failed: "See error" },
-  open: "Open",
-  prev: "Previous",
-  next: "Next",
 };
 
 const PAGE_SIZE = 20;
@@ -135,7 +123,7 @@ export default function Invoices() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm" data-testid="invoices-table">
-                  <thead className="bg-gray-50 text-left text-xs text-gray-500">
+                  <thead className="bg-gray-50 text-start text-xs text-gray-500">
                     <tr>
                       {STR.cols.map((h, i) => (
                         <th key={i} className="px-4 py-3 font-semibold">
@@ -155,7 +143,7 @@ export default function Invoices() {
                         <td className="px-4 py-3">
                           <StatusBadge status={inv.status} />
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-end">
                           <Link to={`/invoices/${inv.id}`} className="font-medium text-blue-600 hover:underline whitespace-nowrap">
                             {STR.action[inv.status] || STR.open}
                           </Link>

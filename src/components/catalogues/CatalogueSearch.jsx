@@ -5,22 +5,15 @@ import Spinner from "../../ui/Spinner";
 import CompanyPicker from "../certificates/CompanyPicker";
 import useCompanyScope from "../../hooks/useCompanyScope";
 import { searchCatalogues } from "../../services/apiCatalogues";
+import { strings, t } from "../../i18n";
 
 // "Search catalogues" (backend plan.md §15.6, A6.6): full text over the company's
 // catalogue pages plus fuzzy product names. Each hit names the product, the page
 // and a snippet with the matched words highlighted, and opens the review screen
 // on that block (the PDF page beside it).
 const STR = {
-  title: "Search catalogues",
-  hint: "Search every printed page of this company's catalogues — “Vitamin E”, “withdrawal none”, “AKS0”.",
-  placeholder: "Ingredient, product, code, phrase…",
-  search: "Search",
-  none: "Nothing printed matches.",
-  count: (n) => `${n} result${n === 1 ? "" : "s"}`,
-  page: (p) => `p.${p}`,
-  phrase: "exact phrase",
-  name: "similar name",
-  context: "Cover / back page",
+  ...strings("catalogueSearch"),
+  count: (n) => t("catalogueSearch.count", { count: n }),
 };
 
 /** "a [[b]] c" → ["a ", <mark>b</mark>, " c"] */
@@ -63,10 +56,10 @@ export default function CatalogueSearch() {
 
   return (
     <section className="bg-white border border-gray-200 rounded-xl">
-      <button type="button" onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-2 px-4 py-3 text-left">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-2 px-4 py-3 text-start">
         <BookOpenText className="w-4 h-4 text-blue-600" />
         <span className="font-semibold text-gray-900">{STR.title}</span>
-        <ChevronDown className={`w-4 h-4 ml-auto text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 ms-auto text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="px-4 pb-4 space-y-3">
@@ -74,8 +67,8 @@ export default function CatalogueSearch() {
           <form onSubmit={run} className="flex flex-wrap gap-2 items-end">
             {!scopeState.isCompany && <CompanyPicker scope={scopeState} variant="field" compact className="min-w-[14rem]" />}
             <div className="relative flex-1 min-w-[14rem]">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={STR.placeholder} className="w-full min-h-10 pl-9 pr-3 border border-gray-300 rounded-lg text-sm" />
+              <Search className="w-4 h-4 text-gray-400 absolute start-3 top-1/2 -translate-y-1/2" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={STR.placeholder} className="w-full min-h-10 ps-9 pe-3 border border-gray-300 rounded-lg text-sm" />
             </div>
             <button type="submit" disabled={!q.trim() || !scope || state.loading} className="min-h-10 px-4 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:opacity-50">
               {STR.search}

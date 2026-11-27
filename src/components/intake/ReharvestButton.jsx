@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { BookOpenCheck, Loader2 } from "lucide-react";
 import { reharvestCompany } from "../../services/apiWorkflow";
 import { getTaskStatus } from "../../services/apiProducts";
+import { t } from "../../i18n";
 
 const taskOf = (r) => r?.data?.task || r?.data || r?.task || r;
 
@@ -17,19 +18,19 @@ export default function ReharvestButton({ companyId, scope = {}, compact = false
   const follow = (taskId) => {
     timer.current = setTimeout(async () => {
       try {
-        const t = taskOf(await getTaskStatus(taskId));
-        if (t.status === "completed" || t.status === "done") {
+        const it = taskOf(await getTaskStatus(taskId));
+        if (it.status === "completed" || it.status === "done") {
           setState(null);
-          const r = t.result || {};
-          toast.success(`قريت ${r.read ?? r.files ?? 0} ملف — ملّيت ${r.filled ?? 0} قيمة${r.conflicts ? ` — ${r.conflicts} تعارضات` : ""}${r.inferred?.filled ? ` — اتستنتج ${r.inferred.filled}` : ""}`);
+          const r = it.result || {};
+          toast.success(`${t("reharvestButton.done", { read: r.read ?? r.files ?? 0, filled: r.filled ?? 0 })}${r.conflicts ? t("reharvestButton.conflicts", { conflicts: r.conflicts }) : ""}${r.inferred?.filled ? t("reharvestButton.estimated", { filled: r.inferred.filled }) : ""}`);
           return;
         }
-        if (t.status === "failed") {
+        if (it.status === "failed") {
           setState(null);
-          toast.error(t.error || "قراية الملفات فشلت");
+          toast.error(it.error || t("reharvestButton.readingTheFilesFailed"));
           return;
         }
-        setState({ progress: t.progress || 0, message: t.message || t.progressMessage || "بقرا الملفات…" });
+        setState({ progress: it.progress || 0, message: it.message || it.progressMessage || t("reharvestButton.readingTheFiles") });
         follow(taskId);
       } catch (e) {
         setState(null);
@@ -40,7 +41,7 @@ export default function ReharvestButton({ companyId, scope = {}, compact = false
 
   const start = async () => {
     try {
-      setState({ progress: 0, message: "بقرا الملفات…" });
+      setState({ progress: 0, message: t("reharvestButton.readingTheFiles") });
       const r = await reharvestCompany(scope, companyId);
       follow(r.taskId);
     } catch (e) {
@@ -56,9 +57,9 @@ export default function ReharvestButton({ companyId, scope = {}, compact = false
       </span>
     );
   return (
-    <button type="button" onClick={start} title="اقرا كل ملفات الشركة تاني واملا منتجاتها" aria-label="اقرا ملفات الشركة تاني" className={compact ? "p-2 text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" : "inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50"} data-testid="reharvest">
+    <button type="button" onClick={start} title={t("reharvestButton.readAllTheCompanysFiles")} aria-label={t("reharvestButton.readTheCompanysFilesAgain")} className={compact ? "p-2 text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" : "inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50"} data-testid="reharvest">
       <BookOpenCheck className="h-4 w-4" />
-      {!compact && "اقرا ملفات الشركة تاني"}
+      {!compact && t("reharvestButton.readTheCompanysFilesAgain")}
     </button>
   );
 }

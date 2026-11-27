@@ -13,6 +13,7 @@ import { Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import Button from "../ui/Button";
+import { LANG, languageName, localizeCountries, t } from "../i18n";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
@@ -48,7 +49,7 @@ export default function LabelGenerator() {
           setCompanies(res.data.companies || []);
         }
       } catch (err) {
-        if (!cancelled) setCompaniesError(err.response?.data?.message || "Failed to load companies");
+        if (!cancelled) setCompaniesError(err.response?.data?.message || t("labelGenerator.failedToLoadCompanies"));
       } finally {
         if (!cancelled) setCompaniesLoading(false);
       }
@@ -62,12 +63,12 @@ export default function LabelGenerator() {
   );
 
   const countryOptions = useMemo(() => [
-    ...countryList().getData()
+    ...localizeCountries(countryList().getData())
   ], []);
-  const [selectedCountry, setSelectedCountry] = useState(countryOptions.find(c => c.label === "Egypt") || countryOptions[0]);
+  const [selectedCountry, setSelectedCountry] = useState(countryOptions.find(c => c.value === "EG") || countryOptions[0]);
 
   const languageOptions = useMemo(() => {
-    return iso6391.getAllNames().map(name => ({ label: name, value: name }));
+    return iso6391.getAllCodes().map((code) => ({ label: languageName(code, iso6391.getName(code)), value: iso6391.getName(code) })).sort((a, b) => a.label.localeCompare(b.label, LANG));
   }, []);
   const [selectedLanguage, setSelectedLanguage] = useState(languageOptions.find(l => l.value === "Arabic") || languageOptions[0]);
 
@@ -78,18 +79,18 @@ export default function LabelGenerator() {
   const handleGenerate = async (e) => {
     e.preventDefault();
 
-    if (!formulationText.trim()) return toast.error("Please enter the product formulation/details.");
-    if (!aimOfUseHint.trim()) return toast.error("Please enter the confirmed Aim of Use — the AI will not guess this.");
-    if (!selectedCountry) return toast.error("Please select a target country.");
-    if (!selectedLanguage) return toast.error("Please select a target language.");
+    if (!formulationText.trim()) return toast.error(t("labelGenerator.pleaseEnterTheProductFormulation"));
+    if (!aimOfUseHint.trim()) return toast.error(t("labelGenerator.pleaseEnterTheConfirmedAim"));
+    if (!selectedCountry) return toast.error(t("labelGenerator.pleaseSelectATargetCountry"));
+    if (!selectedLanguage) return toast.error(t("labelGenerator.pleaseSelectATargetLanguage"));
     if (!companyUser && !selectedCompany) {
-      return toast.error("Please select which company this label belongs to.");
+      return toast.error(t("labelGenerator.pleaseSelectWhichCompanyThis"));
     }
 
     try {
       setIsGenerating(true);
       setJobProgress(0);
-      setJobMessage("Starting AI label generation...");
+      setJobMessage(t("labelGenerator.startingAiLabelGeneration"));
 
       const payload = {
         formulationText,
@@ -109,7 +110,7 @@ export default function LabelGenerator() {
       const res = await generateLabelAi(payload);
       const taskId = res.data?.taskId || res.taskId;
 
-      toast.success("AI is writing your label... Please wait.");
+      toast.success(t("labelGenerator.aiIsWritingYourLabel"));
 
       let settled = false;
       let pollInterval = null;
@@ -129,12 +130,12 @@ export default function LabelGenerator() {
         setIsGenerating(false);
         const newLabelId = result?.labelId;
         if (newLabelId) {
-          toast.success("Label generated successfully!");
+          toast.success(t("labelGenerator.labelGeneratedSuccessfully"));
           navigate(`/labels/detail/${newLabelId}`);
         } else {
           // Contract says this can't happen post-Phase-1, but don't silently show
           // nothing if it ever does.
-          toast.error("The generation task completed but returned no labelId.");
+          toast.error(t("labelGenerator.theGenerationTaskCompletedBut"));
         }
       };
 
@@ -143,7 +144,7 @@ export default function LabelGenerator() {
         settled = true;
         cleanup();
         setIsGenerating(false);
-        toast.error(message || "AI generation failed.");
+        toast.error(message || t("labelGenerator.aiGenerationFailed"));
       };
 
       const applyStatus = (status, data) => {
@@ -192,7 +193,7 @@ export default function LabelGenerator() {
       });
 
     } catch (err) {
-      toast.error(err.message || "Failed to start generation");
+      toast.error(err.message || t("labelGenerator.failedToStartGeneration"));
       setIsGenerating(false);
     }
   };
@@ -201,17 +202,15 @@ export default function LabelGenerator() {
     <div className="max-w-3xl mx-auto pb-12 animate-in fade-in zoom-in-95">
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-3">
-          <Sparkles className="w-8 h-8 text-blue-600" /> Create a Label
-        </h1>
-        <p className="text-gray-500 mt-2">Generate label text from product data, then review the field-by-field report before sign-off.</p>
+          <Sparkles className="w-8 h-8 text-blue-600" />{" "}{t("labelGenerator.createALabel")}</h1>
+        <p className="text-gray-500 mt-2">{t("labelGenerator.generateLabelTextFromProduct")}</p>
       </div>
 
       <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
           <form onSubmit={handleGenerate} className="space-y-6">
             {!companyUser && (
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Company <span className="text-red-600">*</span>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t("labelGenerator.company")}{" "}<span className="text-red-600">*</span>
                 </label>
                 <Select
                   options={companyOptions}
@@ -219,84 +218,77 @@ export default function LabelGenerator() {
                   onChange={setSelectedCompany}
                   isLoading={companiesLoading}
                   isDisabled={isGenerating}
-                  placeholder={companiesError ? "Failed to load companies" : "Select the company this label belongs to..."}
+                  placeholder={companiesError ? t("labelGenerator.failedToLoadCompanies") : t("labelGenerator.selectTheCompanyThisLabel")}
                   className="text-sm"
-                  noOptionsMessage={() => (companiesLoading ? "Loading..." : "No companies found")}
+                  noOptionsMessage={() => (companiesLoading ? t("labelGenerator.loading") : t("labelGenerator.noCompaniesFound"))}
                 />
                 {companiesError && (
                   <p className="text-xs text-red-600 mt-1">{companiesError}</p>
                 )}
-                <p className="text-[11px] text-gray-500 mt-1">
-                  Required - this label is always scoped to one company, there is no global option.
-                </p>
+                <p className="text-[11px] text-gray-500 mt-1">{t("labelGenerator.requiredThisLabelIsAlways")}</p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Product Formulation & Details</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">{t("labelGenerator.productFormulationDetails")}</label>
               <textarea
                 value={formulationText}
                 onChange={(e) => setFormulationText(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                 rows="8"
-                placeholder="e.g., A veterinary liquid supplement containing Vitamin A (1,000,000 IU/L), Vitamin D3 (200,000 IU/L) for poultry. Dose: 1ml per 10 liters of drinking water for 3-5 days."
+                placeholder={t("labelGenerator.eGAVeterinaryLiquid")}
                 disabled={isGenerating}
                 required
               />
-              <p className="text-[11px] text-gray-500 mt-1">The more details you provide, the better the AI can construct the label sections.</p>
+              <p className="text-[11px] text-gray-500 mt-1">{t("labelGenerator.theMoreDetailsYouProvide")}</p>
             </div>
 
             <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-4">
-              <span className="text-sm font-bold text-amber-900">
-                Product facts - pin down details the AI should not guess
-              </span>
-              <p className="text-[11px] text-amber-800 mt-1">
-                These hints become guardrails for the label text. They reduce guesses around indications, species, and dose instructions.
-              </p>
+              <span className="text-sm font-bold text-amber-900">{t("labelGenerator.productFactsPinDownDetails")}</span>
+              <p className="text-[11px] text-amber-800 mt-1">{t("labelGenerator.theseHintsBecomeGuardrailsFor")}</p>
 
               <div className="mt-4 space-y-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Confirmed Aim of Use / Indication <span className="text-red-600">*</span>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">{t("labelGenerator.confirmedAimOfUseIndication")}{" "}<span className="text-red-600">*</span>
                   </label>
                   <input
                     value={aimOfUseHint}
                     onChange={(e) => setAimOfUseHint(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                    placeholder="Example: Urinary acidifier used to help prevent urinary calculi (urolithiasis) in ruminants"
+                    placeholder={t("labelGenerator.exampleUrinaryAcidifierUsedTo")}
                     disabled={isGenerating}
                     required
                   />
-                  <p className="text-[11px] text-gray-500 mt-1">Required because the same ingredients can legally support different claims depending on intended use.</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{t("labelGenerator.requiredBecauseTheSameIngredients")}</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Confirmed Target Animal Species</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">{t("labelGenerator.confirmedTargetAnimalSpecies")}</label>
                   <input
                     value={targetSpeciesHint}
                     onChange={(e) => setTargetSpeciesHint(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                    placeholder="Example: Cow, Buffalo, Camel, Sheep, Goat"
+                    placeholder={t("labelGenerator.exampleCowBuffaloCamelSheep")}
                     disabled={isGenerating}
                   />
-                  <p className="text-[11px] text-gray-500 mt-1">Species can change required warnings, withdrawal periods, and whether a rule applies.</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{t("labelGenerator.speciesCanChangeRequiredWarnings")}</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Confirmed Direction of Use / Dosage</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">{t("labelGenerator.confirmedDirectionOfUseDosage")}</label>
                   <input
                     value={directionOfUseHint}
                     onChange={(e) => setDirectionOfUseHint(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                    placeholder="Example: Sheep and Goats 5g/head/day; Cattle, Buffalo and Camels 30g/head/day, mixed with feed"
+                    placeholder={t("labelGenerator.exampleSheepAndGoats5g")}
                     disabled={isGenerating}
                   />
-                  <p className="text-[11px] text-gray-500 mt-1">Dosage wording is often a compliance-critical value, so the label should not invent it.</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{t("labelGenerator.dosageWordingIsOftenA")}</p>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Target Country (FDA rules)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t("labelGenerator.targetCountryFdaRules")}</label>
                 <Select
                   options={countryOptions}
                   value={selectedCountry}
@@ -304,10 +296,10 @@ export default function LabelGenerator() {
                   className="text-sm"
                   isDisabled={isGenerating}
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Chooses which country's regulatory wording and validation context the label should target.</p>
+                <p className="text-[11px] text-gray-500 mt-1">{t("labelGenerator.choosesWhichCountrysRegulatoryWording")}</p>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Target Language</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t("labelGenerator.targetLanguage")}</label>
                 <Select
                   options={languageOptions}
                   value={selectedLanguage}
@@ -315,12 +307,12 @@ export default function LabelGenerator() {
                   className="text-sm"
                   isDisabled={isGenerating}
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Controls the language the generated label text is written in.</p>
+                <p className="text-[11px] text-gray-500 mt-1">{t("labelGenerator.controlsTheLanguageTheGenerated")}</p>
               </div>
             </div>
 
             <AiAction><Button type="submit" isLoading={isGenerating} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 flex items-center justify-center gap-2">
-              <Sparkles className="w-5 h-5" /> {isGenerating ? "Generating Label..." : "Write Label Text"}
+              <Sparkles className="w-5 h-5" /> {isGenerating ? t("labelGenerator.generatingLabel") : t("labelGenerator.writeLabelText")}
             </Button></AiAction>
           </form>
 

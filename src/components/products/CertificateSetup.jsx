@@ -5,6 +5,7 @@ import { FilePlus2, Loader2, Plus, UploadCloud } from "lucide-react";
 import { createCertificateType } from "../../services/apiCertificateTypes";
 import { uploadTemplate } from "../../services/apiCertificateTemplates";
 import { KNOWN, codeFromFileName } from "../../utils/certificateTypeFromName";
+import { t } from "../../i18n";
 
 // "Make certificates…" with nothing set up yet (26 Nov: "This company has no certificate types yet."
 // and nothing else): make a type in one click, or drop a certificate file — its type is read from the
@@ -30,7 +31,7 @@ export default function CertificateSetup({ companyId, types, missingTypes = [], 
     setBusy(code);
     try {
       await ensureType(code);
-      toast.success(`اتعمل نوع ${code}`);
+      toast.success(t("certificateSetup.typeCreated", { code }));
     } catch (e) {
       toast.error(e?.response?.data?.message || e.message);
     } finally {
@@ -60,12 +61,12 @@ export default function CertificateSetup({ companyId, types, missingTypes = [], 
 
   const absent = KNOWN.filter(([c]) => !typeOf(c));
   return (
-    <div dir="rtl" className="space-y-3 rounded-xl border border-teal-200 bg-teal-50/50 p-3" data-testid="certificate-setup">
-      {!types.length && <p className="font-semibold text-gray-800">الشركة دي لسه مفيهاش أنواع شهادات.</p>}
-      {missingTypes.length > 0 && <p className="text-xs text-amber-900">مفيش قالب شغّال لـ: {missingTypes.join("، ")} — ارفع الشهادة نفسها وتبقى قالب.</p>}
+    <div className="space-y-3 rounded-xl border border-teal-200 bg-teal-50/50 p-3" data-testid="certificate-setup">
+      {!types.length && <p className="font-semibold text-gray-800">{t("certificateSetup.thisCompanyHasNoCertificate")}</p>}
+      {missingTypes.length > 0 && <p className="text-xs text-amber-900">{t("certificateSetup.noActiveTemplateForUpload", { join: missingTypes.join(t("common.listSep")) })}</p>}
       {absent.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-gray-700">اعمل نوع شهادة:</span>
+          <span className="text-gray-700">{t("certificateSetup.createACertificateType")}</span>
           {absent.map(([c, , ar]) => (
             <button key={c} type="button" disabled={!!busy} onClick={() => addType(c)} className="inline-flex items-center gap-1 rounded-full border border-teal-400 bg-white px-2.5 py-0.5 font-semibold text-teal-800 hover:bg-teal-50" data-testid={`add-type-${c}`}>
               {busy === c ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />} {c} <span className="font-normal text-gray-500">{ar}</span>
@@ -83,36 +84,30 @@ export default function CertificateSetup({ companyId, types, missingTypes = [], 
         data-testid="template-drop"
       >
         <UploadCloud className="h-5 w-5 text-teal-600" />
-        <span className="font-semibold">ارفع قالب: اسحب ملف الشهادة هنا (.pdf أو .ai)</span>
-        <span className="text-gray-500">بيبقى قالب مسودة لنوعه (من اسم الملف) — تحدد حقوله في صفحة القالب قبل ما يطلّع شهادات.</span>
+        <span className="font-semibold">{t("certificateSetup.uploadATemplateDragThe")}</span>
+        <span className="text-gray-500">{t("certificateSetup.itBecomesADraftTemplate")}</span>
         <input type="file" accept=".pdf,.ai" multiple className="hidden" onChange={(e) => take([...e.target.files])} />
       </label>
       {ask && (
         <div className="flex flex-wrap items-center gap-1.5 text-xs" data-testid="ask-type">
-          <span>«{ask.name}» — نوعه إيه؟</span>
+          <span>{t("certificateSetup.whatType", { name: ask.name })}</span>
           {KNOWN.map(([c]) => (
             <button key={c} type="button" onClick={() => (upload(ask, c), setAsk(null))} className="rounded-full border border-gray-300 bg-white px-2 py-0.5 hover:bg-gray-50">
               {c}
             </button>
           ))}
-          <button type="button" onClick={() => setAsk(null)} className="text-gray-500 underline">
-            إلغاء
-          </button>
+          <button type="button" onClick={() => setAsk(null)} className="text-gray-500 underline">{t("certificateSetup.cancel")}</button>
         </div>
       )}
       {busy && !KNOWN.some(([c]) => c === busy) && (
         <p className="flex items-center gap-1.5 text-xs text-gray-600">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> بنرفع {busy}…
-        </p>
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />{" "}{t("certificateSetup.uploading", { busy })}</p>
       )}
       {made.length > 0 && (
         <ul className="space-y-0.5 text-xs" data-testid="templates-made">
           {made.map((m) => (
             <li key={m.link} className="flex items-center gap-1.5">
-              <FilePlus2 className="h-3.5 w-3.5 text-teal-700" /> {m.code} من «{m.file}» —{" "}
-              <Link to={m.link} className="font-semibold text-blue-700 hover:underline">
-                حدد حقوله
-              </Link>
+              <FilePlus2 className="h-3.5 w-3.5 text-teal-700" /> {m.code}{" "}{t("certificateSetup.from", { file: m.file })}<Link to={m.link} className="font-semibold text-blue-700 hover:underline">{t("certificateSetup.markItsFields")}</Link>
             </li>
           ))}
         </ul>

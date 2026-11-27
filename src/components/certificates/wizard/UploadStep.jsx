@@ -10,71 +10,10 @@ import { createCertificateType } from "../../../services/apiCertificateTypes";
 import { uploadTemplate, uploadTemplateVersion } from "../../../services/apiCertificateTemplates";
 import { getBrands } from "../../../services/apiBrands";
 import { describeCertificateError } from "../../../utils/certificateErrors";
-import { pick } from "../../../i18n/lang";
+import { localizeCountries, strings } from "../../../i18n";
 
-const STR_EN = {
-  drop: "Drop the certificate design here, or",
-  browse: "browse",
-  dropHint: "Illustrator .ai (saved with “Create PDF Compatible File”), .pdf or .html · up to 60 MB",
-  liveText: "Keep the text as live text — don’t convert it to outlines.",
-  replace: "Replace",
-  companyHint: "you can create for any company",
-  name: "Template name",
-  type: "Certificate type",
-  orNewType: "or",
-  newType: "create a new type",
-  typeName: "Type name",
-  typeCode: "Code",
-  createType: "Create",
-  cancel: "Cancel",
-  brand: "Brand",
-  brandHint: "optional · this company’s brands",
-  anyBrand: "Any brand",
-  country: "Country",
-  optional: "optional",
-  anyCountry: "All countries",
-  scope: "One certificate for…",
-  perProduct: "Each product",
-  perProductHint: "An invoice with 5 products gives 5 certificates.",
-  perInvoice: "The whole invoice",
-  // plan §17: repeating groups (product lists) are Phase 7 — not built yet
-  perInvoiceHint: "One certificate for the whole invoice (invoice-level fields only for now).",
-  upload: "Upload & convert",
-  uploadVersion: "Upload as a new version",
-  slotTaken: "Another template already covers this type, brand, country and scope.",
-  openExisting: "Open it",
-};
-const STR = pick({ en: STR_EN, ar: {
-  drop: "اسحب تصميم الشهادة هنا، أو",
-  browse: "اختار ملف",
-  dropHint: "Illustrator .ai (محفوظ بـ «Create PDF Compatible File») أو .pdf أو .html · لحد 60 ميجا",
-  liveText: "خلّي النص نص عادي — متحوّلوش لأشكال (outlines).",
-  replace: "غيّر",
-  companyHint: "تقدر تعمل لأي شركة",
-  name: "اسم القالب",
-  type: "نوع الشهادة",
-  orNewType: "أو",
-  newType: "اعمل نوع جديد",
-  typeName: "اسم النوع",
-  typeCode: "الكود",
-  createType: "اعمل",
-  cancel: "إلغاء",
-  brand: "البراند",
-  brandHint: "اختياري · براندات الشركة دي",
-  anyBrand: "أي براند",
-  country: "الدولة",
-  optional: "اختياري",
-  anyCountry: "كل الدول",
-  scope: "شهادة واحدة لـ…",
-  perProduct: "كل منتج",
-  perProductHint: "فاتورة فيها 5 منتجات بتطلع 5 شهادات.",
-  perInvoice: "الفاتورة كلها",
-  perInvoiceHint: "شهادة واحدة للفاتورة كلها (فيها جدول للمنتجات).",
-  upload: "ارفع وحوّل",
-  uploadVersion: "ارفعه كنسخة جديدة",
-  slotTaken: "فيه قالب تاني بيغطي نفس النوع والبراند والدولة والنطاق.",
-  openExisting: "افتحه",
-} });
+
+const STR = strings("uploadStep");
 
 const FORMAT_BADGE = { ai: "bg-orange-50 text-orange-700", pdf: "bg-red-50 text-red-700", html: "bg-blue-50 text-blue-700", htm: "bg-blue-50 text-blue-700" };
 const lbl = "flex flex-col gap-1.5 text-xs font-semibold text-gray-600";
@@ -99,7 +38,7 @@ export default function UploadStep({ scope, scopeState, companyId, types, onType
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [newType, setNewType] = useState(null); // { name, code } while creating inline
-  const countries = useMemo(() => countryList().getData(), []);
+  const countries = useMemo(() => localizeCountries(countryList().getData()), []);
 
   useEffect(() => {
     if (!certificateTypeId && types?.length) setTypeId(types.find((t) => t.isActive)?.id || "");
@@ -182,7 +121,7 @@ export default function UploadStep({ scope, scopeState, companyId, types, onType
           <span className={`w-10 h-10 rounded-lg flex items-center justify-center font-mono text-xs font-bold uppercase ${FORMAT_BADGE[ext] || "bg-gray-100 text-gray-700"}`}>{ext}</span>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-gray-900 truncate">{file.name}</div>
-            <div className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(1)} MB</div>
+            <div className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(1)}{" "}MB</div>
           </div>
           <label htmlFor={inputId} className="inline-flex items-center px-3 py-2 rounded-xl border border-gray-300 bg-white text-[13px] font-semibold text-gray-700 cursor-pointer hover:bg-gray-50">
             {STR.replace}

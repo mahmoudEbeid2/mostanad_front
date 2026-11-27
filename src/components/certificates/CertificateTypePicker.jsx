@@ -1,43 +1,17 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { hasPermission } from "../../utils/permissions";
-import { pick } from "../../i18n/lang";
+import { strings, t } from "../../i18n";
 
 // "Certificates to make" on the invoice upload (mockup D1): one card per type. A type with no
 // active template can't be chosen; it offers to create one. All selected + "Include new types
 // automatically" is sent as null: every type with an active template, now and later.
-const STR_EN = {
-  title: "Certificates to make",
-  hint: "Pick the certificates this shipment needs. Each one is made for every matched product.",
-  selectAll: (n, m) => `Select all · ${n} of ${m}`,
-  group: "Certificate types",
-  templates: (n) => `${n} template${n === 1 ? "" : "s"}`,
-  scope: { per_product: "one per product", per_invoice: "one for the whole invoice" },
-  noTemplate: "No active template yet",
-  createTemplate: "Create a template →",
-  willMake: (codes) => `Will make ${codes.join(" + ")} for every matched product`,
-  pickOne: "Pick at least one certificate.",
-  includeNew: "Include new certificate types automatically",
-  remember: (company) => `Remember for ${company}`,
-  noneUsable: "No certificate type has an active template yet, so nothing is chosen here. You can still upload the invoice.",
-  failed: "Couldn't load the certificate types. The upload uses the company's usual choice.",
+
+const STR = {
+  ...strings("certificateTypePicker"),
+  templates: (n) => t("certificateTypePicker.templates", { count: n }),
+  willMake: (codes) => t("certificateTypePicker.willMake", { codes: codes.join(" + ") }),
 };
-const STR = pick({ en: STR_EN, ar: {
-  title: "الشهادات المطلوبة",
-  hint: "اختار الشهادات اللي الشحنة دي محتاجاها. كل واحدة بتتعمل لكل منتج متطابق.",
-  selectAll: (n, m) => `اختار الكل · ${n} من ${m}`,
-  group: "أنواع الشهادات",
-  templates: (n) => `${n} قالب`,
-  scope: { per_product: "واحدة لكل منتج", per_invoice: "واحدة للفاتورة كلها" },
-  noTemplate: "لسه مفيش قالب شغّال",
-  createTemplate: "اعمل قالب ←",
-  willMake: (codes) => `هيتعمل ${codes.join(" + ")} لكل منتج متطابق`,
-  pickOne: "اختار شهادة واحدة على الأقل.",
-  includeNew: "ضيف أنواع الشهادات الجديدة لوحدها",
-  remember: (company) => `افتكر الاختيار ده لـ ${company}`,
-  noneUsable: "مفيش نوع شهادة عليه قالب شغّال لسه، فمفيش حاجة متختارة هنا. تقدر ترفع الفاتورة برضه.",
-  failed: "معرفناش نحمّل أنواع الشهادات. الرفع هيستخدم اختيار الشركة المعتاد.",
-} });
 
 // mockup D1: a square per type, by its place in the list
 const COLOURS = ["bg-blue-100 text-blue-700", "bg-green-100 text-green-700", "bg-amber-100 text-amber-700", "bg-pink-100 text-pink-700", "bg-violet-100 text-violet-700"];
@@ -53,7 +27,7 @@ function TypeCard({ type, colour, checked, onToggle }) {
       onClick={onToggle}
       data-testid="type-card"
       data-code={type.code}
-      className={`flex items-center gap-3 rounded-xl p-3.5 text-left transition-colors border-2 ${checked ? "border-blue-600 bg-blue-50/40 shadow-sm" : "border-gray-200 bg-white hover:border-gray-300"}`}
+      className={`flex items-center gap-3 rounded-xl p-3.5 text-start transition-colors border-2 ${checked ? "border-blue-600 bg-blue-50/40 shadow-sm" : "border-gray-200 bg-white hover:border-gray-300"}`}
     >
       <span aria-hidden="true" className={`w-11 h-11 rounded-lg shrink-0 flex items-center justify-center font-mono text-xs font-bold ${colour}`}>
         {type.code}
@@ -153,7 +127,7 @@ export default function CertificateTypePicker({ types, failed, selected, include
               <input type="checkbox" checked={includeNew} onChange={(e) => onChange({ includeNew: e.target.checked })} className="w-4 h-4 accent-blue-600" data-testid="include-new-types" /> {STR.includeNew}
             </label>
           )}
-          <label className="flex items-center gap-2 text-gray-700 ml-auto">
+          <label className="flex items-center gap-2 text-gray-700 ms-auto">
             <input type="checkbox" checked={remember} onChange={(e) => onChange({ remember: e.target.checked })} className="w-4 h-4 accent-blue-600" data-testid="remember-types" /> {STR.remember(companyName)}
           </label>
         </div>

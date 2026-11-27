@@ -6,7 +6,7 @@ import Spinner from "../../ui/Spinner";
 import useTaskProgress from "../../hooks/useTaskProgress";
 import { getRepairPlan, startRepair } from "../../services/apiCertificateTemplates";
 import { describeCertificateError } from "../../utils/certificateErrors";
-import { pick } from "../../i18n/lang";
+import { strings, t } from "../../i18n";
 
 // "Fix this template" (backend item 2): one checklist of what the scan found —
 // the constituent rows as one repeating list, unnamed fields, fixed text that
@@ -15,52 +15,13 @@ import { pick } from "../../i18n/lang";
 // is added, the ticked changes applied, prepare re-run. The gate is shown on
 // that version before anyone activates it.
 
-const STR_EN = {
-  title: "Fix this template",
-  scanning: "Reading the design…",
-  intro: "Tick what to change. Nothing changes on this version: a new version is made, prepared, and you activate it after checking the gate.",
-  group: "Constituents as one list",
-  groupHint: (n, keys) => `Prints each product's own active ingredients (name ← ingredient, amount ← concentration) instead of ${n} fixed rows. Replaces the fields ${keys}.`,
-  unnamed: "Unnamed fields",
-  fixed: "Fixed text that changes per product or batch",
-  fixedHint: "Each becomes a field with the suggested source. You can change any source afterwards in “Mark fields”.",
-  results: "Fixed results — decide each row",
-  resultsHint: "Printed the same on every certificate today. Nothing here changes unless you pick it.",
-  choices: { keep_fixed: "Keep fixed", lab_result_field: "Lab-result field", show_specification: "Show the specification" },
-  choiceHint: { keep_fixed: "printed as it is now", lab_result_field: "filled per batch (supplier COA / results grid)", show_specification: "prints the row's specification" },
-  spec: "spec",
-  ambiguous: (opts) => `Day/month order unclear — set it in Mark fields (${opts.join(" or ")}).`,
-  decideAll: (n) => `Decide ${n} more result row${n === 1 ? "" : "s"} to continue`,
-  apply: (n) => `Apply ${n} change${n === 1 ? "" : "s"} as a new version`,
-  reconvert: "The design is converted again with a vector background (needed for the list).",
-  working: "Making the new version",
-  cancel: "Close",
-  nothing: "Nothing to fix was found on this version.",
-  origin: { memory: "remembered", rule: "rule", dictionary: "your data", specification: "specification", none: "no source" },
+
+const STR = {
+  ...strings("repairWizard"),
+  ambiguous: (opts) => t("repairWizard.ambiguous", { opts: opts.join(t("repairWizard.or")) }),
+  decideAll: (n) => t("repairWizard.decideAll", { count: n }),
+  apply: (n) => t("repairWizard.apply", { count: n }),
 };
-const STR = pick({ en: STR_EN, ar: {
-  title: "صلّح القالب ده",
-  scanning: "بنقرا التصميم…",
-  intro: "علّم على اللي عايز تغيره. النسخة دي مش هتتغير: بتتعمل نسخة جديدة وتتجهّز، وانت تفعّلها بعد ما تشوف الاختبار.",
-  group: "المكونات كقايمة واحدة",
-  groupHint: (n, keys) => `بتطبع مكونات كل منتج بتاعته (الاسم ← المكوّن، الكمية ← التركيز) بدل ${n} سطر ثابت. بتحل محل الحقول ${keys}.`,
-  unnamed: "حقول من غير اسم",
-  fixed: "نص ثابت بيتغير مع المنتج أو التشغيلة",
-  fixedHint: "كل واحد بيبقى حقل بالمصدر المقترح. تقدر تغيّر أي مصدر بعدين في «حدد الحقول».",
-  results: "نتايج ثابتة — قرّر كل سطر",
-  resultsHint: "بتتطبع زي ما هي على كل شهادة النهارده. مفيش حاجة هنا بتتغير غير لما تختار.",
-  choices: { keep_fixed: "سيبها ثابتة", lab_result_field: "حقل نتيجة تحليل", show_specification: "اطبع المواصفة" },
-  choiceHint: { keep_fixed: "بتتطبع زي دلوقتي", lab_result_field: "بتتملى لكل تشغيلة (شهادة المورد / جدول النتايج)", show_specification: "بتطبع مواصفة السطر" },
-  spec: "المواصفة",
-  ambiguous: (opts) => `ترتيب اليوم والشهر مش واضح — حدده في «حدد الحقول» (${opts.join(" أو ")}).`,
-  decideAll: (n) => `قرّر ${n} سطر نتيجة كمان عشان تكمّل`,
-  apply: (n) => `طبّق ${n} تغيير كنسخة جديدة`,
-  reconvert: "التصميم بيتحوّل تاني بخلفية فيكتور (لازمة للقايمة).",
-  working: "بنعمل النسخة الجديدة",
-  cancel: "اقفل",
-  nothing: "ملقيناش حاجة محتاجة تتصلّح في النسخة دي.",
-  origin: { memory: "متفتكر", rule: "قاعدة", dictionary: "بياناتك", specification: "المواصفة", none: "من غير مصدر" },
-} });
 
 const sourceText = (s) => {
   if (!s) return "—";
@@ -68,7 +29,7 @@ const sourceText = (s) => {
   if (s.kind === "today") return "today's date";
   if (s.kind === "static") return `fixed “${s.text}”`;
   if (s.kind === "template") return s.template.replace(/\{\{\s*item\.batchNo\s*\}\}/, "‹batch no›");
-  const root = { product: "Product", item: "Invoice line", invoice: "Invoice", company: "Company", brand: "Brand" }[s.kind] || s.kind;
+  const root = { product: t("repairWizard.product"), item: t("repairWizard.invoiceLine"), invoice: t("repairWizard.invoice"), company: t("repairWizard.company"), brand: t("repairWizard.brand") }[s.kind] || s.kind;
   return `${root} › ${s.path.replace(/^specifications\.values\.?/, "spec ").replace(/[[\]"]/g, "")}`;
 };
 
@@ -91,11 +52,11 @@ export default function RepairWizard({ scope, version, onClose, onDone }) {
   const [started, setStarted] = useState(null);
   const [busy, setBusy] = useState(false);
   const task = useTaskProgress(started?.taskId, {
-    onDone: (t) => {
-      if (t.status === "completed") {
-        toast.success(t.result?.passed ? `v${started.versionNumber} is ready — check the gate, then activate it` : `v${started.versionNumber} was made, but the gate did not pass — see its report`);
+    onDone: (it) => {
+      if (it.status === "completed") {
+        toast.success(it.result?.passed ? t("repairWizard.vIsReadyCheckThe", { versionNumber: started.versionNumber }) : t("repairWizard.vWasMadeButThe", { versionNumber: started.versionNumber }));
         onDone?.(started);
-      } else toast.error(describeCertificateError(t.error) || "The repair failed");
+      } else toast.error(describeCertificateError(it.error) || t("repairWizard.theRepairFailed"));
     },
   });
 
@@ -166,12 +127,11 @@ export default function RepairWizard({ scope, version, onClose, onDone }) {
           {started && (
             <div className="space-y-2" aria-live="polite">
               <p className="text-sm font-semibold text-gray-900">
-                {STR.working} v{started.versionNumber}
-              </p>
+                {STR.working}{" "}{t("repairWizard.v2", { versionNumber: started.versionNumber })}</p>
               <div role="progressbar" aria-valuenow={Math.round(task.progress || 0)} aria-valuemin={0} aria-valuemax={100} aria-label={STR.working} className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
                 <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${Math.max(task.progress || 0, 5)}%` }} />
               </div>
-              <p className="text-xs text-gray-600">{task.message || "Queued…"}</p>
+              <p className="text-xs text-gray-600">{task.message || t("repairWizard.queued")}</p>
             </div>
           )}
           {plan && !started && (
@@ -185,7 +145,7 @@ export default function RepairWizard({ scope, version, onClose, onDone }) {
                     <span>
                       <span className="font-medium">{g.label}</span>
                       <span className="block text-xs text-gray-600">{STR.groupHint(g.rows.length, g.removes.join(", "))}</span>
-                      <span className="block text-xs text-gray-500">Today: {g.rows.map((r) => `${r.name} ${r.amount}`).join(" · ")}</span>
+                      <span className="block text-xs text-gray-500">{t("repairWizard.today")}{" "}{g.rows.map((r) => `${r.name} ${r.amount}`).join(" · ")}</span>
                     </span>
                   </label>
                 </Section>
@@ -195,8 +155,7 @@ export default function RepairWizard({ scope, version, onClose, onDone }) {
                   <ul className="space-y-1">
                     {of("unnamed_field").map((u) => (
                       <li key={u.id} className="text-sm text-gray-700">
-                        <code className="text-xs bg-gray-100 rounded px-1">{u.fieldKey}</code> prints “{u.sampleValue}”: {u.identifiedAs}
-                      </li>
+                        <code className="text-xs bg-gray-100 rounded px-1">{u.fieldKey}</code>{" "}{t("repairWizard.prints", { sampleValue: u.sampleValue, identifiedAs: u.identifiedAs })}</li>
                     ))}
                   </ul>
                 </Section>
@@ -206,14 +165,14 @@ export default function RepairWizard({ scope, version, onClose, onDone }) {
                   <ul className="divide-y divide-gray-100 border border-gray-200 rounded-lg">
                     {of("fixed_to_field").map((f) => (
                       <li key={f.id} className="flex items-start gap-2 px-3 py-2 text-sm">
-                        <input type="checkbox" className="w-4 h-4 mt-0.5" checked={!!ticks[f.id]} onChange={tick(f.id)} aria-label={`Make “${f.label}” a field`} />
+                        <input type="checkbox" className="w-4 h-4 mt-0.5" checked={!!ticks[f.id]} onChange={tick(f.id)} aria-label={t("repairWizard.makeAField", { label: f.label })} />
                         <span className="flex-1 min-w-0">
                           <span className="font-medium text-gray-900">{f.label}</span> <span className="text-gray-500">“{f.field.sampleValue}”</span>
                           <span className="block text-xs text-gray-600">
                             → {sourceText(f.suggestion?.source)}
                             {f.suggestion?.format?.date ? ` · ${f.suggestion.format.date}` : ""}
-                            {f.suggestion?.isLabResult ? " · per batch" : ""}
-                            <span className="ml-1 text-gray-400">({STR.origin[f.suggestion?.origin] || f.suggestion?.origin})</span>
+                            {f.suggestion?.isLabResult ? t("repairWizard.perBatch") : ""}
+                            <span className="ms-1 text-gray-400">({STR.origin[f.suggestion?.origin] || f.suggestion?.origin})</span>
                           </span>
                           {f.suggestion?.ambiguousDate && <span className="block text-xs text-amber-800">{STR.ambiguous(f.suggestion.ambiguousDate)}</span>}
                         </span>
@@ -237,7 +196,7 @@ export default function RepairWizard({ scope, version, onClose, onDone }) {
                           )}
                         </p>
                         <fieldset className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                          <legend className="sr-only">What to do with “{r.text}” in the {r.rowLabel} row</legend>
+                          <legend className="sr-only">{t("repairWizard.whatToDoWith", { text: r.text, row: r.rowLabel })}</legend>
                           {r.choices.map((c) => (
                             <label key={c} className="flex items-center gap-1.5 text-xs text-gray-700" title={STR.choiceHint[c]}>
                               <input type="radio" name={r.id} value={c} checked={choices[r.id] === c} onChange={() => setChoices((x) => ({ ...x, [r.id]: c }))} />

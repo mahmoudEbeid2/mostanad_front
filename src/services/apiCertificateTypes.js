@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { t } from "../i18n";
 
 // Certificates V2 — certificate type catalogue (backend CERTIFICATES_V2_PLAN.md §12).
 // Every call takes `scope` = { companyId } for system users ({} for a company session).
@@ -13,21 +14,21 @@ const unwrap = (promise, fallbackMessage) =>
   });
 
 export const listCertificateTypes = (scope = {}, { includeInactive = false } = {}) =>
-  unwrap(apiClient.get("/certificate-types", { params: { ...scope, includeInactive } }), "Failed to load certificate types").then(
+  unwrap(apiClient.get("/certificate-types", { params: { ...scope, includeInactive } }), t("errors.failedToLoadCertificateTypes")).then(
     (d) => d.data.types
   );
 
 /** The upload picker: active types with `activeTemplates` and `scopes`, and the company's saved choice. → { types, defaultCertificateTypeIds } */
 export const listCertificateTypesForPicker = (scope = {}) =>
-  unwrap(apiClient.get("/certificate-types", { params: scope }), "Failed to load certificate types").then((d) => d.data);
+  unwrap(apiClient.get("/certificate-types", { params: scope }), t("errors.failedToLoadCertificateTypes")).then((d) => d.data);
 
 export const createCertificateType = (scope = {}, body) =>
-  unwrap(apiClient.post("/certificate-types", body, { params: scope }), "Failed to create the certificate type").then((d) => d.data.type);
+  unwrap(apiClient.post("/certificate-types", body, { params: scope }), t("errors.failedToCreateTheCertificate")).then((d) => d.data.type);
 
 export const updateCertificateType = (scope = {}, id, body) =>
-  unwrap(apiClient.patch(`/certificate-types/${id}`, body, { params: scope }), "Failed to update the certificate type").then((d) => d.data.type);
+  unwrap(apiClient.patch(`/certificate-types/${id}`, body, { params: scope }), t("errors.failedToUpdateTheCertificate")).then((d) => d.data.type);
 
 export const deleteCertificateType = (scope = {}, id) =>
-  unwrap(apiClient.delete(`/certificate-types/${id}`, { params: scope }), "Failed to delete the certificate type");
+  unwrap(apiClient.delete(`/certificate-types/${id}`, { params: scope }), t("errors.failedToDeleteTheCertificate"));
 
 export { unwrap };

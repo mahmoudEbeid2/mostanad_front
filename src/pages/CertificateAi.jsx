@@ -13,6 +13,7 @@ import { hasPermission } from "../utils/permissions";
 import { addDictionarySynonym } from "../services/apiInvoices";
 import { decideSynonym, getAiSettings, getAiStats, getAiStatus, getCompleteness, getDictionaryHealth, rebuildDictionary, suggestSynonyms, updateAiSettings } from "../services/apiCertificateAi";
 import { withNextStep } from "../utils/aiReason";
+import { fmtDateTime, fmtNum, fmtTime, t } from "../i18n";
 
 // /certificate-ai — the certificate AI layers in one place (backend plan.md §8, §9; A4):
 //   Quality   — evaluation dashboard: acceptance/edit rates, calibration, calls per template/invoice, cost
@@ -20,13 +21,13 @@ import { withNextStep } from "../utils/aiReason";
 //   Dictionary — health report (low coverage, type conflicts, near duplicates → synonym), AI label synonyms
 //   Settings  — the company's AI switches and auto-accept threshold
 const TABS = [
-  { key: "quality", label: "Quality" },
-  { key: "products", label: "Product data" },
-  { key: "dictionary", label: "Dictionary health" },
-  { key: "settings", label: "Settings" },
+  { key: "quality", label: t("certificateAi.quality") },
+  { key: "products", label: t("certificateAi.productData") },
+  { key: "dictionary", label: t("certificateAi.dictionaryHealth") },
+  { key: "settings", label: t("certificateAi.settings") },
 ];
-const KIND = { field_map: "Template field mapping", group_binding: "Repeating groups", invoice_gap: "Invoice gap filling", product_match: "Product matching", dictionary_synonym: "Dictionary synonyms", field_label: "Field labels" };
-const RUN = { INVOICE_EXTRACT: "Invoice reading", CERT_FIELD_MAP: "Field mapping", CERT_INVOICE_GAPS: "Gap filling", CERT_PRODUCT_MATCH: "Product matching", CERT_DICTIONARY: "Dictionary synonyms", CERT_ASSIST: "Suggest fields" };
+const KIND = { field_map: t("certificateAi.templateFieldMapping"), group_binding: t("certificateAi.repeatingGroups"), invoice_gap: t("certificateAi.invoiceGapFilling"), product_match: t("certificateAi.productMatching"), dictionary_synonym: t("certificateAi.dictionarySynonyms"), field_label: t("certificateAi.fieldLabels") };
+const RUN = { INVOICE_EXTRACT: t("certificateAi.invoiceReading"), CERT_FIELD_MAP: t("certificateAi.fieldMapping"), CERT_INVOICE_GAPS: t("certificateAi.gapFilling"), CERT_PRODUCT_MATCH: t("certificateAi.productMatching"), CERT_DICTIONARY: t("certificateAi.dictionarySynonyms"), CERT_ASSIST: t("certificateAi.suggestFields") };
 const pct = (r) => (r === null || r === undefined ? "—" : `${Math.round(r * 100)} %`);
 const usd = (n) => (n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`);
 
@@ -53,8 +54,8 @@ function Meter({ value }) {
   );
 }
 
-const Th = ({ children, right }) => <th className={`px-3 py-2 font-semibold ${right ? "text-right" : "text-left"}`}>{children}</th>;
-const Td = ({ children, right, className = "" }) => <td className={`px-3 py-2 ${right ? "text-right tabular-nums" : ""} ${className}`}>{children}</td>;
+const Th = ({ children, right }) => <th className={`px-3 py-2 font-semibold ${right ? "text-end" : "text-start"}`}>{children}</th>;
+const Td = ({ children, right, className = "" }) => <td className={`px-3 py-2 ${right ? "text-end tabular-nums" : ""} ${className}`}>{children}</td>;
 const Table = ({ head, children, testId }) => (
   <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
     <table className="w-full text-sm" data-testid={testId}>
@@ -89,30 +90,26 @@ function Quality({ scope }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm">
-        <label htmlFor="ai-days" className="text-gray-600">
-          Period
-        </label>
+        <label htmlFor="ai-days" className="text-gray-600">{t("certificateAi.period")}</label>
         <select id="ai-days" value={days} onChange={(e) => setDays(Number(e.target.value))} className="border border-gray-300 rounded-lg px-2 py-1 bg-white">
           {[7, 30, 90, 365].map((d) => (
-            <option key={d} value={d}>
-              Last {d} days
-            </option>
+            <option key={d} value={d}>{t("certificateAi.lastDays", { d })}</option>
           ))}
         </select>
       </div>
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4" data-testid="ai-tiles">
-        <Tile label="AI calls" value={calls} note={notSent ? `${notSent} not sent (AI off or unavailable)` : "requests sent to the AI"} />
-        <Tile label="Answers kept by people" value={pct(decided ? kept / decided : null)} note={`${decided} decided`} />
-        <Tile label="Waiting for a person" value={pending} />
-        <Tile label="Estimated cost" value={usd(stats.cost.totalUsd)} note={stats.cost.unpricedAttempts ? `${stats.cost.unpricedAttempts} calls without a price, not counted` : "priced per call at each model's rate"} />
+        <Tile label={t("certificateAi.aiCalls")} value={calls} note={notSent ? t("certificateAi.notSentAiOffOr", { notSent }) : t("certificateAi.requestsSentToTheAi")} />
+        <Tile label={t("certificateAi.answersKeptByPeople")} value={pct(decided ? kept / decided : null)} note={t("certificateAi.decided", { decided })} />
+        <Tile label={t("certificateAi.waitingForAPerson")} value={pending} />
+        <Tile label={t("certificateAi.estimatedCost")} value={usd(stats.cost.totalUsd)} note={stats.cost.unpricedAttempts ? t("certificateAi.callsWithoutAPriceNot", { unpricedAttempts: stats.cost.unpricedAttempts }) : t("certificateAi.pricedPerCallAtEach")} />
       </div>
 
       <section className="space-y-2">
-        <h2 className="font-semibold text-gray-900">Suggestions by layer</h2>
-        <Table testId="ai-kinds" head={<><Th>Layer</Th><Th right>Total</Th><Th>Kept (accepted + auto)</Th><Th>Edited</Th><Th right>Rejected</Th><Th right>Refused by code</Th><Th right>Pending</Th><Th right>Avg confidence</Th></>}>
+        <h2 className="font-semibold text-gray-900">{t("certificateAi.suggestionsByLayer")}</h2>
+        <Table testId="ai-kinds" head={<><Th>{t("certificateAi.layer")}</Th><Th right>{t("certificateAi.total")}</Th><Th>{t("certificateAi.keptAcceptedAuto")}</Th><Th>{t("certificateAi.edited")}</Th><Th right>{t("certificateAi.rejected")}</Th><Th right>{t("certificateAi.refusedByCode")}</Th><Th right>{t("certificateAi.pending")}</Th><Th right>{t("certificateAi.avgConfidence")}</Th></>}>
           {stats.kinds.length === 0 && (
             <tr>
-              <Td className="text-gray-500">No AI suggestions in this period.</Td>
+              <Td className="text-gray-500">{t("certificateAi.noAiSuggestionsInThis")}</Td>
             </tr>
           )}
           {stats.kinds.map((k) => (
@@ -131,9 +128,9 @@ function Quality({ scope }) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-semibold text-gray-900">Calibration</h2>
-        <p className="text-xs text-gray-500">How often people kept an answer, by the confidence the AI gave it. A well-calibrated model keeps more of its confident answers.</p>
-        <Table testId="ai-calibration" head={<><Th>AI confidence</Th><Th right>Decided</Th><Th>Kept</Th></>}>
+        <h2 className="font-semibold text-gray-900">{t("certificateAi.calibration")}</h2>
+        <p className="text-xs text-gray-500">{t("certificateAi.howOftenPeopleKeptAn")}</p>
+        <Table testId="ai-calibration" head={<><Th>{t("certificateAi.aiConfidence")}</Th><Th right>{t("certificateAi.decided2")}</Th><Th>{t("certificateAi.kept")}</Th></>}>
           {stats.calibration.map((b) => (
             <tr key={b.bucket}>
               <Td>{b.bucket}</Td>
@@ -145,14 +142,14 @@ function Quality({ scope }) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-semibold text-gray-900">AI calls per template and per invoice</h2>
-        <p className="text-xs text-gray-500">Should fall over time as mapping memory and product aliases grow.</p>
+        <h2 className="font-semibold text-gray-900">{t("certificateAi.aiCallsPerTemplateAnd")}</h2>
+        <p className="text-xs text-gray-500">{t("certificateAi.shouldFallOverTimeAs")}</p>
         <div className="grid gap-4 lg:grid-cols-2">
-          {[["Per template", tplWeeks], ["Per invoice", invWeeks]].map(([title, rows]) => (
-            <Table key={title} head={<><Th>{title} · week of</Th><Th right>Calls</Th><Th right>Items</Th><Th>Calls each</Th></>}>
+          {[[t("certificateAi.perTemplate"), tplWeeks], [t("certificateAi.perInvoice"), invWeeks]].map(([title, rows]) => (
+            <Table key={title} head={<><Th>{title}{" "}{t("certificateAi.weekOf")}</Th><Th right>{t("certificateAi.calls")}</Th><Th right>{t("certificateAi.items")}</Th><Th>{t("certificateAi.callsEach")}</Th></>}>
               {rows.length === 0 && (
                 <tr>
-                  <Td className="text-gray-500">No calls.</Td>
+                  <Td className="text-gray-500">{t("certificateAi.noCalls")}</Td>
                 </tr>
               )}
               {rows.map((w) => (
@@ -176,22 +173,22 @@ function Quality({ scope }) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-semibold text-gray-900">Calls and cost by model task</h2>
-        <Table testId="ai-runs" head={<><Th>Task</Th><Th right>Calls</Th><Th right>Failed</Th><Th right>Turned off</Th><Th right>Input tokens</Th><Th right>Output + thinking</Th><Th right>Avg time</Th><Th right>Est. cost</Th></>}>
+        <h2 className="font-semibold text-gray-900">{t("certificateAi.callsAndCostByModel")}</h2>
+        <Table testId="ai-runs" head={<><Th>{t("certificateAi.task")}</Th><Th right>{t("certificateAi.calls")}</Th><Th right>{t("certificateAi.failed")}</Th><Th right>{t("certificateAi.turnedOff")}</Th><Th right>{t("certificateAi.inputTokens")}</Th><Th right>{t("certificateAi.outputThinking")}</Th><Th right>{t("certificateAi.avgTime")}</Th><Th right>{t("certificateAi.estCost")}</Th></>}>
           {stats.runs.map((r) => (
             <tr key={r.kind}>
               <Td>{RUN[r.kind] || r.kind}</Td>
               <Td right>{r.calls}</Td>
               <Td right>{r.failed || 0}</Td>
               <Td right>{r.disabled || 0}</Td>
-              <Td right>{r.inputTokens.toLocaleString()}</Td>
-              <Td right>{(r.outputTokens + r.thinkingTokens).toLocaleString()}</Td>
-              <Td right>{r.avgMs ? `${(r.avgMs / 1000).toFixed(1)} s` : "—"}</Td>
+              <Td right>{fmtNum(r.inputTokens)}</Td>
+              <Td right>{fmtNum(r.outputTokens + r.thinkingTokens)}</Td>
+              <Td right>{r.avgMs ? t("certificateAi.s", { toFixed: (r.avgMs / 1000).toFixed(1) }) : "—"}</Td>
               <Td right>{usd(r.costUsd)}</Td>
             </tr>
           ))}
         </Table>
-        <p className="text-[11px] text-gray-400">Cost is an estimate from the tokens Google reported, at the prices shown above (set CERT_AI_PRICE_* on the server to match your plan).</p>
+        <p className="text-[11px] text-gray-400">{t("certificateAi.costIsAnEstimateFrom")}</p>
       </section>
     </div>
   );
@@ -210,30 +207,30 @@ function Products({ scope }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        <Tile label="Products" value={data.totals.products} />
-        <Tile label="Complete for certificates" value={data.totals.complete} />
-        <Tile label="Missing something" value={data.totals.incomplete} />
-        <Tile label="Values templates read" value={data.totals.needs} />
+        <Tile label={t("certificateAi.products")} value={data.totals.products} />
+        <Tile label={t("certificateAi.completeForCertificates")} value={data.totals.complete} />
+        <Tile label={t("certificateAi.missingSomething")} value={data.totals.incomplete} />
+        <Tile label={t("certificateAi.valuesTemplatesRead")} value={data.totals.needs} />
       </div>
       <section className="space-y-2">
-        <h2 className="font-semibold text-gray-900">What your active templates need</h2>
-        <Table testId="completeness-needs" head={<><Th>Value</Th><Th>Used by</Th><Th right>Products missing it</Th><Th>Examples</Th></>}>
+        <h2 className="font-semibold text-gray-900">{t("certificateAi.whatYourActiveTemplatesNeed")}</h2>
+        <Table testId="completeness-needs" head={<><Th>{t("certificateAi.value")}</Th><Th>{t("certificateAi.usedBy")}</Th><Th right>{t("certificateAi.productsMissingIt")}</Th><Th>{t("certificateAi.examples")}</Th></>}>
           {data.needs.length === 0 && (
             <tr>
-              <Td className="text-gray-500">No active template reads product data yet.</Td>
+              <Td className="text-gray-500">{t("certificateAi.noActiveTemplateReadsProduct")}</Td>
             </tr>
           )}
           {data.needs.map((n) => (
             <tr key={n.path}>
               <Td>
                 {n.label}
-                {n.kind === "list" && n.expected?.length > 0 && <span className="block text-[11px] text-gray-500">needs: {n.expected.join(", ")}</span>}
+                {n.kind === "list" && n.expected?.length > 0 && <span className="block text-[11px] text-gray-500">{t("certificateAi.needs")}{" "}{n.expected.join(", ")}</span>}
               </Td>
               <Td className="text-gray-600">{n.templates.join(", ")}</Td>
               <Td right className={n.missingCount ? "text-amber-800 font-semibold" : "text-emerald-700"}>{n.missingCount}</Td>
               <Td className="text-xs">
                 {n.missing.slice(0, 4).map((p) => (
-                  <Link key={p.id} to={`/products?edit=${p.id}`} className="mr-2 text-blue-600 hover:underline">
+                  <Link key={p.id} to={`/products?edit=${p.id}`} className="me-2 text-blue-600 hover:underline">
                     {p.name}
                   </Link>
                 ))}
@@ -244,15 +241,15 @@ function Products({ scope }) {
         </Table>
       </section>
       <section className="space-y-2">
-        <h2 className="font-semibold text-gray-900">Products to complete</h2>
+        <h2 className="font-semibold text-gray-900">{t("certificateAi.productsToComplete")}</h2>
         <div className="space-y-2" data-testid="completeness-products">
-          {data.products.length === 0 && <p className="text-sm text-emerald-700">Every product has what the templates need.</p>}
+          {data.products.length === 0 && <p className="text-sm text-emerald-700">{t("certificateAi.everyProductHasWhatThe")}</p>}
           {data.products.map((p) => (
             <div key={p.id} className="rounded-xl border border-gray-200 bg-white">
-              <button type="button" onClick={() => setOpen(open === p.id ? null : p.id)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm">
+              <button type="button" onClick={() => setOpen(open === p.id ? null : p.id)} className="w-full flex items-center gap-3 px-4 py-2.5 text-start text-sm">
                 <span className="font-medium text-gray-900">{p.name}</span>
-                <span className="text-xs text-amber-800">{p.missing.length} missing</span>
-                <span className="ml-auto text-xs text-gray-500 truncate max-w-[50%]">{p.missing.join(" · ")}</span>
+                <span className="text-xs text-amber-800">{p.missing.length}{" "}{t("certificateAi.missing")}</span>
+                <span className="ms-auto text-xs text-gray-500 truncate max-w-[50%]">{p.missing.join(" · ")}</span>
               </button>
               {open === p.id && (
                 <div className="border-t border-gray-100 p-4">
@@ -293,15 +290,12 @@ function Dictionary({ scope, canEdit }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <span className="text-gray-600">
-          {h.dictionary.entries} keys from {h.dictionary.productCount} products · built {new Date(h.dictionary.builtAt).toLocaleString()}
-        </span>
+          {h.dictionary.entries}{" "}{t("certificateAi.keysFromProductsBuilt", { productCount: h.dictionary.productCount, toLocaleString: fmtDateTime(h.dictionary.builtAt) })}</span>
         {canEdit && (
           <>
-            <button type="button" disabled={!!busy} onClick={act("rebuild", () => rebuildDictionary(scope), "Dictionary rebuilt")} className="text-blue-600 hover:underline">
-              Rebuild now
-            </button>
-            <AiAction><button type="button" disabled={!!busy} onClick={act("ai", () => suggestSynonyms(scope), (o) => (o.ai.unavailable ? withNextStep(o.ai.reason, "Add synonyms by hand.") : `${o.suggested} suggestion(s) for ${o.asked} key(s)`))} className="flex items-center gap-1 text-violet-700 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed">
-              <Sparkles className="w-3.5 h-3.5" /> {busy === "ai" ? "Asking…" : "Suggest names for unclear keys (AI)"}
+            <button type="button" disabled={!!busy} onClick={act("rebuild", () => rebuildDictionary(scope), t("certificateAi.dictionaryRebuilt"))} className={"text-blue-600 hover:underline"}>{t("certificateAi.rebuildNow")}</button>
+            <AiAction><button type="button" disabled={!!busy} onClick={act("ai", () => suggestSynonyms(scope), (o) => (o.ai.unavailable ? withNextStep(o.ai.reason, t("certificateAi.addSynonymsByHand")) : t("certificateAi.suggestionSForKeyS", { suggested: o.suggested, asked: o.asked })))} className={"flex items-center gap-1 text-violet-700 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"}>
+              <Sparkles className="w-3.5 h-3.5" /> {busy === "ai" ? t("certificateAi.asking") : t("certificateAi.suggestNamesForUnclearKeys")}
             </button></AiAction>
           </>
         )}
@@ -309,24 +303,20 @@ function Dictionary({ scope, canEdit }) {
 
       {h.synonymSuggestions.length > 0 && (
         <section className="space-y-2">
-          <h2 className="font-semibold text-gray-900">AI name suggestions — nothing applies until you accept it</h2>
-          <Table testId="synonym-suggestions" head={<><Th>Key</Th><Th>Suggested names</Th><Th>Why</Th><Th></Th></>}>
+          <h2 className="font-semibold text-gray-900">{t("certificateAi.aiNameSuggestionsNothingApplies")}</h2>
+          <Table testId="synonym-suggestions" head={<><Th>{t("certificateAi.key")}</Th><Th>{t("certificateAi.suggestedNames")}</Th><Th>{t("certificateAi.why")}</Th><Th></Th></>}>
             {h.synonymSuggestions.map((s) => (
               <tr key={s.id}>
                 <Td className="font-mono text-xs">{s.path.replace(/^product\./, "")}</Td>
                 <Td>
-                  <input value={edits[s.id] ?? s.synonyms.join(", ")} onChange={(e) => setEdits((x) => ({ ...x, [s.id]: e.target.value }))} disabled={!canEdit} aria-label={`Names for ${s.path}`} className="w-full border border-gray-300 rounded-lg px-2 py-1 text-sm" />
+                  <input value={edits[s.id] ?? s.synonyms.join(", ")} onChange={(e) => setEdits((x) => ({ ...x, [s.id]: e.target.value }))} disabled={!canEdit} aria-label={t("certificateAi.namesFor", { path: s.path })} className="w-full border border-gray-300 rounded-lg px-2 py-1 text-sm" />
                 </Td>
                 <Td className="text-xs text-gray-500">{s.rationale}</Td>
                 <Td>
                   {canEdit && (
                     <span className="flex gap-2 text-xs">
-                      <button type="button" onClick={act(s.id, () => decideSynonym(scope, s.id, { decision: "accept", synonyms: (edits[s.id] ?? s.synonyms.join(", ")).split(",").map((x) => x.trim()).filter(Boolean) }), "Names added")} className="text-emerald-700 font-semibold hover:underline">
-                        Accept
-                      </button>
-                      <button type="button" onClick={act(s.id, () => decideSynonym(scope, s.id, { decision: "reject" }))} className="text-red-600 hover:underline">
-                        Reject
-                      </button>
+                      <button type="button" onClick={act(s.id, () => decideSynonym(scope, s.id, { decision: "accept", synonyms: (edits[s.id] ?? s.synonyms.join(", ")).split(",").map((x) => x.trim()).filter(Boolean) }), t("certificateAi.namesAdded"))} className={"text-emerald-700 font-semibold hover:underline"}>{t("certificateAi.accept")}</button>
+                      <button type="button" onClick={act(s.id, () => decideSynonym(scope, s.id, { decision: "reject" }))} className="text-red-600 hover:underline">{t("certificateAi.reject")}</button>
                     </span>
                   )}
                 </Td>
@@ -337,12 +327,12 @@ function Dictionary({ scope, canEdit }) {
       )}
 
       <section className="space-y-2">
-        <h2 className="font-semibold text-gray-900">Keys that look like the same value</h2>
-        <p className="text-xs text-gray-500">Adding a synonym makes certificates read the other key when a product lacks the first. Product data is never changed.</p>
-        <Table testId="near-duplicates" head={<><Th>Key</Th><Th>Looks like</Th><Th>Why</Th><Th></Th></>}>
+        <h2 className="font-semibold text-gray-900">{t("certificateAi.keysThatLookLikeThe")}</h2>
+        <p className="text-xs text-gray-500">{t("certificateAi.addingASynonymMakesCertificates")}</p>
+        <Table testId="near-duplicates" head={<><Th>{t("certificateAi.key")}</Th><Th>{t("certificateAi.looksLike")}</Th><Th>{t("certificateAi.why")}</Th><Th></Th></>}>
           {h.nearDuplicates.length === 0 && (
             <tr>
-              <Td className="text-gray-500">None found.</Td>
+              <Td className="text-gray-500">{t("certificateAi.noneFound")}</Td>
             </tr>
           )}
           {h.nearDuplicates.map((d) => (
@@ -356,11 +346,9 @@ function Dictionary({ scope, canEdit }) {
               <Td className="text-xs text-gray-500">{d.reason}</Td>
               <Td className="text-xs">
                 {d.alreadySynonym ? (
-                  <span className="text-emerald-700">synonym ✓</span>
+                  <span className="text-emerald-700">{t("certificateAi.synonym")}</span>
                 ) : canEdit ? (
-                  <button type="button" onClick={act(d.alternative.path, () => addDictionarySynonym(scope, d.action), "Synonym added")} className="text-blue-600 hover:underline">
-                    Add as synonym
-                  </button>
+                  <button type="button" onClick={act(d.alternative.path, () => addDictionarySynonym(scope, d.action), t("certificateAi.synonymAdded"))} className={"text-blue-600 hover:underline"}>{t("certificateAi.addAsSynonym")}</button>
                 ) : null}
               </Td>
             </tr>
@@ -370,11 +358,11 @@ function Dictionary({ scope, canEdit }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-2">
-          <h2 className="font-semibold text-gray-900">Values stored as different types</h2>
-          <Table head={<><Th>Key</Th><Th>Types seen</Th></>}>
+          <h2 className="font-semibold text-gray-900">{t("certificateAi.valuesStoredAsDifferentTypes")}</h2>
+          <Table head={<><Th>{t("certificateAi.key")}</Th><Th>{t("certificateAi.typesSeen")}</Th></>}>
             {h.typeConflicts.length === 0 && (
               <tr>
-                <Td className="text-gray-500">None.</Td>
+                <Td className="text-gray-500">{t("certificateAi.none")}</Td>
               </tr>
             )}
             {h.typeConflicts.map((t) => (
@@ -386,53 +374,51 @@ function Dictionary({ scope, canEdit }) {
           </Table>
         </section>
         <section className="space-y-2">
-          <h2 className="font-semibold text-gray-900">Rare keys (under 25 % of products)</h2>
-          <Table head={<><Th>Key</Th><Th right>Products</Th><Th>Template needs it</Th></>}>
+          <h2 className="font-semibold text-gray-900">{t("certificateAi.rareKeysUnder25Of")}</h2>
+          <Table head={<><Th>{t("certificateAi.key")}</Th><Th right>{t("certificateAi.products")}</Th><Th>{t("certificateAi.templateNeedsIt")}</Th></>}>
             {h.lowCoverage.length === 0 && (
               <tr>
-                <Td className="text-gray-500">None.</Td>
+                <Td className="text-gray-500">{t("certificateAi.none")}</Td>
               </tr>
             )}
             {h.lowCoverage.map((e) => (
               <tr key={e.path}>
                 <Td>{e.label}</Td>
                 <Td right>{pct(e.coverage)}</Td>
-                <Td>{e.neededByTemplates ? "yes" : ""}</Td>
+                <Td>{e.neededByTemplates ? t("certificateAi.yes") : ""}</Td>
               </tr>
             ))}
           </Table>
         </section>
       </div>
       {h.variants.length > 0 && (
-        <p className="text-xs text-gray-500">
-          Spellings read as one key automatically: {h.variants.map((v) => v.spellings.join(" / ")).join(" · ")}
-        </p>
+        <p className="text-xs text-gray-500">{t("certificateAi.spellingsReadAsOneKey", { join: h.variants.map((v) => v.spellings.join(" / ")).join(" · ") })}</p>
       )}
     </div>
   );
 }
 
 const SWITCHES = [
-  { key: "enabled", label: "Use AI for certificates", hint: "Off: everything still works by hand." },
-  { key: "allowInvoiceGapFill", label: "Find missing values in invoices", hint: "Every value comes with evidence the server checks word for word." },
-  { key: "allowAiMatching", label: "Suggest product matches", hint: "Only among the candidates code found." },
-  { key: "allowSynonyms", label: "Suggest names for unclear product keys", hint: "Applied only after you accept each one." },
-  { key: "autoAccept", label: "Accept confident AI answers automatically", hint: "Off: a person confirms every AI answer." },
-  { key: "allowProductInference", label: "Infer missing product facts from the product's own data", hint: "Quoted or converted values are facts; values estimated from the product's facts are marked “estimated” for you to confirm. Never lab results, batches, dates or quantities." },
-  { key: "allowWebLookup", label: "Look up missing product facts on the web", hint: "Each value needs a link and a quote the server checks on the page, about the same product (name + maker, brand or code). Cached per product; limited below." },
-  { key: "fillVerifiedDirectly", label: "Fill values proven by a quote directly", hint: "The product's data, the invoice, its catalogue, the manufacturer's site or a registry, quoted word for word. Off: you confirm each one too." },
-  { key: "rememberProductValues", label: "Keep a certificate profile per product", hint: "Proven and confirmed values are kept on the product, so the next invoice needs no AI and no web lookup for them. Never lab results." },
+  { key: "enabled", label: t("certificateAi.useAiForCertificates"), hint: t("certificateAi.offEverythingStillWorksBy") },
+  { key: "allowInvoiceGapFill", label: t("certificateAi.findMissingValuesInInvoices"), hint: t("certificateAi.everyValueComesWithEvidence") },
+  { key: "allowAiMatching", label: t("certificateAi.suggestProductMatches"), hint: t("certificateAi.onlyAmongTheCandidatesCode") },
+  { key: "allowSynonyms", label: t("certificateAi.suggestNamesForUnclearProduct"), hint: t("certificateAi.appliedOnlyAfterYouAccept") },
+  { key: "autoAccept", label: t("certificateAi.acceptConfidentAiAnswersAutomatically"), hint: t("certificateAi.offAPersonConfirmsEvery") },
+  { key: "allowProductInference", label: t("certificateAi.inferMissingProductFactsFrom"), hint: t("certificateAi.quotedOrConvertedValuesAre") },
+  { key: "allowWebLookup", label: t("certificateAi.lookUpMissingProductFacts"), hint: t("certificateAi.eachValueNeedsALink") },
+  { key: "fillVerifiedDirectly", label: t("certificateAi.fillValuesProvenByA"), hint: t("certificateAi.theProductsDataTheInvoice") },
+  { key: "rememberProductValues", label: t("certificateAi.keepACertificateProfilePer"), hint: t("certificateAi.provenAndConfirmedValuesAre") },
 ];
 const LIMITS = [
-  { key: "webLookupMaxProductsPerCheck", label: "Web lookups per check (products)", min: 0, max: 100 },
-  { key: "webLookupDailyLimit", label: "Web lookups per day (company)", min: 0, max: 1000 },
+  { key: "webLookupMaxProductsPerCheck", label: t("certificateAi.webLookupsPerCheckProducts"), min: 0, max: 100 },
+  { key: "webLookupDailyLimit", label: t("certificateAi.webLookupsPerDayCompany"), min: 0, max: 1000 },
 ];
 
 // Read-only: which model each AI task runs on (backend config AI_MODEL_DEFAULT /
 // AI_MODEL_FALLBACK / AI_MODEL_<TASK>), its price, and any model the API has
 // paused after repeated overloads.
 const TASK_LABEL = (task) => task.toLowerCase().split("_").map((w, i) => (i ? w : w[0].toUpperCase() + w.slice(1))).join(" ");
-const price = (p) => (p ? `$${p.inputPerMillion} in · $${p.outputPerMillion} out per 1M tokens` : "price not set");
+const price = (p) => (p ? t("certificateAi.inOutPer1mTokens", { inputPerMillion: p.inputPerMillion, outputPerMillion: p.outputPerMillion }) : t("certificateAi.priceNotSet"));
 function AiModels() {
   const [m, setM] = useState(null);
   const [error, setError] = useState(null);
@@ -445,30 +431,26 @@ function AiModels() {
   if (!m) return null;
   return (
     <section className="max-w-3xl space-y-3" data-testid="ai-models">
-      <h2 className="text-sm font-semibold text-gray-900">AI models</h2>
+      <h2 className="text-sm font-semibold text-gray-900">{t("certificateAi.aiModels")}</h2>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Tile label="Default model (every task)" value={<span className="text-base font-mono">{m.default.modelId}</span>} note={price(m.default.price)} />
-        <Tile label="Fallback (only while the default is overloaded)" value={<span className="text-base font-mono">{m.fallback?.modelId || "off"}</span>} note={m.fallback ? price(m.fallback.price) : "No fallback configured"} />
+        <Tile label={t("certificateAi.defaultModelEveryTask")} value={<span className="text-base font-mono">{m.default.modelId}</span>} note={price(m.default.price)} />
+        <Tile label={t("certificateAi.fallbackOnlyWhileTheDefault")} value={<span className="text-base font-mono">{m.fallback?.modelId || t("certificateAi.off")}</span>} note={m.fallback ? price(m.fallback.price) : t("certificateAi.noFallbackConfigured")} />
       </div>
       {m.paused?.length > 0 && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800" role="status">
-          Paused after repeated overloads: {m.paused.map((p) => `${p.model} (until ${new Date(p.pausedUntil).toLocaleTimeString()})`).join(", ")}. Calls go to the fallback meanwhile.
-        </p>
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800" role="status">{t("certificateAi.pausedAfterRepeatedOverloads")}{" "}{m.paused.map((p) => `${p.model} (until ${fmtTime(p.pausedUntil)})`).join(", ")}{t("certificateAi.callsGoToTheFallback")}</p>
       )}
-      <Table testId="ai-models-tasks" head={<><Th>Task</Th><Th>Model</Th></>}>
-        {m.tasks.map((t) => (
-          <tr key={t.task}>
-            <Td>{TASK_LABEL(t.task)}</Td>
+      <Table testId="ai-models-tasks" head={<><Th>{t("certificateAi.task")}</Th><Th>{t("certificateAi.model")}</Th></>}>
+        {m.tasks.map((it) => (
+          <tr key={it.task}>
+            <Td>{TASK_LABEL(it.task)}</Td>
             <Td className="font-mono text-xs">
-              {t.modelId}
-              {t.overridden && <span className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 font-sans text-[11px] text-blue-700">own setting</span>}
+              {it.modelId}
+              {it.overridden && <span className="ms-2 rounded bg-blue-50 px-1.5 py-0.5 font-sans text-[11px] text-blue-700">{t("certificateAi.ownSetting")}</span>}
             </Td>
           </tr>
         ))}
       </Table>
-      <p className="text-xs text-gray-500">
-        Set on the server, not here. A failed call is retried up to {m.retry.maxAttempts} times within {Math.round(m.retry.totalTimeMs / 1000)} s; after {m.retry.breakerThreshold} overloads in a row a model is paused for {Math.round(m.retry.breakerPauseMs / 1000)} s.
-      </p>
+      <p className="text-xs text-gray-500">{t("certificateAi.setOnTheServerNot", { maxAttempts: m.retry.maxAttempts, round: Math.round(m.retry.totalTimeMs / 1000), breakerThreshold: m.retry.breakerThreshold, round2: Math.round(m.retry.breakerPauseMs / 1000) })}</p>
     </section>
   );
 }
@@ -482,7 +464,7 @@ function Settings({ scope, canEdit }) {
   const save = async (patch) => {
     try {
       setS(await updateAiSettings(scope, patch));
-      toast.success("Saved");
+      toast.success(t("certificateAi.saved"));
     } catch (e) {
       toast.error(e.message);
     }
@@ -501,9 +483,9 @@ function Settings({ scope, canEdit }) {
         </label>
       ))}
       <label className="block rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
-        <span className="block font-medium text-gray-900">Also trust these web domains</span>
-        <span className="block text-xs text-gray-500">Manufacturer sites and official registries are trusted already; distributors get a warning; everything else is refused unless listed here. One domain per line.</span>
-        <textarea rows={3} defaultValue={(s.webDomainAllowList || []).join("\n")} key={(s.webDomainAllowList || []).join()} disabled={!canEdit || !s.allowWebLookup} onBlur={(e) => { const list = e.target.value.split(/[\s,]+/).map((x) => x.trim()).filter(Boolean); if (list.join() !== (s.webDomainAllowList || []).join()) save({ webDomainAllowList: list }); }} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-1 font-mono text-xs" aria-label="Trusted web domains" />
+        <span className="block font-medium text-gray-900">{t("certificateAi.alsoTrustTheseWebDomains")}</span>
+        <span className="block text-xs text-gray-500">{t("certificateAi.manufacturerSitesAndOfficialRegistries")}</span>
+        <textarea rows={3} defaultValue={(s.webDomainAllowList || []).join("\n")} key={(s.webDomainAllowList || []).join()} disabled={!canEdit || !s.allowWebLookup} onBlur={(e) => { const list = e.target.value.split(/[\s,]+/).map((x) => x.trim()).filter(Boolean); if (list.join() !== (s.webDomainAllowList || []).join()) save({ webDomainAllowList: list }); }} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-1 font-mono text-xs" aria-label={t("certificateAi.trustedWebDomains")} />
       </label>
       {LIMITS.map((l) => (
         <label key={l.key} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
@@ -515,7 +497,7 @@ function Settings({ scope, canEdit }) {
         </label>
       ))}
       <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
-        <span className="font-medium text-gray-900">Auto-accept threshold</span>
+        <span className="font-medium text-gray-900">{t("certificateAi.autoAcceptThreshold")}</span>
         <input type="number" min={0.5} max={1} step={0.01} defaultValue={s.autoAcceptThreshold} key={s.autoAcceptThreshold} disabled={!canEdit || !s.autoAccept} onBlur={(e) => Number(e.target.value) !== s.autoAcceptThreshold && save({ autoAcceptThreshold: Number(e.target.value) })} className="w-24 border border-gray-300 rounded-lg px-2 py-1" />
         <span className="text-xs text-gray-500">0.50 – 1.00</span>
       </label>
@@ -548,14 +530,14 @@ export default function CertificateAi() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Certificate AI</h1>
-          <p className="text-sm text-gray-500">How the AI layers are doing, what your products still need, and the switches.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("certificateAi.certificateAi")}</h1>
+          <p className="text-sm text-gray-500">{t("certificateAi.howTheAiLayersAre")}</p>
         </div>
         <CompanyPicker scope={scopeState} />
       </div>
       <RoleBanner scope={scopeState} />
       {!scope ? (
-        <p className="text-sm text-gray-500">Pick a company first.</p>
+        <p className="text-sm text-gray-500">{t("certificateAi.pickACompanyFirst")}</p>
       ) : (
         <>
           <div role="tablist" className="flex gap-1 border-b border-gray-200">

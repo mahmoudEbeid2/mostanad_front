@@ -1,6 +1,7 @@
 import axios from "axios";
 import apiClient from "./apiClient";
 import { unwrap } from "./apiCertificateTypes";
+import { t } from "../i18n";
 
 // Product catalogues as source documents (backend plan.md §15, A6). Every call
 // takes `scope` = { companyId } for system users ({} for a company session).
@@ -12,7 +13,7 @@ const sendFile = (url, fd, { params, signal, onProgress } = {}) =>
     .post(url, fd, { params, signal, headers: { "Content-Type": "multipart/form-data" }, onUploadProgress: onProgress })
     .then((r) => r.data.data)
     .catch((err) => {
-      const out = new Error(err.response?.data?.message || (err.response ? "Upload failed" : "The connection was lost during the upload. Check your network and try again."));
+      const out = new Error(err.response?.data?.message || (err.response ? t("errors.uploadFailed") : t("errors.theConnectionWasLostDuring")));
       out.cancelled = axios.isCancel(err);
       throw out;
     });
@@ -36,67 +37,67 @@ export const uploadCatalogueVersion = (scope = {}, catalogueId, { file, label })
   return sendFile(`/catalogues/${catalogueId}/versions`, fd, { params: scope });
 };
 
-export const listCatalogues = (scope = {}) => unwrap(apiClient.get("/catalogues", { params: scope }), "Failed to load catalogues").then((d) => d.data.catalogues);
+export const listCatalogues = (scope = {}) => unwrap(apiClient.get("/catalogues", { params: scope }), t("errors.failedToLoadCatalogues")).then((d) => d.data.catalogues);
 
 /** → version + blocks [{ id, seq, kind, page, bbox, title, text, status, productId, extracted }] */
-export const getCatalogueVersion = (scope = {}, id) => unwrap(apiClient.get(`/catalogue-versions/${id}`, { params: scope }), "Failed to load the catalogue").then((d) => d.data.version);
+export const getCatalogueVersion = (scope = {}, id) => unwrap(apiClient.get(`/catalogue-versions/${id}`, { params: scope }), t("errors.failedToLoadTheCatalogue")).then((d) => d.data.version);
 
 /** The kept PDF as an ArrayBuffer (rendered page by page in the review screen). */
 export const getCatalogueFile = (scope = {}, id) => apiClient.get(`/catalogue-versions/${id}/file`, { params: scope, responseType: "arraybuffer" }).then((r) => r.data);
 
 /** → block with text and line geometry */
-export const getCatalogueBlock = (scope = {}, id) => unwrap(apiClient.get(`/catalogue-blocks/${id}`, { params: scope }), "Failed to load the block").then((d) => d.data.block);
+export const getCatalogueBlock = (scope = {}, id) => unwrap(apiClient.get(`/catalogue-blocks/${id}`, { params: scope }), t("errors.failedToLoadTheBlock")).then((d) => d.data.block);
 
 export const linkCatalogueBlock = (scope = {}, blockId, productId) =>
-  unwrap(apiClient.post(`/catalogue-blocks/${blockId}/link`, { productId }, { params: scope }), "Failed to link the product").then((d) => d.data);
+  unwrap(apiClient.post(`/catalogue-blocks/${blockId}/link`, { productId }, { params: scope }), t("errors.failedToLinkTheProduct")).then((d) => d.data);
 
 // ── A6.4 review (plan §15.3 steps 6–7) ──
 /** → { version, counts, categories, blocks: [{ …, lines, extracted, highlights, categoryId, match, bulkAcceptable }] } */
-export const getCatalogueReview = (scope = {}, versionId) => unwrap(apiClient.get(`/catalogue-versions/${versionId}/review`, { params: scope }), "Failed to load the review").then((d) => d.data);
+export const getCatalogueReview = (scope = {}, versionId) => unwrap(apiClient.get(`/catalogue-versions/${versionId}/review`, { params: scope }), t("errors.failedToLoadTheReview")).then((d) => d.data);
 
 /** { values?: { field: text | [text] | null }, categoryId?: uuid | null } → { blockId, extracted } */
-export const editCatalogueBlock = (scope = {}, blockId, body) => unwrap(apiClient.patch(`/catalogue-blocks/${blockId}`, body, { params: scope }), "Failed to save").then((d) => d.data);
+export const editCatalogueBlock = (scope = {}, blockId, body) => unwrap(apiClient.patch(`/catalogue-blocks/${blockId}`, body, { params: scope }), t("errors.failedToSave")).then((d) => d.data);
 
 /** Creates a product from the block → { blockId, productId, product } */
-export const acceptCatalogueBlock = (scope = {}, blockId) => unwrap(apiClient.post(`/catalogue-blocks/${blockId}/accept`, {}, { params: scope }), "Failed to accept").then((d) => d.data);
+export const acceptCatalogueBlock = (scope = {}, blockId) => unwrap(apiClient.post(`/catalogue-blocks/${blockId}/accept`, {}, { params: scope }), t("errors.failedToAccept")).then((d) => d.data);
 
-export const rejectCatalogueBlock = (scope = {}, blockId) => unwrap(apiClient.post(`/catalogue-blocks/${blockId}/reject`, {}, { params: scope }), "Failed to reject").then((d) => d.data);
+export const rejectCatalogueBlock = (scope = {}, blockId) => unwrap(apiClient.post(`/catalogue-blocks/${blockId}/reject`, {}, { params: scope }), t("errors.failedToReject")).then((d) => d.data);
 
 /** → { created, products, skipped: { flagged, existing, notExtracted } } */
-export const acceptUnflaggedBlocks = (scope = {}, versionId) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/accept-unflagged`, {}, { params: scope }), "Bulk accept failed").then((d) => d.data);
+export const acceptUnflaggedBlocks = (scope = {}, versionId) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/accept-unflagged`, {}, { params: scope }), t("errors.bulkAcceptFailed")).then((d) => d.data);
 
-export const mergeCatalogueBlocks = (scope = {}, versionId, blockIds) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/merge-blocks`, { blockIds }, { params: scope }), "Merge failed").then((d) => d.data);
+export const mergeCatalogueBlocks = (scope = {}, versionId, blockIds) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/merge-blocks`, { blockIds }, { params: scope }), t("errors.mergeFailed")).then((d) => d.data);
 
-export const splitCatalogueBlock = (scope = {}, blockId, atLine) => unwrap(apiClient.post(`/catalogue-blocks/${blockId}/split`, { atLine }, { params: scope }), "Split failed").then((d) => d.data);
+export const splitCatalogueBlock = (scope = {}, blockId, atLine) => unwrap(apiClient.post(`/catalogue-blocks/${blockId}/split`, { atLine }, { params: scope }), t("errors.splitFailed")).then((d) => d.data);
 
 /** (re-)extract; blockIds = only those pending blocks → { versionId, jobId } */
-export const extractCatalogueVersion = (scope = {}, versionId, body = {}) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/extract`, body, { params: scope }), "Extraction failed to start").then((d) => d.data);
+export const extractCatalogueVersion = (scope = {}, versionId, body = {}) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/extract`, body, { params: scope }), t("errors.extractionFailedToStart")).then((d) => d.data);
 
 /** { dotGroup3: "thousands" | "decimal" } — once per catalogue */
-export const setCatalogueNumberConvention = (scope = {}, versionId, dotGroup3) => unwrap(apiClient.put(`/catalogue-versions/${versionId}/number-convention`, { dotGroup3 }, { params: scope }), "Failed to save the convention").then((d) => d.data);
+export const setCatalogueNumberConvention = (scope = {}, versionId, dotGroup3) => unwrap(apiClient.put(`/catalogue-versions/${versionId}/number-convention`, { dotGroup3 }, { params: scope }), t("errors.failedToSaveTheConvention")).then((d) => d.data);
 
 // ── A6.5 re-upload diff (plan §15.4) ──
 /** → { version, summary, items: [{ blockId, kind: new|changed|unchanged|ambiguous, product?, changes?, unchanged?, declined?, match? }], removed } */
-export const getCatalogueDiff = (scope = {}, versionId) => unwrap(apiClient.get(`/catalogue-versions/${versionId}/diff`, { params: scope }), "Failed to load the diff").then((d) => d.data);
+export const getCatalogueDiff = (scope = {}, versionId) => unwrap(apiClient.get(`/catalogue-versions/${versionId}/diff`, { params: scope }), t("errors.failedToLoadTheDiff")).then((d) => d.data);
 
 /** { fields?: [...] (none = every non-conflict change), productId? (one of several matches) } */
-export const applyCatalogueBlockDiff = (scope = {}, blockId, body = {}) => unwrap(apiClient.post(`/catalogue-blocks/${blockId}/apply-diff`, body, { params: scope }), "Failed to apply").then((d) => d.data);
+export const applyCatalogueBlockDiff = (scope = {}, blockId, body = {}) => unwrap(apiClient.post(`/catalogue-blocks/${blockId}/apply-diff`, body, { params: scope }), t("errors.failedToApply")).then((d) => d.data);
 
 /** every unflagged block without conflicts → { applied, changedFields, products, skipped } */
-export const applyCatalogueVersionDiff = (scope = {}, versionId) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/apply-diff`, {}, { params: scope }), "Failed to apply").then((d) => d.data);
+export const applyCatalogueVersionDiff = (scope = {}, versionId) => unwrap(apiClient.post(`/catalogue-versions/${versionId}/apply-diff`, {}, { params: scope }), t("errors.failedToApply")).then((d) => d.data);
 
 // ── A6.6 search (plan §15.6) ──
 /** → { q, words, results: [{ blockId, versionId, catalogueId, manufacturer, versionLabel, page, kind, name, productCode, productId, snippet ("[[word]]" marks), match: phrase|words|name }] } */
 export const searchCatalogues = (scope = {}, q, { allVersions = false } = {}) =>
-  unwrap(apiClient.get("/catalogue-search", { params: { ...scope, q, ...(allVersions ? { allVersions: "true" } : {}) } }), "Search failed").then((d) => d.data);
+  unwrap(apiClient.get("/catalogue-search", { params: { ...scope, q, ...(allVersions ? { allVersions: "true" } : {}) } }), t("errors.searchFailed")).then((d) => d.data);
 
 // ── C1 choose pages (only the kept pages are sent to the AI) ──
 /** → { version, pageCount, pages: [{ number, kind, textLength, reason, thumbnailUrl, previewUrl }], selection, estimate } */
-export const getCataloguePages = (scope = {}, versionId) => unwrap(apiClient.get(`/catalogue-versions/${versionId}/pages`, { params: scope }), "Failed to load the pages").then((d) => d.data);
+export const getCataloguePages = (scope = {}, versionId) => unwrap(apiClient.get(`/catalogue-versions/${versionId}/pages`, { params: scope }), t("errors.failedToLoadThePages")).then((d) => d.data);
 
 /** { pages: [n…] } (original page numbers) → { selection, estimate } */
 export const saveCataloguePageSelection = (scope = {}, versionId, pages) =>
-  unwrap(apiClient.put(`/catalogue-versions/${versionId}/page-selection`, { pages }, { params: scope }), "Failed to save the pages").then((d) => d.data);
+  unwrap(apiClient.put(`/catalogue-versions/${versionId}/page-selection`, { pages }, { params: scope }), t("errors.failedToSaveThePages")).then((d) => d.data);
 
 /** A page image (thumbnailUrl / previewUrl from getCataloguePages) as a Blob — it needs the bearer token. */
 export const getCataloguePageImage = (scope = {}, url) => apiClient.get(url, { params: scope, responseType: "blob" }).then((r) => r.data);

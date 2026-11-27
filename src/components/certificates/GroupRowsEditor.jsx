@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2 } from "lucide-react";
 import FlagBadges from "./FlagBadges";
+import { strings, t } from "../../i18n";
 
 // A repeating group's rows in the certificate editor (plan §7.8, §11): add,
 // remove, reorder, edit. The whole list is the value — the page saves it like
@@ -7,19 +8,9 @@ import FlagBadges from "./FlagBadges";
 // version and the server re-renders the layout (rows, pitch, what moves).
 
 const STR = {
-  rows: (n) => `${n} row${n === 1 ? "" : "s"}`,
-  add: "Add row",
-  up: "Move row up",
-  down: "Move row down",
-  remove: "Delete row",
-  reset: "Reset the rows to their source",
-  source: { product_list: "From the product", invoice_lines: "From the invoice lines", manual: "Typed here" },
-  edited: "edited",
-  unsaved: "unsaved",
-  empty: "No rows.",
-  fit: (n) => `Only ${n} row${n === 1 ? "" : "s"} fit above the footer — remove rows or shorten the list. A longer list needs a design with more room (continuation pages aren't supported yet).`,
-  capacity: (n) => `Fits up to ${n} rows`,
-  cell: (row, label) => `Row ${row} · ${label}`,
+  ...strings("groupRowsEditor"),
+  rows: (n) => t("groupRowsEditor.rows", { count: n }),
+  fit: (n) => t("groupRowsEditor.fit", { count: n }),
 };
 
 export default function GroupRowsEditor({ group, value, fonts, draftRows, editable, onChange, onRevert, onReset }) {
@@ -55,7 +46,7 @@ export default function GroupRowsEditor({ group, value, fonts, draftRows, editab
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-gray-500">
+            <tr className="text-start text-xs text-gray-500">
               <th className="w-6 font-medium">#</th>
               {group.cells.map((c) => (
                 <th key={c.key} className="font-medium px-1">
@@ -87,7 +78,7 @@ export default function GroupRowsEditor({ group, value, fonts, draftRows, editab
                   </td>
                 ))}
                 {editable && (
-                  <td className="whitespace-nowrap text-right">
+                  <td className="whitespace-nowrap text-end">
                     <button type="button" disabled={i === 0} onClick={() => move(i, -1)} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30" aria-label={`${STR.up} ${i + 1}`}>
                       <ArrowUp className="w-3.5 h-3.5" />
                     </button>

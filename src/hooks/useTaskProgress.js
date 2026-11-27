@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import apiClient from "../services/apiClient";
+import { t } from "../i18n";
 
 // Background task progress (plan §13.2): polls GET /background-tasks/:id every
 // 2 s — the row carries progress, message, stage and stages, so this works without
@@ -45,7 +46,7 @@ export default function useTaskProgress(taskId, { intervalMs = 2000, onDone } = 
           }));
         }
       } catch (err) {
-        if (err.response?.status === 404) return finish({ status: "failed", error: "Task not found" });
+        if (err.response?.status === 404) return finish({ status: "failed", error: t("useTaskProgress.taskNotFound") });
       }
       if (!stopped) timer = setTimeout(poll, intervalMs);
     };

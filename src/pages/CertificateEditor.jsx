@@ -30,74 +30,19 @@ import {
   restoreCertificateVersion,
   waitForTask,
 } from "../services/apiCertificatesV2";
-import { pick } from "../i18n/lang";
 import useFollowEntityCompany from "../hooks/useFollowEntityCompany";
+import { fmtDateTime, fmtTime, strings, t } from "../i18n";
 
 // /certificates/:id (plan §11, §13.6; mockup B5). The frame always shows a
 // SERVER render; typing only patches the field span's text for instant,
 // ephemeral feedback (no layout compensation) until the save re-renders.
-const STR_EN = {
-  whole: "Whole invoice",
-  batch: "Batch",
-  versions: (n) => `Versions (${n})`,
-  exportPdf: "Export PDF",
-  exporting: "Rendering the PDF…",
-  downloadPdf: "Download PDF",
-  finalize: "Finalize",
-  confirmFinalize: { title: "Finalize this certificate?", message: "Its PDF is frozen and it can no longer be edited. You can still duplicate it as a new draft.", confirmLabel: "Finalize" },
-  finalized: "Certificate finalized",
-  issuesLeft: (n) => `${n} issue${n === 1 ? "" : "s"} left`,
-  unsavedLeft: "Save your changes first",
-  duplicate: "Duplicate as draft",
-  duplicated: "Draft created",
-  rendered: "Rendered on the server · matches the PDF",
-  viewingOld: (n) => `Viewing version ${n} — read-only`,
-  backToCurrent: "Back to the current version",
-  finalNote: (d) => `Final since ${new Date(d).toLocaleString()} — read-only. Duplicate it to make changes.`,
-  saved: (d) => `Saved ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-  saving: "Saving…",
-  dirty: "Unsaved changes",
-  failed: "Not saved",
-  conflictTitle: "Someone else changed this certificate",
-  conflictText: (n) => `It is now at version ${n}. Reload their version (your unsaved changes are dropped), or save yours on top of it.`,
-  reload: "Reload",
-  overwrite: "Overwrite with mine",
-  restored: (n) => `Version ${n} restored`,
-  reset: (k) => `${k} reset to its source`,
-  pending: "This certificate is still being rendered.",
-  failedCert: "This certificate failed to render:",
+
+const STR = {
+  ...strings("certificateEditor"),
+  issuesLeft: (n) => t("certificateEditor.issuesLeft", { count: n }),
+  finalNote: (d) => t("certificateEditor.finalNote", { date: fmtDateTime(d) }),
+  saved: (d) => t("certificateEditor.saved", { time: fmtTime(d) }),
 };
-const STR = pick({ en: STR_EN, ar: {
-  whole: "الفاتورة كلها",
-  batch: "تشغيلة",
-  versions: (n) => `النسخ (${n})`,
-  exportPdf: "طلّع PDF",
-  exporting: "بنعمل الـ PDF…",
-  downloadPdf: "نزّل PDF",
-  finalize: "اعتمد",
-  confirmFinalize: { title: "تعتمد الشهادة دي؟", message: "الـ PDF بتاعها هيتثبت ومش هتتعدل تاني. تقدر تعمل منها نسخة جديدة بعدين.", confirmLabel: "اعتمد" },
-  finalized: "الشهادة اتعتمدت",
-  issuesLeft: (n) => `فاضل ${n} حاجة`,
-  unsavedLeft: "احفظ تعديلاتك الأول",
-  duplicate: "اعمل نسخة مسودة",
-  duplicated: "اتعملت مسودة",
-  rendered: "اتعملت على السيرفر · نفس الـ PDF",
-  viewingOld: (n) => `بتتفرج على النسخة ${n} — قراءة بس`,
-  backToCurrent: "ارجع للنسخة الحالية",
-  finalNote: (d) => `معتمدة من ${new Date(d).toLocaleString("ar-EG")} — قراءة بس. اعمل منها نسخة عشان تعدّل.`,
-  saved: (d) => `اتحفظ ${d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}`,
-  saving: "بنحفظ…",
-  dirty: "فيه تعديلات مش محفوظة",
-  failed: "ماتحفظش",
-  conflictTitle: "حد تاني عدّل الشهادة دي",
-  conflictText: (n) => `بقت النسخة ${n}. حمّل نسختهم (تعديلاتك اللي مش محفوظة هتروح)، أو احفظ بتاعتك فوقها.`,
-  reload: "حمّل تاني",
-  overwrite: "احفظ بتاعتي فوقها",
-  restored: (n) => `رجعت النسخة ${n}`,
-  reset: (k) => `${k} رجع لمصدره`,
-  pending: "الشهادة دي لسه بتتعمل.",
-  failedCert: "الشهادة دي فشلت وهي بتتعمل:",
-} });
 
 // 28 Nov (owner), COA: a test with no result is taken off the certificate — said in one line; it comes back
 // once its result is given (a test the product type doesn't have isn't listed: no result brings it back)
@@ -106,7 +51,7 @@ function removedLine(values, fields) {
   const names = Object.entries(values || {})
     .filter(([, v]) => (v?.flags || []).includes("row_removed") && !v.removedWith && v.provenance?.rule !== "not_applicable_oral")
     .map(([k]) => String(label.get(k) || k).replace(/\s*(result|النتيجة|نتيجة)\s*$/i, "").trim());
-  return names.length ? `اتشال من الشهادة: ${[...new Set(names)].join("، ")} — مفيش نتيجة. ابعت النتيجة في سطر وترجع` : null;
+  return names.length ? t("certificateEditor.removedRows", { list: [...new Set(names)].join(t("common.listSep")) }) : null;
 }
 
 export default function CertificateEditor() {
@@ -314,10 +259,10 @@ export default function CertificateEditor() {
         <div>
           <p className="text-sm text-gray-500">
             {cert.withoutInvoice ? (
-              <span data-testid="without-invoice">No invoice</span>
+              <span data-testid="without-invoice">{t("certificateEditor.noInvoice")}</span>
             ) : (
               <Link to={`/invoices/${cert.invoiceId}?batch=${cert.batchId}`} className="text-blue-600 hover:underline">
-                {cert.invoiceNumber || "Invoice"}
+                {cert.invoiceNumber || t("certificateEditor.invoice")}
               </Link>
             )}
             {cert.batchNo ? ` / ${STR.batch} ${cert.batchNo}` : ""}
@@ -350,8 +295,8 @@ export default function CertificateEditor() {
                 {STR.finalize}
               </Button>
               {blocking.length > 0 ? (
-                <span className="text-xs text-red-600 mt-1 max-w-xs text-right" dir="auto" title={blocking.join(", ")} data-testid="issues-left">
-                  {STR.issuesLeft(blocking.length)}: {blocking.slice(0, 6).join("، ")}{blocking.length > 6 ? "…" : ""}
+                <span className="text-xs text-red-600 mt-1 max-w-xs text-end" dir="auto" title={blocking.join(", ")} data-testid="issues-left">
+                  {STR.issuesLeft(blocking.length)}: {blocking.slice(0, 6).join(t("common.listSep"))}{blocking.length > 6 ? "…" : ""}
                 </span>
               ) : dirty ? (
                 <span className="text-xs text-gray-500 mt-1">{STR.unsavedLeft}</span>
@@ -363,15 +308,13 @@ export default function CertificateEditor() {
 
       <RoleBanner scope={scopeState} />
       {cert.isExperimentSample && (
-        <p dir="rtl" className="rounded-xl border-2 border-red-500 bg-red-50 px-4 py-2 text-sm font-bold text-red-800" data-testid="experiment-sample">
-          عينة من وضع التجربة — «SAMPLE – NOT VALID» على كل صفحة. مينفعش تتعتمد ولا تتصدّر كشهادة صالحة؛ طلّعها تاني والوضع مقفول.
-        </p>
+        <p className="rounded-xl border-2 border-red-500 bg-red-50 px-4 py-2 text-sm font-bold text-red-800" data-testid="experiment-sample">{t("certificateEditor.aSampleFromExperimentMode")}</p>
       )}
       {["draft", "final"].includes(cert.status) && canEdit && <ReviewBar scope={scope} cert={cert} fields={fields} onChanged={load} />}
       {/* an experiment sample's AI values are test data — never accepted (QA 28 Nov) */}
       {cert.status === "draft" && canEdit && !cert.isExperimentSample && <EstimatesBar scope={scope} values={cert.values} certificateIds={[cert.id]} onAccepted={load} />}
       {removedLine(cert.values, fields) && (
-        <p dir="rtl" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-900" data-testid="removed-rows">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-900" data-testid="removed-rows">
           {removedLine(cert.values, fields)}
         </p>
       )}
@@ -412,7 +355,7 @@ export default function CertificateEditor() {
               {viewing !== null ? (
                 <span className="text-amber-800">
                   {STR.viewingOld(viewing)}{" "}
-                  <button type="button" className="ml-2 text-blue-600 hover:underline" onClick={() => setViewing(null)}>
+                  <button type="button" className="ms-2 text-blue-600 hover:underline" onClick={() => setViewing(null)}>
                     {STR.backToCurrent}
                   </button>
                 </span>
@@ -440,7 +383,7 @@ export default function CertificateEditor() {
                 }
               }}
               minHeight={640}
-              title="Certificate"
+              title={t("certificateEditor.certificate")}
             />
           </section>
           <CertificateValuesForm

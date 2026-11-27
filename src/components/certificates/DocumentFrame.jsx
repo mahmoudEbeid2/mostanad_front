@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import Spinner from "../../ui/Spinner";
+import { strings, t } from "../../i18n";
 
 // The ONE way certificate/template HTML is shown in the app (plan §13.3).
 //  - HTML is loaded through the authorised API client (`load()` returns the
@@ -21,20 +22,13 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
 [data-page]+[data-page]{border-top:8px solid #e5e7eb!important}
 ::selection{background:rgba(37,99,235,.28)}`;
 
-const STR = {
-  loading: "Loading document…",
-  failed: "Couldn't load the document",
-  page: "Page",
-  zoomIn: "Zoom in",
-  zoomOut: "Zoom out",
-  fit: "Fit",
-};
+const STR = strings("documentFrame");
 
 //  - `overlay(scale)` renders above the document in the frame's coordinate
 //    space (unscaled document px) — field highlights fallback, the floating
 //    "Make field" button. It never touches the document.
 //  - `hint`: optional instruction shown at the left of the toolbar
-export default function DocumentFrame({ load, reloadKey, onReady, overlay, hint, fit = true, className = "", minHeight = 480, title = "Document preview" }) {
+export default function DocumentFrame({ load, reloadKey, onReady, overlay, hint, fit = true, className = "", minHeight = 480, title = t("documentFrame.documentPreview") }) {
   const containerRef = useRef(null);
   const frameRef = useRef(null);
   const [html, setHtml] = useState(null);
@@ -156,13 +150,13 @@ export default function DocumentFrame({ load, reloadKey, onReady, overlay, hint,
           {hint}
           {size.pages.length > 1 && (
             <>
-              <button type="button" className="p-1 rounded hover:bg-gray-100 disabled:opacity-40" disabled={page <= 1} onClick={() => goTo(page - 1)} aria-label="Previous page">
+              <button type="button" className="p-1 rounded hover:bg-gray-100 disabled:opacity-40" disabled={page <= 1} onClick={() => goTo(page - 1)} aria-label={t("documentFrame.previousPage")}>
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span>
                 {STR.page} {page} / {size.pages.length}
               </span>
-              <button type="button" className="p-1 rounded hover:bg-gray-100 disabled:opacity-40" disabled={page >= size.pages.length} onClick={() => goTo(page + 1)} aria-label="Next page">
+              <button type="button" className="p-1 rounded hover:bg-gray-100 disabled:opacity-40" disabled={page >= size.pages.length} onClick={() => goTo(page + 1)} aria-label={t("documentFrame.nextPage")}>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </>
@@ -191,7 +185,7 @@ export default function DocumentFrame({ load, reloadKey, onReady, overlay, hint,
         )}
         {!error && (
           <div style={{ width: size.width * scale, height: size.height * scale, visibility: html === null && !size.width ? "hidden" : "visible", opacity: html === null ? 0.4 : 1 }} className="relative mx-auto">
-            <div ref={markRef} aria-hidden="true" className="pointer-events-none absolute left-0 h-px w-px" style={{ top: 0, scrollMarginTop: 56 }} />
+            <div ref={markRef} aria-hidden="true" className="pointer-events-none absolute start-0 h-px w-px" style={{ top: 0, scrollMarginTop: 56 }} />
             <div style={{ width: size.width, height: size.height, transform: `scale(${scale})`, transformOrigin: "0 0" }} className="relative bg-white shadow-md">
               <iframe
                 ref={frameRef}

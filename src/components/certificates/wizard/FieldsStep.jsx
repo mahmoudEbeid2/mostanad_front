@@ -14,7 +14,7 @@ import { cellOptions, slugKey, sourceOptions } from "../../../utils/certificateF
 import { describeCertificateError } from "../../../utils/certificateErrors";
 import { withNextStep } from "../../../utils/aiReason";
 import ReadinessPanel from "./ReadinessPanel";
-import { pick, tr } from "../../../i18n/lang";
+import { strings, t } from "../../../i18n";
 
 // Wizard step 2 — mark fields (plan §13.4). The document is the sanitized
 // design; the field list autosaves (800 ms debounce) with PUT …/fields, which
@@ -22,44 +22,12 @@ import { pick, tr } from "../../../i18n/lang";
 // Repeating groups (plan §7.8) are saved in the same request; the server
 // answers with what it detected (shape, footer line, capacity) or why it can't.
 
-const STR_EN = {
-  hint: "Select the text that changes.",
-  hintCtrl: "Ctrl",
-  hintTail: "+ select to add several.",
-  invalid: "Not saved — fix:",
-  failed: "Not saved:",
-  back: "Back",
-  next: "Next: settings",
-  newVersion: "Create a new version to edit",
-  aiNone: "No new suggestions.",
-  aiDisabled: "AI suggestions are turned off.",
-  mapAll: "Map all",
-  mapping: "Mapping…",
-  mapAllHint: "Fill “Value comes from” for every field still typed by hand: your earlier choices first, then your product data, then AI.",
-  sample: "Sample product (optional)",
-  sampleHint: "The product this design was made for — mappings are checked against its values.",
-  aiUnavailable: (reason) => withNextStep(reason, "Mark and map the fields by hand."),
-  mapped: (n) => `${n} field${n === 1 ? "" : "s"} mapped`,
+
+const STR = {
+  ...strings("fieldsStep"),
+  aiUnavailable: (reason) => withNextStep(reason, t("fieldsStep.aiUnavailableNext")),
+  mapped: (n) => t("fieldsStep.mapped", { count: n }),
 };
-const STR = pick({ en: STR_EN, ar: {
-  hint: "حدد النص اللي بيتغير.",
-  hintCtrl: "Ctrl",
-  hintTail: "+ تحديد عشان تضيف أكتر من واحد.",
-  invalid: "ماتحفظش — صلّح:",
-  failed: "ماتحفظش:",
-  back: "رجوع",
-  next: "التالي: الإعدادات",
-  newVersion: "اعمل نسخة جديدة عشان تعدّل",
-  aiNone: "مفيش اقتراحات جديدة.",
-  aiDisabled: "اقتراحات الذكاء الاصطناعي مقفولة.",
-  mapAll: "اربط الكل",
-  mapping: "بنربط…",
-  mapAllHint: "املى «القيمة بتيجي من» لكل حقل لسه بيتكتب بالإيد: اختياراتك القديمة الأول، بعدين بيانات منتجاتك، بعدين الذكاء الاصطناعي.",
-  sample: "منتج المثال (اختياري)",
-  sampleHint: "المنتج اللي التصميم ده اتعمل عشانه — الربط بيتراجع على قيمه.",
-  aiUnavailable: (reason) => withNextStep(reason, "حدد واربط الحقول بالإيد."),
-  mapped: (n) => `اترابط ${n} حقل`,
-} });
 
 let uidSeq = 0;
 const nextUid = () => `f${++uidSeq}`;
@@ -325,7 +293,7 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
       const r = await confirmAllFields(scope, version.id, minConfidence);
       const done = new Set((r.fields || []).filter((f) => f.confirmed).map((f) => f.key));
       update((cur) => cur.map((f) => (done.has(f.key) ? { ...f, confirmed: true, mappingConfirmed: true } : f)));
-      const note = `${tr(`اتأكد ${r.confirmed} حقل`, `${r.confirmed} field(s) confirmed`)}${r.skipped ? tr(` — ${r.skipped} ثقتهم أقل فسبناهم`, ` — ${r.skipped} less confident left`) : ""}. ${r.readiness?.ready ? tr("القالب جاهز ✓", "The template is ready ✓") : r.readiness?.message || ""}`;
+      const note = `${t("fieldsStep.fieldSConfirmed", { confirmed: r.confirmed })}${r.skipped ? t("fieldsStep.lessConfidentLeft", { skipped: r.skipped }) : ""}. ${r.readiness?.ready ? t("fieldsStep.theTemplateIsReady") : r.readiness?.message || ""}`;
       setBulk((b) => ({ busy: null, note, tick: b.tick + 1 }));
     } catch (err) {
       setBulk((b) => ({ ...b, busy: null }));
@@ -336,7 +304,7 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
     setBulk((b) => ({ ...b, busy: "diff" }));
     try {
       const r = await comparePages(scope, version.id, 1);
-      const note = r.pagesCompared > 1 ? tr(`قارنّا ${r.pagesCompared} صفحة: ${r.static} مكان ثابت اتعلّم، و${r.extra.length} سطر بيتغير ممكن يبقى حقل.`, `Compared ${r.pagesCompared} pages: ${r.static} static place(s) marked, ${r.extra.length} changing line(s) could be fields.`) : tr("الملف صفحة واحدة — مفيش حاجة نقارنها.", "The file has one page — nothing to compare.");
+      const note = r.pagesCompared > 1 ? t("fieldsStep.comparedPagesStaticPlaceS", { pagesCompared: r.pagesCompared, static: r.static, length: r.extra.length }) : t("fieldsStep.theFileHasOnePage");
       setBulk((b) => ({ busy: null, note, tick: b.tick + 1 }));
     } catch (err) {
       setBulk((b) => ({ ...b, busy: null }));
@@ -360,7 +328,7 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
       const cur = draftsRef.current;
       const taken = new Set(cur.map((f) => f.key));
       const added = segments.map((s, i) => {
-        const label = s.label || `Field ${cur.length + i + 1}`;
+        const label = s.label || t("fieldsStep.field", { v: cur.length + i + 1 });
         const key = uniqueKey(slugKey(label), taken);
         taken.add(key);
         const { label: _l, ...seg } = s;
@@ -436,7 +404,7 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
           <div>
             <p className="font-medium">{save.state === "invalid" ? STR.invalid : STR.failed}</p>
             {save.problems?.length ? (
-              <ul className="list-disc ml-4">
+              <ul className="list-disc ms-4">
                 {save.problems.map((p, i) => (
                   <li key={i}>
                     <span className="font-mono">{p.key}</span>: {p.message}
@@ -452,13 +420,13 @@ export default function FieldsStep({ scope, templateScope, version, onSaved, onN
       {!readOnly && (
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/60 px-3 py-2 text-sm" data-testid="bulk-confirm">
           <Button onClick={() => confirmAll(null)} isLoading={bulk.busy === "all"} disabled={!!bulk.busy || !unconfirmedCount} className="py-2! text-sm">
-            {tr(`أكّد كل الاقتراحات (${unconfirmedCount})`, `Confirm all suggestions (${unconfirmedCount})`)}
+            {t("fieldsStep.confirmAllSuggestions", { unconfirmedCount })}
           </Button>
           <Button variant="secondary" onClick={() => confirmAll(0.8)} isLoading={bulk.busy === "high"} disabled={!!bulk.busy || !unconfirmedCount} className="py-2! text-sm">
-            {tr("أكّد الاقتراحات عالية الثقة بس", "Confirm high-confidence only")}
+            {t("fieldsStep.confirmHighConfidenceOnly")}
           </Button>
           <Button variant="secondary" onClick={compare} isLoading={bulk.busy === "diff"} disabled={!!bulk.busy} className="py-2! text-sm">
-            {tr("قارن صفحات الملف", "Compare the file's pages")}
+            {t("fieldsStep.compareTheFilesPages")}
           </Button>
           {bulk.note && <span className="text-xs text-gray-700" data-testid="bulk-note">{bulk.note}</span>}
         </div>

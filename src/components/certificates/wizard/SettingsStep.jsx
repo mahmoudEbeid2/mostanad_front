@@ -8,50 +8,16 @@ import Button from "../../../ui/Button";
 import { updateTemplateSettings } from "../../../services/apiCertificateTemplates";
 import { getBrands } from "../../../services/apiBrands";
 import { describeCertificateError } from "../../../utils/certificateErrors";
-import { pick } from "../../../i18n/lang";
+import { localizeCountries, strings } from "../../../i18n";
 
 // Wizard step 3 — review the template's slot (plan §13.4): name, type, brand,
 // country, scope. The server re-checks slot uniqueness on save.
 
-const STR_EN = {
-  name: "Template name",
-  type: "Certificate type",
-  brand: "Brand",
-  anyBrand: "Any brand",
-  country: "Country",
-  anyCountry: "Any country",
-  scope: "One certificate per…",
-  perProduct: "Product (invoice line)",
-  perInvoice: "Invoice",
-  save: "Save settings",
-  saved: "Settings saved",
-  next: "Next: prepare & test",
-  supersedes: (n) => `Activating this version will replace version ${n}, which is active now. Certificates already generated keep the design they used.`,
-  firstActive: "This template has no active version yet — activating this one makes it available for generation.",
-  slotTaken: "Another template already covers this type, brand, country and scope:",
-  open: "Open it",
-};
-const STR = pick({ en: STR_EN, ar: {
-  name: "اسم القالب",
-  type: "نوع الشهادة",
-  brand: "البراند",
-  anyBrand: "أي براند",
-  country: "الدولة",
-  anyCountry: "أي دولة",
-  scope: "شهادة واحدة لكل…",
-  perProduct: "منتج (سطر في الفاتورة)",
-  perInvoice: "فاتورة",
-  save: "احفظ الإعدادات",
-  saved: "الإعدادات اتحفظت",
-  next: "التالي: جهّز واختبر",
-  supersedes: (n) => `تشغيل النسخة دي هيبدّل النسخة ${n} اللي شغّالة دلوقتي. الشهادات اللي اتعملت بتفضل بتصميمها.`,
-  firstActive: "القالب ده مالوش نسخة شغّالة لسه — تشغيل دي بيخليه متاح للشهادات.",
-  slotTaken: "فيه قالب تاني بيغطي نفس النوع والبراند والدولة والنطاق:",
-  open: "افتحه",
-} });
+
+const STR = strings("settingsStep");
 
 export default function SettingsStep({ scope, companyId, template, version, types, onSaved, onNext }) {
-  const countries = useMemo(() => countryList().getData(), []);
+  const countries = useMemo(() => localizeCountries(countryList().getData()), []);
   const [form, setForm] = useState(() => ({
     name: template.name,
     certificateTypeId: template.certificateTypeId,

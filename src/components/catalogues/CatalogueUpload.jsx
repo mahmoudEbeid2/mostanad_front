@@ -7,63 +7,16 @@ import CompanyPicker from "../certificates/CompanyPicker";
 import CatalogueSteps from "./CatalogueSteps";
 import { getBrands } from "../../services/apiBrands";
 import { uploadCatalogue } from "../../services/apiCatalogues";
+import { strings, t } from "../../i18n";
 
 // Step 1 of a catalogue upload (design C0): drop zone, details, the upload with its
 // real % and a Cancel, then the quick check of the PDF (the request's answer: the
 // server opens the file and counts its pages). Nothing is read by AI here.
 const MAX_BYTES = 60 * 1024 * 1024;
 const STR = {
-  title: "Upload a catalogue",
-  subtitle: "The file is kept as the source. Nothing changes in your products until you review and apply.",
-  drop: "Drop the catalogue PDF here",
-  browse: "or browse your files",
-  dropHint: "PDF with selectable text · up to 60 MB · one file",
-  notPdf: "That isn't a PDF — choose a .pdf file.",
-  tooBig: (mb) => `This file is ${mb} MB — the limit is 60 MB.`,
-  oneFile: "Drop one file at a time.",
-  ready: "ready to upload",
-  change: "Change file",
-  details: "Details",
-  detailsHint: "company is required, the rest is optional",
-  brand: "Brand",
-  noBrand: "No brand",
-  edition: "Edition",
-  editionHint: "e.g. 2025–2026",
-  manufacturer: "Manufacturer",
-  manufacturerHint: "defaults to the brand",
-  upload: "Upload",
-  needFile: "Choose a PDF first.",
-  needCompany: "Pick the company first.",
-  noAi: "No AI is used until you choose pages and click Extract.",
-  cancel: "Cancel upload",
-  uploading: "Uploading…",
-  keepOpen: "Keep this tab open until the upload finishes.",
-  checking: "Checking the PDF…",
-  checkingHint: "A few seconds — only the pages are counted.",
-  stageUpload: "Upload the file",
-  stageCheck: "Check the PDF",
-  ofMb: (a, b, left) => `${a} of ${b} MB${left ? ` · about ${left} left` : ""}`,
-  uploaded: (mb) => `${mb} MB uploaded`,
-  afterUpload: "after the upload",
-  counting: "counting pages…",
-  opensFine: (n) => `${n} pages · opens fine, not password-protected`,
-  done: (n) => `Uploaded — ${n} pages`,
-  next: "Next: click the pages that have products.",
-  choose: "Choose pages →",
-  chooseWaiting: "Available as soon as the upload is checked.",
-  chooseHint: "Thumbnails load as you scroll. You can also come back later from Catalogues.",
-  failedCheck: "The file couldn't be opened",
-  failedUpload: "The upload didn't finish",
-  stopped: (name) => `stopped at “${name}”`,
-  another: "Upload another file",
-  retry: "Try again",
-  whatNext: "What happens after the upload",
-  steps: [
-    ["Check the file", "seconds. The pages are counted. Nothing is read by AI."],
-    ["Choose pages", "you. Click the pages that have products; skip covers and blank pages to save AI cost."],
-    ["Extract", "Only the chosen pages are read and sent to the AI."],
-    ["Review & apply", "You confirm every product before it changes."],
-  ],
+  ...strings("catalogueUpload"),
+  ofMb: (a, b, left) => t("catalogueUpload.ofMb", { a, b }) + (left ? t("catalogueUpload.left", { left }) : ""),
+  steps: [1, 2, 3, 4].map((i) => [t(`catalogueUpload.step${i}`), t(`catalogueUpload.step${i}Hint`)]),
 };
 
 const mb = (bytes) => (bytes / 1e6).toFixed(1);
@@ -219,7 +172,7 @@ export default function CatalogueUpload({ scopeState, onUploaded, onActivity }) 
                 </p>
               </div>
               <p className="text-xs text-gray-500" data-testid="upload-failed-stage">
-                {file?.name} · {mb(file?.size || 0)} MB · {STR.stopped(failure.stage === "check" ? STR.stageCheck : STR.stageUpload)}
+                {file?.name} · {mb(file?.size || 0)}{" "}MB ·{" "}{STR.stopped(failure.stage === "check" ? STR.stageCheck : STR.stageUpload)}
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button type="button" variant="secondary" onClick={reset} data-testid="upload-another">
@@ -264,7 +217,7 @@ export default function CatalogueUpload({ scopeState, onUploaded, onActivity }) 
               <div className="min-w-0 flex-1">
                 <div className="truncate font-semibold text-gray-900">{file.name}</div>
                 <div className="text-xs text-gray-500">
-                  {mb(file.size)} MB · {phase === "idle" ? STR.ready : summary}
+                  {mb(file.size)}{" "}MB ·{" "}{phase === "idle" ? STR.ready : summary}
                 </div>
               </div>
               {phase === "idle" && (
@@ -333,7 +286,7 @@ export default function CatalogueUpload({ scopeState, onUploaded, onActivity }) 
                     {overall}%
                   </span>
                 </div>
-                <div role="progressbar" aria-label="Upload" aria-valuenow={overall} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
+                <div role="progressbar" aria-label={t("catalogueUpload.upload")} aria-valuenow={overall} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
                   <div className={`h-full rounded-full transition-all ${phase === "ready" ? "bg-emerald-600" : "bg-blue-600"}`} style={{ width: `${overall}%` }} />
                 </div>
                 <p className="mt-1.5 text-xs text-gray-500">{phase === "ready" ? STR.next : phase === "checking" ? STR.checkingHint : STR.keepOpen}</p>

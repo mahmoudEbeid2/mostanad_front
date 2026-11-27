@@ -1,3 +1,4 @@
+import { t } from "../../i18n";
 // One badge for every Certificates V2 lifecycle (plan §4): template versions,
 // invoices, batches and certificates.
 const STYLES = {
@@ -34,7 +35,7 @@ const STYLES = {
   extraction_failed: "bg-red-50 text-red-700",
 };
 
-const LABELS = { partially_failed: "partially failed", extraction_failed: "extraction failed", pages_ready: "choose pages" };
+const LABELS = { partially_failed: t("statusBadge.partiallyFailed"), extraction_failed: t("statusBadge.extractionFailed"), pages_ready: t("statusBadge.choosePages") };
 
 export default function StatusBadge({ status, className = "" }) {
   if (!status) return null;

@@ -5,6 +5,7 @@ import { getApprovals, postApprove, postRevoke } from "../../services/apiGenerat
 import { useAuth } from "../../context/AuthContext";
 import Button from "../../ui/Button";
 import { LABEL_FIELD_CATALOG, provenanceForField } from "../../utils/labelFieldCatalog";
+import { fmtDateTime, t } from "../../i18n";
 
 // Turns a raw field path ("activeIngredients[0].amount") into something a
 // signer can actually read without knowing the schema.
@@ -50,7 +51,7 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
       const rows = await getApprovals(label.id);
       setApprovals(rows || []);
     } catch (err) {
-      toast.error(err.message || "Failed to load approvals");
+      toast.error(err.message || t("approvalTab.failedToLoadApprovals"));
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +92,7 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
 
   const handleApprove = async () => {
     if (!allGatesPassed) {
-      toast.error("All 6 approval gates must be cleared before signing.");
+      toast.error(t("approvalTab.all6ApprovalGatesMust"));
       return;
     }
 
@@ -107,11 +108,11 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
       };
 
       const result = await postApprove(label.id, payload);
-      toast.success(`Label version v${currentVersion} approved and promoted to Reference Label!`);
+      toast.success(t("approvalTab.labelVersionVApprovedAnd", { currentVersion }));
       await loadApprovals();
       onApprovalChanged?.();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || "Failed to approve label";
+      const msg = err.response?.data?.message || err.message || t("approvalTab.failedToApproveLabel");
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -120,7 +121,7 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
 
   const handleRevoke = async () => {
     if (!revokeReason.trim()) {
-      toast.error("Please provide a reason for revocation.");
+      toast.error(t("approvalTab.pleaseProvideAReasonFor"));
       return;
     }
 
@@ -128,14 +129,14 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
       setIsRevoking(true);
       const result = await postRevoke(label.id, revokingApproval.id, revokeReason.trim());
       toast.success(
-        `Approval revoked. ${result.affectedLabelIds?.length || 0} dependent labels marked as needing review.`
+        t("approvalTab.approvalRevokedDependentLabelsMarked", { v: result.affectedLabelIds?.length || 0 })
       );
       setRevokingApproval(null);
       setRevokeReason("");
       await loadApprovals();
       onApprovalChanged?.();
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Failed to revoke approval");
+      toast.error(err.response?.data?.message || err.message || t("approvalTab.failedToRevokeApproval"));
     } finally {
       setIsRevoking(false);
     }
@@ -148,16 +149,13 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
         <div className="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-gray-100 flex-wrap">
           <div>
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-blue-600" /> Regulated Approval Gates (Section 12)
-            </h3>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Signing a label promotes it to an authoritative reference label. All six criteria must be met.
-            </p>
+              <ShieldCheck className="w-5 h-5 text-blue-600" />{" "}{t("approvalTab.regulatedApprovalGatesSection12")}</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{t("approvalTab.signingALabelPromotesIt")}</p>
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${
             allGatesPassed ? "bg-green-50 text-green-800 border-green-200" : "bg-amber-50 text-amber-800 border-amber-200"
           }`}>
-            {allGatesPassed ? "Ready for Signature" : "Gates Pending"}
+            {allGatesPassed ? t("approvalTab.readyForSignature") : t("approvalTab.gatesPending")}
           </span>
         </div>
 
@@ -166,11 +164,11 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
           <div className="flex items-start gap-3 text-sm">
             {gate1Passed ? <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" /> : <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />}
             <div>
-              <p className="font-semibold text-gray-900">Gate 1: Fresh Validation Report</p>
+              <p className="font-semibold text-gray-900">{t("approvalTab.gate1FreshValidationReport")}</p>
               <p className="text-xs text-gray-500">
                 {gate1Passed
-                  ? `Report matches current version (v${currentVersion}).`
-                  : `Validation is stale or missing (Latest: v${latestValidation?.versionNumber || "none"}, Current: v${currentVersion}). Re-run validation.`}
+                  ? t("approvalTab.reportMatchesCurrentVersionV", { currentVersion })
+                  : t("approvalTab.stale", { latest: latestValidation?.versionNumber || "—", current: currentVersion })}
               </p>
             </div>
           </div>
@@ -179,11 +177,11 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
           <div className="flex items-start gap-3 text-sm">
             {gate2Passed ? <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" /> : <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />}
             <div>
-              <p className="font-semibold text-gray-900">Gate 2: Zero Regulatory Failures</p>
+              <p className="font-semibold text-gray-900">{t("approvalTab.gate2ZeroRegulatoryFailures")}</p>
               <p className="text-xs text-gray-500">
                 {gate2Passed
-                  ? "All deterministic and compliance rule checks passed."
-                  : `Validation report contains ${latestValidation?.errorCount || 0} error(s). Cannot approve with active failures.`}
+                  ? t("approvalTab.allDeterministicAndComplianceRule")
+                  : t("approvalTab.validationReportContainsErrorS", { v: latestValidation?.errorCount || 0 })}
               </p>
             </div>
           </div>
@@ -192,14 +190,12 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
           <div className="flex items-start gap-3 text-sm">
             {gate3Passed ? <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />}
             <div className="flex-1">
-              <p className="font-semibold text-gray-900">Gate 3: UNVERIFIABLE Verdicts Acknowledged</p>
+              <p className="font-semibold text-gray-900">{t("approvalTab.gate3UnverifiableVerdictsAcknowledged")}</p>
               {unverifiableVerdicts.length === 0 ? (
-                <p className="text-xs text-gray-500">No unverifiable verdicts in current report.</p>
+                <p className="text-xs text-gray-500">{t("approvalTab.noUnverifiableVerdictsInCurrent")}</p>
               ) : (
                 <div className="mt-2 space-y-2">
-                  <p className="text-xs text-amber-800">
-                    The following fields could not be verified automatically. Explicit human acknowledgment is required:
-                  </p>
+                  <p className="text-xs text-amber-800">{t("approvalTab.theFollowingFieldsCouldNot")}</p>
                   {unverifiableVerdicts.map((v) => (
                     <label key={v.path} className="flex items-center gap-2 text-xs text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-200 cursor-pointer">
                       <input
@@ -210,10 +206,9 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
                       />
                       {v.ruleKey === "NO_AUTHORITATIVE_REQUIREMENTS" ? (
                         <span>
-                          <strong>No rules for {label.country}</strong> — I approve without the regulatory check (recorded with my name and the time).
-                        </span>
+                          <strong>{t("approvalTab.noRulesFor")}{" "}{label.country}</strong>{" "}{t("approvalTab.iApproveWithoutTheRegulatory")}</span>
                       ) : (
-                        <span>I acknowledge unverifiable check on: <strong>{v.path}</strong> ({v.message || "Manual check required"})</span>
+                        <span>{t("approvalTab.iAcknowledgeUnverifiableCheckOn")}{" "}<strong>{v.path}</strong> ({v.message || t("approvalTab.manualCheckRequired")})</span>
                       )}
                     </label>
                   ))}
@@ -226,14 +221,12 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
           <div className="flex items-start gap-3 text-sm">
             {gate4Passed ? <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />}
             <div className="flex-1">
-              <p className="font-semibold text-gray-900">Gate 4: Per-Field Estimated Values Signature</p>
+              <p className="font-semibold text-gray-900">{t("approvalTab.gate4PerFieldEstimated")}</p>
               {estimatedFields.length === 0 ? (
-                <p className="text-xs text-gray-500">No estimated/inferred fields in this label.</p>
+                <p className="text-xs text-gray-500">{t("approvalTab.noEstimatedInferredFieldsIn")}</p>
               ) : (
                 <div className="mt-2 space-y-2">
-                  <p className="text-xs text-amber-800">
-                    Signing an estimated value is a legal commitment on regulated output. Check each field deliberately:
-                  </p>
+                  <p className="text-xs text-amber-800">{t("approvalTab.signingAnEstimatedValueIs")}</p>
                   {estimatedFields.map((field) => {
                     const basis = provenanceForField(provenance, field).find((p) => p.key === field)?.estimateBasis;
                     return (
@@ -244,8 +237,7 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
                           onChange={() => toggleSignEstimated(field)}
                           className="rounded text-amber-600 mt-0.5"
                         />
-                        <span>
-                          I formally verify and sign the estimated value for: <strong>{friendlyFieldLabel(field)}</strong>
+                        <span>{t("approvalTab.iFormallyVerifyAndSign")}{" "}<strong>{friendlyFieldLabel(field)}</strong>
                           {basis && <span className="block mt-1 text-amber-800 italic">{basis}</span>}
                         </span>
                       </label>
@@ -260,20 +252,17 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
           <div className="flex items-start gap-3 text-sm">
             {gate5Passed ? <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />}
             <div className="flex-1">
-              <p className="font-semibold text-gray-900">Gate 5: Autonomy Tier & Separation of Duties</p>
-              <p className="text-xs text-gray-500">
-                Tier: <span className="font-mono font-bold uppercase">{label.autonomyTier || "standard"}</span> · Risk Score: {label.riskScore ?? "N/A"}
+              <p className="font-semibold text-gray-900">{t("approvalTab.gate5AutonomyTierSeparation")}</p>
+              <p className="text-xs text-gray-500">{t("approvalTab.tier")}{" "}<span className="font-mono font-bold uppercase">{label.autonomyTier || t("approvalTab.standard")}</span>{" "}{t("approvalTab.riskScore")}{" "}{label.riskScore ?? t("approvalTab.nA")}
               </p>
               {gate5NeedsDual && (
                 <div className="mt-2">
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                    Second Approver User ID (Dual Review Required)
-                  </label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("approvalTab.secondApproverUserIdDual")}</label>
                   <input
                     type="text"
                     value={secondApproverUserId}
                     onChange={(e) => setSecondApproverUserId(e.target.value)}
-                    placeholder="Enter User ID of second independent reviewer..."
+                    placeholder={t("approvalTab.enterUserIdOfSecond")}
                     className="w-full text-xs rounded-xl border border-gray-300 p-2.5"
                   />
                 </div>
@@ -285,11 +274,11 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
           <div className="flex items-start gap-3 text-sm">
             {gate6Passed ? <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" /> : <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />}
             <div>
-              <p className="font-semibold text-gray-900">Gate 6: Backing Documents Coverage</p>
+              <p className="font-semibold text-gray-900">{t("approvalTab.gate6BackingDocumentsCoverage")}</p>
               <p className="text-xs text-gray-500">
                 {gate6Passed
-                  ? `Regulatory documents coverage is ${latestValidation?.coveragePercent?.toFixed(1) || 100}% (>= 95% threshold).`
-                  : `Regulatory document coverage (${latestValidation?.coveragePercent?.toFixed(1)}%) is below the mandatory 95% threshold.`}
+                  ? t("approvalTab.regulatoryDocumentsCoverageIs95", { v: latestValidation?.coveragePercent?.toFixed(1) || 100 })
+                  : t("approvalTab.regulatoryDocumentCoverageIsBelow", { v: latestValidation?.coveragePercent?.toFixed(1) })}
               </p>
             </div>
           </div>
@@ -299,28 +288,26 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
         <div className="mt-6 pt-6 border-t border-gray-100 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Promotion Scope</label>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("approvalTab.promotionScope")}</label>
               <select
                 value={scope}
                 onChange={(e) => setScope(e.target.value)}
                 className="w-full text-sm rounded-xl border border-gray-300 p-2.5 bg-white"
               >
-                <option value="company">Company (Private Reference for this tenant)</option>
-                {canPublishGlobal && <option value="global">Global (Publish as an authoritative reference for all tenants)</option>}
+                <option value="company">{t("approvalTab.companyPrivateReferenceForThis")}</option>
+                {canPublishGlobal && <option value="global">{t("approvalTab.globalPublishAsAnAuthoritative")}</option>}
               </select>
               {!canPublishGlobal && (
-                <p className="text-[11px] text-gray-400 mt-1">
-                  Global promotion requires the publish_global_reference permission on a system account.
-                </p>
+                <p className="text-[11px] text-gray-400 mt-1">{t("approvalTab.globalPromotionRequiresThePublish")}</p>
               )}
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Approval Note (Optional)</label>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("approvalTab.approvalNoteOptional")}</label>
               <input
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="e.g. Approved for export registration packaging"
+                placeholder={t("approvalTab.eGApprovedForExport")}
                 className="w-full text-sm rounded-xl border border-gray-300 p-2.5"
               />
             </div>
@@ -333,8 +320,7 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
               isLoading={isSubmitting}
               className="px-6 py-2.5 font-bold"
             >
-              <Award className="w-4 h-4" /> Formally Approve & Promote Reference
-            </Button>
+              <Award className="w-4 h-4" />{" "}{t("approvalTab.formallyApprovePromoteReference")}</Button>
           </div>
         </div>
       </div>
@@ -342,15 +328,14 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
       {/* Approvals History */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Award className="w-5 h-5 text-blue-600" /> Approval & Promotion History
-        </h3>
+          <Award className="w-5 h-5 text-blue-600" />{" "}{t("approvalTab.approvalPromotionHistory")}</h3>
 
         {isLoading ? (
           <div className="text-center py-6">
             <span className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin inline-block" />
           </div>
         ) : approvals.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">No formal approvals have been granted for this label yet.</p>
+          <p className="text-sm text-gray-400 italic">{t("approvalTab.noFormalApprovalsHaveBeen")}</p>
         ) : (
           <div className="space-y-3">
             {approvals.map((app) => {
@@ -364,32 +349,26 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
                 >
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-gray-900 text-sm">
-                        Version v{app.approvedVersion} Approved
-                      </span>
+                      <span className="font-bold text-gray-900 text-sm">{t("approvalTab.versionVApproved", { approvedVersion: app.approvedVersion })}</span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                         isRevoked ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
                       }`}>
-                        {isRevoked ? "Revoked" : "Active Reference"}
+                        {isRevoked ? t("approvalTab.revoked") : t("approvalTab.activeReference")}
                       </span>
                     </div>
 
-                    <p className="text-xs text-gray-600 mt-1">
-                      Approved by: <strong>{app.approverName || "Authorized Reviewer"}</strong> ({app.approverRole || "Staff"}) on {new Date(app.approvedAt).toLocaleString()}
-                    </p>
+                    <p className="text-xs text-gray-600 mt-1">{t("approvalTab.approvedBy")}{" "}<strong>{app.approverName || t("approvalTab.authorizedReviewer")}</strong> ({app.approverRole || t("approvalTab.staff")}{t("approvalTab.on", { toLocaleString: fmtDateTime(app.approvedAt) })}</p>
 
                     {app.promotedReferenceId && (
-                      <p className="text-xs text-blue-700 font-mono mt-0.5">
-                        Promoted Reference ID: {app.promotedReferenceId}
-                      </p>
+                      <p className="text-xs text-blue-700 font-mono mt-0.5">{t("approvalTab.promotedReferenceId", { promotedReferenceId: app.promotedReferenceId })}</p>
                     )}
 
                     {app.note && <p className="text-xs text-gray-500 mt-1 italic">&ldquo;{app.note}&rdquo;</p>}
 
                     {isRevoked && (
                       <div className="mt-2 text-xs text-red-700 bg-red-50 p-2 rounded-lg border border-red-200">
-                        <p className="font-bold">Revocation Reason: {app.revocationReason}</p>
-                        <p className="text-[10px] text-gray-500">Revoked at: {new Date(app.revokedAt).toLocaleString()}</p>
+                        <p className="font-bold">{t("approvalTab.revocationReason")}{" "}{app.revocationReason}</p>
+                        <p className="text-[10px] text-gray-500">{t("approvalTab.revokedAt")}{" "}{fmtDateTime(app.revokedAt)}</p>
                       </div>
                     )}
                   </div>
@@ -400,8 +379,7 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
                       onClick={() => setRevokingApproval(app)}
                       className="text-xs text-red-600 hover:text-red-800 border-red-200 hover:bg-red-50"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" /> Revoke Approval
-                    </Button>
+                      <RotateCcw className="w-3.5 h-3.5" />{" "}{t("approvalTab.revokeApproval")}</Button>
                   )}
                 </div>
               );
@@ -415,34 +393,28 @@ export default function ApprovalTab({ label, latestValidation, currentVersion, p
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-              <RotateCcw className="w-5 h-5 text-red-600" /> Revoke Approval (v{revokingApproval.approvedVersion})
-            </h3>
-            <p className="text-xs text-gray-600 mb-4">
-              Revoking will mark the promoted reference label inactive and flag all other generated labels whose provenance cites this reference as <strong>needing review</strong>.
+              <RotateCcw className="w-5 h-5 text-red-600" />{" "}{t("approvalTab.revokeApprovalV", { approvedVersion: revokingApproval.approvedVersion })}</h3>
+            <p className="text-xs text-gray-600 mb-4">{t("approvalTab.revokingWillMarkThePromoted")}{" "}<strong>{t("approvalTab.needingReview")}</strong>.
             </p>
 
             <div className="mb-4">
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Reason for Revocation *</label>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">{t("approvalTab.reasonForRevocation")}</label>
               <textarea
                 value={revokeReason}
                 onChange={(e) => setRevokeReason(e.target.value)}
                 rows={3}
-                placeholder="e.g. Discovered updated guideline from authority rendering clause 4.2 invalid..."
+                placeholder={t("approvalTab.eGDiscoveredUpdatedGuideline")}
                 className="w-full text-xs rounded-xl border border-gray-300 p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
               />
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setRevokingApproval(null)} disabled={isRevoking}>
-                Cancel
-              </Button>
+              <Button variant="secondary" onClick={() => setRevokingApproval(null)} disabled={isRevoking}>{t("approvalTab.cancel")}</Button>
               <Button
                 onClick={handleRevoke}
                 isLoading={isRevoking}
                 className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                Confirm Revocation
-              </Button>
+              >{t("approvalTab.confirmRevocation")}</Button>
             </div>
           </div>
         </div>

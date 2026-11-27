@@ -5,6 +5,7 @@ import io from "socket.io-client";
 import Button from "../ui/Button";
 import toast from "react-hot-toast";
 import { retryReferenceLabelTask } from "../services/apiReferenceLabels";
+import { t } from "../i18n";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:3000";
 
@@ -53,15 +54,15 @@ export default function BulkProcessing() {
 
   const handleRetry = async (taskId) => {
     try {
-      setTasks(prev => prev.map(t => 
-        t.taskId === taskId ? { ...t, status: "pending", error: "", message: "Retrying..." } : t
+      setTasks(prev => prev.map(it => 
+        it.taskId === taskId ? { ...it, status: "pending", error: "", message: t("bulkProcessing.retrying") } : it
       ));
       await retryReferenceLabelTask(taskId);
-      toast.success("Task queued for retry");
+      toast.success(t("bulkProcessing.taskQueuedForRetry"));
     } catch (error) {
-      toast.error(error.message || "Failed to retry task");
-      setTasks(prev => prev.map(t => 
-        t.taskId === taskId ? { ...t, status: "failed", error: error.message || "Retry failed" } : t
+      toast.error(error.message || t("bulkProcessing.failedToRetryTask"));
+      setTasks(prev => prev.map(it => 
+        it.taskId === taskId ? { ...it, status: "failed", error: error.message || t("bulkProcessing.retryFailed") } : it
       ));
     }
   };
@@ -73,22 +74,20 @@ export default function BulkProcessing() {
       <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 p-8">
         
         <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">AI Bulk Processing Dashboard</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">{t("bulkProcessing.aiBulkProcessingDashboard")}</h2>
           <p className="text-gray-500">
             {allCompleted 
-              ? "All documents have finished processing."
-              : `Processing ${tasks.length} documents.`}
+              ? t("bulkProcessing.allDocumentsHaveFinishedProcessing")
+              : t("bulkProcessing.processingDocuments", { length: tasks.length })}
           </p>
           {!allCompleted && (
-            <div className="mt-4 inline-flex items-start gap-3 p-4 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 text-left">
+            <div className="mt-4 inline-flex items-start gap-3 p-4 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 text-start">
               <div className="shrink-0 mt-0.5">
                 <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
               </div>
               <div>
-                <p className="font-semibold mb-1">Background Processing Active</p>
-                <p className="text-sm">
-                  The process is running in the background. You can safely leave this page and we will notify you when it's done.
-                </p>
+                <p className="font-semibold mb-1">{t("bulkProcessing.backgroundProcessingActive")}</p>
+                <p className="text-sm">{t("bulkProcessing.theProcessIsRunningIn")}</p>
               </div>
             </div>
           )}
@@ -119,16 +118,16 @@ export default function BulkProcessing() {
               {/* Details & Progress */}
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-1">
-                  <h4 className="font-semibold text-gray-900 truncate pr-4">
-                    {task.fileName || "Unknown File"}
+                  <h4 className="font-semibold text-gray-900 truncate pe-4">
+                    {task.fileName || t("bulkProcessing.unknownFile")}
                   </h4>
                   <span className="text-xs font-bold text-gray-500 shrink-0">
-                    {task.status === "completed" ? "100%" : task.status === "failed" ? "Failed" : `${task.progress || 0}%`}
+                    {task.status === "completed" ? "100%" : task.status === "failed" ? t("bulkProcessing.failed") : `${task.progress || 0}%`}
                   </span>
                 </div>
                 
                 <p className="text-xs text-gray-500 truncate mb-2">
-                  {task.error || task.message || (task.status === "pending" ? "Waiting to start..." : "Processing...")}
+                  {task.error || task.message || (task.status === "pending" ? t("bulkProcessing.waitingToStart") : t("bulkProcessing.processing"))}
                 </p>
 
                 <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
@@ -141,10 +140,9 @@ export default function BulkProcessing() {
 
               {/* Action Buttons */}
               {task.status === "failed" && (
-                <div className="shrink-0 ml-4">
+                <div className="shrink-0 ms-4">
                   <Button variant="secondary" size="sm" onClick={() => handleRetry(task.taskId)} className="flex items-center gap-1 text-sm border-gray-300">
-                    <RefreshCw className="w-4 h-4" /> Try Again
-                  </Button>
+                    <RefreshCw className="w-4 h-4" />{" "}{t("bulkProcessing.tryAgain")}</Button>
                 </div>
               )}
 
@@ -155,8 +153,7 @@ export default function BulkProcessing() {
         {allCompleted && (
           <div className="flex justify-center mt-10 animate-in fade-in zoom-in">
             <Button onClick={() => navigate("/labels")} className="px-8 flex items-center gap-2">
-              <ArrowLeft className="w-5 h-5" /> Return to Labels
-            </Button>
+              <ArrowLeft className="w-5 h-5" />{" "}{t("bulkProcessing.returnToLabels")}</Button>
           </div>
         )}
 

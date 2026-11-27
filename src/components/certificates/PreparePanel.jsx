@@ -1,23 +1,19 @@
 import { AlertTriangle, Check, Circle, Minus, X } from "lucide-react";
 import Spinner from "../../ui/Spinner";
+import { strings, t } from "../../i18n";
 
 // "Prepare certificates" (backend item 5): the job's named stages — matching →
 // product data → batch results → supplier COAs — with live progress, then only
 // what still needs the person: values to confirm (Confirm all in the data check
 // below) and lab results still missing (the results grid).
 const STR = {
-  title: "Prepare certificates",
-  running: "Preparing…",
-  failed: "Preparing stopped:",
-  status: { done: "done", skipped: "nothing to do", failed: "failed", running: "running", pending: "waiting" },
-  toConfirm: (p) => `${p.toConfirm.length} value${p.toConfirm.length === 1 ? "" : "s"} to confirm${p.estimated ? ` (${p.estimated} estimated)` : ""} — use “Confirm all” in the data check below.`,
-  labResults: (n) => `${n} lab result${n === 1 ? "" : "s"} still missing — fill ${n === 1 ? "it" : "them"} in the results grid below (or upload the supplier COA).`,
-  other: (n) => `${n} other required value${n === 1 ? "" : "s"} missing — see the data check below.`,
-  optional: (n) => `${n} optional value${n === 1 ? "" : "s"} still empty — they will print blank, flagged.`,
-  unmatched: (n) => `${n} line${n === 1 ? "" : "s"} still need${n === 1 ? "s" : ""} a product.`,
-  ready: "Nothing required is missing — you can generate.",
-  cost: (c) => `AI for this invoice so far: ${c.attempts} call${c.attempts === 1 ? "" : "s"} · $${Number(c.costUsd || 0).toFixed(4)}`,
-  close: "Close",
+  ...strings("preparePanel"),
+  toConfirm: (p) => t("preparePanel.toConfirm", { count: p.toConfirm.length, estimated: p.estimated ? t("preparePanel.estimated", { n: p.estimated }) : "" }),
+  labResults: (n) => t("preparePanel.labResults", { count: n }),
+  other: (n) => t("preparePanel.other", { count: n }),
+  optional: (n) => t("preparePanel.optional", { count: n }),
+  unmatched: (n) => t("preparePanel.unmatched", { count: n }),
+  cost: (c) => t("preparePanel.cost", { count: c.attempts, cost: Number(c.costUsd || 0).toFixed(4) }),
 };
 
 const ICON = {

@@ -6,6 +6,7 @@ import {
   Activity, ArrowUpRight, DollarSign, ListTodo, Zap, Clock, Loader2, CheckCircle, AlertOctagon
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { t } from "../i18n";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ export default function Dashboard() {
           setData(res.data);
         }
       } catch (error) {
-        toast.error("Failed to load dashboard statistics");
+        toast.error(t("dashboard.failedToLoadDashboardStatistics"));
         console.error(error);
       } finally {
         setIsLoading(false);
@@ -44,11 +45,8 @@ export default function Dashboard() {
         <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
           <AlertCircle className="w-10 h-10" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-        <p className="text-gray-500 max-w-md">
-          You do not have the required permissions to view the dashboard statistics. 
-          Please contact your system administrator.
-        </p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("dashboard.accessDenied")}</h2>
+        <p className="text-gray-500 max-w-md">{t("dashboard.youDoNotHaveThe")}</p>
       </div>
     );
   }
@@ -66,8 +64,8 @@ export default function Dashboard() {
       
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="text-gray-500 mt-1">Welcome back, {user?.name}. Here is what's happening today.</p>
+        <h1 className="text-3xl font-bold text-gray-900">{t("dashboard.dashboardOverview")}</h1>
+        <p className="text-gray-500 mt-1">{t("dashboard.welcomeBackHereIsWhats", { name: user?.name })}</p>
       </div>
 
       {/* UI plan, Phase E (27 Nov): the experiment switch moved to Admin → Experiment mode; uploading lives on
@@ -75,10 +73,10 @@ export default function Dashboard() {
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Users" value={data?.stats?.users} growth={data?.stats?.growth?.users} icon={Users} color="blue" />
-        <StatCard title="Companies" value={data?.stats?.companies} growth={data?.stats?.growth?.companies} icon={Building2} color="indigo" />
-        <StatCard title="Products" value={data?.stats?.products} growth={data?.stats?.growth?.products} icon={Package} color="emerald" />
-        <StatCard title="Monthly Revenue" value={`$${data?.stats?.totalMonthlyRevenue || 0}`} growth={data?.stats?.growth?.revenue} icon={DollarSign} color="amber" />
+        <StatCard title={t("dashboard.totalUsers")} value={data?.stats?.users} growth={data?.stats?.growth?.users} icon={Users} color="blue" />
+        <StatCard title={t("dashboard.companies")} value={data?.stats?.companies} growth={data?.stats?.growth?.companies} icon={Building2} color="indigo" />
+        <StatCard title={t("dashboard.products")} value={data?.stats?.products} growth={data?.stats?.growth?.products} icon={Package} color="emerald" />
+        <StatCard title={t("dashboard.monthlyRevenue")} value={`$${data?.stats?.totalMonthlyRevenue || 0}`} growth={data?.stats?.growth?.revenue} icon={DollarSign} color="amber" />
       </div>
 
       {/* Secondary Stats & Tasks */}
@@ -92,27 +90,27 @@ export default function Dashboard() {
                 <Zap className="w-5 h-5 fill-current" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">AI Tasks Processing</h2>
-                <p className="text-sm text-gray-500">Real-time status of background AI jobs</p>
+                <h2 className="text-xl font-bold text-gray-900">{t("dashboard.aiTasksProcessing")}</h2>
+                <p className="text-sm text-gray-500">{t("dashboard.realTimeStatusOfBackground")}</p>
               </div>
             </div>
             <div className="flex flex-col items-end">
               <span className="text-2xl font-black text-gray-900">{data?.tasks?.total || 0}</span>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Total Tasks</span>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t("dashboard.totalTasks")}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <TaskBox label="Pending" count={data?.tasks?.byStatus?.pending || 0} color="text-amber-600" bg="bg-amber-50" icon={Clock} border="border-amber-100" />
-            <TaskBox label="Processing" count={data?.tasks?.byStatus?.processing || 0} color="text-blue-600" bg="bg-blue-50" icon={Loader2} border="border-blue-100" />
-            <TaskBox label="Completed" count={data?.tasks?.byStatus?.completed || 0} color="text-emerald-600" bg="bg-emerald-50" icon={CheckCircle} border="border-emerald-100" />
-            <TaskBox label="Failed" count={data?.tasks?.byStatus?.failed || 0} color="text-red-600" bg="bg-red-50" icon={AlertOctagon} border="border-red-100" />
+            <TaskBox label={t("dashboard.pending")} count={data?.tasks?.byStatus?.pending || 0} color="text-amber-600" bg="bg-amber-50" icon={Clock} border="border-amber-100" />
+            <TaskBox label={t("dashboard.processing")} count={data?.tasks?.byStatus?.processing || 0} color="text-blue-600" bg="bg-blue-50" icon={Loader2} border="border-blue-100" />
+            <TaskBox label={t("dashboard.completed")} count={data?.tasks?.byStatus?.completed || 0} color="text-emerald-600" bg="bg-emerald-50" icon={CheckCircle} border="border-emerald-100" />
+            <TaskBox label={t("dashboard.failed")} count={data?.tasks?.byStatus?.failed || 0} color="text-red-600" bg="bg-red-50" icon={AlertOctagon} border="border-red-100" />
           </div>
           
           {/* Progress Bar for completion rate */}
           <div className="mt-8 pt-6 border-t border-gray-100">
             <div className="flex justify-between items-end mb-2">
-              <span className="text-sm font-bold text-gray-700">Overall Completion Rate</span>
+              <span className="text-sm font-bold text-gray-700">{t("dashboard.overallCompletionRate")}</span>
               <span className="text-sm font-black text-emerald-600">
                 {data?.tasks?.total ? Math.round(((data?.tasks?.byStatus?.completed || 0) / data.tasks.total) * 100) : 0}%
               </span>
@@ -130,16 +128,14 @@ export default function Dashboard() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
            <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-indigo-500" />
-              Subscriptions
-            </h2>
+              <CreditCard className="w-5 h-5 text-indigo-500" />{t("dashboard.subscriptions")}</h2>
           </div>
           <div className="flex flex-col gap-4 justify-center items-center h-full pb-8">
             <div className="w-24 h-24 rounded-full border-8 border-indigo-100 flex items-center justify-center relative">
               <span className="text-3xl font-extrabold text-indigo-600">{data?.stats?.activeSubscriptions}</span>
             </div>
-            <p className="text-gray-500 font-medium">Active Subscriptions</p>
-            <p className="text-sm text-gray-400">Out of {data?.stats?.plans} available plans</p>
+            <p className="text-gray-500 font-medium">{t("dashboard.activeSubscriptions")}</p>
+            <p className="text-sm text-gray-400">{t("dashboard.outOfAvailablePlans", { plans: data?.stats?.plans })}</p>
           </div>
         </div>
       </div>
@@ -181,7 +177,7 @@ function StatCard({ title, value, growth = 0, icon: Icon, color }) {
 function TaskBox({ label, count, color, bg, icon: Icon, border }) {
   return (
     <div className={`${bg} rounded-2xl p-5 flex flex-col items-center text-center border ${border} relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300`}>
-      <div className={`absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}>
+      <div className={`absolute -end-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}>
          {Icon && <Icon className="w-20 h-20" />}
       </div>
       <div className="relative z-10 flex flex-col items-center gap-2">

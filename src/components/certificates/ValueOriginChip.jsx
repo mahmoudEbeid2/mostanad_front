@@ -3,7 +3,7 @@
 //   an estimate → «مستنتج» — its reasoning and basis on hover; never blocks, accepted with «اعتمد كل المستنتج»
 // An estimate is never shown as coming from a document.
 import { openEvidence } from "../../services/apiWorkflow";
-import { tr } from "../../i18n/lang";
+import { t } from "../../i18n";
 
 const shortName = (s) => String(s || "").replace(/\.(pdf|png|jpe?g|ai|xlsx|csv)$/i, "").slice(0, 40);
 
@@ -13,35 +13,35 @@ export default function ValueOriginChip({ provenance, flags = [] }) {
   if (p.kind === "computed") {
     return (
       <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800" title={p.formula || undefined} data-chip="computed">
-        {tr("محسوب", "Computed")}
+        {t("valueOriginChip.computed")}
       </span>
     );
   }
   // PART 3: filled by the AI in experiment mode — test data, never a real value
   if (p.experiment) {
     return (
-      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-800" title="وضع التجربة: بيانات تجريبية من الذكاء الاصطناعي" data-chip="experiment">
-        {tr("مستنتج (تجربة)", "Estimated (experiment)")}
+      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-800" title={t("valueOriginChip.experimentModeSampleDataFrom")} data-chip="experiment">
+        {t("valueOriginChip.estimatedExperiment")}
       </span>
     );
   }
   if (flags.includes("estimated") || (p.estimated && !p.confirmedAt)) {
-    const why = [p.reasoning, p.basis ? `${tr("الأساس", "Basis")}: ${p.basis}` : null].filter(Boolean).join("\n");
+    const why = [p.reasoning, p.basis ? `${t("valueOriginChip.basis")}: ${p.basis}` : null].filter(Boolean).join("\n");
     return (
       <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700" title={why || undefined} data-chip="estimated">
-        {tr("مستنتج", "Estimated")}
+        {t("valueOriginChip.estimated")}
       </span>
     );
   }
   if (p.estimated && p.confirmedAt) {
     return (
       <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600" title={p.basis || undefined} data-chip="estimate-accepted">
-        {tr("مستنتج — اتعمد", "Estimate — accepted")}
+        {t("valueOriginChip.estimateAccepted")}
       </span>
     );
   }
   if (p.source === "harvest" && p.file) {
-    const label = `${tr("من", "From")}: ${shortName(p.file)}${p.page ? ` ${tr("ص", "p.")}${p.page}` : ""}`;
+    const label = `${t("valueOriginChip.from")}: ${shortName(p.file)}${p.page ? ` ${t("valueOriginChip.p")}${p.page}` : ""}`;
     const link = p.fileId ? `/api/v1/evidence-files/${p.fileId}${p.page ? `#page=${p.page}` : ""}` : null;
     return link ? (
       <button type="button" onClick={() => openEvidence(link).catch(() => {})} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800 hover:underline" title={p.quote ? `“${p.quote}”` : undefined} data-chip="source">

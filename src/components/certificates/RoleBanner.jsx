@@ -1,12 +1,8 @@
+import { strings } from "../../i18n";
 // Who you are working as, on every certificates page (mockups A1/B1):
 // a system user works for any company (picked on the page); a company
 // account only ever sees its own data.
-const STR = {
-  system: "System admin",
-  systemNote: "You can work for every company. Pick the company first — everything you create belongs to it.",
-  company: "Company account",
-  companyNote: (name) => `${name} — you see only your own templates, invoices and certificates.`,
-};
+const STR = strings("roleBanner");
 
 export default function RoleBanner({ scope, systemNote, companyNote }) {
   const { isCompany, companyName } = scope;

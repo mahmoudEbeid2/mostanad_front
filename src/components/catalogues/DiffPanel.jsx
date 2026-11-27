@@ -1,23 +1,16 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import Button from "../../ui/Button";
+import { strings, t } from "../../i18n";
 
 // One block of a newer catalogue version against the existing product it matches
 // (backend plan.md §15.4, A6.5): old → new per field, conflicts (a person's or a
 // pre-catalogue value) never ticked by default. Apply = the ticked fields only.
 const STR = {
-  against: (p, by) => `Updates existing product “${p.name}”${p.productCode ? ` (${p.productCode})` : ""} — matched by ${by}`,
-  unchanged: "No changes — applying links the product to this edition.",
-  conflict: "Conflict",
-  old: "Now",
-  next: "Catalogue",
-  apply: (n) => (n ? `Apply ${n} field${n > 1 ? "s" : ""}` : "Link without changes"),
-  declined: (fs) => `Declined earlier, not proposed again: ${fs.join(", ")}`,
-  ambiguous: "Several products match this block — pick the one it describes:",
-  taken: "The matching product is already linked to another block of this edition.",
-  pick: "Choose a product",
-  applyTo: "Apply to this product",
-  estimated: "Estimated",
+  ...strings("diffPanel"),
+  against: (p, by) => t("diffPanel.against", { name: p.name, code: p.productCode ? ` (${p.productCode})` : "", by }),
+  apply: (n) => (n ? t("diffPanel.apply", { count: n }) : t("diffPanel.linkWithoutChanges")),
+  declined: (fs) => t("diffPanel.declined", { fields: fs.join(", ") }),
 };
 
 const showValue = (field, v) => {
@@ -89,7 +82,7 @@ export default function DiffPanel({ item, canManage, busy, onApply }) {
               </span>
             )}
             {c.estimated && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300">{STR.estimated}</span>}
-            <span className="text-[11px] text-gray-500 ml-auto">{c.reason}</span>
+            <span className="text-[11px] text-gray-500 ms-auto">{c.reason}</span>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-1 text-xs">
             <div>
@@ -99,7 +92,7 @@ export default function DiffPanel({ item, canManage, busy, onApply }) {
             <div>
               <p className="text-gray-500">
                 {STR.next}
-                {c.page ? ` · p.${c.page}` : ""}
+                {c.page ? t("diffPanel.p", { page: c.page }) : ""}
               </p>
               <pre className="whitespace-pre-wrap font-sans text-gray-900" title={c.quote ? `“${c.quote}”` : undefined}>
                 {showValue(c.field, c.new)}

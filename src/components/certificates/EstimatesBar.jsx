@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { Sparkles } from "lucide-react";
 import Button from "../../ui/Button";
 import { acceptAllEstimates } from "../../services/apiWorkflow";
-import { tr } from "../../i18n/lang";
+import { t } from "../../i18n";
 
 export default function EstimatesBar({ scope, values, certificateIds = [], productIds = [], onAccepted }) {
   const [busy, setBusy] = useState(false);
@@ -16,7 +16,7 @@ export default function EstimatesBar({ scope, values, certificateIds = [], produ
     setBusy(true);
     try {
       const r = await acceptAllEstimates(scope, certificateIds.length ? { certificateIds } : { productIds });
-      toast.success(tr(`اتعمد ${r.marksCleared || r.accepted} قيمة مستنتجة`, `${r.marksCleared || r.accepted} estimated value(s) accepted`));
+      toast.success(t("estimatesBar.estimatedValueSAccepted", { v: r.marksCleared || r.accepted }));
       onAccepted?.();
     } catch (e) {
       toast.error(e.message);
@@ -28,10 +28,10 @@ export default function EstimatesBar({ scope, values, certificateIds = [], produ
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3" data-testid="estimates-bar">
       <p className="flex items-center gap-2 text-sm text-violet-900">
         <Sparkles className="h-4 w-4" />
-        {tr(`${count} قيمة «مستنتجة» — مش من ملف. راجعها، وبعدين اعتمدها مرة واحدة.`, `${count} value(s) are estimated — not from a file. Check them, then accept them at once.`)}
+        {t("estimatesBar.valueSAreEstimatedNot", { count })}
       </p>
       <Button onClick={accept} isLoading={busy} className="py-2! text-sm">
-        {tr("اعتمد كل المستنتج", "Accept all estimates")}
+        {t("estimatesBar.acceptAllEstimates")}
       </Button>
     </div>
   );

@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Select from "react-select";
 import { searchCertificateProducts } from "../../services/apiCertificateTemplates";
+import { strings, t } from "../../i18n";
 
 // Product picker for one invoice line (plan §13.2, §9.3): the ranked match
 // candidates first, then a live search of the company's own catalogue
 // (GET /certificate-products — tenant-forced on the server).
 const STR = {
-  candidates: "Suggested matches",
-  catalogue: "Catalogue",
-  placeholder: (n) => (n ? `Choose… (${n} suggestion${n === 1 ? "" : "s"})` : "Search the catalogue…"),
-  noOptions: "No product found — type to search the catalogue",
-  loading: "Searching…",
+  ...strings("productMatchSelect"),
+  placeholder: (n) => (n ? t("productMatchSelect.choose", { count: n }) : t("productMatchSelect.search")),
 };
 
 const optionOf = (p, extra = {}) => ({ value: p.id ?? p.productId, label: p.name, code: p.productCode ?? p.code ?? null, ...extra });
@@ -79,7 +77,7 @@ export default function ProductMatchSelect({ scope, item, onChange, disabled, in
           <div className="text-sm">
             <div>
               {o.label} {o.code && <span className="text-gray-400 font-mono text-xs">{o.code}</span>}
-              {o.ai ? <span className="ml-2 text-xs text-violet-700">AI {Math.round(o.ai.confidence * 100)}%</span> : typeof o.score === "number" && <span className="ml-2 text-xs text-blue-600">{Math.round(o.score * 100)}%</span>}
+              {o.ai ? <span className="ms-2 text-xs text-violet-700">{t("productMatchSelect.ai", { round: Math.round(o.ai.confidence * 100) })}</span> : typeof o.score === "number" && <span className="ms-2 text-xs text-blue-600">{Math.round(o.score * 100)}%</span>}
             </div>
             {o.reasons?.length > 0 && <div className="text-xs text-gray-400">{o.reasons.join(" · ")}</div>}
           </div>

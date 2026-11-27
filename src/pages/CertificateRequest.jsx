@@ -116,6 +116,8 @@ function RequestMatrix({ id }) {
   });
   // «اعتمد كل المستنتج»: every draft of the request — its estimated descriptive values accepted, marks cleared
   const certIds = [...new Set((data?.rows || []).flatMap((r) => Object.values(r.cells || {}).map((c) => c.certificateId).filter(Boolean)))];
+  // an experiment sample's AI values are test data — never accepted (QA 28 Nov)
+  const samples = (data?.rows || []).some((r) => Object.values(r.cells || {}).some((c) => c.experiment));
   const acceptEstimates = () => run("est", async () => {
     const r = await acceptAllEstimates(scope, { certificateIds: certIds });
     toast.success(r.marksCleared ? `اتعمد ${r.marksCleared} قيمة مستنتجة` : "مفيش قيم مستنتجة مستنية اعتماد");
@@ -135,7 +137,7 @@ function RequestMatrix({ id }) {
           <Button onClick={generate} isLoading={busy === "gen"} disabled={!!busy || unclear.length > 0} data-testid="request-generate">
             <Play className="h-4 w-4" /> طلّع الشهادات
           </Button>
-          {certIds.length > 0 && (
+          {certIds.length > 0 && !samples && (
             <Button variant="secondary" onClick={acceptEstimates} isLoading={busy === "est"} disabled={!!busy} data-testid="request-accept-estimates">
               <Sparkles className="h-4 w-4" /> اعتمد كل المستنتج
             </Button>

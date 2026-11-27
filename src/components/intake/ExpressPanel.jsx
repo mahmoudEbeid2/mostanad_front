@@ -122,7 +122,8 @@ function Steps({ ex, batchId, onChanged }) {
 function EstimatesLine({ ex, scope, onChanged }) {
   const [busy, setBusy] = useState(false);
   const n = ex.inferred?.filled || 0;
-  if (!n) return null;
+  // an experiment sample's AI values are test data — never accepted (QA 28 Nov)
+  if (!n || (ex.certificates || []).some((c) => c.experiment)) return null;
   const accept = async () => {
     setBusy(true);
     try {
@@ -223,6 +224,11 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
                 ) : (
                   <>
                     {c.blanks?.length > 0 && <span className="text-amber-800">ناقص: {c.blanks.map(fieldAr).join("، ")}</span>}
+                    {c.removedAr && (
+                      <span className="basis-full text-amber-800" data-testid="express-removed">
+                        {c.removedAr}
+                      </span>
+                    )}
                     <Link to={`/certificates/${c.id}`} className="text-blue-700 hover:underline">
                       افتح
                     </Link>

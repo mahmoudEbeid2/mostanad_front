@@ -99,6 +99,15 @@ const STR = pick({ en: STR_EN, ar: {
   failedCert: "الشهادة دي فشلت وهي بتتعمل:",
 } });
 
+// 28 Nov (owner), COA: a test with no result is taken off the certificate — said in one line; it comes back
+// once its result is given (a test the product type doesn't have isn't listed: no result brings it back)
+function removedLine(values, fields) {
+  const label = new Map((fields || []).map((f) => [f.key, f.label]));
+  const names = Object.entries(values || {})
+    .filter(([, v]) => (v?.flags || []).includes("row_removed") && !v.removedWith && v.provenance?.rule !== "not_applicable_oral")
+    .map(([k]) => String(label.get(k) || k).replace(/\s*(result|النتيجة|نتيجة)\s*$/i, "").trim());
+  return names.length ? `اتشال من الشهادة: ${[...new Set(names)].join("، ")} — مفيش نتيجة. ابعت النتيجة في سطر وترجع` : null;
+}
 
 export default function CertificateEditor() {
   const { id } = useParams();
@@ -278,11 +287,6 @@ export default function CertificateEditor() {
     return (
       <div className="space-y-4">
         <RoleBanner scope={scopeState} />
-      {cert.isExperimentSample && (
-        <p dir="rtl" className="rounded-xl border-2 border-red-500 bg-red-50 px-4 py-2 text-sm font-bold text-red-800" data-testid="experiment-sample">
-          عينة من وضع التجربة — «SAMPLE – NOT VALID» على كل صفحة. مينفعش تتعتمد ولا تتصدّر كشهادة صالحة؛ طلّعها تاني والوضع مقفول.
-        </p>
-      )}
         <CompanyPicker scope={scopeState} />
       </div>
     );
@@ -358,8 +362,19 @@ export default function CertificateEditor() {
       </div>
 
       <RoleBanner scope={scopeState} />
+      {cert.isExperimentSample && (
+        <p dir="rtl" className="rounded-xl border-2 border-red-500 bg-red-50 px-4 py-2 text-sm font-bold text-red-800" data-testid="experiment-sample">
+          عينة من وضع التجربة — «SAMPLE – NOT VALID» على كل صفحة. مينفعش تتعتمد ولا تتصدّر كشهادة صالحة؛ طلّعها تاني والوضع مقفول.
+        </p>
+      )}
       {["draft", "final"].includes(cert.status) && canEdit && <ReviewBar scope={scope} cert={cert} fields={fields} onChanged={load} />}
-      {cert.status === "draft" && canEdit && <EstimatesBar scope={scope} values={cert.values} certificateIds={[cert.id]} onAccepted={load} />}
+      {/* an experiment sample's AI values are test data — never accepted (QA 28 Nov) */}
+      {cert.status === "draft" && canEdit && !cert.isExperimentSample && <EstimatesBar scope={scope} values={cert.values} certificateIds={[cert.id]} onAccepted={load} />}
+      {removedLine(cert.values, fields) && (
+        <p dir="rtl" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-900" data-testid="removed-rows">
+          {removedLine(cert.values, fields)}
+        </p>
+      )}
 
       {cert.status === "pending" && <p className="text-sm text-blue-700">{STR.pending}</p>}
       {cert.status === "failed" && (

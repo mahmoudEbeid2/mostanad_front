@@ -18,7 +18,8 @@ import {
   PanelLeftClose,
   UploadCloud,
   Zap,
-  Languages
+  Languages,
+  FlaskConical,
 } from "lucide-react";
 import { LANG, setLang, tr } from "../i18n/lang";
 
@@ -74,8 +75,18 @@ const navLinks = [
       { name: "Types", ar: "أنواع الشهادات", path: "/certificates/types", permission: "read_certificate_types" },
       { name: "Invoices", ar: "الفواتير", path: "/invoices", permission: "read_invoices" },
       { name: "Generated certificates", ar: "الشهادات المتعملة", path: "/certificates", permission: "read_certificates" },
+      { name: "Requests", ar: "الطلبات", path: "/certificates/requests", permission: "read_certificates" },
       { name: "New request", ar: "طلب شهادات جديد", path: "/certificates/requests/new", permission: "create_certificates" },
       { name: "AI", ar: "الذكاء الاصطناعي", path: "/certificate-ai", permission: "read_certificate_templates" },
+    ]
+  },
+  {
+    // UI plan, Phase D/E: owner / admin tools off the client's dashboard
+    name: "Admin", ar: "الإدارة",
+    icon: FlaskConical,
+    permission: "read_users",
+    subLinks: [
+      { name: "Experiment mode", ar: "وضع التجربة", path: "/admin/experiment", permission: "read_users" },
     ]
   },
 ];
@@ -89,7 +100,8 @@ export default function Sidebar() {
     Products: location.pathname.startsWith("/products") || location.pathname.startsWith("/catalogues"),
     "Regulatory & EDA": location.pathname.startsWith("/regulatory") || location.pathname.startsWith("/eda"),
     Labels: location.pathname.startsWith("/labels") || location.pathname.startsWith("/reference-labels"),
-    Certificates: location.pathname.startsWith("/certificates") || location.pathname.startsWith("/invoices") || location.pathname.startsWith("/certificate-ai")
+    Certificates: location.pathname.startsWith("/certificates") || location.pathname.startsWith("/invoices") || location.pathname.startsWith("/certificate-ai"),
+    Admin: location.pathname.startsWith("/admin")
   });
 
   const toggleDropdown = (name) => {

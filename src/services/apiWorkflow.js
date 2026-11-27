@@ -5,6 +5,7 @@ import { unwrap } from "./apiCertificateTypes";
 // matrix, the review steps, revisions, the designer's panel, composition disagreements.
 
 export const createCertificateRequest = (scope = {}, body) => unwrap(apiClient.post("/certificate-requests", { ...body, ...(scope.companyId ? { companyId: scope.companyId } : {}) }, { params: scope }), "Failed to create the request").then((d) => d.data);
+export const listCertificateRequests = (scope = {}, query = {}) => unwrap(apiClient.get("/certificate-requests", { params: { ...scope, ...query } }), "Failed to load the requests").then((d) => d.data);
 export const getCertificateRequest = (scope = {}, id) => unwrap(apiClient.get(`/certificate-requests/${id}`, { params: scope }), "Failed to load the request").then((d) => d.data);
 export const resolveRequestLine = (scope = {}, id, lineId, productId) => unwrap(apiClient.patch(`/certificate-requests/${id}/lines/${lineId}`, { productId }, { params: scope }), "Failed to save the product").then((d) => d.data);
 export const generateRequest = (scope = {}, id) => unwrap(apiClient.post(`/certificate-requests/${id}/generate`, {}, { params: scope }), "Failed to start").then((d) => d.data);

@@ -6,9 +6,6 @@ import {
   Activity, ArrowUpRight, DollarSign, ListTodo, Zap, Clock, Loader2, CheckCircle, AlertOctagon
 } from "lucide-react";
 import toast from "react-hot-toast";
-import IntakeDropTile from "../components/intake/IntakeDropTile";
-import ExpressToReviewTile from "../components/intake/ExpressToReviewTile";
-import ExperimentCard from "../components/ExperimentCard";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -73,12 +70,8 @@ export default function Dashboard() {
         <p className="text-gray-500 mt-1">Welcome back, {user?.name}. Here is what's happening today.</p>
       </div>
 
-      {/* PART 3: the owner's switch (shown to the owner / super-admin only) */}
-      <ExperimentCard />
-
-      {/* drop any files here → "ارفع ملفاتك" */}
-      <IntakeDropTile />
-      <ExpressToReviewTile />
+      {/* UI plan, Phase E (27 Nov): the experiment switch moved to Admin → Experiment mode; uploading lives on
+          Uploads and in the chat; the flat "items need review" banner is replaced by the requests list */}
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

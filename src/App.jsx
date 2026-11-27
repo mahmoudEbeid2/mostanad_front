@@ -42,6 +42,8 @@ import ProtectedRoute from "./ui/ProtectedRoute";
 import AppLayout from "./ui/AppLayout";
 import RequirePermission from "./ui/RequirePermission";
 import CertificateRequest from "./pages/CertificateRequest";
+import CertificateRequests from "./pages/CertificateRequests";
+import AdminExperiment from "./pages/AdminExperiment";
 
 function App() {
   return (
@@ -89,6 +91,7 @@ function App() {
             <Route path="/invoices/new" element={<RequirePermission permission="read_invoices"><Invoices /></RequirePermission>} />
             <Route path="/invoices/:id" element={<RequirePermission permission="read_invoices"><InvoiceReview /></RequirePermission>} />
             <Route path="/certificate-ai" element={<RequirePermission permission="read_certificate_templates"><CertificateAi /></RequirePermission>} />
+            <Route path="/certificates/requests" element={<RequirePermission permission="read_certificates"><CertificateRequests /></RequirePermission>} />
             <Route path="/certificates/requests/new" element={<RequirePermission permission="create_certificates"><CertificateRequest /></RequirePermission>} />
             <Route path="/certificates/requests/:id" element={<RequirePermission permission="read_certificates"><CertificateRequest /></RequirePermission>} />
             <Route path="/certificates" element={<RequirePermission permission="read_certificates"><CertificatesList /></RequirePermission>} />
@@ -102,6 +105,7 @@ function App() {
             <Route path="/processing/:jobId" element={<Processing />} />
             <Route path="/processing-bulk" element={<BulkProcessing />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/admin/experiment" element={<RequirePermission permission="read_users"><AdminExperiment /></RequirePermission>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

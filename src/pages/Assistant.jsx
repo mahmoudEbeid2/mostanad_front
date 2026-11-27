@@ -530,7 +530,7 @@ export default function Assistant() {
                 </div>
               )}
               {messages.map((m) => (
-                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} onActionFinished={onActionFinished} latest={m === latestAssistant && !busy} canEdit={!busy && !String(m.id).startsWith("local-")} onResend={resendFrom} onChoose={(c) => send(c.say || `I mean ${c.name}${c.productCode ? ` (${c.productCode})` : ""}`)} drafts={draftsOf(m)} draftProps={{ ...draftProps, onActionFinished }} />
+                <AssistantMessage key={m.id} m={m} conversationId={conversation?.id} onActionFinished={onActionFinished} latest={m === latestAssistant && !busy} canEdit={!busy && !String(m.id).startsWith("local-")} onResend={resendFrom} onChoose={(c) => send(c.say || `I mean ${c.name}${c.pack ? ` ${c.pack}` : ""}${c.productCode ? ` (${c.productCode})` : ""}`)} drafts={draftsOf(m)} draftProps={{ ...draftProps, onActionFinished }} />
               ))}
               {Object.values(drafts)
                 .filter((d) => !draftHome[d.id] && !liveDraftIds.includes(d.id) && d.status !== "cancelled" && d.status !== "expired")

@@ -213,6 +213,8 @@ export default function AssistantMessage({ m, onChoose, latest, conversationId, 
           {choices.map((c) => (
             <button key={c.id} type="button" onClick={() => onChoose(c)} className="min-h-8 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-semibold text-blue-700 hover:bg-blue-100" dir="auto">
               {c.name}
+              {/* a pack variant is its own product for now: the pack tells "OLIGOVET" from "OLIGOVET" */}
+              {c.pack && !String(c.name).replace(/\s+/g, "").toLowerCase().includes(String(c.pack).replace(/\s+/g, "").toLowerCase()) ? ` · ${c.pack}` : ""}
               {c.productCode ? ` · ${c.productCode}` : ""}
               {c.company ? ` · ${c.company}` : ""}
             </button>

@@ -571,7 +571,15 @@
     },
     "prev": "Previous",
     "next": "Next",
-    "page": "Page {p} of {n}"
+    "page": "Page {p} of {n}",
+    "filterLabel": "Show",
+    "filters": {
+      "all": "All",
+      "review": "Needs review",
+      "ready": "Ready"
+    },
+    "emptyFiltered": "No request here on this page.",
+    "fromInvoice": "From an invoice →"
   },
   "certificatesList": {
     "title": "Generated certificates",
@@ -3753,7 +3761,48 @@
     "urgentOrders": "Urgent orders",
     "checkALabel2": "Check a Label",
     "createALabel2": "Create a Label",
-    "newRequest": "New request"
+    "newRequest": "New request",
+    "nav": {
+      "home": "Home",
+      "certificates": "Certificates",
+      "labels": "Labels",
+      "products": "Products",
+      "uploads": "Uploads",
+      "companies": "Companies & brands",
+      "admin": "Admin",
+      "certificates_": {
+        "requests": "Requests",
+        "certificates": "Certificates",
+        "templates": "Templates",
+        "numbering": "Numbering & types"
+      },
+      "labels_": {
+        "myLabels": "My labels",
+        "checkLabel": "Check a label",
+        "createLabel": "Create a label",
+        "referenceLabels": "Reference labels",
+        "regulations": "Regulations & rules"
+      },
+      "products_": {
+        "products": "Products",
+        "catalogues": "Catalogues",
+        "conflicts": "Conflicts",
+        "categories": "Categories"
+      },
+      "companies_": {
+        "companies": "Companies",
+        "brands": "Brands"
+      },
+      "admin_": {
+        "overview": "Overview",
+        "users": "Users",
+        "roles": "Roles",
+        "experiment": "Experiment mode",
+        "aiUsage": "AI usage & cost",
+        "health": "System health",
+        "certificateAi": "Certificate AI settings"
+      }
+    }
   },
   "certificateErrors": {
     "thisAiFileHasNo": "This .ai file has no PDF content. In Illustrator choose File → Save As, tick «Create PDF Compatible File», and upload it again.",
@@ -4135,5 +4184,19 @@
     "processingComplete": "Processing complete",
     "failed": "Background task failed: {message}",
     "extractionFailed": "AI extraction failed"
+  },
+  "comingSoon": {
+    "title": "Coming soon",
+    "hint": "This page is ready; the data it shows isn't served by the server yet."
+  },
+  "placeholders": {
+    "adminOverview": "Admin overview",
+    "adminOverviewHint": "Users, companies, products, AI tasks and worker health — for the owner.",
+    "aiUsage": "AI usage & cost",
+    "aiUsageHint": "Calls and cost per month, company and task.",
+    "health": "System health",
+    "healthHint": "Workers, queues and file reading — failed tasks with their reason and a retry.",
+    "conflicts": "Conflicts",
+    "conflictsHint": "Where two files disagree on a product's value: both values, both sources, pick one."
   }
 }

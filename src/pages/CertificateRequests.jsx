@@ -11,7 +11,7 @@ import CompanyPicker from "../components/certificates/CompanyPicker";
 import RoleBanner from "../components/certificates/RoleBanner";
 import useCompanyScope from "../hooks/useCompanyScope";
 import { listCertificateRequests } from "../services/apiWorkflow";
-import { fmtDate, strings } from "../i18n";
+import { fmtDate, fmtNum, strings } from "../i18n";
 
 const STR = strings("certificateRequests");
 const STATUS_STYLE = { new: "bg-gray-100 text-gray-700", in_progress: "bg-amber-50 text-amber-800", ready: "bg-green-50 text-green-800" };
@@ -42,6 +42,18 @@ export default function CertificateRequests() {
     load();
   }, [load]);
 
+  // "needs review" (UI plan, Phase D — the old Urgent orders): drafts made, not all final yet.
+  // Filtered on the page loaded; a server-side filter is in BACKEND_API_TODO.md.
+  const filter = params.get("filter") || "all";
+  const needsReview = (r) => Object.values(r.types || {}).some((x) => x.draft > 0 || x.failed > 0);
+  const shown = data.items.filter((r) => (filter === "review" ? needsReview(r) : filter === "ready" ? r.status === "ready" : true));
+  const setFilter = (f) => {
+    const next = new URLSearchParams(params);
+    if (f === "all") next.delete("filter");
+    else next.set("filter", f);
+    next.delete("page");
+    setParams(next, { replace: true });
+  };
   const pages = Math.max(1, Math.ceil((data.total || 0) / PAGE_SIZE));
   const goPage = (p) => {
     const next = new URLSearchParams(params);
@@ -66,16 +78,32 @@ export default function CertificateRequests() {
 
       <RoleBanner scope={scopeState} />
 
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label={STR.filterLabel} data-testid="requests-filter">
+        {["all", "review", "ready"].map((f) => (
+          <button
+            key={f}
+            type="button"
+            aria-pressed={filter === f}
+            onClick={() => setFilter(f)}
+            className={`min-h-8 rounded-full border px-3 text-xs font-semibold ${filter === f ? "border-blue-600 bg-blue-50 text-blue-700" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
+          >
+            {STR.filters[f]}
+            {f !== "all" && !loading && ` · ${fmtNum(data.items.filter((r) => (f === "review" ? needsReview(r) : r.status === "ready")).length)}`}
+          </button>
+        ))}
+        <Link to="/invoices" className="ms-auto text-xs font-medium text-blue-700 hover:underline">{STR.fromInvoice}</Link>
+      </div>
+
       {!scope ? (
         <p className="text-sm text-gray-500">{STR.pickCompany}</p>
       ) : loading ? (
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
-      ) : !data.items.length ? (
+      ) : !shown.length ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center" data-testid="requests-empty">
           <ClipboardList className="mx-auto h-8 w-8 text-gray-400" />
-          <p className="mt-2 font-semibold text-gray-800">{STR.empty}</p>
+          <p className="mt-2 font-semibold text-gray-800">{filter === "all" ? STR.empty : STR.emptyFiltered}</p>
           <p className="mt-1 text-sm text-gray-500">{STR.emptyHint}</p>
         </div>
       ) : (
@@ -91,7 +119,7 @@ export default function CertificateRequests() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {data.items.map((r) => (
+              {shown.map((r) => (
                 <tr key={r.id} className="align-top hover:bg-gray-50">
                   <td className="whitespace-nowrap px-4 py-3">
                     <Link to={`/certificates/requests/${r.id}`} className="font-semibold text-blue-700 hover:underline" data-testid="request-link">

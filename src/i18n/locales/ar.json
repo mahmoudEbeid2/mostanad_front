@@ -561,7 +561,15 @@
     },
     "prev": "السابق",
     "next": "التالي",
-    "page": "صفحة {p} من {n}"
+    "page": "صفحة {p} من {n}",
+    "filterLabel": "اعرض",
+    "filters": {
+      "all": "الكل",
+      "review": "محتاجة مراجعة",
+      "ready": "جاهزة"
+    },
+    "emptyFiltered": "مفيش طلب هنا في الصفحة دي.",
+    "fromInvoice": "من فاتورة ←"
   },
   "certificatesList": {
     "title": "الشهادات المتعملة",
@@ -3678,7 +3686,48 @@
     "urgentOrders": "الطلبات السريعة",
     "checkALabel2": "افحص ليبل",
     "createALabel2": "اعمل ليبل",
-    "newRequest": "طلب جديد"
+    "newRequest": "طلب جديد",
+    "nav": {
+      "home": "الرئيسية",
+      "certificates": "الشهادات",
+      "labels": "الليبلات",
+      "products": "المنتجات",
+      "uploads": "الملفات المرفوعة",
+      "companies": "الشركات والبراندات",
+      "admin": "الإدارة",
+      "certificates_": {
+        "requests": "الطلبات",
+        "certificates": "الشهادات",
+        "templates": "القوالب",
+        "numbering": "الترقيم والأنواع"
+      },
+      "labels_": {
+        "myLabels": "ليبلاتي",
+        "checkLabel": "افحص ليبل",
+        "createLabel": "اعمل ليبل",
+        "referenceLabels": "ليبلات مرجعية",
+        "regulations": "اللوائح والقواعد"
+      },
+      "products_": {
+        "products": "المنتجات",
+        "catalogues": "الكتالوجات",
+        "conflicts": "التعارضات",
+        "categories": "الفئات"
+      },
+      "companies_": {
+        "companies": "الشركات",
+        "brands": "البراندات"
+      },
+      "admin_": {
+        "overview": "نظرة عامة",
+        "users": "المستخدمين",
+        "roles": "الأدوار",
+        "experiment": "وضع التجربة",
+        "aiUsage": "استخدام وتكلفة الذكاء الاصطناعي",
+        "health": "صحة السيستم",
+        "certificateAi": "إعدادات ذكاء الشهادات"
+      }
+    }
   },
   "certificateErrors": {
     "thisAiFileHasNo": "ملف الـ .ai ده مفيهوش محتوى PDF. في Illustrator اختار File ← Save As، علّم «Create PDF Compatible File»، وارفعه تاني.",
@@ -4059,5 +4108,19 @@
   "aiAction": {
     "aiUnavailable": "الذكاء الاصطناعي مش متاح. {message}",
     "aiUnavailableRightNowDo": "الذكاء الاصطناعي مش متاح دلوقتي — اعمل ده بالإيد."
+  },
+  "comingSoon": {
+    "title": "قريب",
+    "hint": "الصفحة جاهزة؛ بس السيرفر لسه مابيبعتش البيانات بتاعتها."
+  },
+  "placeholders": {
+    "adminOverview": "نظرة عامة للإدارة",
+    "adminOverviewHint": "المستخدمين والشركات والمنتجات ومهام الذكاء الاصطناعي وحالة العمليات — لصاحب الحساب.",
+    "aiUsage": "استخدام وتكلفة الذكاء الاصطناعي",
+    "aiUsageHint": "الطلبات والتكلفة لكل شهر وشركة ومهمة.",
+    "health": "صحة السيستم",
+    "healthHint": "العمليات والطوابير وقراية الملفات — المهام الفاشلة بسببها وزرار إعادة المحاولة.",
+    "conflicts": "التعارضات",
+    "conflictsHint": "لما ملفين يختلفوا على قيمة في منتج: القيمتين ومصدرهم، واختار واحدة."
   }
 }

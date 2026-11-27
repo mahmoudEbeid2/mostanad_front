@@ -44,6 +44,7 @@ import RequirePermission from "./ui/RequirePermission";
 import CertificateRequest from "./pages/CertificateRequest";
 import CertificateRequests from "./pages/CertificateRequests";
 import AdminExperiment from "./pages/AdminExperiment";
+import { AdminOverview, AdminAiUsage, AdminHealth, ProductConflicts } from "./pages/Placeholders";
 
 function App() {
   return (
@@ -65,10 +66,14 @@ function App() {
             <Route path="/intake" element={<RequirePermission permission="read_products"><Intake /></RequirePermission>} />
             <Route path="/intake/:batchId" element={<RequirePermission permission="read_products"><Intake /></RequirePermission>} />
             <Route path="/dashboard" element={<RequirePermission permission="read_dashboard"><Dashboard /></RequirePermission>} />
-            <Route path="/roles" element={<RequirePermission permission="read_roles"><Roles /></RequirePermission>} />
+            <Route path="/roles" element={<Navigate to="/admin/roles" replace />} />
             <Route path="/categories" element={<RequirePermission permission="read_categories"><Categories /></RequirePermission>} />
             <Route path="/products" element={<RequirePermission permission="read_products"><Products /></RequirePermission>} />
-            <Route path="/express" element={<RequirePermission permission="read_products"><ExpressReview /></RequirePermission>} />
+            {/* UI plan, Phase D: "Urgent orders" retired — its content is the "needs review" filter on Requests */}
+            <Route path="/express" element={<Navigate to="/certificates/requests?filter=review" replace />} />
+            <Route path="/express/items" element={<RequirePermission permission="read_products"><ExpressReview /></RequirePermission>} />
+            <Route path="/uploads" element={<RequirePermission permission="read_products"><Intake /></RequirePermission>} />
+            <Route path="/products/conflicts" element={<RequirePermission permission="read_products"><ProductConflicts /></RequirePermission>} />
             <Route path="/products/import" element={<RequirePermission permission="create_products"><ProductImport /></RequirePermission>} />
             <Route path="/products/import/:id" element={<RequirePermission permission="read_products"><ProductImport /></RequirePermission>} />
             <Route path="/products/catalog-upload" element={<RequirePermission permission="create_products"><Catalogs /></RequirePermission>} />
@@ -82,7 +87,8 @@ function App() {
             <Route path="/labels/detail/:id" element={<RequirePermission permission="read_labels"><LabelDetail /></RequirePermission>} />
             <Route path="/labels/generator" element={<LabelGenerator />} />
             {/* Certificates V2 (CERTIFICATES_V2_PLAN.md §13.1) */}
-            <Route path="/certificates/types" element={<RequirePermission permission="read_certificate_types"><CertificateTypes /></RequirePermission>} />
+            <Route path="/certificates/types" element={<Navigate to="/certificates/numbering" replace />} />
+            <Route path="/certificates/numbering" element={<RequirePermission permission="read_certificate_types"><CertificateTypes /></RequirePermission>} />
             <Route path="/certificates/templates" element={<RequirePermission permission="read_certificate_templates"><CertificateTemplates /></RequirePermission>} />
             <Route path="/certificates/templates/new" element={<RequirePermission permission="create_certificate_templates"><CertificateTemplateWizard /></RequirePermission>} />
             <Route path="/certificates/templates/:templateId" element={<RequirePermission permission="read_certificate_templates"><CertificateTemplateWizard /></RequirePermission>} />
@@ -90,13 +96,13 @@ function App() {
             <Route path="/invoices" element={<RequirePermission permission="read_invoices"><Invoices /></RequirePermission>} />
             <Route path="/invoices/new" element={<RequirePermission permission="read_invoices"><Invoices /></RequirePermission>} />
             <Route path="/invoices/:id" element={<RequirePermission permission="read_invoices"><InvoiceReview /></RequirePermission>} />
-            <Route path="/certificate-ai" element={<RequirePermission permission="read_certificate_templates"><CertificateAi /></RequirePermission>} />
+            <Route path="/certificate-ai" element={<Navigate to="/admin/certificate-ai" replace />} />
             <Route path="/certificates/requests" element={<RequirePermission permission="read_certificates"><CertificateRequests /></RequirePermission>} />
             <Route path="/certificates/requests/new" element={<RequirePermission permission="create_certificates"><CertificateRequest /></RequirePermission>} />
             <Route path="/certificates/requests/:id" element={<RequirePermission permission="read_certificates"><CertificateRequest /></RequirePermission>} />
             <Route path="/certificates" element={<RequirePermission permission="read_certificates"><CertificatesList /></RequirePermission>} />
             <Route path="/certificates/:id" element={<RequirePermission permission="read_certificates"><CertificateEditor /></RequirePermission>} />
-            <Route path="/users" element={<RequirePermission permission="read_users"><Users /></RequirePermission>} />
+            <Route path="/users" element={<Navigate to="/admin/users" replace />} />
             <Route path="/companies" element={<RequirePermission permission="read_companies"><Companies /></RequirePermission>} />
             <Route path="/brands" element={<Brands />} />
             <Route path="/regulatory-documents" element={<RequirePermission permission="read_eda_requirements"><RegulatoryDocuments /></RequirePermission>} />
@@ -105,7 +111,14 @@ function App() {
             <Route path="/processing/:jobId" element={<Processing />} />
             <Route path="/processing-bulk" element={<BulkProcessing />} />
             <Route path="/account" element={<Account />} />
+            {/* Admin (owner / super-admin), UI plan Phase D */}
+            <Route path="/admin" element={<RequirePermission permission="read_users"><AdminOverview /></RequirePermission>} />
+            <Route path="/admin/users" element={<RequirePermission permission="read_users"><Users /></RequirePermission>} />
+            <Route path="/admin/roles" element={<RequirePermission permission="read_roles"><Roles /></RequirePermission>} />
             <Route path="/admin/experiment" element={<RequirePermission permission="read_users"><AdminExperiment /></RequirePermission>} />
+            <Route path="/admin/ai-usage" element={<RequirePermission permission="read_users"><AdminAiUsage /></RequirePermission>} />
+            <Route path="/admin/health" element={<RequirePermission permission="read_users"><AdminHealth /></RequirePermission>} />
+            <Route path="/admin/certificate-ai" element={<RequirePermission permission="read_certificate_templates"><CertificateAi /></RequirePermission>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

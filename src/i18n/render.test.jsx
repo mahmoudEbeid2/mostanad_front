@@ -66,7 +66,7 @@ const SCREENS = [
   ["/certificates/requests/new", "../pages/CertificateRequest", "/certificates/requests/new"],
   ["/certificates", "../pages/CertificatesList", "/certificates"],
   ["/certificates/templates", "../pages/CertificateTemplates", "/certificates/templates"],
-  ["/certificates/types", "../pages/CertificateTypes", "/certificates/types"],
+  ["/certificates/numbering", "../pages/CertificateTypes", "/certificates/numbering"],
   ["/invoices", "../pages/Invoices", "/invoices"],
   ["/products", "../pages/Products", "/products"],
   ["/labels/browse", "../pages/LabelsList", "/labels/browse"],
@@ -79,7 +79,8 @@ const SCREENS = [
   ["/account", "../pages/Account", "/account"],
   ["/admin/experiment", "../pages/AdminExperiment", "/admin/experiment"],
   ["/certificate-ai", "../pages/CertificateAi", "/certificate-ai"],
-  ["/express", "../pages/ExpressReview", "/express"],
+  ["/express/items", "../pages/ExpressReview", "/express/items"],
+  ["/admin", "../pages/Placeholders", "/admin"],
   ["/catalogues", "../pages/Catalogues", "/catalogues"],
   ["/reference-labels", "../pages/ReferenceLabels", "/reference-labels"],
 ];

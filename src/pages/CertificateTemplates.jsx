@@ -170,7 +170,7 @@ export default function CertificateTemplates() {
           <p className="text-sm text-gray-500 mt-1">{STR.subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Link to="/certificates/types">
+          <Link to="/certificates/numbering">
             <Button variant="secondary">{STR.types}</Button>
           </Link>
           {canUpload && (
@@ -244,7 +244,7 @@ export default function CertificateTemplates() {
       ) : types && types.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-10 text-center space-y-3">
           <p className="text-sm text-gray-600">{STR.noTypes}</p>
-          <Link to="/certificates/types" className="text-blue-600 hover:underline text-sm font-medium">
+          <Link to="/certificates/numbering" className="text-blue-600 hover:underline text-sm font-medium">
             {STR.goTypes}
           </Link>
         </div>

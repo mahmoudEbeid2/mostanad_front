@@ -277,7 +277,7 @@ export default function ExpressPanel({ ex, scope = {}, batchId = null, onChanged
               <Link to="/products" className="text-blue-700 hover:underline">{t("expressPanel.reviewTheNewProductsData")}</Link>
             </li>
             <li>
-              <Link to="/express" className="text-blue-700 hover:underline">{t("expressPanel.everythingFromExpressRequestsThat")}</Link>
+              <Link to="/certificates/requests?filter=review" className="text-blue-700 hover:underline">{t("expressPanel.everythingFromExpressRequestsThat")}</Link>
             </li>
           </ul>
         </div>

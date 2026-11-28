@@ -1,6 +1,6 @@
 import AiAction from "../ui/AiAction";
 import { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import CertificateDataFields from "../components/certificates/CertificateDataFields";
 import { getProducts, createProduct, updateProduct, deleteProduct, getProductById, extractProductAi, getTaskStatus } from "../services/apiProducts";
 import { getCompanies } from "../services/apiCompanies";
@@ -468,9 +468,11 @@ export default function Products() {
                       <input type="checkbox" aria-label={t("products.select", { name: product.name })} checked={selected.has(product.id)} onChange={() => toggleSelected(product.id)} />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-900 group-hover:text-teal-600 transition-colors">
-                        {product.name}
-                        {product.sourceProductId && (
+                      <div className="font-semibold text-gray-900 group-hover:text-teal-600 transition-colors" dir="auto">
+                        <Link to={`/products/${product.id}`} className="hover:underline" data-testid="product-open">{product.name}</Link>
+                        {/* one product, several packs (UI plan): the pack beside the name, never a "copy" */}
+                        {product.packaging && <span className="ms-2 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-semibold text-gray-700 align-middle">{product.packaging}</span>}
+                        {product.sourceProductId && !product.packaging && (
                           <span className="ms-2 inline-flex items-center gap-1 rounded bg-teal-50 px-1.5 py-0.5 text-[11px] font-medium text-teal-700 align-middle" title={t("products.copiedFromAnotherProduct")}>
                             <Link2 className="w-3 h-3" />{t("products.copy")}</span>
                         )}

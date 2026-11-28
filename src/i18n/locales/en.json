@@ -4167,7 +4167,9 @@
     "health": "System health",
     "healthHint": "Workers, queues and file reading — failed tasks with their reason and a retry.",
     "conflicts": "Conflicts",
-    "conflictsHint": "Where two files disagree on a product's value: both values, both sources, pick one."
+    "conflictsHint": "Where two files disagree on a product's value: both values, both sources, pick one.",
+    "conflictsSoon": "The list across all products is coming soon. Today each product shows its own conflicts in its \"Data from files\" tab, where you pick the right value.",
+    "conflictsOpenProducts": "Open Products →"
   },
   "home": {
     "title": "Welcome, {name}",
@@ -4273,5 +4275,124 @@
     "subscriptions": "Subscriptions",
     "activeSubscriptions": "Active Subscriptions",
     "outOfAvailablePlans": "Out of {plans} available plans"
+  },
+  "numberingTable": {
+    "title": "Certificate numbering",
+    "hint": "One row per certificate type. Saving marks the row \"set by a person\": documents read later never change it.",
+    "empty": "No certificate types have numbering yet.",
+    "type": "Type",
+    "pattern": "Pattern",
+    "nextNumber": "Next number",
+    "monthly": "Monthly restart",
+    "source": "Source",
+    "patternFor": "Numbering pattern for {code}",
+    "preview": "Next:",
+    "needsSeq": "The pattern needs a sequence, e.g. {SEQ3}.",
+    "nextFor": "Next number for {code}",
+    "nextHint": "It can't be set below a number already given.",
+    "nextHintMonthly": "This month's next number. It can't be set below a number already given this month.",
+    "restartMonthly": "Restart every month",
+    "monthlyImpossible": "Only possible when the pattern prints both the month and the year — otherwise the same number would come out twice.",
+    "sources": {
+      "detected": "Learnt from a document",
+      "default": "Default",
+      "user": "Set by a person"
+    },
+    "example": "From: {example}",
+    "lastGiven": "Last given: {n}",
+    "save": "Save",
+    "saved": "{code} numbering saved",
+    "historySoon": "History of the numbers given, and who changed a row last — coming soon."
+  },
+  "aiUsage": {
+    "period": "Period",
+    "periods": {
+      "month": "This month",
+      "last": "Last month",
+      "d90": "Last 90 days"
+    },
+    "none": "Nothing in this period.",
+    "calls": "Calls",
+    "tokens": "Tokens",
+    "cost": "Cost",
+    "failed": "Failed calls",
+    "unpriced": "Calls without a price",
+    "range": "{from} – {to}",
+    "byCompany": "By company",
+    "company": "Company",
+    "noCompany": "No company (system)",
+    "byFeature": "By feature",
+    "feature": "Feature",
+    "byModel": "By model",
+    "model": "Model",
+    "top": "Costliest operations",
+    "operation": "Operation"
+  },
+  "productPage": {
+    "notFound": "This product wasn't found.",
+    "back": "Products",
+    "edit": "Edit",
+    "sections": "Product sections",
+    "tabs": {
+      "overview": "Overview",
+      "composition": "Composition",
+      "packs": "Packs",
+      "files": "Data from files",
+      "certificates": "Certificates",
+      "labels": "Labels"
+    },
+    "ingredient": "Ingredient",
+    "amount": "Amount",
+    "noComposition": "No composition recorded yet.",
+    "noPack": "No pack",
+    "thisPack": "This pack",
+    "open": "Open",
+    "onlyPack": "This is the only pack.",
+    "noCertificates": "No certificates for this product yet.",
+    "noLabels": "No labels for this product yet.",
+    "status": {
+      "draft": "Draft",
+      "final": "Final",
+      "failed": "Failed"
+    }
+  },
+  "systemHealth": {
+    "failedSoon": "The list of failed tasks with their reason and a retry button is coming soon.",
+    "allGood": "All workers are running",
+    "degraded": "{count} queue(s) need attention",
+    "converterOk": "Design converter OK ({ms} ms)",
+    "converterDown": "Design converter not reachable",
+    "refresh": "Refresh",
+    "queue": "Queue",
+    "workers": "Workers",
+    "waiting": "Waiting",
+    "active": "Running",
+    "failed": "Failed",
+    "delayed": "Delayed"
+  },
+  "uploads": {
+    "title": "Uploads",
+    "subtitle": "Every file drop: its company, the kinds of files, what came out, and the request it made.",
+    "upload": "Upload files",
+    "empty": "No uploads yet",
+    "emptyHint": "Drop files here or in the assistant; each drop shows up in this list.",
+    "when": "When",
+    "company": "Company",
+    "files": "Files",
+    "outcome": "Outcome",
+    "fileCount_one": "{count} file",
+    "fileCount_other": "{count} files",
+    "failedFiles_one": "{count} failed",
+    "failedFiles_other": "{count} failed",
+    "open": "Open",
+    "openRequest": "Open the request",
+    "status": {
+      "review": "Waiting for your OK",
+      "done": "Done",
+      "executing": "Filing",
+      "classifying": "Recognising",
+      "uploading": "Uploading",
+      "failed": "Failed"
+    }
   }
 }

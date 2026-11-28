@@ -248,7 +248,7 @@ export default function CertificateEditor() {
   const blocking = Object.entries(cert.flags || {})
     .filter(([, f]) => f.some((x) => ["missing", "overflow", "missing_span", "sample_value", "unconfirmed"].includes(x) || x.startsWith("glyph:")))
     .map(([k]) => fields.find((f) => f.key === k)?.label || cert.groups?.find((g) => g.key === k)?.label || k);
-  const title = `${cert.certificateType?.code || ""} · ${cert.scope === "per_invoice" ? STR.whole : cert.product?.name || "—"}`;
+  const title = `${cert.certificateType?.code || ""} · ${cert.scope === "per_invoice" ? STR.whole : [cert.product?.name, cert.product?.packaging].filter(Boolean).join(" · ") || "—"}`;
   const saveText =
     saveState.state === "saving" ? STR.saving : saveState.state === "dirty" || dirty ? STR.dirty : saveState.state === "error" ? STR.failed : saveState.at ? STR.saved(saveState.at) : "";
 

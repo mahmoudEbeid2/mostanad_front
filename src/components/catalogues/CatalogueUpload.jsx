@@ -8,11 +8,12 @@ import CatalogueSteps from "./CatalogueSteps";
 import { getBrands } from "../../services/apiBrands";
 import { uploadCatalogue } from "../../services/apiCatalogues";
 import { strings, t } from "../../i18n";
+import { limitBytes, tooBig } from "../../utils/uploadLimits";
 
 // Step 1 of a catalogue upload (design C0): drop zone, details, the upload with its
 // real % and a Cancel, then the quick check of the PDF (the request's answer: the
 // server opens the file and counts its pages). Nothing is read by AI here.
-const MAX_BYTES = 60 * 1024 * 1024;
+const MAX_BYTES = limitBytes("catalogue");
 const STR = {
   ...strings("catalogueUpload"),
   ofMb: (a, b, left) => t("catalogueUpload.ofMb", { a, b }) + (left ? t("catalogueUpload.left", { left }) : ""),
@@ -25,7 +26,7 @@ const fmtLeft = (s) => (s >= 90 ? `${Math.round(s / 60)} min` : `${Math.max(1, M
 function checkFile(file) {
   const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
   if (!isPdf) return STR.notPdf;
-  if (file.size > MAX_BYTES) return STR.tooBig(mb(file.size));
+  if (file.size > MAX_BYTES) return tooBig(file, "catalogue");
   return null;
 }
 

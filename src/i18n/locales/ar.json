@@ -19,7 +19,7 @@
     "gapInCountry": " في {country}"
   },
   "certificateCard": {
-    "whole": "الفاتورة كلها · {n} منتج",
+    "whole": "{code} · {count} منتج",
     "batch": "تشغيلة {b}",
     "issues": "{n} حاجة ناقصة",
     "rendering": "بتتعمل…",
@@ -27,8 +27,9 @@
     "fix": "صلّح الناقص",
     "view": "افتح",
     "wait": "استنى شوية",
-    "whole_other": "الفاتورة كلها · {count} منتج",
-    "issues_other": "{count} مشكلة"
+    "whole_other": "{code} · {count} منتج",
+    "issues_other": "{count} مشكلة",
+    "select": "اختار {name}"
   },
   "certificateTypePicker": {
     "title": "الشهادات المطلوبة",
@@ -68,6 +69,13 @@
       "regenerate_field": "رجعت لمصدرها",
       "duplicate": "نسخة",
       "font_fallback": "خطوط بديلة"
+    },
+    "section": {
+      "product": "المنتج",
+      "composition": "التركيب",
+      "batch": "الباتش",
+      "lab": "نتايج المعمل",
+      "document": "المستند"
     }
   },
   "companyPicker": {
@@ -590,7 +598,24 @@
     "pickCompany": "اختار شركة عشان تشوف شهاداتها.",
     "prev": "السابق",
     "next": "التالي",
-    "newCertificateRequest": "طلب شهادات جديد"
+    "newCertificateRequest": "طلب شهادات جديد",
+    "byRequest": "طلب يوم {date}",
+    "requestNo": "فاتورة {no}",
+    "noRequest": "اتعملت لمنتج (من غير طلب)",
+    "openRequest": "افتح الطلب",
+    "count_other": "{count} شهادة",
+    "count_one": "شهادة واحدة",
+    "drafts_other": "{count} مسودة",
+    "drafts_one": "مسودة واحدة",
+    "selectDrafts": "اختار مسوداته",
+    "selected_other": "اخترت {count} مسودة",
+    "selected_one": "اخترت مسودة واحدة",
+    "archive": "أرشفة",
+    "delete": "مسح",
+    "clear": "إلغاء الاختيار",
+    "bulkSoon": "أرشفة ومسح المسودات مع بعض قريبًا (النهائية مش بتتلمس أبدًا).",
+    "loadError": "معرفناش نحمّل الشهادات.",
+    "retry": "جرّب تاني"
   },
   "certificateTemplates": {
     "title": "قوالب الشهادات",
@@ -3181,7 +3206,18 @@
     "created": "اتعمل",
     "noLabelsYet": "مفيش ليبلات لسه",
     "createALabelFromProduct": "اعمل ليبل من بيانات منتج أو افحص ليبل موجود عشان يظهر هنا.",
-    "pageOfLabelS": "صفحة {page} من {totalPages} · {total} ليبل"
+    "pageOfLabelS": "صفحة {page} من {totalPages} · {total} ليبل",
+    "thumbnail": "معاينة",
+    "product": "المنتج",
+    "company": "الشركة",
+    "statuses": {
+      "draft": "مسودة",
+      "validated": "اتراجع",
+      "failed_validation": "المراجعة فشلت",
+      "approved": "معتمد",
+      "revoked": "اتلغى",
+      "archived": "متأرشف"
+    }
   },
   "login": {
     "welcomeBack": "أهلًا بيك",
@@ -4311,5 +4347,8 @@
       "uploading": "بيترفع",
       "failed": "فشل"
     }
+  },
+  "uploadLimit": {
+    "tooBig": "الملف ده {mb} ميجا — الحد {limit} ميجا."
   }
 }

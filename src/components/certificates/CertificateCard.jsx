@@ -9,14 +9,17 @@ import { strings, t } from "../../i18n";
 
 const STR = {
   ...strings("certificateCard"),
-  whole: (n) => t("certificateCard.whole", { count: n }),
+  whole: (code, n) => t("certificateCard.whole", { code, count: n }),
   issues: (n) => t("certificateCard.issues", { count: n }),
 };
 
-export default function CertificateCard({ scope, cert }) {
+// `select`: { checked, onChange } — the bulk choice of drafts on the certificates list
+export default function CertificateCard({ scope, cert, select }) {
   const pending = cert.status === "pending";
   const failed = cert.status === "failed";
-  const title = cert.scope === "per_invoice" ? STR.whole(cert.lineNos.length) : cert.product?.name || "—";
+  // a whole-request certificate reads "HC · 6 products"; a product's carries its pack ("OLIGOVET · 1L")
+  const pack = cert.product?.packaging || cert.packaging || null;
+  const title = cert.scope === "per_invoice" ? STR.whole(cert.certificateType?.code || "", cert.lineNos.length) : [cert.product?.name, pack].filter(Boolean).join(" · ") || "—";
   const subtitle = cert.scope === "per_invoice" ? [cert.template?.name, cert.template?.country].filter(Boolean).join(" — ") : cert.batchNo ? STR.batch(cert.batchNo) : "";
   const action = cert.status === "final" ? STR.view : cert.flagCount > 0 ? STR.fix : STR.open;
   return (
@@ -25,8 +28,13 @@ export default function CertificateCard({ scope, cert }) {
         {cert.hasThumbnail ? <AuthImage load={() => getCertificateThumbnail(scope, cert.id)} reloadKey={`${cert.id}:${cert.currentVersion}`} alt={title} className="w-full h-full" /> : <div className={`w-full h-full ${pending ? "animate-pulse bg-gray-100" : ""}`} />}
       </div>
       <div className="min-w-0 flex-1 space-y-1.5">
+        {select && (
+          <label className="float-end">
+            <input type="checkbox" checked={select.checked} onChange={select.onChange} aria-label={t("certificateCard.select", { name: title })} data-testid="certificate-select" />
+          </label>
+        )}
         <span className="inline-block rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-gray-700">{cert.certificateType?.code}</span>
-        <h3 className="font-semibold text-gray-900 leading-tight truncate" title={title}>
+        <h3 className="font-semibold text-gray-900 leading-tight truncate" title={title} dir="auto">
           {title}
         </h3>
         {subtitle && <p className="text-xs text-gray-500 truncate">{subtitle}</p>}

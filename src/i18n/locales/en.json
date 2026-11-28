@@ -25,10 +25,11 @@
     "fix": "Fix issues",
     "view": "Open",
     "wait": "Please wait",
-    "whole_one": "Whole invoice · {count} product",
-    "whole_other": "Whole invoice · {count} products",
+    "whole_one": "{code} · {count} product",
+    "whole_other": "{code} · {count} products",
     "issues_one": "{count} issue",
-    "issues_other": "{count} issues"
+    "issues_other": "{count} issues",
+    "select": "Select {name}"
   },
   "certificateTypePicker": {
     "title": "Certificates to make",
@@ -68,6 +69,13 @@
       "regenerate_field": "reset",
       "duplicate": "duplicated",
       "font_fallback": "fallback fonts"
+    },
+    "section": {
+      "product": "Product",
+      "composition": "Composition",
+      "batch": "Batch",
+      "lab": "Lab results",
+      "document": "Document"
     }
   },
   "companyPicker": {
@@ -600,7 +608,24 @@
     "pickCompany": "Pick a company to see its certificates.",
     "prev": "Previous",
     "next": "Next",
-    "newCertificateRequest": "New certificate request"
+    "newCertificateRequest": "New certificate request",
+    "byRequest": "Request of {date}",
+    "requestNo": "Invoice {no}",
+    "noRequest": "Made for a product (no request)",
+    "openRequest": "Open the request",
+    "count_one": "{count} certificate",
+    "count_other": "{count} certificates",
+    "drafts_one": "{count} draft",
+    "drafts_other": "{count} drafts",
+    "selectDrafts": "Select its drafts",
+    "selected_one": "{count} draft selected",
+    "selected_other": "{count} drafts selected",
+    "archive": "Archive",
+    "delete": "Delete",
+    "clear": "Clear",
+    "bulkSoon": "Archiving and deleting drafts in bulk is coming soon (finals are never touched).",
+    "loadError": "The certificates couldn't be loaded.",
+    "retry": "Try again"
   },
   "certificateTemplates": {
     "title": "Certificate templates",
@@ -3253,7 +3278,18 @@
     "created": "Created",
     "noLabelsYet": "No labels yet",
     "createALabelFromProduct": "Create a label from product data or check an existing label to see it here.",
-    "pageOfLabelS": "Page {page} of {totalPages} · {total} label(s)"
+    "pageOfLabelS": "Page {page} of {totalPages} · {total} label(s)",
+    "thumbnail": "Preview",
+    "product": "Product",
+    "company": "Company",
+    "statuses": {
+      "draft": "Draft",
+      "validated": "Checked",
+      "failed_validation": "Check failed",
+      "approved": "Approved",
+      "revoked": "Revoked",
+      "archived": "Archived"
+    }
   },
   "login": {
     "welcomeBack": "Welcome Back",
@@ -4394,5 +4430,8 @@
       "uploading": "Uploading",
       "failed": "Failed"
     }
+  },
+  "uploadLimit": {
+    "tooBig": "This file is {mb} MB — the limit is {limit} MB."
   }
 }

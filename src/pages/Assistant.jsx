@@ -19,6 +19,7 @@ import AssistantSettings from "../components/assistant/AssistantSettings";
 import Spinner from "../ui/Spinner";
 import { guessCompanyName, normName } from "../utils/companyGuess";
 import { t } from "../i18n";
+import { tooBig } from "../utils/uploadLimits";
 
 // The assistant (design E1): a full page. Read-only in this phase — it reads
 // with the signed-in user's own access. Opened from a page (?from=type:id) it
@@ -203,7 +204,6 @@ export default function Assistant() {
 
   // ── files: uploaded as soon as they are picked or dropped, one request each (its own progress) ──
   const ACCEPT = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
-  const MAX_BYTES = 60 * 1024 * 1024;
   const addFiles = async (list) => {
     const picked = [...list];
     if (!picked.length) return;
@@ -217,7 +217,7 @@ export default function Assistant() {
     }
     for (const file of picked) {
       const key = `${file.name}-${file.size}-${Math.random()}`;
-      const bad = !ACCEPT.includes(file.type) ? t("assistant.attachAPdfPngJpeg") : file.size > MAX_BYTES ? t("assistant.filesAreLimitedTo60") : null;
+      const bad = !ACCEPT.includes(file.type) ? t("assistant.attachAPdfPngJpeg") : tooBig(file, "assistant");
       setFiles((fs) => [...fs, { key, name: file.name, sizeBytes: file.size, mimeType: file.type, progress: 0, file, error: bad, bad: !!bad }]);
       if (bad) continue;
       upload(conv.id, key, file);

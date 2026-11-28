@@ -21,6 +21,7 @@ import ProductFieldSource from "../components/ProductFieldSource";
 import CatalogueSearch from "../components/catalogues/CatalogueSearch";
 import { categoryOptions } from "../utils/categoryOptions";
 import { fmtDate, t } from "../i18n";
+import useCompanyScope from "../hooks/useCompanyScope";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -28,7 +29,9 @@ export default function Products() {
   
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCompany, setFilterCompany] = useState("");
+  // the company comes from the one switcher in the header (UI plan, Phase G); a company account is scoped by the server
+  const companyScope = useCompanyScope();
+  const filterCompany = companyScope.isCompany ? "" : companyScope.companyId || "";
   const [filterBrand, setFilterBrand] = useState("");
   
   // Dropdown Data
@@ -389,16 +392,7 @@ export default function Products() {
         </div>
         
         <div className="flex w-full md:w-auto gap-4">
-          <select
-            value={filterCompany}
-            onChange={(e) => setFilterCompany(e.target.value)}
-            className="w-full md:w-48 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700"
-          >
-            <option value="">{t("products.allCompanies")}</option>
-            {companies.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+{/* company: the header switcher */}
           
           <select
             value={filterBrand}

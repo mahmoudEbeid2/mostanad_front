@@ -139,7 +139,7 @@ function MatchCell({ scope, item, editable, onMatch, onIgnore, onRemember, onNew
       {matched && !changing ? (
         <>
           <span className="text-gray-900" data-testid="matched-product">
-            {item.product.name}
+            {[item.product.name, item.product.packaging].filter(Boolean).join(" · ")}
           </span>
           {editable && (
             <button type="button" title={STR.change} aria-label={STR.change} onClick={() => setChanging(true)} className="text-gray-400 hover:text-blue-600">

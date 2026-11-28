@@ -5,13 +5,20 @@ import { strings, t } from "../../i18n";
 // The company every Certificates V2 page works on (plan §13.1; mockups A1/A2/B1).
 // System users pick it (every call adds ?companyId=); a company session sees
 // its own name read-only in the same place.
-//  - variant "inline": compact, for page headers
+//  - variant "inline": the header's switcher (GlobalHeader, `inHeader`). On a page it renders nothing: the
+//    one switcher in the header is the one every page follows (UI plan, Phase G)
 //  - variant "field":  labelled form/filter field ("Company" + optional hint);
 //    `yours` adds "· your company" to a company session's name (A2, not A1/B1);
-//    `compact` matches the 40px selects of a filter card
+//    `compact` matches the 40px selects of a filter card — a filter, so it too gives way to the header
 const STR = strings("companyPicker");
 
-export default function CompanyPicker({ scope, variant = "inline", hint, yours = true, compact = false, labelClassName = "text-xs font-semibold text-gray-600", className = "" }) {
+export default function CompanyPicker(props) {
+  if (!props.inHeader && (props.variant || "inline") === "inline") return null;
+  if (props.compact) return null;
+  return <Picker {...props} />;
+}
+
+function Picker({ scope, variant = "inline", hint, yours = true, compact = false, labelClassName = "text-xs font-semibold text-gray-600", className = "" }) {
   // PART 3: a company in experiment mode is marked in the switcher
   const experiment = useExperimentStatus();
   const onIds = new Set([...(experiment?.companiesOn || []).map((c) => c.id), ...(experiment?.global?.on ? (scope.companies || []).map((c) => c.id) : [])]);

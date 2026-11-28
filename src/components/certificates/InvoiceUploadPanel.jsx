@@ -9,13 +9,14 @@ import { listCertificateTypesForPicker } from "../../services/apiCertificateType
 import { useAiStatus } from "../../context/AiStatusContext";
 import CertificateTypePicker from "./CertificateTypePicker";
 import { localizeCountries, strings } from "../../i18n";
+import { limitBytes, tooBig } from "../../utils/uploadLimits";
 
 // Invoice upload (plan §13.5, mockup B1): drop zone + optional brand hint and
 // destination country, then straight to the review page while it is read.
 // `companyField` (the company picker, or a company's own name) leads the form.
 const STR = strings("invoiceUploadPanel");
 
-const MAX_BYTES = 15 * 1024 * 1024;
+const MAX_BYTES = limitBytes("invoice");
 
 export default function InvoiceUploadPanel({ scope, companyId, companyName = "", companyField = null }) {
   const navigate = useNavigate();
@@ -66,7 +67,7 @@ export default function InvoiceUploadPanel({ scope, companyId, companyName = "",
 
   const pick = (f) => {
     if (!f) return;
-    setError(f.size > MAX_BYTES ? STR.tooLarge : null);
+    setError(tooBig(f, "invoice"));
     setFile(f);
   };
 

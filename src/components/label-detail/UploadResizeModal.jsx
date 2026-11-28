@@ -10,6 +10,7 @@ import DesignResize from "./DesignResize";
 import { sizeAr } from "./resizeText";
 import { getLayoutSizes, uploadLabelToResize, getLabelUpload, confirmLabelUpload, downloadLayoutPdf, layoutFileUrl } from "../../services/apiLabelLayout";
 import { t } from "../../i18n";
+import { tooBig } from "../../utils/uploadLimits";
 
 // Labels list (or a label's page) → "غيّر المقاس": a label the client has as a
 // file (PDF, Illustrator .ai, PNG, JPEG), at other sizes. Two ways, per upload:
@@ -119,7 +120,7 @@ export default function UploadResizeModal({ onClose, isSystem, companies = [], l
     if (!f) return;
     const ok = ["application/pdf", "image/png", "image/jpeg"].includes(f.type) || /\.ai$/i.test(f.name);
     if (!ok) return setError(t("uploadResizeModal.uploadAPdfAnIllustrator"));
-    if (f.size > 40 * 1024 * 1024) return setError(t("uploadResizeModal.theFileIsBiggerThan"));
+    if (tooBig(f, "labelResize")) return setError(tooBig(f, "labelResize"));
     setError(null);
     setFile(f);
   };

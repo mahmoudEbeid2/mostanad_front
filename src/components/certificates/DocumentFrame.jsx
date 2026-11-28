@@ -78,7 +78,9 @@ export default function DocumentFrame({ load, reloadKey, onReady, overlay, hint,
     st.textContent = VIEWER_CSS;
     doc.head.appendChild(st);
     const pageEls = Array.from(doc.querySelectorAll("[data-page]"));
-    const pages = pageEls.map((p) => ({ page: Number(p.getAttribute("data-page")), top: p.offsetTop, width: p.offsetWidth, height: p.offsetHeight }));
+    // top: from the document's own top (offsetTop is relative to a positioned wrapper and read 0 for page 2)
+    const docTop = doc.documentElement.getBoundingClientRect().top;
+    const pages = pageEls.map((p) => ({ page: Number(p.getAttribute("data-page")), top: p.getBoundingClientRect().top - docTop, width: p.offsetWidth, height: p.offsetHeight }));
     const width = pages.length ? Math.max(...pages.map((p) => p.width)) : doc.documentElement.scrollWidth;
     const height = doc.documentElement.scrollHeight;
     setSize({ width, height, pages });
@@ -135,11 +137,16 @@ export default function DocumentFrame({ load, reloadKey, onReady, overlay, hint,
   // document on the certificate page, so it has nothing to scroll. A marker at the page's top is scrolled
   // into view instead, by whichever ancestor scrolls (the box itself, the page, the window).
   const markRef = useRef(null);
+  // n is the page's place (1…N), not its data-page value (which may start at 0)
   const goTo = (n) => {
-    const p = size.pages.find((x) => x.page === n);
+    const p = size.pages[n - 1];
     if (!p || !markRef.current) return;
+    // measured at the click: images and fonts loaded after the first measure move the pages down
+    const doc = frameRef.current?.contentDocument;
+    const el = doc?.querySelectorAll("[data-page]")[n - 1];
+    const top = el ? el.getBoundingClientRect().top - doc.documentElement.getBoundingClientRect().top : p.top;
     setPage(n);
-    markRef.current.style.top = `${p.top * scale}px`;
+    markRef.current.style.top = `${top * scale}px`;
     markRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 

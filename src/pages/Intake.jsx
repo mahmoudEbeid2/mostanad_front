@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { isCompanyUser } from "../utils/permissions";
 import IntakeReview from "../components/intake/IntakeReview";
 import { fmtDateTime, t } from "../i18n";
+import { tooBig } from "../utils/uploadLimits";
 
 // "ارفع ملفاتك": drop any files — many, a folder, a .zip — with no company picked
 // first. Each file is sent in chunks (with its own progress), then recognised; the
@@ -44,9 +45,12 @@ export default function Intake() {
   }, []);
 
   const add = (list) => {
-    const good = list.filter(({ file }) => OK.test(file.name));
-    const bad = list.length - good.length;
+    const typed = list.filter(({ file }) => OK.test(file.name));
+    const bad = list.length - typed.length;
     if (bad) toast.error(t("intake.filesHaveAnUnsupportedType", { bad }));
+    const big = typed.find(({ file }) => tooBig(file, "intake"));
+    if (big) toast.error(`${big.file.name}: ${tooBig(big.file, "intake")}`);
+    const good = typed.filter(({ file }) => !tooBig(file, "intake"));
     setPicked((p) => [...p, ...good.map(({ file, relPath }) => ({ key: `${relPath || file.name}-${file.size}-${Math.random()}`, file, relPath, progress: 0, state: "waiting" }))]);
   };
   const patch = (key, change) => setPicked((p) => p.map((x) => (x.key === key ? { ...x, ...change } : x)));

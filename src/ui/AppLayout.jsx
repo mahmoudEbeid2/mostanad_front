@@ -9,6 +9,7 @@ import { AssistantStatusProvider } from "../context/AssistantStatusContext";
 import { SidebarProvider } from "../context/SidebarContext";
 import { useSidebar, SIDEBAR_ID, shortcutLabel } from "../context/sidebarState";
 import AssistantFab from "../components/assistant/AssistantFab";
+import GlobalHeader from "./GlobalHeader";
 import { t } from "../i18n";
 
 export default function AppLayout() {
@@ -59,8 +60,10 @@ function Shell() {
           </div>
         </main>
       ) : (
-        <main className={`flex-1 ${offset} ${MOTION} p-8 overflow-y-auto h-screen min-w-0`}>
+        // pb-28: the last row of any table scrolls clear of the floating assistant button
+        <main className={`flex-1 ${offset} ${MOTION} p-8 pb-28 overflow-y-auto h-screen min-w-0`}>
           <div className="max-w-6xl mx-auto">
+            <GlobalHeader />
             <ExperimentBanner />
             <AiBanner />
             <Outlet />

@@ -1,4 +1,4 @@
-// Admin → Overview (UI plan, Phase E): the numbers that were on the dashboard — users, companies, products,
+// Overview — the main page for everyone (was Admin → Overview, UI plan Phase E): the numbers that were on the dashboard — users, companies, products,
 // AI tasks with the failed ones one click away. Revenue and subscriptions stay hidden until billing exists.
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -43,12 +43,17 @@ export default function AdminOverview() {
 
   if (!hasAccess) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
-        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
-          <AlertCircle className="w-10 h-10" />
+      // the overview's numbers need the dashboard permission; everyone else is sent on to their work
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t("placeholders.adminOverview")}</h1>
+          <p className="text-gray-500 mt-1">{t("adminOverview.subtitle")}</p>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("dashboard.accessDenied")}</h2>
-        <p className="text-gray-500 max-w-md">{t("dashboard.youDoNotHaveThe")}</p>
+        <div className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+          <AlertCircle className="mb-3 h-8 w-8 text-gray-400" aria-hidden="true" />
+          <p className="font-semibold text-gray-800">{t("adminOverview.noStats")}</p>
+          <Link to="/work-queue" className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{t("adminOverview.openWorkQueue")}</Link>
+        </div>
       </div>
     );
   }

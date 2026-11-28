@@ -14,7 +14,7 @@ export default function RequirePermission({ children, permission }) {
   }
 
   if (!hasPermission(user, permission)) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/overview" replace />;
   }
 
   return children;

@@ -66,12 +66,15 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* the main page is the Overview (for everyone); the old dashboard is the Work queue */}
+            <Route path="/" element={<Navigate to="/overview" replace />} />
+            <Route path="/overview" element={<AdminOverview />} />
             <Route path="/assistant" element={<Assistant />} />
             {/* "ارفع ملفاتك": drop any files, recognised and filed on one card */}
             <Route path="/intake" element={<RequirePermission permission="read_products"><Intake /></RequirePermission>} />
             <Route path="/intake/:batchId" element={<RequirePermission permission="read_products"><Intake /></RequirePermission>} />
-            <Route path="/dashboard" element={<Home />} />
+            <Route path="/work-queue" element={<Home />} />
+            <Route path="/dashboard" element={<Navigate to="/work-queue" replace />} />
             <Route path="/roles" element={<Navigate to="/admin/roles" replace />} />
             <Route path="/categories" element={<RequirePermission permission="read_categories"><Categories /></RequirePermission>} />
             <Route path="/products" element={<RequirePermission permission="read_products"><Products /></RequirePermission>} />
@@ -119,7 +122,7 @@ function App() {
             <Route path="/processing-bulk" element={<BulkProcessing />} />
             <Route path="/account" element={<Account />} />
             {/* Admin (owner / super-admin), UI plan Phase D */}
-            <Route path="/admin" element={<RequirePermission permission="read_users"><AdminOverview /></RequirePermission>} />
+            <Route path="/admin" element={<Navigate to="/overview" replace />} />
             <Route path="/admin/users" element={<RequirePermission permission="read_users"><Users /></RequirePermission>} />
             <Route path="/admin/roles" element={<RequirePermission permission="read_roles"><Roles /></RequirePermission>} />
             <Route path="/admin/experiment" element={<RequirePermission permission="read_users"><AdminExperiment /></RequirePermission>} />

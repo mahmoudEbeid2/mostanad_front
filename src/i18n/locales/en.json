@@ -3807,7 +3807,9 @@
         "aiUsage": "AI usage & cost",
         "health": "System health",
         "certificateAi": "Certificate AI settings"
-      }
+      },
+      "overview": "Overview",
+      "workQueue": "Work queue"
     }
   },
   "certificateErrors": {
@@ -4196,7 +4198,7 @@
     "hint": "This page is ready; the data it shows isn't served by the server yet."
   },
   "placeholders": {
-    "adminOverview": "Admin overview",
+    "adminOverview": "Overview",
     "adminOverviewHint": "Users, companies, products, AI tasks and worker health — for the owner.",
     "aiUsage": "AI usage & cost",
     "aiUsageHint": "Calls and cost per month, company and task.",
@@ -4208,7 +4210,7 @@
     "conflictsOpenProducts": "Open Products →"
   },
   "home": {
-    "title": "Welcome, {name}",
+    "title": "Work queue",
     "subtitle": "Your requests: what's waiting for you, what's in progress, what's ready.",
     "shortcuts": "Shortcuts",
     "newRequest": "New request",
@@ -4288,7 +4290,9 @@
     "failedTasks": "Failed tasks",
     "failedHint": "Background tasks that stopped with an error.",
     "seeFailed": "See them on System health",
-    "aiCost": "AI usage & cost →"
+    "aiCost": "AI usage & cost →",
+    "noStats": "The overview numbers are for admins. Your requests and what's waiting for you are in the Work queue.",
+    "openWorkQueue": "Open the Work queue"
   },
   "dashboard": {
     "failedToLoadDashboardStatistics": "Failed to load dashboard statistics",

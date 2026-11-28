@@ -1,9 +1,9 @@
-// The sidebar (UI plan, Phase D): grouped around what the client does — Home, Assistant, Certificates,
+// The sidebar (UI plan, Phase D): grouped around what the client does — Overview, Work queue, Assistant, Certificates,
 // Labels, Products, Uploads, Companies & brands — with the owner's tools under Admin.
 // "Urgent orders" is gone: /express goes to Requests filtered by "needs review".
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Package, Tags, FileCheck, Building2, LogOut, Sparkles, ChevronDown, ChevronUp, PanelLeftClose, UploadCloud, Languages, ShieldCheck } from "lucide-react";
+import { Home, LayoutDashboard, Package, Tags, FileCheck, Building2, LogOut, Sparkles, ChevronDown, ChevronUp, PanelLeftClose, UploadCloud, Languages, ShieldCheck } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 import { useAssistantStatus } from "../context/AssistantStatusContext";
@@ -12,7 +12,8 @@ import { LANG, setLang, t } from "../i18n";
 
 // labels: sidebar.nav.<group> and sidebar.nav.<group>_.<link>; `match` = path prefixes that keep a group open
 export const NAV = [
-  { key: "home", path: "/dashboard", icon: Home },
+  { key: "overview", path: "/overview", icon: LayoutDashboard },
+  { key: "workQueue", path: "/work-queue", icon: Home },
   {
     key: "certificates",
     icon: Sparkles,
@@ -64,7 +65,6 @@ export const NAV = [
     permission: "read_users",
     match: ["/admin"],
     links: [
-      { key: "overview", path: "/admin", end: true },
       { key: "users", path: "/admin/users", permission: "read_users" },
       { key: "roles", path: "/admin/roles", permission: "read_roles" },
       { key: "experiment", path: "/admin/experiment" },

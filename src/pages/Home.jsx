@@ -9,7 +9,6 @@ import Spinner from "../ui/Spinner";
 import CompanyPicker from "../components/certificates/CompanyPicker";
 import TypeProgress from "../components/requests/TypeProgress";
 import useCompanyScope from "../hooks/useCompanyScope";
-import { useAuth } from "../context/AuthContext";
 import { useAssistantStatus } from "../context/AssistantStatusContext";
 import { listCertificateRequests, getCertificateRequest } from "../services/apiWorkflow";
 import { downloadBatchZip, downloadBatchPdf } from "../services/apiCertificatesV2";
@@ -37,7 +36,6 @@ function Section({ title, count, children, action, testId }) {
 const Empty = ({ children }) => <p className="rounded-xl border border-dashed border-gray-300 bg-white px-5 py-6 text-center text-sm text-gray-500">{children}</p>;
 
 export default function Home() {
-  const { user } = useAuth();
   const scopeState = useCompanyScope();
   const { scope } = scopeState;
   const { status: assistant } = useAssistantStatus();
@@ -88,7 +86,7 @@ export default function Home() {
     <div className="space-y-8 pb-12" data-testid="home">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("home.title", { name: user?.name || "" })}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("home.title")}</h1>
           <p className="mt-1 text-sm text-gray-500">{t("home.subtitle")}</p>
         </div>
         <CompanyPicker scope={scopeState} />
